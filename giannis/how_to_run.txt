@@ -1,0 +1,16 @@
+1) Μην αλλάξεις τη σειρά των #include
+
+2) Για τα 3 πρώτα #include δε χρειάζεται να εγκαταστήσεις κάτι.
+
+3)    Εγκατάσταση glfw, glew.
+3.1)  https://www.msys2.org/   Κατεβάζεις το .exe και το εγκαθιστας σύμφωνα με τις οδηγίες.
+3.2   Εγκατάσταση του gcc compiler. Η σελίδα του βήματος 3.1 λέει ακριβώς πως να το κάνεις.
+3.3)  Εγκατάσταση της glew. Ανοίγεις το msys terminal και τρέχεις : pacman -S mingw-w64-x86_64-glew
+3.4)  Εγκατάσταση της glfw. Ανοίγεις το msys terminal και τρέχεις : pacman -S mingw-w64-x86_64-glfw
+
+4) Το #include<thread> υπάρχει by default στον compiler της C++
+
+5) Πως τρέχουμε το thread_test.cpp?
+
+    g++ thread_test.cpp -o thread_test.exe C:\Users\Michalis\github\KIMIN\imgui\imgui*.cpp -I C:\Users\Michalis\github\KIMIN\imgui -lopengl32 -lglfw3 -lglew32
+                                           το αντίστοιχο δικό σου path ...................    το αντίστοιχο δικό σου path ........
