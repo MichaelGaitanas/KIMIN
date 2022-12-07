@@ -27,7 +27,7 @@ typedef std::vector<dvec> dmat; //nxn matrix of doubles
 typedef std::vector<ivec> imat; //nxn matrix of ints
 
 typedef std::vector<dmat3> dtensnx3x3; //nx3x3 tensor of doubles (basically n floors of 3x3 matrices of doubles)
-typedef std::vector<dmat> dtens; //nxnxn tensor of doubles
+typedef std::vector<dmat> dtens; // nxnxn tensor of doubles
 
 typedef std::complex<double> dcomplex; //complex double (double + i*double)
 typedef std::vector<dcomplex> dcomplexvec; //vector of n complex doubles

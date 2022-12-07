@@ -54,8 +54,8 @@ public:
 
     void rotate(float xoffset, float yoffset)
     {
-        if (pitch > 88.9f) pitch = 88.9f;
-        else if (pitch <= -88.9f) pitch = -88.9f;
+        if (pitch > 88.9f) pitch = 88.9f; //bound zenith
+        else if (pitch <= -88.9f) pitch = -88.9f; //bound nadir
 
         if (abs(yaw) > 360.0f) yaw = 0.0f;
 

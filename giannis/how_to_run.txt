@@ -10,7 +10,7 @@
 
 4) Το #include<thread> υπάρχει by default στον compiler της C++
 
-5) Πως τρέχουμε το thread_test.cpp?
+5) Πως τρέχεις το thread_test.cpp? Ανοίγεις το cmd, πας στο directory .../.../giannis/ και γράφεις :
 
     g++ thread_test.cpp -o thread_test.exe C:\Users\Michalis\github\KIMIN\imgui\imgui*.cpp -I C:\Users\Michalis\github\KIMIN\imgui -lopengl32 -lglfw3 -lglew32
                                            το αντίστοιχο δικό σου path ...................    το αντίστοιχο δικό σου path ........
