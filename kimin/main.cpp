@@ -85,7 +85,7 @@ int main()
         ImGui::NewFrame();
  
         //create the imgui window at the top left of the glfw window
-        ImGui::SetNextWindowPos(ImVec2(0,0), ImGuiCond_FirstUseEver); //extremely carefule with the FirstUseEver flag 
+        ImGui::SetNextWindowPos(ImVec2(0.0f,0.0f), ImGuiCond_FirstUseEver); //extremely careful with the FirstUseEver flag 
         ImGui::Begin("GUI");
 
         /* field : simulation name */
@@ -95,7 +95,7 @@ int main()
         ImGui::PushItemWidth(200); //field box width (height is auto)
             ImGui::InputText(" ", simname, IM_ARRAYSIZE(simname));
         ImGui::PopItemWidth();
-        ImGui::Dummy(ImVec2(0,15));
+        ImGui::Dummy(ImVec2(0.0f,15.0f));
 
         /* field : ellipsoid shape model */
         ImGui::Text("Shape model");
@@ -121,7 +121,7 @@ int main()
                 static double a1 = 0.0;
                 ImGui::Text("a1 ");
                 ImGui::SameLine();
-                ImGui::PushItemWidth(100);
+                ImGui::PushItemWidth(100.0f);
                     ImGui::PushID(0);
                         ImGui::InputDouble("", &a1, 0.0, 0.0,"%.5lf");
                     ImGui::PopID();
@@ -133,7 +133,7 @@ int main()
                 static double b1 = 0.0;
                 ImGui::Text("b1 ");
                 ImGui::SameLine();
-                ImGui::PushItemWidth(100);
+                ImGui::PushItemWidth(100.0f);
                     ImGui::PushID(1);
                         ImGui::InputDouble("", &b1, 0.0, 0.0,"%.5lf");
                     ImGui::PopID();
@@ -145,7 +145,7 @@ int main()
                 static double c1 = 0.0;
                 ImGui::Text("c1 ");
                 ImGui::SameLine();
-                ImGui::PushItemWidth(100);
+                ImGui::PushItemWidth(100.0f);
                     ImGui::PushID(2);
                         ImGui::InputDouble("", &c1, 0.0, 0.0,"%.5lf");
                     ImGui::PopID();
@@ -153,13 +153,13 @@ int main()
                 ImGui::SameLine();
                 ImGui::Text("[km]");
 
-                ImGui::Dummy(ImVec2(0,10));
+                ImGui::Dummy(ImVec2(0.0f,10.0f));
 
                 /* field : a2 semiaxis */
                 static double a2 = 0.0;
                 ImGui::Text("a2 ");
                 ImGui::SameLine();
-                ImGui::PushItemWidth(100);
+                ImGui::PushItemWidth(100.0f);
                     ImGui::PushID(3);
                         ImGui::InputDouble("", &a2, 0.0, 0.0,"%.5lf");
                     ImGui::PopID();
@@ -171,7 +171,7 @@ int main()
                 static double b2 = 0.0;
                 ImGui::Text("b2 ");
                 ImGui::SameLine();
-                ImGui::PushItemWidth(100);
+                ImGui::PushItemWidth(100.0f);
                     ImGui::PushID(4);
                         ImGui::InputDouble("", &b2, 0.0, 0.0,"%.5lf");
                     ImGui::PopID();
@@ -183,7 +183,7 @@ int main()
                 static double c2 = 0.0;
                 ImGui::Text("c2 ");
                 ImGui::SameLine();
-                ImGui::PushItemWidth(100);
+                ImGui::PushItemWidth(100.0f);
                     ImGui::PushID(5);
                         ImGui::InputDouble("", &c2, 0.0, 0.0,"%.5lf");
                     ImGui::PopID();
@@ -191,9 +191,9 @@ int main()
                 ImGui::SameLine();
                 ImGui::Text("[km]");
 
-                ImGui::Dummy(ImVec2(0,15));
+                ImGui::Dummy(ImVec2(0.0f,15.0f));
 
-                if (ImGui::Button("OK", ImVec2(50,30)))
+                if (ImGui::Button("OK", ImVec2(50.0f,30.0f)))
                     show_ell_axes_menu = false;
 
                 ImGui::End();
@@ -215,9 +215,8 @@ int main()
             }
             else
             {
-                
-                ImGui::Text("KIMIN's obj database\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t");
-                ImGui::Dummy(ImVec2(0,15));
+                ImGui::Text("KIMIN's .obj database\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t");
+                ImGui::Dummy(ImVec2(0.0f,10.0f));
 
                 static int refer_to_body = 1; //initial body choice for the .obj file
                 if (ImGui::RadioButton("Body 1", refer_to_body == 1))
@@ -227,26 +226,26 @@ int main()
 
                 if (ImGui::TreeNodeEx("v"))
                 {
-                    std::vector<std::filesystem::path> pv = lsobj("../resources/obj/v");
-                    for (int i = 0; i < pv.size(); ++i)
-                        ImGui::Selectable(pv[i].string().c_str());
+                    std::vector<std::filesystem::path> path_v = lsobj("../resources/obj/v");
+                    for (int i = 0; i < path_v.size(); ++i)
+                        ImGui::Selectable(path_v[i].string().c_str());
                     ImGui::TreePop();
                 }
                 if (ImGui::TreeNodeEx("vf"))
                 {
-                    std::vector<std::filesystem::path> pvf = lsobj("../resources/obj/vf");
-                    for (int i = 0; i < pvf.size(); ++i)
-                        ImGui::Selectable(pvf[i].string().c_str());
+                    std::vector<std::filesystem::path> path_vf = lsobj("../resources/obj/vf");
+                    for (int i = 0; i < path_vf.size(); ++i)
+                        ImGui::Selectable(path_vf[i].string().c_str());
                     ImGui::TreePop();
                 }
                 if (ImGui::TreeNodeEx("vfn"))
                 {
-                    std::vector<std::filesystem::path> pvfn = lsobj("../resources/obj/vfn");
-                    for (int i = 0; i < pvfn.size(); ++i)
-                        ImGui::Selectable(pvfn[i].string().c_str());
+                    std::vector<std::filesystem::path> path_vfn = lsobj("../resources/obj/vfn");
+                    for (int i = 0; i < path_vfn.size(); ++i)
+                        ImGui::Selectable(path_vfn[i].string().c_str());
                     ImGui::TreePop();
                 }
-                ImGui::Dummy(ImVec2(0, 15));
+                ImGui::Dummy(ImVec2(0.0f,15.0f));
 
                 if (ImGui::Button("OK", ImVec2(50,30)))
                     show_obj_files_menu = false;
@@ -255,7 +254,7 @@ int main()
             }
         }
 
-        ImGui::Dummy(ImVec2(0, 15));
+        ImGui::Dummy(ImVec2(0.0f, 15.0f));
 
         ImGui::Text("Mass");
 
@@ -263,7 +262,7 @@ int main()
         static double M1 = 0.0;
         ImGui::Text("M1 ");
         ImGui::SameLine();
-        ImGui::PushItemWidth(100);
+        ImGui::PushItemWidth(100.0f);
             ImGui::PushID(6);
                 ImGui::InputDouble("", &M1, 0.0, 0.0,"%.5lf");
             ImGui::PopID();
@@ -271,11 +270,11 @@ int main()
         ImGui::SameLine();
         ImGui::Text("[kg]");
         
-        /* field : M1 */
+        /* field : M2 */
         static double M2 = 0.0;
         ImGui::Text("M2 ");
         ImGui::SameLine();
-        ImGui::PushItemWidth(100);
+        ImGui::PushItemWidth(100.0f);
             ImGui::PushID(7);
                 ImGui::InputDouble("", &M2, 0.0, 0.0,"%.5lf");
             ImGui::PopID();
@@ -283,16 +282,15 @@ int main()
         ImGui::SameLine();
         ImGui::Text("[kg]");
 
-        ImGui::Dummy(ImVec2(0,15));
+        ImGui::Dummy(ImVec2(0.0f,15.0f));
 
-
-        ImGui::Text("Integration time parameters");
+        ImGui::Text("Integration time");
 
         /* field : t0 */
         static double t0 = 0.0;
         ImGui::Text("t0              ");
         ImGui::SameLine();
-        ImGui::PushItemWidth(100);
+        ImGui::PushItemWidth(100.0f);
             ImGui::PushID(8);
                 ImGui::InputDouble("", &t0, 0.0, 0.0,"%.5lf");
             ImGui::PopID();
@@ -304,7 +302,7 @@ int main()
         static double tmax = 0.0;
         ImGui::Text("tmax         ");
         ImGui::SameLine();
-        ImGui::PushItemWidth(100);
+        ImGui::PushItemWidth(100.0f);
             ImGui::PushID(9);
                 ImGui::InputDouble("", &tmax, 0.0, 0.0,"%.5lf");
             ImGui::PopID();
@@ -314,9 +312,9 @@ int main()
         
         /* field : print step */
         static double print_step = 0.0;
-        ImGui::Text("print_step ");
+        ImGui::Text("Print step ");
         ImGui::SameLine();
-        ImGui::PushItemWidth(100);
+        ImGui::PushItemWidth(100.0f);
             ImGui::PushID(10);
                 ImGui::InputDouble("", &print_step, 0.0, 0.0,"%.5lf");
             ImGui::PopID();
@@ -324,7 +322,7 @@ int main()
         ImGui::SameLine();
         ImGui::Text("[days]");
 
-        ImGui::Dummy(ImVec2(0,20));
+        ImGui::Dummy(ImVec2(0.0f,20.0f));
 
         ImGui::Text("Initial state");
         ImGui::Indent();
@@ -335,7 +333,7 @@ int main()
         static double relx = 0.0;
         ImGui::Text("x   ");
         ImGui::SameLine();
-        ImGui::PushItemWidth(100);
+        ImGui::PushItemWidth(100.0f);
             ImGui::PushID(11);
                 ImGui::InputDouble("", &relx, 0.0, 0.0,"%.5lf");
             ImGui::PopID();
@@ -347,7 +345,7 @@ int main()
         static double rely = 0.0;
         ImGui::Text("y   ");
         ImGui::SameLine();
-        ImGui::PushItemWidth(100);
+        ImGui::PushItemWidth(100.0f);
             ImGui::PushID(12);
                 ImGui::InputDouble("", &rely, 0.0, 0.0,"%.5lf");
             ImGui::PopID();
@@ -359,7 +357,7 @@ int main()
         static double relz = 0.0;
         ImGui::Text("z   ");
         ImGui::SameLine();
-        ImGui::PushItemWidth(100);
+        ImGui::PushItemWidth(100.0f);
             ImGui::PushID(13);
                 ImGui::InputDouble("", &relz, 0.0, 0.0,"%.5lf");
             ImGui::PopID();
@@ -369,12 +367,11 @@ int main()
 
         ImGui::Text("Relative velocity");
 
-
         /* field : relative velocity x */
         static double relvx = 0.0;
         ImGui::Text("vx  ");
         ImGui::SameLine();
-        ImGui::PushItemWidth(100);
+        ImGui::PushItemWidth(100.0f);
             ImGui::PushID(14);
                 ImGui::InputDouble("", &relvx, 0.0, 0.0,"%.5lf");
             ImGui::PopID();
@@ -386,7 +383,7 @@ int main()
         static double relvy = 0.0;
         ImGui::Text("vy  ");
         ImGui::SameLine();
-        ImGui::PushItemWidth(100);
+        ImGui::PushItemWidth(100.0f);
             ImGui::PushID(15);
                 ImGui::InputDouble("", &relvy, 0.0, 0.0,"%.5lf");
             ImGui::PopID();
@@ -398,7 +395,7 @@ int main()
         static double relvz = 0.0;
         ImGui::Text("vz  ");
         ImGui::SameLine();
-        ImGui::PushItemWidth(100);
+        ImGui::PushItemWidth(100.0f);
             ImGui::PushID(16);
                 ImGui::InputDouble("", &relvz, 0.0, 0.0,"%.5lf");
             ImGui::PopID();
@@ -411,7 +408,7 @@ int main()
         /* field : orientation variables (combo) */
         static const char *orient_var[] = {"Euler angles ", "Quaternion "};
         static int orient_var_choice = 0;
-        ImGui::PushItemWidth(200);
+        ImGui::PushItemWidth(200.0f);
             ImGui::PushID(17);
                 ImGui::Combo("  ", &orient_var_choice, orient_var, IM_ARRAYSIZE(orient_var));
             ImGui::PopID();
@@ -421,9 +418,9 @@ int main()
         {
             /* field : roll 1 angle */
             static double roll1 = 0.0;
-            ImGui::Text("roll 1   ");
+            ImGui::Text("roll 1    ");
             ImGui::SameLine();
-            ImGui::PushItemWidth(100);
+            ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(18);
                     ImGui::InputDouble("", &roll1, 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
@@ -433,9 +430,9 @@ int main()
 
             /* field : pitch 1 angle */
             static double pitch1 = 0.0;
-            ImGui::Text("pitch 1   ");
+            ImGui::Text("pitch 1 ");
             ImGui::SameLine();
-            ImGui::PushItemWidth(100);
+            ImGui::PushItemWidth(100.0);
                 ImGui::PushID(19);
                     ImGui::InputDouble("", &pitch1, 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
@@ -445,9 +442,9 @@ int main()
             
             /* field : yaw 1 angle */
             static double yaw1 = 0.0;
-            ImGui::Text("yaw 1   ");
+            ImGui::Text("yaw 1  ");
             ImGui::SameLine();
-            ImGui::PushItemWidth(100);
+            ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(20);
                     ImGui::InputDouble("", &yaw1, 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
@@ -457,9 +454,9 @@ int main()
 
             /* field : roll 2 angle */
             static double roll2 = 0.0;
-            ImGui::Text("roll 2   ");
+            ImGui::Text("roll 2    ");
             ImGui::SameLine();
-            ImGui::PushItemWidth(100);
+            ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(21);
                     ImGui::InputDouble("", &roll2, 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
@@ -469,9 +466,9 @@ int main()
 
             /* field : pitch 2 angle */
             static double pitch2 = 0.0;
-            ImGui::Text("pitch 2   ");
+            ImGui::Text("pitch 2 ");
             ImGui::SameLine();
-            ImGui::PushItemWidth(100);
+            ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(22);
                     ImGui::InputDouble("", &pitch2, 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
@@ -481,9 +478,9 @@ int main()
             
             /* field : yaw 2 angle */
             static double yaw2 = 0.0;
-            ImGui::Text("yaw 2   ");
+            ImGui::Text("yaw 2  ");
             ImGui::SameLine();
-            ImGui::PushItemWidth(100);
+            ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(23);
                     ImGui::InputDouble("", &yaw2, 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
@@ -497,7 +494,7 @@ int main()
             static double q10 = 1.0;
             ImGui::Text("q10   ");
             ImGui::SameLine();
-            ImGui::PushItemWidth(100);
+            ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(24);
                     ImGui::InputDouble("", &q10, 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
@@ -509,7 +506,7 @@ int main()
             static double q11 = 0.0;
             ImGui::Text("q11   ");
             ImGui::SameLine();
-            ImGui::PushItemWidth(100);
+            ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(25);
                     ImGui::InputDouble("", &q11, 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
@@ -521,7 +518,7 @@ int main()
             static double q12 = 0.0;
             ImGui::Text("q12   ");
             ImGui::SameLine();
-            ImGui::PushItemWidth(100);
+            ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(26);
                     ImGui::InputDouble("", &q12, 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
@@ -533,7 +530,7 @@ int main()
             static double q13 = 0.0;
             ImGui::Text("q13   ");
             ImGui::SameLine();
-            ImGui::PushItemWidth(100);
+            ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(27);
                     ImGui::InputDouble("", &q13, 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
@@ -541,15 +538,11 @@ int main()
             ImGui::SameLine();
             ImGui::Text("[  ]");
 
-
-
-
-
             /* field : q20 quaternion component */
             static double q20 = 1.0;
             ImGui::Text("q20   ");
             ImGui::SameLine();
-            ImGui::PushItemWidth(100);
+            ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(28);
                     ImGui::InputDouble("", &q20, 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
@@ -561,7 +554,7 @@ int main()
             static double q21 = 0.0;
             ImGui::Text("q21   ");
             ImGui::SameLine();
-            ImGui::PushItemWidth(100);
+            ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(29);
                     ImGui::InputDouble("", &q21, 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
@@ -573,7 +566,7 @@ int main()
             static double q22 = 0.0;
             ImGui::Text("q22   ");
             ImGui::SameLine();
-            ImGui::PushItemWidth(100);
+            ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(30);
                     ImGui::InputDouble("", &q22, 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
@@ -585,7 +578,7 @@ int main()
             static double q23 = 0.0;
             ImGui::Text("q23   ");
             ImGui::SameLine();
-            ImGui::PushItemWidth(100);
+            ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(31);
                     ImGui::InputDouble("", &q23, 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
@@ -594,163 +587,152 @@ int main()
             ImGui::Text("[  ]");
         }
 
-        //angular velocity
-
-        /*
         ImGui::Text("Angular velocity");
 
+        /* field : frame choice (combo) */
         static const char *frame_type[] = {"Inertial frame", "Body frame"};
         static int frame_type_choice = 0;
-        ImGui::PushID(19);
         ImGui::PushItemWidth(200.0f);
-        ImGui::Combo("  ", &frame_type_choice, frame_type, IM_ARRAYSIZE(frame_type));
-        ImGui::PopID();
+            ImGui::PushID(32);
+                ImGui::Combo("  ", &frame_type_choice, frame_type, IM_ARRAYSIZE(frame_type));
+            ImGui::PopID();
         ImGui::PopItemWidth();
+
         if (frame_type_choice == 0)
         {
-            static double wx = 0.0;
-            ImGui::PushID(20);
-            ImGui::PushItemWidth(100.0f);
-            ImGui::Text("wx ");
+            /* field : w1x (inertial) angular velocity */
+            static double w1x = 0.0;
+            ImGui::Text("w1x   ");
             ImGui::SameLine();
-            ImGui::InputDouble("", &wx, 0.0, 0.0,"%.5lf");
+            ImGui::PushItemWidth(100.0f);
+                ImGui::PushID(33);
+                    ImGui::InputDouble("", &w1x, 0.0, 0.0,"%.5lf");
+                ImGui::PopID();
+            ImGui::PopItemWidth();
             ImGui::SameLine();
             ImGui::Text("[rad/sec]");
-            ImGui::PopID();
-            ImGui::PopItemWidth();
 
-            static double wy = 0.0;
-            ImGui::PushID(21);
-            ImGui::PushItemWidth(100.0f);
-            ImGui::Text("wy ");
+            /* field : w1y (inertial) angular velocity */
+            static double w1y = 0.0;
+            ImGui::Text("w1y   ");
             ImGui::SameLine();
-            ImGui::InputDouble("", &wy, 0.0, 0.0,"%.5lf");
+            ImGui::PushItemWidth(100.0f);
+                ImGui::PushID(34);
+                    ImGui::InputDouble("", &w1y, 0.0, 0.0,"%.5lf");
+                ImGui::PopID();
+            ImGui::PopItemWidth();
             ImGui::SameLine();
             ImGui::Text("[rad/sec]");
-            ImGui::PopID();
-            ImGui::PopItemWidth();
             
-            static double wz = 0.0;
-            ImGui::PushID(22);
-            ImGui::PushItemWidth(100.0f);
-            ImGui::Text("wz ");
+            /* field : w1z (inertial) angular velocity */
+            static double w1z = 0.0;
+            ImGui::Text("w1z   ");
             ImGui::SameLine();
-            ImGui::InputDouble("", &wz, 0.0, 0.0,"%.5lf");
+            ImGui::PushItemWidth(100.0f);
+                ImGui::PushID(35);
+                    ImGui::InputDouble("", &w1z, 0.0, 0.0,"%.5lf");
+                ImGui::PopID();
+            ImGui::PopItemWidth();
             ImGui::SameLine();
             ImGui::Text("[rad/sec]");
-            ImGui::PopID();
-            ImGui::PopItemWidth();
-            ImGui::Dummy(ImVec2(0.0f, 20.0f));
         }
         else if (frame_type_choice == 1)
         {
-            static double w1 = 0.0;
-            ImGui::PushID(23);
-            ImGui::PushItemWidth(100.0f);
-            ImGui::Text("w1 ");
+            /* field : w11 (body) angular velocity */
+            static double w11 = 0.0;
+            ImGui::Text("w11   ");
             ImGui::SameLine();
-            ImGui::InputDouble("", &w1, 0.0, 0.0,"%.5lf");
+            ImGui::PushItemWidth(100.0f);
+                ImGui::PushID(36);
+                    ImGui::InputDouble("", &w11, 0.0, 0.0,"%.5lf");
+                ImGui::PopID();
+            ImGui::PopItemWidth();
             ImGui::SameLine();
             ImGui::Text("[rad/sec]");
-            ImGui::PopID();
-            ImGui::PopItemWidth();
 
-            static double w2 = 0.0;
-            ImGui::PushID(24);
-            ImGui::PushItemWidth(100.0f);
-            ImGui::Text("w2 ");
+            /* field : w12 (body) angular velocity */
+            static double w12 = 0.0;
+            ImGui::Text("w12   ");
             ImGui::SameLine();
-            ImGui::InputDouble("", &w2, 0.0, 0.0,"%.5lf");
+            ImGui::PushItemWidth(100.0f);
+                ImGui::PushID(37);
+                    ImGui::InputDouble("", &w12, 0.0, 0.0,"%.5lf");
+                ImGui::PopID();
+            ImGui::PopItemWidth();
             ImGui::SameLine();
             ImGui::Text("[rad/sec]");
-            ImGui::PopID();
-            ImGui::PopItemWidth();
 
-            static double w3 = 0.0;
-            ImGui::PushID(25);
-            ImGui::PushItemWidth(100.0f);
-            ImGui::Text("w3 ");
+            /* field : w13 (body) angular velocity */
+            static double w13 = 0.0;
+            ImGui::Text("w13   ");
             ImGui::SameLine();
-            ImGui::InputDouble("", &w3, 0.0, 0.0,"%.5lf");
+            ImGui::PushItemWidth(100.0f);
+                ImGui::PushID(38);
+                    ImGui::InputDouble("", &w13, 0.0, 0.0,"%.5lf");
+                ImGui::PopID();
+            ImGui::PopItemWidth();
             ImGui::SameLine();
             ImGui::Text("[rad/sec]");
-            ImGui::PopID();
-            ImGui::PopItemWidth();
-            ImGui::Dummy(ImVec2(0.0f, 20.0f));
         }
 
-        //ImGui::Dummy(ImVec2(0.0f, 10.0f));
+        ImGui::Dummy(ImVec2(0.0f, 10.0f));
 
         ImGui::Unindent();
 
-
-        //integrator
         ImGui::Text("Integrator");
+
+        /* field : integration method */
         static const char *integ_method[] = {"Runge-Kutta-Fehlberg 78 ", "Bulirsch-Stoer", "Dormand-Prince 5 ", "Runge-Kutta 4 (explicit)"};
         static int integ_method_choice = 0;
-        ImGui::PushID(26);
         ImGui::PushItemWidth(200.0f);
-        ImGui::Combo("  ", &integ_method_choice, integ_method, IM_ARRAYSIZE(integ_method));
-        ImGui::PopID();
+            ImGui::PushID(39);
+                ImGui::Combo("  ", &integ_method_choice, integ_method, IM_ARRAYSIZE(integ_method));
+            ImGui::PopID();
         ImGui::PopItemWidth();
 
-        static double tol = 0.0;
-        ImGui::PushID(27);
-        ImGui::PushItemWidth(100.0f);
+        /* field : integration method tolerance */
+        static double tol = 1e-9;
         ImGui::Text("tolerance ");
         ImGui::SameLine();
-        ImGui::InputDouble("", &tol, 0.0, 0.0,"%.5lf");
-        ImGui::SameLine();
-        ImGui::Text("[  ]");
-        ImGui::PopID();
+        ImGui::PushItemWidth(200.0);
+            ImGui::PushID(40);
+                ImGui::InputDouble("", &tol, 0.0, 0.0,"%.16lf");
+            ImGui::PopID();
         ImGui::PopItemWidth();
 
-        ImGui::Dummy(ImVec2(0.0f, 10.0f));
+        ImGui::Dummy(ImVec2(0.0f,15.0f));
 
+        /* field : whether to assume a collision detection criterion or not */
         ImGui::Checkbox("Detect binary collision", &detect_binary_collision);
 
-        ImGui::Dummy(ImVec2(0.0f, 15.0f));
+        ImGui::Dummy(ImVec2(0.0f,15.0f));
 
         ImGui::Text("Files to export");
-        static bool print_time = true;
-        ImGui::Checkbox("Time", &print_time);
-        static bool print_rel_pos_vel = true;
-        ImGui::Checkbox("Relative position/velocity", &print_rel_pos_vel);
-        static bool print_ang = true;
-        ImGui::Checkbox("Euler angles", &print_ang);
-        static bool print_quat = true;
-        ImGui::Checkbox("Quaternions", &print_quat);
-        static bool print_wi = true;
-        ImGui::Checkbox("Angular velocities (inertial-frame)", &print_wi);
-        static bool print_wb = true;
-        ImGui::Checkbox("Angular velocities (body-frames)", &print_wb);
-        static bool print_ener_mom = true;
-        ImGui::Checkbox("Energy & momentum", &print_ener_mom);
-        static bool print_kep = true;
-        ImGui::Checkbox("Relative Keplerian elements", &print_kep);
 
-        ImGui::Dummy(ImVec2(0.0f, 10.0f));
+        /* fields : which files to export after the simulation */
+        static bool export_time = true;
+        ImGui::Checkbox("Time", &export_time);
+        static bool export_rel_pos_vel = true;
+        ImGui::Checkbox("Relative position/velocity", &export_rel_pos_vel);
+        static bool export_ang = true;
+        ImGui::Checkbox("Euler angles", &export_ang);
+        static bool export_quat = true;
+        ImGui::Checkbox("Quaternions", &export_quat);
+        static bool export_wi = true;
+        ImGui::Checkbox("Angular velocities (inertial-frame)", &export_wi);
+        static bool export_wb = true;
+        ImGui::Checkbox("Angular velocities (body-frames)", &export_wb);
+        static bool export_ener_mom = true;
+        ImGui::Checkbox("Energy & momentum", &export_ener_mom);
+        static bool export_kep = true;
+        ImGui::Checkbox("Relative Keplerian elements", &export_kep);
 
+        ImGui::Dummy(ImVec2(0.0f,10.0f));
 
-        if (ImGui::Button("Run", ImVec2(50,30)));
+        if (ImGui::Button("Run", ImVec2(50.0f,30.0f)));
         {
 
         }
-
-
-        
-
-
-
-
-
-        */
-
-
-        
-
-
-
 
  
         ImGui::End();
