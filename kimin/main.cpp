@@ -7,6 +7,7 @@
 
 #include<cstdio>
 
+
 #include"../include/directory.hpp"
 
 //remember to store these functions somewehre...
@@ -24,6 +25,40 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height)
     glViewport(0,0,width,height);
     return;
 }
+
+int mwidth, mheight;
+class log
+{
+public:
+    ImGuiTextBuffer buffer;
+    bool scroll_to_bottom;
+
+    void cls()
+    {
+        buffer.clear();
+    }
+
+    void add(const char *format, ...) IM_FMTARGS(2)
+    {
+        va_list args;
+        va_start(args, format);
+        buffer.appendfv(format, args);
+        va_end(args);
+        scroll_to_bottom = true;
+    }
+
+    void draw(const char* title, bool *popened = NULL)
+    {
+        ImGui::SetNextWindowPos(ImVec2((float)mwidth/2.0f,(float)mheight - 175.0f), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2((float)mwidth/2.0f,100.0f), ImGuiCond_FirstUseEver); 
+        ImGui::Begin(title, popened);
+        ImGui::TextUnformatted(buffer.begin());
+        if (scroll_to_bottom)
+            ImGui::SetScrollHereY(1.0f);
+        scroll_to_bottom = false;
+        ImGui::End();
+    }
+};
 
 //////////////////////////////////////////////////////////////////////////////////////
 
@@ -44,6 +79,14 @@ int main()
     }
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
+
+
+    const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    mwidth = mode->width, mheight = mode->height;
+
+
+
     glewExperimental = GL_TRUE;
     if (glewInit() != GLEW_OK)
     {
@@ -72,6 +115,7 @@ int main()
     bool ell_xclose_button_existence = true;
     bool obj_xclose_button_existence = true;
     bool detect_binary_collision = true;
+    bool playback_video = false;
 
     //game loop
     while (!glfwWindowShouldClose(window))
@@ -696,7 +740,7 @@ int main()
         ImGui::SameLine();
         ImGui::PushItemWidth(200.0);
             ImGui::PushID(40);
-                ImGui::InputDouble("", &tol, 0.0, 0.0,"%.16lf");
+                ImGui::InputDouble("", &tol, 0.0, 0.0,"%e");
             ImGui::PopID();
         ImGui::PopItemWidth();
 
@@ -727,15 +771,26 @@ int main()
         static bool export_kep = true;
         ImGui::Checkbox("Relative Keplerian elements", &export_kep);
 
-        ImGui::Dummy(ImVec2(0.0f,10.0f));
+        ImGui::Dummy(ImVec2(0.0f,15.0f));
+
+        /* field : whether to render OpenGL playback video or not */
+        ImGui::Checkbox("Playback video", &playback_video);
+
+        ImGui::Dummy(ImVec2(0.0f,20.0f));
 
         if (ImGui::Button("Run", ImVec2(50.0f,30.0f)));
         {
 
         }
 
- 
         ImGui::End();
+
+        static log kimin_log;
+        if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_A))) 
+            kimin_log.add("Hypothetical formatted string\n");
+        if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_C)))
+            kimin_log.cls();
+        kimin_log.draw("Log");
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
