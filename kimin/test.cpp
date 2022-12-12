@@ -28,33 +28,63 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 
 //////////////////////////////////////////////////////////////////////////////////////
 
-class log
+
+struct ExampleAppLog
 {
-public:
-    ImGuiTextBuffer buffer;
-    bool scroll_to_bottom;
+    ImGuiTextBuffer     Buf;
+    ImVector<int>       LineOffsets; // Index to lines offset. We maintain this with AddLog() calls.
 
-    void cls()
+    ExampleAppLog()
     {
-        buffer.clear();
+        Clear();
     }
 
-    void add(const char *format, ...) IM_FMTARGS(2)
+    void    Clear()
     {
+        Buf.clear();
+        LineOffsets.clear();
+        LineOffsets.push_back(0);
+    }
+
+    void    AddLog(const char* fmt, ...) IM_FMTARGS(2)
+    {
+        int old_size = Buf.size();
         va_list args;
-        va_start(args, format);
-        buffer.appendfv(format, args);
+        va_start(args, fmt);
+        Buf.appendfv(fmt, args);
         va_end(args);
-        scroll_to_bottom = true;
+        for (int new_size = Buf.size(); old_size < new_size; old_size++)
+            if (Buf[old_size] == '\n')
+                LineOffsets.push_back(old_size + 1);
     }
 
-    void draw(const char* title, bool *popened = NULL)
+    void    Draw(const char* title, bool* popened = NULL)
     {
         ImGui::Begin(title, popened);
-        ImGui::TextUnformatted(buffer.begin());
-        if (scroll_to_bottom)
+        bool clear = ImGui::Button("Clear");
+        ImGui::Separator();
+        ImGui::BeginChild("scrolling", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
+        if (clear)
+            Clear();
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+        const char* buf = Buf.begin();
+        const char* buf_end = Buf.end();
+        ImGuiListClipper clipper;
+        clipper.Begin(LineOffsets.Size);
+        while (clipper.Step())
+        {
+            for (int line_no = clipper.DisplayStart; line_no < clipper.DisplayEnd; line_no++)
+            {
+                const char* line_start = buf + LineOffsets[line_no];
+                const char* line_end = (line_no + 1 < LineOffsets.Size) ? (buf + LineOffsets[line_no + 1] - 1) : buf_end;
+                ImGui::TextUnformatted(line_start, line_end);
+            }
+        }
+        clipper.End();
+        ImGui::PopStyleVar();
+        if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
             ImGui::SetScrollHereY(1.0f);
-        scroll_to_bottom = false;
+        ImGui::EndChild();
         ImGui::End();
     }
 };
@@ -110,12 +140,10 @@ int main()
         ImGui::NewFrame();
  
         
-        static log kiminlog;
-        if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Space))) 
-            kiminlog.add("Hello sksjdsajkdbsajbd dahbd %d world\n", 123);
-        if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_A)))
-            kiminlog.cls();
-        kiminlog.draw("title");
+        static ExampleAppLog my_log;
+        if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_A))) 
+            my_log.AddLog("Hello %d world\n", 123);
+        my_log.Draw("title");
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

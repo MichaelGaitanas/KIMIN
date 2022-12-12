@@ -6,9 +6,10 @@
 #include<GLFW/glfw3.h>
 
 #include<cstdio>
-
+#include<filesystem>
 
 #include"../include/directory.hpp"
+#include"../include/log.hpp"
 
 //remember to store these functions somewehre...
 //////////////////////////////////////////////////////////////////////////////////////
@@ -27,38 +28,7 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 }
 
 int mwidth, mheight;
-class log
-{
-public:
-    ImGuiTextBuffer buffer;
-    bool scroll_to_bottom;
 
-    void cls()
-    {
-        buffer.clear();
-    }
-
-    void add(const char *format, ...) IM_FMTARGS(2)
-    {
-        va_list args;
-        va_start(args, format);
-        buffer.appendfv(format, args);
-        va_end(args);
-        scroll_to_bottom = true;
-    }
-
-    void draw(const char* title, bool *popened = NULL)
-    {
-        ImGui::SetNextWindowPos(ImVec2((float)mwidth/2.0f,(float)mheight - 175.0f), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2((float)mwidth/2.0f,100.0f), ImGuiCond_FirstUseEver); 
-        ImGui::Begin(title, popened);
-        ImGui::TextUnformatted(buffer.begin());
-        if (scroll_to_bottom)
-            ImGui::SetScrollHereY(1.0f);
-        scroll_to_bottom = false;
-        ImGui::End();
-    }
-};
 
 //////////////////////////////////////////////////////////////////////////////////////
 
@@ -71,6 +41,7 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
+    //glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, 1);
     GLFWwindow *window = glfwCreateWindow(800,600, "KIMIN", NULL, NULL);
     if (window == NULL)
     {
@@ -79,14 +50,7 @@ int main()
     }
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-
-
-
     const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-    mwidth = mode->width, mheight = mode->height;
-
-
-
     glewExperimental = GL_TRUE;
     if (glewInit() != GLEW_OK)
     {
@@ -679,6 +643,45 @@ int main()
             ImGui::PopItemWidth();
             ImGui::SameLine();
             ImGui::Text("[rad/sec]");
+
+
+
+            /* field : w2x (inertial) angular velocity */
+            static double w2x = 0.0;
+            ImGui::Text("w2x   ");
+            ImGui::SameLine();
+            ImGui::PushItemWidth(100.0f);
+                ImGui::PushID(36);
+                    ImGui::InputDouble("", &w2x, 0.0, 0.0,"%.5lf");
+                ImGui::PopID();
+            ImGui::PopItemWidth();
+            ImGui::SameLine();
+            ImGui::Text("[rad/sec]");
+
+            /* field : w2y (inertial) angular velocity */
+            static double w2y = 0.0;
+            ImGui::Text("w2y   ");
+            ImGui::SameLine();
+            ImGui::PushItemWidth(100.0f);
+                ImGui::PushID(37);
+                    ImGui::InputDouble("", &w2y, 0.0, 0.0,"%.5lf");
+                ImGui::PopID();
+            ImGui::PopItemWidth();
+            ImGui::SameLine();
+            ImGui::Text("[rad/sec]");
+            
+            /* field : w2z (inertial) angular velocity */
+            static double w2z = 0.0;
+            ImGui::Text("w2z   ");
+            ImGui::SameLine();
+            ImGui::PushItemWidth(100.0f);
+                ImGui::PushID(38);
+                    ImGui::InputDouble("", &w2z, 0.0, 0.0,"%.5lf");
+                ImGui::PopID();
+            ImGui::PopItemWidth();
+            ImGui::SameLine();
+            ImGui::Text("[rad/sec]");
+
         }
         else if (frame_type_choice == 1)
         {
@@ -687,7 +690,7 @@ int main()
             ImGui::Text("w11   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(36);
+                ImGui::PushID(39);
                     ImGui::InputDouble("", &w11, 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -699,7 +702,7 @@ int main()
             ImGui::Text("w12   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(37);
+                ImGui::PushID(40);
                     ImGui::InputDouble("", &w12, 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -711,8 +714,48 @@ int main()
             ImGui::Text("w13   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(38);
+                ImGui::PushID(41);
                     ImGui::InputDouble("", &w13, 0.0, 0.0,"%.5lf");
+                ImGui::PopID();
+            ImGui::PopItemWidth();
+            ImGui::SameLine();
+            ImGui::Text("[rad/sec]");
+
+
+
+
+
+            /* field : w21 (body) angular velocity */
+            static double w21 = 0.0;
+            ImGui::Text("w21   ");
+            ImGui::SameLine();
+            ImGui::PushItemWidth(100.0f);
+                ImGui::PushID(42);
+                    ImGui::InputDouble("", &w21, 0.0, 0.0,"%.5lf");
+                ImGui::PopID();
+            ImGui::PopItemWidth();
+            ImGui::SameLine();
+            ImGui::Text("[rad/sec]");
+
+            /* field : w22 (body) angular velocity */
+            static double w22 = 0.0;
+            ImGui::Text("w22   ");
+            ImGui::SameLine();
+            ImGui::PushItemWidth(100.0f);
+                ImGui::PushID(43);
+                    ImGui::InputDouble("", &w22, 0.0, 0.0,"%.5lf");
+                ImGui::PopID();
+            ImGui::PopItemWidth();
+            ImGui::SameLine();
+            ImGui::Text("[rad/sec]");
+
+            /* field : w23 (body) angular velocity */
+            static double w23 = 0.0;
+            ImGui::Text("w23   ");
+            ImGui::SameLine();
+            ImGui::PushItemWidth(100.0f);
+                ImGui::PushID(44);
+                    ImGui::InputDouble("", &w23, 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::SameLine();
@@ -729,7 +772,7 @@ int main()
         static const char *integ_method[] = {"Runge-Kutta-Fehlberg 78 ", "Bulirsch-Stoer", "Dormand-Prince 5 ", "Runge-Kutta 4 (explicit)"};
         static int integ_method_choice = 0;
         ImGui::PushItemWidth(200.0f);
-            ImGui::PushID(39);
+            ImGui::PushID(45);
                 ImGui::Combo("  ", &integ_method_choice, integ_method, IM_ARRAYSIZE(integ_method));
             ImGui::PopID();
         ImGui::PopItemWidth();
@@ -739,7 +782,7 @@ int main()
         ImGui::Text("tolerance ");
         ImGui::SameLine();
         ImGui::PushItemWidth(200.0);
-            ImGui::PushID(40);
+            ImGui::PushID(46);
                 ImGui::InputDouble("", &tol, 0.0, 0.0,"%e");
             ImGui::PopID();
         ImGui::PopItemWidth();
@@ -778,19 +821,24 @@ int main()
 
         ImGui::Dummy(ImVec2(0.0f,20.0f));
 
-        if (ImGui::Button("Run", ImVec2(50.0f,30.0f)));
-        {
+        //if (ImGui::Button("Run", ImVec2(50.0f,30.0f)));
+        //{
+            //1) Re-scan all the user inputs because valid imgui inputs doesn't mean valid physics inputs...
+            //mkdir(simname);
+            //std::filesystem::create_directories("../testfolder");
+            //printf("did it\n");
 
-        }
+            //2) Run physics simulation
+
+        //}
 
         ImGui::End();
 
+
         static log kimin_log;
-        if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_A))) 
+        if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_A)))
             kimin_log.add("Hypothetical formatted string\n");
-        if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_C)))
-            kimin_log.cls();
-        kimin_log.draw("Log");
+        kimin_log.draw("Log", NULL, mode->width, mode->height);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

@@ -20,4 +20,12 @@ std::vector<std::filesystem::path> lsobj(const char *path)
     return paths;
 }
 
+/*
+void mkdir(const char *path)
+{
+    std::filesystem::create_directories(path);
+    return;
+}
+*/
+
 #endif
