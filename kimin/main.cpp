@@ -89,6 +89,18 @@ int main()
 
     static int refer_to_body = 1; //initial body choice for the .obj file
 
+    static int current_v1 = -1;
+    static int current_vf1 = -1;
+    static int current_vfn1 = -1;
+
+    static int current_v2 = -1;
+    static int current_vf2 = -1;
+    static int current_vfn2 = -1;
+
+    std::vector<std::filesystem::path> path_v = lsobj("../resources/obj/v/");
+    std::vector<std::filesystem::path> path_vf = lsobj("../resources/obj/vf/");
+    std::vector<std::filesystem::path> path_vfn = lsobj("../resources/obj/vfn/");
+
     static double M1 = 0.0;
     static double M2 = 0.0;
 
@@ -295,25 +307,56 @@ int main()
             if (ImGui::RadioButton("Body 2", refer_to_body == 2))
                 refer_to_body = 2;
 
+            
             if (ImGui::TreeNodeEx("v"))
             {
-                std::vector<std::filesystem::path> path_v = lsobj("../resources/obj/v");
                 for (int i = 0; i < path_v.size(); ++i)
-                    ImGui::Selectable(path_v[i].string().c_str());
+                {
+                    if (refer_to_body == 1)
+                    {
+                        if (ImGui::Selectable(path_v[i].string().c_str(), (current_v1 == i)))
+                            {current_v1 = i; current_vf1 = -1; current_vfn1 = -1; }
+                    }
+                    else
+                    {
+                        if (ImGui::Selectable(path_v[i].string().c_str(), (current_v2 == i)))
+                            {current_v2 = i; current_vf2 = -1; current_vfn2 = -1; }
+                    }
+                }
                 ImGui::TreePop();
             }
             if (ImGui::TreeNodeEx("vf"))
             {
-                std::vector<std::filesystem::path> path_vf = lsobj("../resources/obj/vf");
                 for (int i = 0; i < path_vf.size(); ++i)
-                    ImGui::Selectable(path_vf[i].string().c_str());
+                {
+                    if (refer_to_body == 1)
+                    {
+                        if (ImGui::Selectable(path_vf[i].string().c_str(), (current_vf1 == i)))
+                            {current_v1 = -1; current_vf1 = i; current_vfn1 = -1; }
+                    }
+                    else
+                    {
+                        if (ImGui::Selectable(path_vf[i].string().c_str(), (current_vf2 == i)))
+                            {current_v2 = -1; current_vf2 = i; current_vfn2 = -1; }
+                    }
+                }
                 ImGui::TreePop();
             }
             if (ImGui::TreeNodeEx("vfn"))
             {
-                std::vector<std::filesystem::path> path_vfn = lsobj("../resources/obj/vfn");
                 for (int i = 0; i < path_vfn.size(); ++i)
-                    ImGui::Selectable(path_vfn[i].string().c_str());
+                {
+                    if (refer_to_body == 1)
+                    {
+                        if (ImGui::Selectable(path_vfn[i].string().c_str(), (current_vfn1 == i)))
+                            {current_v1 = -1; current_vf1 = -1; current_vfn1 = i; }
+                    }
+                    else
+                    {
+                        if (ImGui::Selectable(path_vfn[i].string().c_str(), (current_vfn2 == i)))
+                            {current_v2 = -1; current_vf2 = -1; current_vfn2 = i; }
+                    }
+                }
                 ImGui::TreePop();
             }
             ImGui::Dummy(ImVec2(0.0f,15.0f));
@@ -935,6 +978,18 @@ int main()
             kimin_log.add("export wb = ["); kimin_log.add(std::to_string(export_wb).c_str()); kimin_log.add("]\n");
             kimin_log.add("export ener mom = ["); kimin_log.add(std::to_string(export_ener_mom).c_str()); kimin_log.add("]\n");
             kimin_log.add("export kep = ["); kimin_log.add(std::to_string(export_kep).c_str()); kimin_log.add("]\n");
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
