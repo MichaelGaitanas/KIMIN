@@ -25,10 +25,16 @@ public:
 
     double t0 = 0.0, tmax = 0.0, print_step = 0.0;
 
+    const char *cart_kep_var[2] = {"Cartesian ", "Keplerian "};
+    int cart_kep_var_choice = 0;
+
     double relx = 0.0, rely = 0.0, relz = 0.0;
     double relvx = 0.0, relvy = 0.0, relvz = 0.0;
 
-    const char *orient_var[2] = {"Euler angles ", "Quaternion "};
+    double rela = 0.0, rele = 0.0, reli = 0.0;
+    double relOm = 0.0, relw = 0.0, relM = 0.0;
+
+    const char *orient_var[2] = {"Euler angles ", "Quaternions "};
     int orient_var_choice = 0;
 
     double roll1 = 0.0, pitch1 = 0.0, yaw1 = 0.0;
