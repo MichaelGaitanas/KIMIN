@@ -66,6 +66,7 @@
         "xtree": "cpp",
         "xutility": "cpp",
         "filesystem": "cpp",
-        "list": "cpp"
+        "list": "cpp",
+        "cstdarg": "cpp"
     }
 }

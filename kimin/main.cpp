@@ -7,9 +7,11 @@
 
 #include<cstdio>
 #include<filesystem>
+#include<cmath>
 
+#include"../include/typedef.hpp"
 #include"../include/directory.hpp"
-#include"../include/log.hpp"
+#include"../include/logger.hpp"
 #include"../include/inputs.hpp"
 
 void raw_hardware_input(GLFWwindow *window)
@@ -34,7 +36,7 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
-    //glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, 1);
+    glfwWindowHint(GLFW_REFRESH_RATE, 60);
     GLFWwindow *window = glfwCreateWindow(800,600, "KIMIN", NULL, NULL);
     if (window == NULL)
     {
@@ -42,6 +44,7 @@ int main()
         return 0;
     }
     glfwMakeContextCurrent(window);
+    glfwSwapInterval(1);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     glewExperimental = GL_TRUE;
@@ -65,13 +68,12 @@ int main()
     ImGui_ImplOpenGL3_Init("#version 330");
     //////////////////////////////////////////////////////////////////////////////////////
 
-    std::string finpath1, finpath2;
     std::vector<std::filesystem::path> path_v = lsobj("../resources/obj/v/");
     std::vector<std::filesystem::path> path_vf = lsobj("../resources/obj/vf/");
     std::vector<std::filesystem::path> path_vfn = lsobj("../resources/obj/vfn/");
 
     inputs ins;
-    log lg;
+    logger lg;
 
     //game loop
     while (!glfwWindowShouldClose(window))
@@ -86,7 +88,11 @@ int main()
  
         //create the imgui window at the top left of the glfw window
         ImGui::SetNextWindowPos(ImVec2(0.0f,0.0f), ImGuiCond_FirstUseEver); //extremely careful with the FirstUseEver flag 
-        ImGui::Begin("Controls (under development)");
+        ImGui::Begin("Inputs (under development)",&ins.xclose);
+        if (!ins.xclose)
+        {
+            glfwSetWindowShouldClose(window, true);
+        }
 
         //field : simulation name
         ImGui::Text("Simulation name");
@@ -97,12 +103,12 @@ int main()
         ImGui::Dummy(ImVec2(0.0f,15.0f));
 
         //field : ellipsoid shape model
-        ImGui::Text("Shape model");
+        ImGui::Text("Shape models");
         if (ImGui::Checkbox("Ellipsoids", &ins.ell_checkbox) && ins.ell_checkbox)
         {
-            ins.pressed_ell_ok = false;
+            ins.clicked_ell_ok = false;
         }
-        if (ins.ell_checkbox && !ins.pressed_ell_ok)
+        if (ins.ell_checkbox && !ins.clicked_ell_ok)
         {
             ins.obj_checkbox = false; //untick the obj checkbox in case it is ticked
             ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y)); 
@@ -184,7 +190,7 @@ int main()
 
             if (ImGui::Button("OK", ImVec2(50.0f,30.0f)))
             {
-                ins.pressed_ell_ok = true;
+                ins.clicked_ell_ok = true;
             }
             ImGui::End();
         }
@@ -192,9 +198,9 @@ int main()
         //field : .obj shape model
         if (ImGui::Checkbox(".obj files", &ins.obj_checkbox) && ins.obj_checkbox)
         {
-            ins.pressed_obj_ok = false;
+            ins.clicked_obj_ok = false;
         }
-        if (ins.obj_checkbox && !ins.pressed_obj_ok)
+        if (ins.obj_checkbox && !ins.clicked_obj_ok)
         {
             ins.ell_checkbox = false; //untick the ellipsoids checkbox in case it is ticked
             ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y)); //display position of the obj files menu 
@@ -202,25 +208,35 @@ int main()
             ImGui::Text("KIMIN's .obj database\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t");
             ImGui::Dummy(ImVec2(0.0f,10.0f));
 
-            if (ImGui::RadioButton("Body 1", ins.refer_to_body == 1))
-                ins.refer_to_body = 1;
-            if (ImGui::RadioButton("Body 2", ins.refer_to_body == 2))
-                ins.refer_to_body = 2;
+            if (ImGui::RadioButton("Body 1", ins.obj_refer_to_body == 1))
+                ins.obj_refer_to_body = 1;
+            if (ImGui::RadioButton("Body 2", ins.obj_refer_to_body == 2))
+                ins.obj_refer_to_body = 2;
 
             
             if (ImGui::TreeNodeEx("v"))
             {
                 for (int i = 0; i < path_v.size(); ++i)
                 {
-                    if (ins.refer_to_body == 1)
+                    if (ins.obj_refer_to_body == 1)
                     {
-                        if (ImGui::Selectable(path_v[i].string().c_str(), (ins.current_v1 == i)))
-                            {ins.current_v1 = i; ins.current_vf1 = -1; ins.current_vfn1 = -1; finpath1 = path_v[i].string();}
+                        if (ImGui::Selectable(path_v[i].string().c_str(), (ins.clicked_v1_index == i)))
+                        {
+                            ins.clicked_v1_index = i;
+                            ins.clicked_vf1_index = -1;
+                            ins.clicked_vfn1_index = -1;
+                            ins.obj_path1 = path_v[i].string();
+                        }
                     }
                     else
                     {
-                        if (ImGui::Selectable(path_v[i].string().c_str(), (ins.current_v2 == i)))
-                            {ins.current_v2 = i; ins.current_vf2 = -1; ins.current_vfn2 = -1; finpath2 = path_v[i].string();}
+                        if (ImGui::Selectable(path_v[i].string().c_str(), (ins.clicked_v2_index == i)))
+                        {
+                            ins.clicked_v2_index = i;
+                            ins.clicked_vf2_index = -1;
+                            ins.clicked_vfn2_index = -1;
+                            ins.obj_path2 = path_v[i].string();
+                        }
                     }
                 }
                 ImGui::TreePop();
@@ -229,15 +245,25 @@ int main()
             {
                 for (int i = 0; i < path_vf.size(); ++i)
                 {
-                    if (ins.refer_to_body == 1)
+                    if (ins.obj_refer_to_body == 1)
                     {
-                        if (ImGui::Selectable(path_vf[i].string().c_str(), (ins.current_vf1 == i)))
-                            {ins.current_v1 = -1; ins.current_vf1 = i; ins.current_vfn1 = -1; finpath1 = path_vf[i].string();}
+                        if (ImGui::Selectable(path_vf[i].string().c_str(), (ins.clicked_vf1_index == i)))
+                        {
+                            ins.clicked_v1_index = -1;
+                            ins.clicked_vf1_index = i;
+                            ins.clicked_vfn1_index = -1;
+                            ins.obj_path1 = path_vf[i].string();
+                        }
                     }
                     else
                     {
-                        if (ImGui::Selectable(path_vf[i].string().c_str(), (ins.current_vf2 == i)))
-                            {ins.current_v2 = -1; ins.current_vf2 = i; ins.current_vfn2 = -1; finpath2 = path_vf[i].string();}
+                        if (ImGui::Selectable(path_vf[i].string().c_str(), (ins.clicked_vf2_index == i)))
+                        {
+                            ins.clicked_v2_index = -1;
+                            ins.clicked_vf2_index = i;
+                            ins.clicked_vfn2_index = -1;
+                            ins.obj_path2 = path_vf[i].string();
+                        }
                     }
                 }
                 ImGui::TreePop();
@@ -246,15 +272,25 @@ int main()
             {
                 for (int i = 0; i < path_vfn.size(); ++i)
                 {
-                    if (ins.refer_to_body == 1)
+                    if (ins.obj_refer_to_body == 1)
                     {
-                        if (ImGui::Selectable(path_vfn[i].string().c_str(), (ins.current_vfn1 == i)))
-                            {ins.current_v1 = -1; ins.current_vf1 = -1; ins.current_vfn1 = i; finpath1 = path_vfn[i].string();}
+                        if (ImGui::Selectable(path_vfn[i].string().c_str(), (ins.clicked_vfn1_index == i)))
+                        {
+                            ins.clicked_v1_index = -1;
+                            ins.clicked_vf1_index = -1;
+                            ins.clicked_vfn1_index = i;
+                            ins.obj_path1 = path_vfn[i].string();
+                        }
                     }
                     else
                     {
-                        if (ImGui::Selectable(path_vfn[i].string().c_str(), (ins.current_vfn2 == i)))
-                            {ins.current_v2 = -1; ins.current_vf2 = -1; ins.current_vfn2 = i; finpath2 = path_vfn[i].string();}
+                        if (ImGui::Selectable(path_vfn[i].string().c_str(), (ins.clicked_vfn2_index == i)))
+                        {
+                            ins.clicked_v2_index = -1;
+                            ins.clicked_vf2_index = -1;
+                            ins.clicked_vfn2_index = i;
+                            ins.obj_path2 = path_vfn[i].string();
+                        }
                     }
                 }
                 ImGui::TreePop();
@@ -263,7 +299,7 @@ int main()
 
             if (ImGui::Button("OK", ImVec2(50.0f,30.0f)))   
             {
-                ins.pressed_obj_ok = true;
+                ins.clicked_obj_ok = true;
             }
 
             ImGui::End();
@@ -299,34 +335,34 @@ int main()
 
         ImGui::Text("Integration time");
 
-        //field : t0
-        ImGui::Text("t0              ");
+        //field : Epoch
+        ImGui::Text("Epoch     ");
         ImGui::SameLine();
         ImGui::PushItemWidth(100.0f);
             ImGui::PushID(8);
-                ImGui::InputDouble("", &ins.t0, 0.0, 0.0,"%.5lf");
+                ImGui::InputDouble("", &ins.epoch, 0.0, 0.0,"%.5lf");
             ImGui::PopID();
         ImGui::PopItemWidth();
         ImGui::SameLine();
         ImGui::Text("[days]");
 
-        //field : tmax
-        ImGui::Text("tmax         ");
+        //field : Duration
+        ImGui::Text("Duration  ");
         ImGui::SameLine();
         ImGui::PushItemWidth(100.0f);
             ImGui::PushID(9);
-                ImGui::InputDouble("", &ins.tmax, 0.0, 0.0,"%.5lf");
+                ImGui::InputDouble("", &ins.dur, 0.0, 0.0,"%.5lf");
             ImGui::PopID();
         ImGui::PopItemWidth();
         ImGui::SameLine();
         ImGui::Text("[days]");
         
-        //field : print step
-        ImGui::Text("Print step ");
+        //field : Step
+        ImGui::Text("Step     ");
         ImGui::SameLine();
         ImGui::PushItemWidth(100.0f);
             ImGui::PushID(10);
-                ImGui::InputDouble("", &ins.print_step, 0.0, 0.0,"%.5lf");
+                ImGui::InputDouble("", &ins.step, 0.0, 0.0,"%.5lf");
             ImGui::PopID();
         ImGui::PopItemWidth();
         ImGui::SameLine();
@@ -449,18 +485,18 @@ int main()
             ImGui::SameLine();
             ImGui::Text("[deg]");
 
-            //field : relative longitude of ascending node Om
-            ImGui::Text("RAAN  ");
+            //field : relative longitude of ascending node raan
+            ImGui::Text("raan  ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(21);
-                    ImGui::InputDouble("", &ins.relOm, 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("", &ins.relraan, 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::SameLine();
             ImGui::Text("[deg]");
             
-            //field : relative argument of periapsis
+            //field : relative argument of periapsis w
             ImGui::Text("w         ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
@@ -853,17 +889,34 @@ int main()
         ImGui::Dummy(ImVec2(0.0f,20.0f));
 
         if (ImGui::Button("Run", ImVec2(50.0f,30.0f)))
-            ins.pressed_run = true;
+            ins.clicked_run = true;
 
         ImGui::End();
 
-        if (ins.pressed_run)
+        if (ins.clicked_run)
         {
-            lg.add("Supposed to run..."); lg.add("\n");
+            strvec errors = ins.validate();
+            if (!errors.size())
+            {
+                /*
+                lg.add("Running physics ...  "); lg.add("\n");
+                for (double xxx = 0.0; xxx <= 1.0e5; xxx += 0.01)
+                    double yyy = 0.5*exp(sin(cos(xxx)*sin(xxx)));
+                */
+            }
+            else
+            {
+                for (int i = 0; i < errors.size(); ++i)
+                {
+                    lg.add(errors[i].c_str()); lg.add("\n");
+                }
+                lg.add("\n");
+            }
+            
         }
         lg.draw("Log (under development)", NULL, mode->width, mode->height);
 
-        ins.pressed_run = false;
+        ins.clicked_run = false;
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

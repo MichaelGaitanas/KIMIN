@@ -4,6 +4,9 @@
 #include<complex>
 #include<array>
 #include<vector>
+#include<string>
+
+typedef std::string str; //classical std string
 
 typedef std::array<double, 3> dvec3; //vector of 3 doubles
 typedef std::array<double, 4> dvec4; //vector of 4 doubles
@@ -15,6 +18,7 @@ typedef std::array<int, 6> ivec6; //vector of 6 ints
 
 typedef std::vector<double> dvec; //vector of n doubles
 typedef std::vector<int> ivec; //vector of n ints
+typedef std::vector<std::string> strvec; //vector of n std strings
 
 typedef std::vector<ivec3> imatnx3; //nx3 matrix of ints
 typedef std::vector<ivec4> imatnx4; //nx4 matrix of ints

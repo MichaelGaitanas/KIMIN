@@ -1,16 +1,14 @@
-#ifndef LOG_HPP
-#define LOG_HPP
+#ifndef LOGGER_HPP
+#define LOGGER_HPP
 
 #include"imgui.h"
 
 #include<cstdio>
 #include<cstdarg>
 
-//KIMIN's log
-class log
+//KIMIN's log window
+class logger
 {
-
-//Let all members be public for now...
 public:
     ImGuiTextBuffer buffer;
     bool scroll_to_bottom;
@@ -38,9 +36,13 @@ public:
         ImGui::SetNextWindowSize(ImVec2(monitor_width/2.0f, 150.0f), ImGuiCond_FirstUseEver); 
         ImGui::Begin(title, popened);
 
-        /* field : clear the log */
+        // field : clear the log
         if (ImGui::Button("Clear "))
             cls();
+        
+        ImGui::SameLine();
+
+        ImGui::Text("[ %.1f fps ]", ImGui::GetIO().Framerate);
 
         ImGui::Separator();
 
