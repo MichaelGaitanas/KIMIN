@@ -44,6 +44,10 @@ public:
 
         ImGui::Text("[ %.1f fps ]", ImGui::GetIO().Framerate);
 
+        //ImGui::SameLine();
+
+        //ImGui::Text(" %c", "|/-\\"[(int)(ImGui::GetTime() / 0.1f) & 3]);
+
         ImGui::Separator();
 
         ImGui::BeginChild("Scroll", ImVec2(0.0f, 0.0f), true, ImGuiWindowFlags_HorizontalScrollbar);

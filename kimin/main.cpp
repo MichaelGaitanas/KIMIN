@@ -358,7 +358,7 @@ int main()
         ImGui::Text("[days]");
         
         //field : Step
-        ImGui::Text("Step     ");
+        ImGui::Text("Step        ");
         ImGui::SameLine();
         ImGui::PushItemWidth(100.0f);
             ImGui::PushID(10);
@@ -453,7 +453,7 @@ int main()
         else if (ins.cart_kep_var_choice == 1)
         {
             //field : relative semi-major axis a
-            ImGui::Text("a          ");
+            ImGui::Text("a       ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(18);
@@ -464,7 +464,7 @@ int main()
             ImGui::Text("[km]");
             
             //field : relative eccentricity e
-            ImGui::Text("e          ");
+            ImGui::Text("e       ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(19);
@@ -475,7 +475,7 @@ int main()
             ImGui::Text("[  ]");
 
             //field : relative inclination i
-            ImGui::Text("i           ");
+            ImGui::Text("i        ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(20);
@@ -497,7 +497,7 @@ int main()
             ImGui::Text("[deg]");
             
             //field : relative argument of periapsis w
-            ImGui::Text("w         ");
+            ImGui::Text("w       ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(22);
@@ -508,7 +508,7 @@ int main()
             ImGui::Text("[deg]");
 
             //field : relative mean anomaly M
-            ImGui::Text("M        ");
+            ImGui::Text("M      ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(23);

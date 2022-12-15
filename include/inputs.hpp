@@ -213,6 +213,15 @@ public:
 
         return errors;
     }
+
+    /*
+    outputs propagate()
+    {
+        outputs outs;
+        ...
+        return outs;
+    }
+    */
 };
 
 #endif

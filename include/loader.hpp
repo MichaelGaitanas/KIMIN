@@ -9,38 +9,6 @@
 #include"typedef.hpp"
 #include"linalg.hpp"
 
-//Load a nx3 dataset from a txt file.
-dmatnx3 loadtxt3d(const char *path)
-{
-    std::ifstream file(path);
-    if (!file.is_open())
-    {
-        printf("'%s' not found. Exiting...\n", path);
-        exit(EXIT_FAILURE);
-    }
-
-    dmatnx3 data; double x,y,z;
-    std::string row; const char *format = "%lf %lf %lf";
-    while (getline(file, row))
-    {
-        sscanf(row.c_str(), format, &x, &y, &z);
-        data.push_back({x,y,z});
-    }
-
-    
-    //This is also correct.
-    /*
-    while (file >> x >> y >> z)
-    {
-        data.push_back({x,y,z});
-    }
-    */
-
-    file.close();
-
-    return data;
-}
-
 //Load an obj file containing only vertices (format : 'v x y z').
 dmatnx3 loadobjv(const char *path)
 {
