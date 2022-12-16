@@ -9,14 +9,17 @@
 #include<cmath>
 
 #include<thread>
+//#include <future>
 
 //Μια υποτιθέμενη "βαριά" συνάρτηση η οποία παίρνει χρόνο να τρέξει και εξαιτίας της κολλάει το gui.
-void run_physics()
+void run_physics(void)
 {
-    for (double z = 0.0; z < 20000.0; z += 0.001)
+    printf("Started physics\n");
+    for (double z = 0.0; z < 200000.0; z += 0.001)
     {
         double y = exp(sin(sqrt(z*fabs(z)+ cos(z))));
     }
+    printf("Finished physics\n");
     return;
 }
 
@@ -68,19 +71,33 @@ int main()
     while (!glfwWindowShouldClose(window))
     {
 		glClear(GL_COLOR_BUFFER_BIT); //Καθάρισε το frame με το χρώμα που όρισες στην glClearColor()
+        double myvar = 1.0;
+        static bool clickedtest = false;
 
         //Φτιάξε ένα imgui παράθυρο 'πάνω από' το (μαύρο) window της OpenGL.
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         ImGui::Begin("Controls");
-        ImGui::Button("Test button"); //φτιάξε ένα κουμπί 'Test button'
+
+        if( ImGui::Button("Test button")){ //φτιάξε ένα κουμπί 'Test button'
+            clickedtest = true;
+            printf("Pressed test\n");
+        }
+        if (clickedtest)
+        {
+            ImGui::SameLine();
+            ImGui::Text("TEST");
+        }
         if (ImGui::Button("Physics button")) //φτιάξε ένα κουμπί 'Physics button' ΚΑΙ αν πατηθεί τρέξε αυτό που λέει το if { }
         {
             //Εδώ είναι το πρόβλημα. Θέλουμε η run_physics() να τρέξει σε ξεχωριστό thread,
             //έτσι ώστε η while() που ανανεώνει τα frames να μην "κολλήσει" εδώ.
-            run_physics();
+            printf("clicked physics test\n");
+            std::thread mythread(run_physics);
+            mythread.detach();
         }
+        //mythread.join();
         ImGui::End();
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
