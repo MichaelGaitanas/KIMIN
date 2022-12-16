@@ -903,6 +903,8 @@ int main()
                 for (double xxx = 0.0; xxx <= 1.0e5; xxx += 0.01)
                     double yyy = 0.5*exp(sin(cos(xxx)*sin(xxx)));
                 */
+               printf("Call to mkdir()\n");
+               mkdir(ins.simname);
             }
             else
             {
