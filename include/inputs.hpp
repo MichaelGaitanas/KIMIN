@@ -3,9 +3,13 @@
 
 #include<cstdio>
 #include<cmath>
+#include<boost/numeric/odeint.hpp>
 
 #include"typedef.hpp"
 #include"constant.hpp"
+
+typedef boost::array<double, 20> boostvec20;
+typedef boost::numeric::odeint::runge_kutta_fehlberg78<boostvec20> rkf78;
 
 class inputs
 {
@@ -16,6 +20,12 @@ public:
 
     //'Simulation name' field. 50 characters available (plus the '\0' character)
     char simname[51] = "";
+
+    //'Theory' checkboxes states
+    bool ord2_checkbox = true;
+    bool ord3_checkbox = false;
+    bool ord4_checkbox = false;
+    bool mascons_checkbox = false;
 
     //'Ellipsoids' checkbox state
     bool ell_checkbox = false;
@@ -127,6 +137,12 @@ public:
             errors.push_back("[Error] :  'Simulation name' is invalid.");
         }
 
+        //Theory model checkboxes error (at least one must be checked).
+        if (!ord2_checkbox && !ord3_checkbox && !ord4_checkbox && !mascons_checkbox)
+        {
+            errors.push_back("[Error] :  Neither 'Order 2', nor 'Order 3', nor 'Order 4', nor 'Mascons' theory is selected.");
+        }
+
         //Shape model checkboxes error (at least one must be checked).
         if (!ell_checkbox && !obj_checkbox)
         {
@@ -214,14 +230,32 @@ public:
         return errors;
     }
 
-    /*
     outputs propagate()
     {
-        outputs outs;
-        ...
+        if (ell_checkbox)
+        {
+            dvec3 semiaxes1 = {a1,b1,c1};
+            dvec3 semiaxes2 = {a2,b2,c2};
+        }
+        
+        /*
+        ell_ell_ord2
+        ell_ell_ord3
+        ell_ell_ord4
+        dvec3 semiaxis1 = {a1,b1,c1};
+        dvec3 semiaxis2 = {a2,b2,c2};
+        dvec3 r   = {relx, rely, relz};
+        dvec3 v   = {0.0, 0.00017421523858789, 0.0};
+        dvec4 q1  = {1.0, 0.0, 0.0, 0.0};
+        dvec3 w1i = {0.0, 0.0, 0.000772269580528465};
+        dvec4 q2  = {1.0, 0.0, 0.0, 0.0};
+        dvec3 w2i = {0.0, 0.0, 0.000146399360157891};
+        */
+        //unsigned steps = integrate_adaptive(make_controlled(tol, tol, rkf78()), odes, state, epoch, dur, step, observe);
+
         return outs;
     }
-    */
+    
 };
 
 #endif

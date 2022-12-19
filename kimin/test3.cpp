@@ -927,8 +927,12 @@ int main()
             strvec errors = ins.validate();
             if (!errors.size())
             {
-                lg.add("Running physics ...  "); lg.add("\n");
-                ///outputs outs = ins.propagate();
+                //lg.add("Running physics ...  "); lg.add("\n");
+                /*
+                std::thread thr(ins.propagate());
+                thr.detach();
+                outputs outs = ins.propagate();
+                */
             }
             else
             {
