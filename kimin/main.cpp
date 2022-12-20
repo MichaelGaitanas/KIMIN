@@ -69,9 +69,8 @@ int main()
     ImGui_ImplOpenGL3_Init("#version 330");
     //////////////////////////////////////////////////////////////////////////////////////
 
-    std::vector<std::filesystem::path> path_v = lsobj("../resources/obj/v/");
-    std::vector<std::filesystem::path> path_vf = lsobj("../resources/obj/vf/");
-    std::vector<std::filesystem::path> path_vfn = lsobj("../resources/obj/vfn/");
+    std::vector<std::filesystem::path> path_masc = lsobj("../resources/obj/mascons/");
+    std::vector<std::filesystem::path> path_poly = lsobj("../resources/obj/polyhedra/");
 
     inputs ins;
     logger lg;
@@ -215,82 +214,51 @@ int main()
                 ins.obj_refer_to_body = 2;
 
             
-            if (ImGui::TreeNodeEx("v"))
+            if (ImGui::TreeNodeEx("Mascons"))
             {
-                for (int i = 0; i < path_v.size(); ++i)
+                for (int i = 0; i < path_masc.size(); ++i)
                 {
                     if (ins.obj_refer_to_body == 1)
                     {
-                        if (ImGui::Selectable(path_v[i].string().c_str(), (ins.clicked_v1_index == i)))
+                        if (ImGui::Selectable(path_masc[i].string().c_str(), (ins.clicked_masc1_index == i)))
                         {
-                            ins.clicked_v1_index = i;
-                            ins.clicked_vf1_index = -1;
-                            ins.clicked_vfn1_index = -1;
-                            ins.obj_path1 = path_v[i].string();
+                            ins.clicked_masc1_index = i;
+                            ins.clicked_poly1_index = -1;
+                            ins.obj_path1 = path_masc[i].string();
                         }
                     }
                     else
                     {
-                        if (ImGui::Selectable(path_v[i].string().c_str(), (ins.clicked_v2_index == i)))
+                        if (ImGui::Selectable(path_masc[i].string().c_str(), (ins.clicked_masc2_index == i)))
                         {
-                            ins.clicked_v2_index = i;
-                            ins.clicked_vf2_index = -1;
-                            ins.clicked_vfn2_index = -1;
-                            ins.obj_path2 = path_v[i].string();
+                            ins.clicked_masc2_index = i;
+                            ins.clicked_poly2_index = -1;
+                            ins.obj_path2 = path_masc[i].string();
                         }
                     }
                 }
                 ImGui::TreePop();
             }
-            if (ImGui::TreeNodeEx("vf"))
+            if (ImGui::TreeNodeEx("Polyhedra"))
             {
-                for (int i = 0; i < path_vf.size(); ++i)
+                for (int i = 0; i < path_poly.size(); ++i)
                 {
                     if (ins.obj_refer_to_body == 1)
                     {
-                        if (ImGui::Selectable(path_vf[i].string().c_str(), (ins.clicked_vf1_index == i)))
+                        if (ImGui::Selectable(path_poly[i].string().c_str(), (ins.clicked_poly1_index == i)))
                         {
-                            ins.clicked_v1_index = -1;
-                            ins.clicked_vf1_index = i;
-                            ins.clicked_vfn1_index = -1;
-                            ins.obj_path1 = path_vf[i].string();
+                            ins.clicked_masc1_index = -1;
+                            ins.clicked_poly1_index = i;
+                            ins.obj_path1 = path_poly[i].string();
                         }
                     }
                     else
                     {
-                        if (ImGui::Selectable(path_vf[i].string().c_str(), (ins.clicked_vf2_index == i)))
+                        if (ImGui::Selectable(path_poly[i].string().c_str(), (ins.clicked_poly2_index == i)))
                         {
-                            ins.clicked_v2_index = -1;
-                            ins.clicked_vf2_index = i;
-                            ins.clicked_vfn2_index = -1;
-                            ins.obj_path2 = path_vf[i].string();
-                        }
-                    }
-                }
-                ImGui::TreePop();
-            }
-            if (ImGui::TreeNodeEx("vfn"))
-            {
-                for (int i = 0; i < path_vfn.size(); ++i)
-                {
-                    if (ins.obj_refer_to_body == 1)
-                    {
-                        if (ImGui::Selectable(path_vfn[i].string().c_str(), (ins.clicked_vfn1_index == i)))
-                        {
-                            ins.clicked_v1_index = -1;
-                            ins.clicked_vf1_index = -1;
-                            ins.clicked_vfn1_index = i;
-                            ins.obj_path1 = path_vfn[i].string();
-                        }
-                    }
-                    else
-                    {
-                        if (ImGui::Selectable(path_vfn[i].string().c_str(), (ins.clicked_vfn2_index == i)))
-                        {
-                            ins.clicked_v2_index = -1;
-                            ins.clicked_vf2_index = -1;
-                            ins.clicked_vfn2_index = i;
-                            ins.obj_path2 = path_vfn[i].string();
+                            ins.clicked_masc2_index = -1;
+                            ins.clicked_poly2_index = i;
+                            ins.obj_path2 = path_poly[i].string();
                         }
                     }
                 }

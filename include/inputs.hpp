@@ -8,6 +8,9 @@
 #include"typedef.hpp"
 #include"constant.hpp"
 #include"ellipsoid.hpp"
+#include"loader.hpp"
+#include"polyhedron.hpp"
+#include"mascon.hpp"
 
 typedef boost::array<double, 20> boostvec20;
 typedef boost::numeric::odeint::runge_kutta_fehlberg78<boostvec20> rkf78;
@@ -35,11 +38,11 @@ public:
     bool obj_checkbox = false;
     //.obj files 'Body 2' or 'Body 2' radiobuttons reference (1 or 2 only)
     int obj_refer_to_body = 1;
-    //Index of the clicked .obj path. Either of v/, vf/ or vfn/ directory.
+    //Index of the clicked .obj path. Either of mascons/, or polyhedra/ directory.
     //-1 means no path is clicked.
     //Only one path per body can be clicked.
-    int clicked_v1_index = -1, clicked_vf1_index = -1, clicked_vfn1_index = -1;
-    int clicked_v2_index = -1, clicked_vf2_index = -1, clicked_vfn2_index = -1;
+    int clicked_masc1_index = -1, clicked_poly1_index = -1;
+    int clicked_masc2_index = -1, clicked_poly2_index = -1;
     //Relative path to the 2 .obj models.
     str obj_path1, obj_path2;
     //.obj 'OK' button state
@@ -161,11 +164,11 @@ public:
         }
 
         //.obj files error (at leat one .obj file must be selected from the user).
-        if(obj_checkbox && clicked_v1_index == -1 && clicked_vf1_index == -1 && clicked_vfn1_index == -1)
+        if(obj_checkbox && clicked_masc1_index == -1 && clicked_poly1_index == -1)
         {
             errors.push_back("[Error] :  No .obj file is selected for 'Body 1'.");
         }
-        if(obj_checkbox && clicked_v2_index == -1 && clicked_vf2_index == -1 && clicked_vfn2_index == -1)
+        if(obj_checkbox && clicked_masc2_index == -1 && clicked_poly2_index == -1)
         {
             errors.push_back("[Error] :  No .obj file is selected for 'Body 2'.");
         }
@@ -231,8 +234,6 @@ public:
         return errors;
     }
 
-
-
     outputs propagate()
     {
         if (ell_checkbox)
@@ -262,9 +263,22 @@ public:
                 dmatnx3 masc2 = fill_ell_with_masc(semiaxes2, ivec3{15,15,15});
             }
         }
-        else
+        else //obj_checkbox
         {
-            if ()
+            //body 1
+            if (clicked_masc1_index != -1) //then the user clicked existing mascons model
+            {
+                dmatnx3 masc1 = loadobjv(obj_path1.c_str());
+            }
+            else //the user clicked polyhedron model
+            {
+                dmatnx3 verts;
+                imatnx3 faces;
+                loadobjvf(obj_path1.c_str(), verts,faces);
+                dmatnx3 masc1 = fill_poly_with_masc(verts,faces, ivec3{15,15,15});
+                correct_masc_com(masc1);
+                correct_masc_inertia(M1, masc1);
+            }
         }
         
         /*
@@ -282,7 +296,7 @@ public:
         */
         //unsigned steps = integrate_adaptive(make_controlled(tol, tol, rkf78()), odes, state, epoch, dur, step, observe);
 
-        return outs;
+        //return outs;
     }
     
 };
