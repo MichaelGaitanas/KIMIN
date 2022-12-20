@@ -7,6 +7,7 @@
 
 #include"typedef.hpp"
 #include"constant.hpp"
+#include"ellipsoid.hpp"
 
 typedef boost::array<double, 20> boostvec20;
 typedef boost::numeric::odeint::runge_kutta_fehlberg78<boostvec20> rkf78;
@@ -20,12 +21,6 @@ public:
 
     //'Simulation name' field. 50 characters available (plus the '\0' character)
     char simname[51] = "";
-
-    //'Theory' checkboxes states
-    bool ord2_checkbox = true;
-    bool ord3_checkbox = false;
-    bool ord4_checkbox = false;
-    bool mascons_checkbox = false;
 
     //'Ellipsoids' checkbox state
     bool ell_checkbox = false;
@@ -49,6 +44,12 @@ public:
     str obj_path1, obj_path2;
     //.obj 'OK' button state
     bool clicked_obj_ok = false;
+
+    //'Theory' checkboxes states
+    bool ord2_checkbox = true;
+    bool ord3_checkbox = false;
+    bool ord4_checkbox = false;
+    bool mascons_checkbox = false;
 
     //'M1', 'M2' fields.
     double M1 = 0.0, M2 = 0.0;
@@ -230,12 +231,40 @@ public:
         return errors;
     }
 
+
+
     outputs propagate()
     {
         if (ell_checkbox)
         {
             dvec3 semiaxes1 = {a1,b1,c1};
             dvec3 semiaxes2 = {a2,b2,c2};
+
+            if (ord2_checkbox)
+            {
+                dtens J1 = ell_integrals(M1, semiaxes1, 2);
+                dtens J2 = ell_integrals(M2, semiaxes2, 2);
+            }
+            else if (ord3_checkbox)
+            {
+                dtens J1 = ell_integrals(M1, semiaxes1, 3);
+                dtens J2 = ell_integrals(M2, semiaxes2, 3);
+            }
+            else if (ord4_checkbox)
+            {
+                dtens J1 = ell_integrals(M1, semiaxes1, 4);
+                dtens J2 = ell_integrals(M2, semiaxes2, 4);
+            }
+            else
+            {
+                //add the grid_reso as parameter to the gui
+                dmatnx3 masc1 = fill_ell_with_masc(semiaxes1, ivec3{15,15,15});
+                dmatnx3 masc2 = fill_ell_with_masc(semiaxes2, ivec3{15,15,15});
+            }
+        }
+        else
+        {
+            if ()
         }
         
         /*

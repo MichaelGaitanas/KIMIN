@@ -9,6 +9,77 @@
 #include"typedef.hpp"
 #include"linalg.hpp"
 
+//Load a nx3 dataset from a txt file.
+dmatnx3 loadtxt3d(const char *path)
+{
+    std::ifstream file(path);
+    if (!file.is_open())
+    {
+        printf("'%s' not found. Exiting...\n", path);
+        exit(EXIT_FAILURE);
+    }
+
+    dmatnx3 data; double x,y,z;
+    std::string row; const char *format = "%lf %lf %lf";
+    while (getline(file, row))
+    {
+        sscanf(row.c_str(), format, &x, &y, &z);
+        data.push_back({x,y,z});
+    }
+
+    
+    //This is also correct.
+    /*
+    while (file >> x >> y >> z)
+    {
+        data.push_back({x,y,z});
+    }
+    */
+
+    file.close();
+
+    return data;
+}
+
+//Parse an obj file and write down if it contains [#,v,f,vn,vt].
+bvec obj_contains_ns_v_f_vn_vt(const char *path)
+{
+    std::ifstream file(path);
+    if (!file.is_open())
+    {
+        printf("'%s' not found. Exiting...\n", path);
+        exit(EXIT_FAILURE);
+    }
+   
+    bvec ns_v_f_vn_vt = {false, false, false, false, false};
+    str row;
+    while (getline(file, row))
+    {
+        if (row[0] == '#' && !ns_v_f_vn_vt[0])
+        {
+            ns_v_f_vn_vt[0] = true;
+        }
+        else if (row[0] == 'v' && row[1] == ' ' && !ns_v_f_vn_vt[1])
+        {
+            ns_v_f_vn_vt[1] = true;
+        }
+        else if (row[0] == 'f' && row[1] == ' ' && !ns_v_f_vn_vt[2])
+        {
+            ns_v_f_vn_vt[2] = true;
+        }
+        else if (row[0] == 'v' && row[1] == 'n' && row[2] == ' '  && !ns_v_f_vn_vt[3])
+        {
+            ns_v_f_vn_vt[3] = true;
+        }
+        else if (row[0] == 'v' && row[1] == 't' && row[2] == ' '  && !ns_v_f_vn_vt[4])
+        {
+            ns_v_f_vn_vt[4] = true;
+        }
+    }
+
+    return ns_v_f_vn_vt;
+}
+
 //Load an obj file containing only vertices (format : 'v x y z').
 dmatnx3 loadobjv(const char *path)
 {

@@ -18,7 +18,7 @@ typedef std::array<int, 6> ivec6; //vector of 6 ints
 
 typedef std::vector<double> dvec; //vector of n doubles
 typedef std::vector<int> ivec; //vector of n ints
-typedef std::vector<std::string> strvec; //vector of n std strings
+typedef std::vector<str> strvec; //vector of n std strings
 
 typedef std::vector<ivec3> imatnx3; //nx3 matrix of ints
 typedef std::vector<ivec4> imatnx4; //nx4 matrix of ints
@@ -35,5 +35,7 @@ typedef std::vector<dmat> dtens; // nxnxn tensor of doubles
 
 typedef std::complex<double> dcomplex; //complex double (double + i*double)
 typedef std::vector<dcomplex> dcomplexvec; //vector of n complex doubles
+
+typedef std::vector<bool> bvec; //vector of n complex doubles
 
 #endif

@@ -119,7 +119,7 @@ void correct_masc_inertia(const double M, dmatnx3 &masc)
 dtens masc_integrals(const double M, const dmatnx3 &masc, const int ord)
 {
     double m = (double)M/masc.size(); //mass of each mascon
-    dtens J(ord+1, dmat(ord+1, dvec(ord+1, 0.0) ) );
+    dtens J(ord+1, dmat(ord+1, dvec(ord+1, 0.0) ) ); //initialize the tensor with zeros
     for (int i = 0; i < ord + 1; ++i)
         for (int j = 0; j < ord + 1; ++j)
             for (int k = 0; k < ord + 1; ++k)

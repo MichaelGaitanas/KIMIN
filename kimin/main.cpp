@@ -103,34 +103,6 @@ int main()
         ImGui::PopItemWidth();
         ImGui::Dummy(ImVec2(0.0f,15.0f));
 
-        //field : physics theory
-        ImGui::Text("Theory");
-        if (ImGui::Checkbox("Order 2", &ins.ord2_checkbox))
-        {
-            ins.ord3_checkbox = false;
-            ins.ord4_checkbox = false;
-            ins.mascons_checkbox = false;
-        }
-        if (ImGui::Checkbox("Order 3", &ins.ord3_checkbox))
-        {
-            ins.ord2_checkbox = false;
-            ins.ord4_checkbox = false;
-            ins.mascons_checkbox = false;
-        }
-        if (ImGui::Checkbox("Order 4", &ins.ord4_checkbox))
-        {
-            ins.ord2_checkbox = false;
-            ins.ord3_checkbox = false;
-            ins.mascons_checkbox = false;
-        }
-        if (ImGui::Checkbox("Mascons", &ins.mascons_checkbox))
-        {
-            ins.ord2_checkbox = false;
-            ins.ord3_checkbox = false;
-            ins.ord4_checkbox = false;
-        }
-        ImGui::Dummy(ImVec2(0.0f,15.0f));
-
         //field : ellipsoid shape model
         ImGui::Text("Shape models");
         if (ImGui::Checkbox("Ellipsoids", &ins.ell_checkbox) && ins.ell_checkbox)
@@ -335,6 +307,34 @@ int main()
         }
 
         ImGui::Dummy(ImVec2(0.0f, 15.0f));
+
+        //field : physics theory
+        ImGui::Text("Theory");
+        if (ImGui::Checkbox("Order 2", &ins.ord2_checkbox))
+        {
+            ins.ord3_checkbox = false;
+            ins.ord4_checkbox = false;
+            ins.mascons_checkbox = false;
+        }
+        if (ImGui::Checkbox("Order 3", &ins.ord3_checkbox))
+        {
+            ins.ord2_checkbox = false;
+            ins.ord4_checkbox = false;
+            ins.mascons_checkbox = false;
+        }
+        if (ImGui::Checkbox("Order 4", &ins.ord4_checkbox))
+        {
+            ins.ord2_checkbox = false;
+            ins.ord3_checkbox = false;
+            ins.mascons_checkbox = false;
+        }
+        if (ImGui::Checkbox("Mascons", &ins.mascons_checkbox))
+        {
+            ins.ord2_checkbox = false;
+            ins.ord3_checkbox = false;
+            ins.ord4_checkbox = false;
+        }
+        ImGui::Dummy(ImVec2(0.0f,15.0f));
 
         ImGui::Text("Mass");
 

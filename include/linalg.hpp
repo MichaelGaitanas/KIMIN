@@ -162,12 +162,6 @@ double length(const dvec3 &v)
     return sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 }
 
-//Length of a 4x1 vector.
-double length(const dvec4 &v)
-{
-    return sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2] + v[3]*v[3]);
-}
-
 //Outer product of two 3x1 vectors.
 dmat3 outer(const dvec3 &v1, const dvec3 &v2)
 {

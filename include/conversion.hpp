@@ -388,4 +388,99 @@ dvec3 cart2spher(const dvec3 &cart, bool latitude_origin_is_the_north_pole = tru
     return {r,lon,lat};
 }
 
+//Calculate the scalar term C[n][m], provided the normalized inertial integral tensor N[i][j][k].
+//The term C[n][m] will be stage 1 normalized.
+//This function is only meant to be called from integrals2stokes().
+double Cnm_step(const int n, const int m, const dtens &N)
+{
+    double Cnm = 0.0;
+    for (int p = 0; p < (int)(n/2) + 1; ++p)
+    {
+        for (int q = 0; q < (int)(m/2) + 1; ++q)
+        {
+            double coeff = pow(-1.0, p+q)*binomial(n,p)*binomial(2*n-2*p, n)*binomial(m, 2*q)*pochhammer(n-m-2*p+1,m);
+            if ((int)coeff != 0)
+            {
+                double sum = 0.0;
+                for (int vx = 0; vx < p+1; ++vx)
+                {
+                    for (int vy = 0; vy < p-vx+1; ++vy)
+                    {
+                        sum += (factorial(p)/( factorial(vx)*factorial(vy)*factorial(p-vx-vy) ))*N[m - 2*q + 2*vx][2*q + 2*vy][n - m - 2*vx - 2*vy];
+                    }
+                }
+                Cnm += coeff*sum;
+            }
+            //else continue;
+        }
+    }
+    return pow(2.0, -n)*Cnm;
+}
+
+//Calculate the scalar term S[n][m], provided the normalized inertial integral tensor N[i][j][k].
+//The term S[n][m] will be stage 1 normalized.
+//This function is only meant to be called from integrals2stokes().
+double Snm_step(const int n, const int m, const dtens &N)
+{
+    double Snm = 0.0;
+    for (int p = 0; p < (int)(n/2) + 1; ++p)
+    {
+        for (int q = 0; q < (int)((m-1)/2) + 1; ++q)
+        {
+            double coeff = pow(-1.0, p+q)*binomial(n,p)*binomial(2*n-2*p, n)*binomial(m, 2*q+1)*pochhammer(n-m-2*p+1,m);
+            if ((int)coeff != 0)
+            {
+                double sum = 0.0;
+                for (int vx = 0; vx < p+1; ++vx)
+                {
+                    for (int vy = 0; vy < p-vx+1; ++vy)
+                    {
+                        sum += (factorial(p)/( factorial(vx)*factorial(vy)*factorial(p-vx-vy) ))*N[m - 2*q - 1 + 2*vx][2*q + 1 + 2*vy][n - m - 2*vx - 2*vy];
+                    }
+                }
+                Snm += coeff*sum;
+            }
+            //else continue;
+        }
+    }
+    return pow(2.0, -n)*Snm;
+}
+
+//Convert the non normalized inertial integral tensor J[i][j][k] to the Stokes coefficient matrices C[n][m], S[n][m].
+//If supernormalized = true, then stage 2 normalization (i.e. supernormalization) will be applied to C[n][m] and S[n][m].
+//Else only stage 1 normalization will be applied to C[n][m] and S[n][m].
+void integrals2stokes(const dtens &J, dmat &C, dmat &S, const double R0, bool supernormalized = true)
+{
+    int ord = J.size() - 1;
+
+    //normalization of the inertial integrals
+    dtens N(ord+1, dmat(ord+1, dvec(ord+1, 0.0) ) );
+    for (int i = 0; i < ord + 1; ++i)
+        for (int j = 0; j < ord + 1; ++j)
+            for (int k = 0; k < ord + 1; ++k)
+                N[i][j][k] = J[i][j][k]/pow(R0, i+j+k)/J[0][0][0];
+
+    //evaluation of the Stokes coefficients
+    C.clear();
+    S.clear();
+    for (int n = 0; n < ord + 1; ++n)
+    {
+        C.push_back(dvec{});
+        S.push_back(dvec{});
+        for (int m = 0; m < n + 1; ++m)
+        {
+            double supernormcoeff;
+            if (supernormalized)
+                supernormcoeff = sqrt( factorial(n+m)/((2.0 - kronecker(0,m))*(2.0*n + 1.0)*factorial(n-m)) );
+            else
+                supernormcoeff = 1.0;
+            double auxcoeff = (2.0 - kronecker(0,m))*factorial(n-m)/factorial(n+m);
+            C[n].push_back(supernormcoeff*auxcoeff*Cnm_step(n,m,N)); //C[n][m] = supernormcoeff*auxcoeff*Cnm_step(n,m,N)
+            S[n].push_back(supernormcoeff*auxcoeff*Snm_step(n,m,N)); //S[n][m] = supernormcoeff*auxcoeff*Snm_step(n,m,N)
+        }
+    }
+
+    return;
+}
+
 #endif
