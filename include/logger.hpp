@@ -30,7 +30,7 @@ public:
     }
 
     //Render the log imgui window on top (actually as part) of the glfw window.
-    void draw(const char *title, bool *popened = NULL, float monitor_width = 1.0f, float monitor_height = 1.0f)
+    void draw(const char *title, bool *popened = NULL, float monitor_width = 1.0f, float monitor_height = 1.0f, str vendor = "void", str renderer = "void", str version = "void")
     {
         ImGui::SetNextWindowPos(ImVec2(monitor_width/2.0f, monitor_height - 225.0f), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(monitor_width/2.0f, 150.0f), ImGuiCond_FirstUseEver); 
@@ -42,11 +42,15 @@ public:
         
         ImGui::SameLine();
 
-        ImGui::Text("[ %.1f fps ]", ImGui::GetIO().Framerate);
-
-        //ImGui::SameLine();
-
-        //ImGui::Text(" %c", "|/-\\"[(int)(ImGui::GetTime() / 0.1f) & 3]);
+        ImGui::Text("Fps [ %.1f ], ", ImGui::GetIO().Framerate);
+        ImGui::SameLine();
+        ImGui::Text("Vendor [ %s ], ", vendor.c_str());
+        ImGui::SameLine();
+        ImGui::Text("Renderer [ %s ], ", renderer.c_str());
+        ImGui::SameLine();
+        ImGui::Text("Version [ %s ] ", version.c_str());
+        ImGui::SameLine();
+        ImGui::Text(" %c", "|/-\\"[(int)(ImGui::GetTime() / 0.1f) & 3]);
 
         ImGui::Separator();
 

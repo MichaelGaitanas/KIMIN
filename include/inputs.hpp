@@ -125,7 +125,7 @@ public:
     //'Run' button state
     bool clicked_run = false;
 
-    //If all inputs are valid, then this function returns an entirely empty vector of strings.
+    //If all inputs are valid, this member function returns an entirely empty vector of strings.
     //Otherwise the returned vector contains strings, each corresponding to an invalid input. In this case,
     //the vector of strings will be displayed in the log as errors.
     strvec validate()
@@ -234,71 +234,182 @@ public:
         return errors;
     }
 
+    //This member function 'decides' what type of simulation the user intends to run via basic booleans. As a result, it sets up all
+    //necessary variables needed for that very simulation. After that, it propagates the state vector (integrates the odes) in time
+    //and ultimately constructs the final outputs object (class) of the simulation.
+    /*
     outputs propagate()
     {
+        //semiaxes of the ellipsoids (IF ellipsoidal geometries are selected)
+        dvec3 semiaxes1, semiaxes2;
+        //mascon models x[i],y[i],z[i] (IF mascon geometries are selected)
+        dmatnx3 masc1, masc2;
+        //inertial integrals tensors (IF analytic expansions are selected)
+        dtens J1, J2;
+
         if (ell_checkbox)
         {
-            dvec3 semiaxes1 = {a1,b1,c1};
-            dvec3 semiaxes2 = {a2,b2,c2};
-
+            semiaxes1 = {a1,b1,c1};
+            semiaxes2 = {a2,b2,c2};
             if (ord2_checkbox)
             {
-                dtens J1 = ell_integrals(M1, semiaxes1, 2);
-                dtens J2 = ell_integrals(M2, semiaxes2, 2);
+                J1 = ell_integrals(M1, semiaxes1, 2);
+                J2 = ell_integrals(M2, semiaxes2, 2);
             }
             else if (ord3_checkbox)
             {
-                dtens J1 = ell_integrals(M1, semiaxes1, 3);
-                dtens J2 = ell_integrals(M2, semiaxes2, 3);
+                J1 = ell_integrals(M1, semiaxes1, 3);
+                J2 = ell_integrals(M2, semiaxes2, 3);
             }
             else if (ord4_checkbox)
             {
-                dtens J1 = ell_integrals(M1, semiaxes1, 4);
-                dtens J2 = ell_integrals(M2, semiaxes2, 4);
+                J1 = ell_integrals(M1, semiaxes1, 4);
+                J2 = ell_integrals(M2, semiaxes2, 4);
             }
             else
             {
-                //add the grid_reso as parameter to the gui
-                dmatnx3 masc1 = fill_ell_with_masc(semiaxes1, ivec3{15,15,15});
-                dmatnx3 masc2 = fill_ell_with_masc(semiaxes2, ivec3{15,15,15});
+                masc1 = fill_ell_with_masc(semiaxes1, ivec3{15,15,15});
+                masc2 = fill_ell_with_masc(semiaxes2, ivec3{15,15,15});
             }
+            //now all theories (expansion & mascons) have the necessary info
         }
         else //obj_checkbox
         {
             //body 1
-            if (clicked_masc1_index != -1) //then the user clicked existing mascons model
+            if (clicked_masc1_index != -1) //then the user clicked a mascon (v) model from the database
             {
-                dmatnx3 masc1 = loadobjv(obj_path1.c_str());
+                masc1 = loadobjv(obj_path1.c_str());
             }
-            else //the user clicked polyhedron model
+            else //the user clicked polyhedron (v,f,n,t,...) model from the database
             {
-                dmatnx3 verts;
-                imatnx3 faces;
+                dmatnx3 verts; imatnx3 faces;
                 loadobjvf(obj_path1.c_str(), verts,faces);
-                dmatnx3 masc1 = fill_poly_with_masc(verts,faces, ivec3{15,15,15});
+                masc1 = fill_poly_with_masc(verts,faces, ivec3{15,15,15});
                 correct_masc_com(masc1);
                 correct_masc_inertia(M1, masc1);
             }
+            //body 2
+            if (clicked_masc2_index != -1) //then the user clicked mascon model
+            {
+                masc2 = loadobjv(obj_path2.c_str());
+            }
+            else //the user clicked polyhedron model
+            {
+                dmatnx3 verts; imatnx3 faces;
+                loadobjvf(obj_path2.c_str(), verts,faces);
+                masc2 = fill_poly_with_masc(verts,faces, ivec3{15,15,15});
+                correct_masc_com(masc2);
+                correct_masc_inertia(M2, masc2);
+            }
+
+
+            if (ord2_checkbox)
+            {
+                J1 = masc_integrals(M1, masc1, 2);
+                J2 = masc_integrals(M2, masc2, 2);
+            }
+            else if (ord3_checkbox)
+            {
+                J1 = masc_integrals(M1, masc1, 3);
+                J2 = masc_integrals(M2, masc2, 3);
+            }
+            else if (ord4_checkbox)
+            {
+                J1 = masc_integrals(M1, masc1, 4);
+                J2 = masc_integrals(M2, masc2, 4);
+            }
+            //now all theories (expansion & mascons) have all necessary info to run
         }
         
-        /*
-        ell_ell_ord2
-        ell_ell_ord3
-        ell_ell_ord4
-        dvec3 semiaxis1 = {a1,b1,c1};
-        dvec3 semiaxis2 = {a2,b2,c2};
-        dvec3 r   = {relx, rely, relz};
-        dvec3 v   = {0.0, 0.00017421523858789, 0.0};
-        dvec4 q1  = {1.0, 0.0, 0.0, 0.0};
-        dvec3 w1i = {0.0, 0.0, 0.000772269580528465};
-        dvec4 q2  = {1.0, 0.0, 0.0, 0.0};
-        dvec3 w2i = {0.0, 0.0, 0.000146399360157891};
-        */
-        //unsigned steps = integrate_adaptive(make_controlled(tol, tol, rkf78()), odes, state, epoch, dur, step, observe);
+        //one check for pos/vel
+        //check for bounded ic
+        if (cart_kep_var_choice == 0) //cartesian
+        {
+            dvec3 r   = {relx, rely, relz};
+            dvec3 v   = {relvx, relvy, relvz};
+        }
+        else
+        {
+            dvec3 cart = kep2cart(kep, G*(M1 + M2))
+        }
 
-        //return outs;
+
+
+        //another one for orientations
+        dvec4 q1  = {q10, q11, q12, q13};
+        dvec4 q2  = {q20, q21, q22, q23};
+
+        //and a final one for the nature of the frames (inertial/body)
+        if (frame_type_choice == 0)
+        {
+            dvec3 w1i = {w1x, w1y, w1z};
+            dvec3 w2i = {w2x, w2y, w2z};
+            dvec3 w1b = iner2body(w1i, quat2mat(quat2unit(q1)));
+            dvec3 w2b = iner2body(w2i, quat2mat(quat2unit(q2)));
+        }
+        else
+        {
+            dvec3 w1b = {w11, w12, w13};
+            dvec3 w2b = {w21, w22, w23};
+        }
+
+        //state vector
+        boostvec20 state = {   r[0],    r[1],    r[2],
+                               v[0],    v[1],    v[2],
+                              q1[0],   q1[1],   q1[2], q1[3],
+                             w1b[0],  w1b[1],  w1b[2],
+                              q2[0],   q2[1],   q2[2], q2[3],
+                             w2b[0],  w2b[1],  w2b[2] };
+        
+        unsigned steps = integrate_adaptive(make_controlled(tol, tol, rkf78()), odes, state, epoch, dur, step, observe);
+
+        return outs;
     }
+    */
     
 };
+
+/*
+int main()
+{
+    M1 = 5.320591856403073e11; //[kg]
+    M2 = 4.940814359692687e9; //[kg]
+    t0 = 0.0; //[sec]
+    tmax = 30.0*86400.0; //[sec]
+    print_step = 2.0*60.0; //[sec]
+    dvec3 r   = {1.19, 0.0, 0.0}; //[km]
+    dvec3 v   = {0.0, 0.00017421523858789, 0.0}; //[km/sec]
+    dvec4 q1  = {1.0, 0.0, 0.0, 0.0}; //[ ]
+    dvec3 w1i = {0.0, 0.0, 0.000772269580528465}; //[rad/sec]
+    dvec4 q2  = {1.0, 0.0, 0.0, 0.0}; // [ ]
+    dvec3 w2i = {0.0, 0.0, 0.000146399360157891}; //[rad/sec]
+
+    dmatnx3 masc1 = loadobjv("../../resources/obj/v/didymain2019_1229_shift_rot.obj");
+    dmatnx3 masc2 = loadobjv("../../resources/obj/v/dimorphos_ellipsoid_515_shift_rot.obj");
+
+    m = M1*M2/(M1 + M2);
+    I1 = masc_inertia(M1, masc1);
+    J1 = masc_integrals(M1, masc1, 3);
+    I2 = masc_inertia(M2, masc2);
+    J2 = masc_integrals(M2, masc2, 3);
+    dvec3 w1b = iner2body(w1i, quat2mat(quat2unit(q1)));
+    dvec3 w2b = iner2body(w2i, quat2mat(quat2unit(q2)));
+
+    //initial conditions
+    bvec20 state = {   r[0],    r[1],    r[2],
+                       v[0],    v[1],    v[2],
+                      q1[0],   q1[1],   q1[2], q1[3],
+                     w1b[0],  w1b[1],  w1b[2],
+                      q2[0],   q2[1],   q2[2], q2[3],
+                     w2b[0],  w2b[1],  w2b[2] };
+    
+    //solve the odes
+    unsigned steps = integrate_adaptive(make_controlled(1e-13, 1e-13, rkf78()), odes, state, t0, tmax, print_step, observe);
+
+    export in files
+
+    return 0;
+}
+*/
 
 #endif

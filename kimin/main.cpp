@@ -56,6 +56,10 @@ int main()
     }
     //////////////////////////////////////////////////////////////////////////////////////
 
+    str vendor   = (char *)glGetString(GL_VENDOR); 
+    str renderer = (char *)glGetString(GL_RENDERER); 
+    str version  = (char *)glGetString(GL_VERSION);
+
     //imgui initialization and basic setup
     //////////////////////////////////////////////////////////////////////////////////////
     IMGUI_CHECKVERSION();
@@ -88,7 +92,7 @@ int main()
  
         //create the imgui window at the top left of the glfw window
         ImGui::SetNextWindowPos(ImVec2(0.0f,0.0f), ImGuiCond_FirstUseEver); //extremely careful with the FirstUseEver flag 
-        ImGui::Begin("Inputs (under development)",&ins.xclose);
+        ImGui::Begin("Inputs ",&ins.xclose);
         if (!ins.xclose)
         {
             glfwSetWindowShouldClose(window, true);
@@ -265,6 +269,14 @@ int main()
                 ImGui::TreePop();
             }
             ImGui::Dummy(ImVec2(0.0f,15.0f));
+
+            static bool selected_grid = false;
+            if (!selected_grid)
+            {
+                ImGui::Begin("Select gird");
+                ImGui::Text("Here");
+                ImGui::End();
+            }
 
             if (ImGui::Button("OK", ImVec2(50.0f,30.0f)))   
             {
@@ -908,7 +920,7 @@ int main()
             }
             
         }
-        lg.draw("Log (under development)", NULL, mode->width, mode->height);
+        lg.draw("Log ", NULL, mode->width, mode->height, vendor,renderer,version);
 
         ins.clicked_run = false;
 
