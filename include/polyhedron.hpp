@@ -265,6 +265,7 @@ bool in_poly(const dvec3 &r, const dmatnx3 &verts, const imatnx3 &faces)
     //even : (x,y,z) is outside the polyhdernon
     if (intersections%2 == 1)
         return true;
+        
     return false;
 }
 

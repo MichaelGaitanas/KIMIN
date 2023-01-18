@@ -5,6 +5,7 @@
 
 #include<cstdio>
 #include<cstdarg>
+#include"directory.hpp"
 
 //KIMIN's log window
 class logger
@@ -30,10 +31,12 @@ public:
     }
 
     //Render the log imgui window on top (actually as part) of the glfw window.
-    void draw(const char *title, bool *popened = NULL, float monitor_width = 1.0f, float monitor_height = 1.0f, str vendor = "void", str renderer = "void", str version = "void")
+    void draw(const char *title, bool *popened = NULL, float monitor_width = 1.0f, float monitor_height = 1.0f, str vendor = "", str renderer = "", str version = "")
     {
-        ImGui::SetNextWindowPos(ImVec2(monitor_width/2.0f, monitor_height - 225.0f), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2(monitor_width/2.0f, 150.0f), ImGuiCond_FirstUseEver); 
+        const float win_width  = ImGui::GetIO().DisplaySize.x;
+        const float win_height = ImGui::GetIO().DisplaySize.y;
+        ImGui::SetNextWindowPos(ImVec2(win_width/7.0f, win_height - win_height/7.0f), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(win_width - 2*win_width/7.0f, win_height/7.0f), ImGuiCond_FirstUseEver);
         ImGui::Begin(title, popened);
 
         // field : clear the log
@@ -42,15 +45,17 @@ public:
         
         ImGui::SameLine();
 
-        ImGui::Text("Fps [ %.1f ], ", ImGui::GetIO().Framerate);
+        ImGui::Text("fps [ %.1f ], ", ImGui::GetIO().Framerate);
         ImGui::SameLine();
         ImGui::Text("Vendor [ %s ], ", vendor.c_str());
         ImGui::SameLine();
         ImGui::Text("Renderer [ %s ], ", renderer.c_str());
         ImGui::SameLine();
-        ImGui::Text("Version [ %s ] ", version.c_str());
+        ImGui::Text("OpenGL [ %s ], ", version.c_str());
         ImGui::SameLine();
-        ImGui::Text(" %c", "|/-\\"[(int)(ImGui::GetTime() / 0.1f) & 3]);
+        ImGui::Text("OS [ %s ] ", os_name().c_str()); //directory.hpp
+        ImGui::SameLine();
+        ImGui::Text(" %c", "|/-\\"[(int)(ImGui::GetTime()/0.1f) & 3]);
 
         ImGui::Separator();
 

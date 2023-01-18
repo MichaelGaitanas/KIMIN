@@ -3,7 +3,7 @@
 
 #include<cstdio>
 #include<cmath>
-#include<boost/numeric/odeint.hpp>
+//#include<boost/numeric/odeint.hpp>
 
 #include"typedef.hpp"
 #include"constant.hpp"
@@ -12,8 +12,8 @@
 #include"polyhedron.hpp"
 #include"mascon.hpp"
 
-typedef boost::array<double, 20> boostvec20;
-typedef boost::numeric::odeint::runge_kutta_fehlberg78<boostvec20> rkf78;
+//typedef boost::array<double, 20> boostvec20;
+//typedef boost::numeric::odeint::runge_kutta_fehlberg78<boostvec20> rkf78;
 
 class inputs
 {
@@ -27,7 +27,7 @@ public:
 
     //'Ellipsoids' checkbox state
     bool ell_checkbox = false;
-    //Ellipsoids 'OK' button state
+    //Ellipsoids 'OK' button state (from the submenu)
     bool clicked_ell_ok = false;
 
     //Ellipsoids ['a1', 'b1', 'c1'], ['a2', 'b2', 'c2'] fields.
@@ -43,13 +43,20 @@ public:
     //Only one path per body can be clicked.
     int clicked_masc1_index = -1, clicked_poly1_index = -1;
     int clicked_masc2_index = -1, clicked_poly2_index = -1;
+    //Decide whether body 1 and body 2 will be loaded as polyhedra .obj
+    bool clicked_poly1 = false, clicked_poly2 = false;
     //Relative path to the 2 .obj models.
-    str obj_path1, obj_path2;
+    str obj_path1 = "", obj_path2 = "";
+    bvec vfnt1 = {false, false, false, false}, vfnt2 = {false, false, false, false};
+    //Cartesian grid resolutions (per axis) for filling the polyhedra with mascons.
+    int grid_reso_x1 = 2, grid_reso_y1 = 2, grid_reso_z1 = 2;
+    int grid_reso_x2 = 2, grid_reso_y2 = 2, grid_reso_z2 = 2;
+    int grid_reso_x_null = 0, grid_reso_y_null = 0, grid_reso_z_null = 0;
     //.obj 'OK' button state
     bool clicked_obj_ok = false;
 
     //'Theory' checkboxes states
-    bool ord2_checkbox = true;
+    bool ord2_checkbox = false;
     bool ord3_checkbox = false;
     bool ord4_checkbox = false;
     bool mascons_checkbox = false;
@@ -163,7 +170,9 @@ public:
             errors.push_back("[Error] :  'a2', 'b2', 'c2' must be positive numbers.");
         }
 
-        //.obj files error (at leat one .obj file must be selected from the user).
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        //.obj files error (at least one .obj file must be selected from the user).
         if(obj_checkbox && clicked_masc1_index == -1 && clicked_poly1_index == -1)
         {
             errors.push_back("[Error] :  No .obj file is selected for 'Body 1'.");
@@ -172,6 +181,54 @@ public:
         {
             errors.push_back("[Error] :  No .obj file is selected for 'Body 2'.");
         }
+
+        //.obj files error of mascons category (the obj file must contain lines of the format 'v x y z' to assume them mascons).
+        if(obj_checkbox && clicked_masc1_index != -1)
+        {
+            vfnt1 = traverseobj(obj_path1.c_str());
+            if (!vfnt1[0])
+            {
+                errors.push_back("[Error] : In 'Body 1' .obj file, no format of type 'v x y z' was found.");
+            }
+        }
+        if(obj_checkbox && clicked_masc2_index != -1)
+        {
+            vfnt2 = traverseobj(obj_path2.c_str());
+            if (!vfnt2[0])
+            {
+                errors.push_back("[Error] : In 'Body 2' .obj file, no format of type 'v x y z' was found.");
+            }
+        }
+
+        //.obj files error of polyhedron category (the obj file must at least contain lines of the format 'v x y z' and 'f i j k' or 'f with slashes' to assume them polyhedra).
+        if (obj_checkbox && clicked_poly1)
+        {
+            vfnt1 = traverseobj(obj_path1.c_str());
+            if ( !(vfnt1[0] && vfnt1[1]) )
+            {
+                errors.push_back("[Error] :  In 'Body 1' .obj file, at least vertices and faces must be present.");
+            }
+        }
+        if (obj_checkbox && clicked_poly2)
+        {
+            vfnt1 = traverseobj(obj_path2.c_str());
+            if ( !(vfnt2[0] && vfnt2[1]) )
+            {
+                errors.push_back("[Error] :  In 'Body 2' .obj file, at least vertices and faces must be present.");
+            }
+        }
+
+        //raycast grid error
+        if (obj_checkbox && clicked_poly1 && (grid_reso_x1 <= 1 || grid_reso_y1 <= 1 || grid_reso_z1 <= 1))
+        {
+            errors.push_back("[Error] :  Invalid 'x axis', 'y axis', 'z axis' resolution for 'Body 1'.");
+        }
+        if (obj_checkbox && clicked_poly2 && (grid_reso_x2 <= 1 || grid_reso_y2 <= 1 || grid_reso_z2 <= 1))
+        {
+            errors.push_back("[Error] :  Invalid 'x axis', 'y axis', 'z axis' resolution for 'Body 2'.");
+        }
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         //Masses error (both M1 and M2 must be > 0.0).
         if (M1 <= 0.0)
@@ -235,7 +292,7 @@ public:
     }
 
     //This member function 'decides' what type of simulation the user intends to run via basic booleans. As a result, it sets up all
-    //necessary variables needed for that very simulation. After that, it propagates the state vector (integrates the odes) in time
+    //necessary variables needed for that very simulation. Next, it propagates the state vector (integrates the odes) in time
     //and ultimately constructs the final outputs object (class) of the simulation.
     /*
     outputs propagate()
@@ -246,6 +303,9 @@ public:
         dmatnx3 masc1, masc2;
         //inertial integrals tensors (IF analytic expansions are selected)
         dtens J1, J2;
+
+        dmatnx3 verts;
+        imatnx3 faces;
 
         if (ell_checkbox)
         {
@@ -268,10 +328,10 @@ public:
             }
             else
             {
-                masc1 = fill_ell_with_masc(semiaxes1, ivec3{15,15,15});
-                masc2 = fill_ell_with_masc(semiaxes2, ivec3{15,15,15});
+                masc1 = fill_ell_with_masc(semiaxes1, ivec3{grid_reso_x1, grid_reso_y1, grid_reso_z1});
+                masc2 = fill_ell_with_masc(semiaxes2, ivec3{grid_reso_x2, grid_reso_y2, grid_reso_z2});
             }
-            //now all theories (expansion & mascons) have the necessary info
+            //hence, assuming ellipsoidal geometries, all theories (expansion & mascons) have the necessary (geometry) parameters to run
         }
         else //obj_checkbox
         {
@@ -282,12 +342,17 @@ public:
             }
             else //the user clicked polyhedron (v,f,n,t,...) model from the database
             {
-                dmatnx3 verts; imatnx3 faces;
-                loadobjvf(obj_path1.c_str(), verts,faces);
+                
+                if (vfnt1[0] && vfnt1[1] && !vfnt1[2] && !vfnt1[3])
+                {
+                    loadobjvf(obj_path1.c_str(), verts,faces);
+                }
                 masc1 = fill_poly_with_masc(verts,faces, ivec3{15,15,15});
                 correct_masc_com(masc1);
                 correct_masc_inertia(M1, masc1);
             }
+
+
             //body 2
             if (clicked_masc2_index != -1) //then the user clicked mascon model
             {
@@ -366,7 +431,6 @@ public:
         return outs;
     }
     */
-    
 };
 
 /*
