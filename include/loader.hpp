@@ -10,7 +10,7 @@
 #include"linalg.hpp"
 
 //Traverse an obj file and write down in a boolean vector if it contains [v,f,n,t].
-bvec traverseobj(const char *path)
+bvec checkobj(const char *path)
 {
     std::ifstream file(path);
     if (!file.is_open())
