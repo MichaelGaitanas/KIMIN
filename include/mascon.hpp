@@ -128,41 +128,4 @@ dtens masc_integrals(const double M, const dmatnx3 &masc, const int ord)
     return J;
 }
 
-//Generate the Stokes coefficient matrices C[n][m], S[n][m] of a mascon distribution with constant density.
-//If supernormalized = true, then stage 2 normalization (i.e. supernormalization) will be applied to C[n][m] and S[n][m].
-//Else only stage 1 normalization will be applied to C[n][m] and S[n][m].
-void masc_stokes(dmat &C, dmat &S, const double M, const dmatnx3 &masc, const double R0, const int ord, bool supernormalized = true)
-{
-    double mass = (double)M/masc.size(); //mass of each mascon
-    C.clear();
-    S.clear();
-    for (int n = 0; n < ord + 1; ++n)
-    {
-        C.push_back(dvec{});
-        S.push_back(dvec{});
-        for (int m = 0; m < n + 1; ++m)
-        {
-            C[n].push_back(0.0);
-            S[n].push_back(0.0);
-
-            double normcoeff;
-            if (supernormalized)
-                normcoeff = sqrt( factorial(n+m)/((2.0 - kronecker(0,m))*(2.0*n + 1.0)*factorial(n-m)) );
-            else
-                normcoeff = 1.0;
-            double auxcoeff = (2.0 - kronecker(0,m))*factorial(n-m)/factorial(n+m)/M;
-            
-            for (int i = 0; i < masc.size(); ++i)
-            {
-                dvec3 spher = cart2spher(masc[i]);
-                double r = spher[0], lon = spher[1], lat = spher[2];
-                C[n][m] += normcoeff*auxcoeff*mass*pow(r/R0, n)*std::assoc_legendre(n,m, cos(lat))*cos(m*lon);
-                S[n][m] += normcoeff*auxcoeff*mass*pow(r/R0, n)*std::assoc_legendre(n,m, cos(lat))*sin(m*lon);
-            }
-        }
-    }
-
-    return;
-}
-
 #endif

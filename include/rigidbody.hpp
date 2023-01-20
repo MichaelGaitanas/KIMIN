@@ -10,41 +10,6 @@
 #include"conversion.hpp"
 #include"potential.hpp"
 
-//Angle (roll, pitch, yaw) odes rhs (angular velocity w is in the body frame).
-//Careful with the (virtual) singularity when pitch = +- pi/2.
-dvec3 ang_rhs(const dvec3 &ang, const dvec3 &w)
-{
-    double roll = ang[0], pitch = ang[1];
-    double cr = cos(roll);
-    double sr = sin(roll);
-    double cp = cos(pitch);
-    double sp = sin(pitch);
-    double droll = w[0] + (w[1]*sr*sp + w[2]*sp*cr)/cp;
-    double dpitch = w[1]*cr - w[2]*sr;
-    double dyaw = (w[1]*sr + w[2]*cr)/cp;
-    return {droll, dpitch, dyaw};
-}
-
-//Rotation matrix odes rhs (angular velocity w is in the body frame).
-dmat3 mat_rhs(const dmat3 &A, const dvec3 &w)
-{
-    double da00 = w[2]*A[0][1] - w[1]*A[0][2];
-    double da01 = w[0]*A[0][2] - w[2]*A[0][0];
-    double da02 = w[1]*A[0][0] - w[0]*A[0][1];
-
-    double da10 = w[2]*A[1][1] - w[1]*A[1][2];
-    double da11 = w[0]*A[1][2] - w[2]*A[1][0];
-    double da12 = w[1]*A[1][0] - w[0]*A[1][1];
-
-    double da20 = w[2]*A[2][1] - w[1]*A[2][2];
-    double da21 = w[0]*A[2][2] - w[2]*A[2][0];
-    double da22 = w[1]*A[2][0] - w[0]*A[2][1];
-
-    return {{{da00,da01,da02},
-             {da10,da11,da12},
-             {da20,da21,da22}}};
-}
-
 //Quaternion odes rhs (angular velocity w is in the body frame).
 dvec4 quat_rhs(const dvec4 &q, const dvec3 &w)
 {
@@ -63,26 +28,6 @@ dvec3 euler_rhs(const dvec3 &w, const dmat3 &I, const dvec3 &tau)
     double dw1 = (tau[1] + w[2]*w[0]*(I[2][2] - I[0][0]))/I[1][1];
     double dw2 = (tau[2] + w[0]*w[1]*(I[0][0] - I[1][1]))/I[2][2];
     return {dw0, dw1, dw2};
-}
-
-//Euler odes rhs assuming a generic, non principal axes aligned body frame.
-//Angular velocity w, moment of inertia I and torque tau are in the body frame.
-dvec3 euler_rhs_gen(const dvec3 &w, const dmat3 &I, const dvec3 &tau)
-{
-    double I00 = I[0][0], I01 = I[0][1], I02 = I[0][2], I11 = I[1][1], I12 = I[1][2], I22 = I[2][2];
-
-    dmat3 Iinv; //inverse inertia matrix
-    Iinv[0][0] = (I12*I12  - I11*I22)/(I02*I02*I11 - 2.0*I01*I02*I12 + I00*I12*I12 + I01*I01*I22 - I00*I11*I22);
-    Iinv[0][1] = (-I02*I12 + I01*I22)/(I02*I02*I11 - 2.0*I01*I02*I12 + I01*I01*I22 + I00*(I12*I12 - I11*I22));
-    Iinv[0][2] = (I02*I11  - I01*I12)/(I02*I02*I11 - 2.0*I01*I02*I12 + I00*I12*I12 + I01*I01*I22 - I00*I11*I22);
-    Iinv[1][0] = (-I02*I12 + I01*I22)/(I02*I02*I11 - 2.0*I01*I02*I12 + I01*I01*I22 + I00*(I12*I12 - I11*I22));
-    Iinv[1][1] = (I02*I02  - I00*I22)/(I02*I02*I11 - 2.0*I01*I02*I12 + I00*I12*I12 + I01*I01*I22 - I00*I11*I22);
-    Iinv[1][2] = (-I01*I02 + I00*I12)/(I02*I02*I11 - 2.0*I01*I02*I12 + I01*I01*I22 + I00*(I12*I12 - I11*I22));
-    Iinv[2][0] = (I02*I11  - I01*I12)/(I02*I02*I11 - 2.0*I01*I02*I12 + I00*I12*I12 + I01*I01*I22 - I00*I11*I22);
-    Iinv[2][1] = (-I01*I02 + I00*I12)/(I02*I02*I11 - 2.0*I01*I02*I12 + I01*I01*I22 + I00*(I12*I12 - I11*I22));
-    Iinv[2][2] = (I01*I01  - I00*I11)/(I02*I02*I11 - 2.0*I01*I02*I12 + I00*I12*I12 + I01*I01*I22 - I00*I11*I22);
-     
-    return dot(-Iinv, tau - cross(w, dot(I,w)));
 }
 
 //Calculate the eigenvalues of the inertia matrix, assuming it is 3x3, real and symmetric.

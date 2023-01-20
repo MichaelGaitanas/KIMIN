@@ -12,7 +12,7 @@
 #include"../include/typedef.hpp"
 #include"../include/directory.hpp"
 #include"../include/logger.hpp"
-#include"../include/inputs.hpp"
+#include"../include/io.hpp"
 
 void raw_hardware_input(GLFWwindow *window)
 {
@@ -124,7 +124,7 @@ int main()
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(0);
-                    ImGui::InputDouble("", &ins.a1, 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("", &ins.semiaxes1[0], 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::SameLine();
@@ -134,7 +134,7 @@ int main()
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(1);
-                    ImGui::InputDouble("", &ins.b1, 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("", &ins.semiaxes1[1], 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::SameLine();
@@ -144,7 +144,7 @@ int main()
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(2);
-                    ImGui::InputDouble("", &ins.c1, 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("", &ins.semiaxes1[2], 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::SameLine();
@@ -156,7 +156,7 @@ int main()
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(3);
-                    ImGui::InputDouble("", &ins.a2, 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("", &ins.semiaxes2[0], 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::SameLine();
@@ -166,7 +166,7 @@ int main()
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(4);
-                    ImGui::InputDouble("", &ins.b2, 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("", &ins.semiaxes2[1], 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::SameLine();
@@ -176,7 +176,7 @@ int main()
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(5);
-                    ImGui::InputDouble("", &ins.c2, 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("", &ins.semiaxes2[2], 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::SameLine();
@@ -210,7 +210,6 @@ int main()
                 ins.obj_refer_to_body = 1;
             if (ImGui::RadioButton("Body 2", ins.obj_refer_to_body == 2))
                 ins.obj_refer_to_body = 2;
-
             
             if (ImGui::TreeNodeEx("Mascon models"))
             {
@@ -286,7 +285,7 @@ int main()
                     ImGui::SameLine();
                     ImGui::PushItemWidth(100.0f);
                         ImGui::PushID(6);
-                            ImGui::InputInt("", &ins.grid_reso_x_null);
+                            ImGui::InputInt("", &ins.grid_reso_null[0]);
                         ImGui::PopID();
                     ImGui::PopItemWidth();
                     ImGui::SameLine();
@@ -296,7 +295,7 @@ int main()
                     ImGui::SameLine();
                     ImGui::PushItemWidth(100.0f);
                         ImGui::PushID(7);
-                            ImGui::InputInt("", &ins.grid_reso_y_null);
+                            ImGui::InputInt("", &ins.grid_reso_null[1]);
                         ImGui::PopID();
                     ImGui::PopItemWidth();
                     ImGui::SameLine();
@@ -306,7 +305,7 @@ int main()
                     ImGui::SameLine();
                     ImGui::PushItemWidth(100.0f);
                         ImGui::PushID(8);
-                            ImGui::InputInt("", &ins.grid_reso_z_null);
+                            ImGui::InputInt("", &ins.grid_reso_null[2]);
                         ImGui::PopID();
                     ImGui::PopItemWidth();
                     ImGui::SameLine();
@@ -320,7 +319,7 @@ int main()
                 ImGui::SameLine();
                 ImGui::PushItemWidth(100.0f);
                     ImGui::PushID(9);
-                        ImGui::InputInt("", &ins.grid_reso_x1);
+                        ImGui::InputInt("", &ins.grid_reso1[0]);
                     ImGui::PopID();
                 ImGui::PopItemWidth();
                 ImGui::SameLine();
@@ -331,7 +330,7 @@ int main()
                 ImGui::SameLine();
                 ImGui::PushItemWidth(100.0f);
                     ImGui::PushID(10);
-                        ImGui::InputInt("", &ins.grid_reso_y1);
+                        ImGui::InputInt("", &ins.grid_reso1[1]);
                     ImGui::PopID();
                 ImGui::PopItemWidth();
                 ImGui::SameLine();
@@ -342,7 +341,7 @@ int main()
                 ImGui::SameLine();
                 ImGui::PushItemWidth(100.0f);
                     ImGui::PushID(11);
-                        ImGui::InputInt("", &ins.grid_reso_z1);
+                        ImGui::InputInt("", &ins.grid_reso1[2]);
                     ImGui::PopID();
                 ImGui::PopItemWidth();
                 ImGui::SameLine();
@@ -355,7 +354,7 @@ int main()
                 ImGui::SameLine();
                 ImGui::PushItemWidth(100.0f);
                     ImGui::PushID(12);
-                        ImGui::InputInt("", &ins.grid_reso_x2);
+                        ImGui::InputInt("", &ins.grid_reso2[0]);
                     ImGui::PopID();
                 ImGui::PopItemWidth();
                 ImGui::SameLine();
@@ -366,7 +365,7 @@ int main()
                 ImGui::SameLine();
                 ImGui::PushItemWidth(100.0f);
                     ImGui::PushID(13);
-                        ImGui::InputInt("", &ins.grid_reso_y2);
+                        ImGui::InputInt("", &ins.grid_reso2[1]);
                     ImGui::PopID();
                 ImGui::PopItemWidth();
                 ImGui::SameLine();
@@ -377,7 +376,7 @@ int main()
                 ImGui::SameLine();
                 ImGui::PushItemWidth(100.0f);
                     ImGui::PushID(14);
-                        ImGui::InputInt("", &ins.grid_reso_z2);
+                        ImGui::InputInt("", &ins.grid_reso2[2]);
                     ImGui::PopID();
                 ImGui::PopItemWidth();
                 ImGui::SameLine();
@@ -1022,7 +1021,7 @@ int main()
         ImGui::SetNextWindowPos(ImVec2(win_width - win_width/7.0f, 0.0f), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(win_width/7.0f, win_height), ImGuiCond_FirstUseEver);
         ImGui::Begin("Graphics", NULL);
-        ImGui::Text("Content...");
+        ImGui::Text("Content to be added...");
         ImGui::End();
 
         ImGui::Render();

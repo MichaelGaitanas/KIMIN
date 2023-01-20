@@ -5,6 +5,7 @@
 
 #include<cstdio>
 #include<cstdarg>
+
 #include"directory.hpp"
 
 //KIMIN's log window
@@ -39,7 +40,7 @@ public:
         ImGui::SetNextWindowSize(ImVec2(win_width - 2*win_width/7.0f, win_height/7.0f), ImGuiCond_FirstUseEver);
         ImGui::Begin(title, popened);
 
-        // field : clear the log
+        //mouse input : clear the log
         if (ImGui::Button("Clear "))
             cls();
         

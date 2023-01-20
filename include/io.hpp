@@ -1,18 +1,21 @@
-#ifndef INPUTS_HPP
-#define INPUTS_HPP
+#ifndef IO_HPP
+#define IO_HPP
 
 #include<cstdio>
 #include<cmath>
-//#include<boost/numeric/odeint.hpp>
 
 #include"typedef.hpp"
 #include"constant.hpp"
 #include"ellipsoid.hpp"
-#include"loader.hpp"
+#include"obj.hpp"
 #include"polyhedron.hpp"
 #include"mascon.hpp"
 #include"conversion.hpp"
+#include"force.hpp"
+#include"torque.hpp"
+#include"rigidbody.hpp"
 
+//#include<boost/numeric/odeint.hpp>
 //typedef boost::array<double, 20> boostvec20;
 //typedef boost::numeric::odeint::runge_kutta_fehlberg78<boostvec20> rkf78;
 
@@ -20,7 +23,7 @@ class inputs
 {
 public:
 
-    //Enable the close button on the root window. Once it is clicked, the game loop terminates.
+    //Enable the close button on the root imgui window (not the glfw one). Once it is clicked, the game loop terminates.
     bool xclose = true;
 
     //'Simulation name' field. 50 characters available (plus the '\0' character)
@@ -31,9 +34,9 @@ public:
     //Ellipsoids 'OK' button state (from the submenu)
     bool clicked_ell_ok = false;
 
-    //Ellipsoids ['a1', 'b1', 'c1'], ['a2', 'b2', 'c2'] fields.
-    double a1 = 0.0, b1 = 0.0, c1 = 0.0;
-    double a2 = 0.0, b2 = 0.0, c2 = 0.0;
+    //Ellipsoids {'a1', 'b1', 'c1'}, {'a2', 'b2', 'c2'} fields.
+    dvec3 semiaxes1 = {0.0,0.0,0.0};
+    dvec3 semiaxes2 = {0.0,0.0,0.0};
 
     //'.obj files' checkbox state
     bool obj_checkbox = false;
@@ -48,11 +51,12 @@ public:
     bool clicked_poly1 = false, clicked_poly2 = false;
     //Relative path to the 2 .obj models.
     str obj_path1 = "", obj_path2 = "";
+    //fundamental contents of the 2 .obj files
     bvec vfnt1 = {false, false, false, false}, vfnt2 = {false, false, false, false};
     //Cartesian grid resolutions (per axis) for filling the polyhedra with mascons.
-    int grid_reso_x1 = 2, grid_reso_y1 = 2, grid_reso_z1 = 2;
-    int grid_reso_x2 = 2, grid_reso_y2 = 2, grid_reso_z2 = 2;
-    int grid_reso_x_null = 0, grid_reso_y_null = 0, grid_reso_z_null = 0;
+    ivec3 grid_reso1 = {2,2,2};
+    ivec3 grid_reso2 = {2,2,2};
+    ivec3 grid_reso_null {0,0,0};
     //.obj 'OK' button state
     bool clicked_obj_ok = false;
 
@@ -74,12 +78,10 @@ public:
     int cart_kep_var_choice = 0;
 
     //'x', 'y', 'z', 'vx', 'vy', 'vz' fields.
-    double relx = 0.0, rely = 0.0, relz = 0.0;
-    double relvx = 0.0, relvy = 0.0, relvz = 0.0;
+    dvec6 relcart = {0.0,0.0,0.0, 0.0,0.0,0.0};
 
     //'a', 'e', 'i', 'RAAN', 'w', 'M' fields.
-    double rela = 0.0, rele = 0.0, reli = 0.0;
-    double relraan = 0.0, relw = 0.0, relM = 0.0;
+    dvec6 relkep = {0.0,0.0,0.0,0.0,0.0,0.0};
 
     //Nature of the orientation variables.
     const char *orient_var[2] = {"Euler angles ", "Quaternions "};
@@ -87,25 +89,25 @@ public:
     int orient_var_choice = 0;
 
     //'roll 1', 'pitch 1', 'yaw 1', 'roll 2', 'pitch 2', 'yaw 2' fields.
-    double roll1 = 0.0, pitch1 = 0.0, yaw1 = 0.0;
-    double roll2 = 0.0, pitch2 = 0.0, yaw2 = 0.0;
+    dvec3 rpy1 = {0.0,0.0,0.0};
+    dvec3 rpy2 = {0.0,0.0,0.0};
 
     //'q1 0', 'q1 1', 'q1 2', 'q1 3', 'q2 0', 'q2 1', 'q2 2', 'q2 3' fields.
-    double q10 = 1.0, q11 = 0.0, q12 = 0.0, q13 = 0.0;
-    double q20 = 1.0, q21 = 0.0, q22 = 0.0, q23 = 0.0;
+    dvec4 q1 = {1.0,0.0,0.0,0.0};
+    dvec4 q2 = {1.0,0.0,0.0,0.0};
 
     //Nature of frames.
     const char *frame_type[2] = {"Inertial frame", "Body frames"};
     //Initial choice. 0 -> Inertial frame, 1 -> Body frames.
     int frame_type_choice = 0;
 
-    //'w1 x', 'w1 y', 'w1 z', 'w2 x', 'w2 y, 'w2 z' fields.
-    double w1x = 0.0, w1y = 0.0, w1z = 0.0;
-    double w2x = 0.0, w2y = 0.0, w2z = 0.0;
+    //'w1x', 'w1y', 'w1z', 'w2x', 'w2y, 'w2z' fields.
+    dvec3 w1i = {0.0,0.0,0.0};
+    dvec3 w2i = {0.0,0.0,0.0};
 
-    //'w1 1', 'w1 2', 'w1 3', 'w2 1', 'w2 2, 'w2 3' fields.
-    double w11 = 0.0, w12 = 0.0, w13 = 0.0;
-    double w21 = 0.0, w22 = 0.0, w23 = 0.0;
+    //'w11', 'w12', 'w13', 'w21', 'w22, 'w23' fields.
+    dvec3 w1b = {0.0,0.0,0.0};
+    dvec3 w2b = {0.0,0.0,0.0};
 
     //Integration method
     const char *integ_method[4] = {"Runge-Kutta-Fehlberg 78 ", "Bulirsch-Stoer", "Dormand-Prince 5 ", "Runge-Kutta 4 (explicit)"};
@@ -132,6 +134,15 @@ public:
 
     //'Run' button state
     bool clicked_run = false;
+
+    ////////////////////////////////////////////////////////////////////////////////////////////
+
+    dmatnx3 masc1, masc2; //mascon coordinates
+    dtens J1, J2; //inertial integral tensors
+    dmat3 I1, I2; //moments of inertia
+    dmat sol;
+
+    ////////////////////////////////////////////////////////////////////////////////////////////
 
     //If all inputs are valid, this member function returns an entirely empty vector of strings.
     //Otherwise the returned vector contains string messages, each corresponding to an invalid input. In this case,
@@ -162,11 +173,11 @@ public:
         }
 
         //Ellipsoids semiaxes error (all semiaxes must be > 0.0).
-        if (ell_checkbox && (a1 <= 0.0 || b1 <= 0.0 || c1 <= 0.0))
+        if (ell_checkbox && (semiaxes1[0] <= 0.0 || semiaxes1[1] <= 0.0 || semiaxes1[2] <= 0.0))
         {
             errors.push_back("[Error] :  'a1', 'b1', 'c1' must be positive numbers.");
         }
-        if (ell_checkbox && (a2 <= 0.0 || b2 <= 0.0 || b2 <= 0.0))
+        if (ell_checkbox && (semiaxes2[0] <= 0.0 || semiaxes2[1] <= 0.0 || semiaxes2[2] <= 0.0))
         {
             errors.push_back("[Error] :  'a2', 'b2', 'c2' must be positive numbers.");
         }
@@ -195,7 +206,7 @@ public:
         if(obj_checkbox && clicked_masc2_index != -1)
         {
             vfnt2 = checkobj(obj_path2.c_str());
-            if (!vfnt2[0]) //no vertices were found in body1
+            if (!vfnt2[0]) //no vertices were found in body2
             {
                 errors.push_back("[Error] : In 'Body 2' .obj file, no vertices were found in order to be assumed as mascons.");
             }
@@ -213,7 +224,7 @@ public:
         }
         if (obj_checkbox && clicked_poly2)
         {
-            vfnt1 = checkobj(obj_path2.c_str());
+            vfnt2 = checkobj(obj_path2.c_str());
             if ( !(vfnt2[0] && vfnt2[1]) )
             {
                 errors.push_back("[Error] :  In 'Body 2' .obj file, at least vertices and faces lines must be present.");
@@ -221,11 +232,11 @@ public:
         }
 
         //raycast grid error (in order to successfully fill the polyhedron with mascons, the grid resolution must be > 1 per axis)
-        if (obj_checkbox && clicked_poly1 && (grid_reso_x1 <= 1 || grid_reso_y1 <= 1 || grid_reso_z1 <= 1))
+        if (obj_checkbox && clicked_poly1 && (grid_reso1[0] <= 1 || grid_reso1[1] <= 1 || grid_reso1[2] <= 1))
         {
             errors.push_back("[Error] :  Invalid 'x axis', 'y axis', 'z axis' resolution for 'Body 1'.");
         }
-        if (obj_checkbox && clicked_poly2 && (grid_reso_x2 <= 1 || grid_reso_y2 <= 1 || grid_reso_z2 <= 1))
+        if (obj_checkbox && clicked_poly2 && (grid_reso2[0] <= 1 || grid_reso2[1] <= 1 || grid_reso2[2] <= 1))
         {
             errors.push_back("[Error] :  Invalid 'x axis', 'y axis', 'z axis' resolution for 'Body 2'.");
         }
@@ -259,29 +270,32 @@ public:
         }
 
         //Quaternion errors (zero quaternion). In case of non normalized quaternions, the program does it automatically.
-        double normq1 = sqrt(q10*q10 + q11*q11 + q12*q12 + q13*q13);
-        double normq2 = sqrt(q20*q20 + q21*q21 + q22*q22 + q23*q23);
-        if (normq1 <= machine_zero)
+        if (orient_var_choice == 1) //that is, if the user chose quaternions as orientation variables
         {
-            errors.push_back("[Error] :  Quaternion 1 ('q10', 'q11', 'q12', 'q13') must be nonzero.");
-        }
-        else
-        {
-            q10 /= normq1;
-            q11 /= normq1;
-            q12 /= normq1;
-            q13 /= normq1;
-        }
-        if (normq2 <= machine_zero)
-        {
-            errors.push_back("[Error] :  Quaternion 2 ('q20', 'q21', 'q22', 'q23') must be nonzero.");
-        }
-        else
-        {
-            q20 /= normq2;
-            q21 /= normq2;
-            q22 /= normq2;
-            q23 /= normq2;
+            double normq1 = sqrt(q10*q10 + q11*q11 + q12*q12 + q13*q13);
+            double normq2 = sqrt(q20*q20 + q21*q21 + q22*q22 + q23*q23);
+            if (normq1 <= machine_zero)
+            {
+                errors.push_back("[Error] :  Quaternion 1 ('q10', 'q11', 'q12', 'q13') must be nonzero.");
+            }
+            else
+            {
+                q10 /= normq1;
+                q11 /= normq1;
+                q12 /= normq1;
+                q13 /= normq1;
+            }
+            if (normq2 <= machine_zero)
+            {
+                errors.push_back("[Error] :  Quaternion 2 ('q20', 'q21', 'q22', 'q23') must be nonzero.");
+            }
+            else
+            {
+                q20 /= normq2;
+                q21 /= normq2;
+                q22 /= normq2;
+                q23 /= normq2;
+            }
         }
 
         //Tolerance error (less than zero).
@@ -294,16 +308,13 @@ public:
     }
 
     //This member function decides what type of simulation the user intends to run. As a result, it sets up all
-    //necessary variables needed for that very simulation. Next, it propagates the state vector (integrates the odes) in time
+    //necessary parameters-variables needed for that very simulation. Next, it propagates the state vector (integrates the odes) in time
     //and ultimately constructs the final outputs object (class) of the simulation.
-    outputs propagate()
+    /*
+    void setup_params()
     {
         //semiaxes of the ellipsoids (IF ellipsoidal geometries are selected)
         dvec3 semiaxes1, semiaxes2;
-        //mascon coordinates (IF .obj geometries are selected)
-        dmatnx3 masc1, masc2;
-        //inertial integrals tensors (IF analytic expansions are selected)
-        dtens J1, J2;
 
         dmatnx3 verts1;
         imatnx3 faces1nx3; //for the vf case
@@ -327,21 +338,29 @@ public:
             {
                 J1 = ell_integrals(M1, semiaxes1, 2);
                 J2 = ell_integrals(M2, semiaxes2, 2);
+                I1 = ell_inertia(M1, semiaxes1);
+                I1 = ell_inertia(M2, semiaxes2);
             }
             else if (ord3_checkbox)
             {
                 J1 = ell_integrals(M1, semiaxes1, 3);
                 J2 = ell_integrals(M2, semiaxes2, 3);
+                I1 = ell_inertia(M1, semiaxes1);
+                I1 = ell_inertia(M2, semiaxes2);
             }
             else if (ord4_checkbox)
             {
                 J1 = ell_integrals(M1, semiaxes1, 4);
                 J2 = ell_integrals(M2, semiaxes2, 4);
+                I1 = ell_inertia(M1, semiaxes1);
+                I1 = ell_inertia(M2, semiaxes2);
             }
             else
             {
                 masc1 = fill_ell_with_masc(semiaxes1, ivec3{grid_reso_x1, grid_reso_y1, grid_reso_z1});
                 masc2 = fill_ell_with_masc(semiaxes2, ivec3{grid_reso_x2, grid_reso_y2, grid_reso_z2});
+                I1 = masc_inertia(M1, masc1);
+                I1 = masc_inertia(M2, masc2);
             }
             //hence, assuming ellipsoidal geometries, all theories (expansion & mascons) have the necessary parameters for the propagation
         }
@@ -383,7 +402,7 @@ public:
                     }
                 }
                 masc1 = fill_poly_with_masc(verts1,faces1nx3, ivec3{10,10,10});
-                correct_masc_com(masc1);
+                //correct_masc_com(masc1);
                 //correct_masc_inertia(M1, masc1);
             }
             //body 2
@@ -422,23 +441,29 @@ public:
                     }
                 }
                 masc2 = fill_poly_with_masc(verts2,faces2nx3, ivec3{10,10,10});
-                correct_masc_com(masc2);
+                //correct_masc_com(masc2);
                 //correct_masc_inertia(M2, masc2);
             }
             if (ord2_checkbox)
             {
                 J1 = masc_integrals(M1, masc1, 2);
                 J2 = masc_integrals(M2, masc2, 2);
+                I1 = masc_inertia(M1, masc1);
+                I2 = masc_inertia(M2, masc2);
             }
             else if (ord3_checkbox)
             {
                 J1 = masc_integrals(M1, masc1, 3);
                 J2 = masc_integrals(M2, masc2, 3);
+                I1 = masc_inertia(M1, masc1);
+                I2 = masc_inertia(M2, masc2);
             }
             else if (ord4_checkbox)
             {
                 J1 = masc_integrals(M1, masc1, 4);
                 J2 = masc_integrals(M2, masc2, 4);
+                I1 = masc_inertia(M1, masc1);
+                I2 = masc_inertia(M2, masc2);
             }
             //hence, assuming .obj geometries, all theories (expansion & mascons) have the necessary parameters for the propagation
         }
@@ -452,84 +477,165 @@ public:
         else //the user chose Keplerian
         {
             //transform the Keplerian to Cartesian because the f2bp propagator is written in Cartesian elements
-            cart = kep2cart(dvec6{rela,rele,reli,relraan,relw,relM}, G*(M1 + M2))
+            cart = kep2cart(dvec6{rela,rele,reli,relraan,relw,relM}, G*(M1 + M2));
         }
 
-
-
-        //another one for orientations
-        dvec4 q1  = {q10, q11, q12, q13};
-        dvec4 q2  = {q20, q21, q22, q23};
-
-        //and a final one for the nature of the frames (inertial/body)
-        if (frame_type_choice == 0)
+        dvec4 q1,q2;
+        if (orient_var_choice == 1)
         {
-            dvec3 w1i = {w1x, w1y, w1z};
-            dvec3 w2i = {w2x, w2y, w2z};
-            dvec3 w1b = iner2body(w1i, quat2mat(quat2unit(q1)));
-            dvec3 w2b = iner2body(w2i, quat2mat(quat2unit(q2)));
+            q1 = {q10, q11, q12, q13};
+            q2 = {q20, q21, q22, q23};
         }
-        else
+        else //orientation variables were chosen to be Euler angles
         {
-            dvec3 w1b = {w11, w12, w13};
-            dvec3 w2b = {w21, w22, w23};
+            q1 = ang2quat(dvec3{roll1,pitch1,yaw1});
+            q2 = ang2quat(dvec3{roll2,pitch2,yaw2});
         }
 
-        //state vector
-        boostvec20 state = {   r[0],    r[1],    r[2],
-                               v[0],    v[1],    v[2],
-                              q1[0],   q1[1],   q1[2], q1[3],
-                             w1b[0],  w1b[1],  w1b[2],
-                              q2[0],   q2[1],   q2[2], q2[3],
-                             w2b[0],  w2b[1],  w2b[2] };
+        dvec3 w1i,w2i;
+        dvec3 w1b,w2b;
+        if (frame_type_choice == 0) //angular velocities were given in the "world" inertial frame
+        {
+            w1b = iner2body(dvec3{w1x, w1y, w1z}, quat2mat(q1));
+            w2b = iner2body(dvec3{w2x, w2y, w2z}, quat2mat(q2));
+        }
+        else //angular velocities were given in the corresponding body frames and need no transformations
+        {
+            w1b = {w11, w12, w13};
+            w2b = {w21, w22, w23};
+        }
+
+        //now everything is ready for the actual propagation
+
+        //current state vector (ic)
+        boostvec20 state = { cart[0], cart[1], cart[2],
+                             cart[3], cart[4], cart[5],
+                               q1[0],   q1[1],   q1[2], q1[3],
+                              w1b[0],  w1b[1],  w1b[2],
+                               q2[0],   q2[1],   q2[2], q2[3],
+                              w2b[0],  w2b[1],  w2b[2] };
         
+        sol.clear();
         unsigned steps = integrate_adaptive(make_controlled(tol, tol, rkf78()), odes, state, epoch, dur, step, observe);
 
-        return outs;
+        //bool madedir = std::filesystem::create_directory(simname);
+        //printf("%s\n",std::filesystem::current_path(std::filesystem::temp_directory_path()));
+
+        return;
     }
+    */
+
+    /*
+    void observe(const boostvec20 &state, const double t)
+    {
+        sol.push_back({t,
+                    state[0],
+                    state[1],
+                    state[2],
+                    state[3],
+                    state[4],
+                    state[5],
+                    state[6],
+                    state[7],
+                    state[8],
+                    state[9],
+                    state[10],
+                    state[11],
+                    state[12],
+                    state[13],
+                    state[14],
+                    state[15],
+                    state[16],
+                    state[17],
+                    state[18],
+                    state[19]});
+        return;
+    }
+    */
+
+    /*
+    void odes(const boostvec20 &state, boostvec20 &dstate, double t)
+    {
+        dvec3 r  =  { state[0],  state[1],  state[2] };
+        dvec3 v  =  { state[3],  state[4],  state[5] };
+        dvec4 q1 =  { state[6],  state[7],  state[8],  state[9] };
+        dvec3 w1b = { state[10], state[11], state[12] };
+        dvec4 q2 =  { state[13], state[14], state[15], state[16] };
+        dvec3 w2b = { state[17], state[18], state[19] };
+
+        q1 = quat2unit(q1);
+        q2 = quat2unit(q2);
+
+        dmat3 A1 = quat2mat(q1);
+        dmat3 A2 = quat2mat(q2);
+
+        dvec3 force = mut_force_integrals_ord2(r, M1,J1,A1, M2,J2,A2);
+
+        dvec3 tau1i = mut_torque_integrals_ord2(r, J1,A1, M2);
+        dvec3 tau2i = -tau1i - cross(r,force);
+
+        dvec3 tau1b = iner2body(tau1i,A1);
+        dvec3 tau2b = iner2body(tau2i,A2);
+
+        dvec4 dq1 = quat_rhs(q1,w1b);
+        dvec3 dw1b = euler_rhs(w1b,I1,tau1b);
+
+        dvec4 dq2 = quat_rhs(q2,w2b);
+        dvec3 dw2b = euler_rhs(w2b,I2,tau2b);
+
+        //relative position rhs (x,y,z)
+        dstate[0] = v[0];
+        dstate[1] = v[1];
+        dstate[2] = v[2];
+
+        //relative velocity rhs (vx,vy,vz)
+        dstate[3] = force[0]/(M1*M2/(M1+M2));
+        dstate[4] = force[1]/(M1*M2/(M1+M2));
+        dstate[5] = force[2]/(M1*M2/(M1+M2));
+
+        //quaternion rhs of rigid body 1 (q10,q11,q12,q13)
+        dstate[6] = dq1[0];
+        dstate[7] = dq1[1];
+        dstate[8] = dq1[2];
+        dstate[9] = dq1[3];
+
+        //Euler rhs of rigid body 1 (w11,w12,w13)
+        dstate[10] = dw1b[0];
+        dstate[11] = dw1b[1];
+        dstate[12] = dw1b[2];
+
+        //quaternion odes of rigid body 2 (q20,q21,q22,q23)
+        dstate[13] = dq2[0];
+        dstate[14] = dq2[1];
+        dstate[15] = dq2[2];
+        dstate[16] = dq2[3];
+
+        //Euler rhs of rigid body 2 (w21,w22,w23)
+        dstate[17] = dw2b[0];
+        dstate[18] = dw2b[1];
+        dstate[19] = dw2b[2];
+
+        return;
+    }
+    */
+
+
+
+    
 };
 
 /*
-int main()
+class ouputs
 {
-    M1 = 5.320591856403073e11; //[kg]
-    M2 = 4.940814359692687e9; //[kg]
-    t0 = 0.0; //[sec]
-    tmax = 30.0*86400.0; //[sec]
-    print_step = 2.0*60.0; //[sec]
-    dvec3 r   = {1.19, 0.0, 0.0}; //[km]
-    dvec3 v   = {0.0, 0.00017421523858789, 0.0}; //[km/sec]
-    dvec4 q1  = {1.0, 0.0, 0.0, 0.0}; //[ ]
-    dvec3 w1i = {0.0, 0.0, 0.000772269580528465}; //[rad/sec]
-    dvec4 q2  = {1.0, 0.0, 0.0, 0.0}; // [ ]
-    dvec3 w2i = {0.0, 0.0, 0.000146399360157891}; //[rad/sec]
+public:
 
-    dmatnx3 masc1 = loadobjv("../../resources/obj/v/didymain2019_1229_shift_rot.obj");
-    dmatnx3 masc2 = loadobjv("../../resources/obj/v/dimorphos_ellipsoid_515_shift_rot.obj");
+    //here go the solution matrices
 
-    m = M1*M2/(M1 + M2);
-    I1 = masc_inertia(M1, masc1);
-    J1 = masc_integrals(M1, masc1, 3);
-    I2 = masc_inertia(M2, masc2);
-    J2 = masc_integrals(M2, masc2, 3);
-    dvec3 w1b = iner2body(w1i, quat2mat(quat2unit(q1)));
-    dvec3 w2b = iner2body(w2i, quat2mat(quat2unit(q2)));
+    void export_in_dir()
+    {
 
-    //initial conditions
-    bvec20 state = {   r[0],    r[1],    r[2],
-                       v[0],    v[1],    v[2],
-                      q1[0],   q1[1],   q1[2], q1[3],
-                     w1b[0],  w1b[1],  w1b[2],
-                      q2[0],   q2[1],   q2[2], q2[3],
-                     w2b[0],  w2b[1],  w2b[2] };
-    
-    //solve the odes
-    unsigned steps = integrate_adaptive(make_controlled(1e-13, 1e-13, rkf78()), odes, state, t0, tmax, print_step, observe);
-
-    export in files
-
-    return 0;
-}
+    }
+};
 */
 
 #endif
