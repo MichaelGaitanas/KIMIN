@@ -21,7 +21,7 @@ str os_name()
 
 //This function receives as input a path to a directory and as a result it returns a vector of paths, corresponding
 //to all the files (even child directories) found inside 'path/'
-std::vector<std::filesystem::path> lsobj(const char *path)
+std::vector<std::filesystem::path> lsfiles(const char *path)
 {
     std::vector<std::filesystem::path> paths; 
     for (const auto &entry : std::filesystem::recursive_directory_iterator(path))
