@@ -8,6 +8,8 @@
 
 str os_name()
 {
+    //Remember #ifdef and #endif instead of #if and #elif.
+
     #if __APPLE__ || __MACH__
         return "Mac OSX";
     #elif __linux__ || __unix || __unix__ || __FreeBSD__
@@ -18,6 +20,26 @@ str os_name()
         return "Unknown OS";
     #endif
 }
+
+/*
+Not tested yet. Don't trust it.
+str compiler_name()
+{
+    #if _MSVC_LANG
+        return "MSVC";
+    #elif __MINGW32__
+        return "MINGW 32";
+    #elif __MINGW64__
+        return "MINGW 64";
+    #elif __GNUC__
+        return "GNU C";
+    #elif __clang_version__
+        return "CLANG";
+    #else
+        return "Unknown compiler";
+    #endif
+}
+*/
 
 //This function receives as input a path to a directory and as a result it returns a vector of paths, corresponding
 //to all the files (even child directories) found inside 'path/'

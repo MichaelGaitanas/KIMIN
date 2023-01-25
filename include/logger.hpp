@@ -32,7 +32,7 @@ public:
     }
 
     //Render the log imgui window on top (actually as part) of the glfw window.
-    void draw(const char *title, bool *popened = NULL, float monitor_width = 1.0f, float monitor_height = 1.0f, str vendor = "", str renderer = "", str version = "")
+    void draw(const char *title, bool *popened = NULL, str vendor = "", str renderer = "", str version = "")
     {
         const float win_width  = ImGui::GetIO().DisplaySize.x;
         const float win_height = ImGui::GetIO().DisplaySize.y;

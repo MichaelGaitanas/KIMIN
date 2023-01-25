@@ -1,18 +1,19 @@
-#ifndef WINDOW_HPP
-#define WINDOW_HPP
+#ifndef GLFW_HPP
+#define GLFW_HPP
 
 #include<GL/glew.h>
 #include<GLFW/glfw3.h>
 
 #include<cstdio>
 
-class window
+class glfw
 {
 public:
-    GLFWwindow *pointer;
-    const GLFWvidmode *mode;
+    GLFWwindow *pointer; //unique pointer
+    const GLFWvidmode *mode; //this concerns the monitor
 
-    window()
+    //Costructor to run once a glfw (window) object is instantiated.
+    glfw()
     {
         glfwInit();
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -65,7 +66,8 @@ public:
         glfwSetFramebufferSizeCallback(pointer, framebuffer_size_callback);
     }
 
-    ~window()
+    //Destructor.
+    ~glfw()
     {
         glfwTerminate();
     }
