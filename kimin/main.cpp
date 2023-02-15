@@ -1,32 +1,33 @@
 #include<cstdio>
 #include<cmath>
 
-#include"../include/typedef.hpp"
+#include<GL/glew.h>
+#include<GLFW/glfw3.h>
+
 #include"../include/glfw.hpp"
 #include"../include/gui.hpp"
-#include"../include/directory.hpp"
 #include"../include/logger.hpp"
 #include"../include/io.hpp"
 
 int main()
 {
-    glfw window;
-    window.add_key_callback();
-    window.add_framebuffer_size_callback();
+    glfw win;
+    win.add_key_callback();
+    win.add_framebuffer_size_callback();
 
     gui::create_imgui_context(); //static member function
-    gui ui(window.pointer);
+    gui ui(win.pointer);
 
     inputs ins;
     logger lg;
 
     glClearColor(0.0f,0.0f,0.0f,1.0f);
-    while (!glfwWindowShouldClose(window.pointer))
+    while (!glfwWindowShouldClose(win.pointer))
     {
         glClear(GL_COLOR_BUFFER_BIT);
 
         ui.new_frame();
-        ui.left_panel(ins, window.pointer);
+        ui.left_panel(ins, win.pointer);
 
         if (ins.clicked_run)
         {
@@ -36,11 +37,15 @@ int main()
                 lg.add("Running physics...  ");
                 ins.propagate();
                 lg.add("Done."); lg.add("\n");
+                //ins.export_files();
             }
             else
             {
                 for (int i = 0; i < errors.size(); ++i)
-                    lg.add(errors[i].c_str()); lg.add("\n");
+                {
+                    lg.add(errors[i].c_str());
+                    lg.add("\n");
+                }
                 lg.add("\n");
             }
             
@@ -49,11 +54,11 @@ int main()
 
         ins.clicked_run = false;
 
-        //ui.bottom_panel(ins, window.pointer);
         ui.right_panel();
+        
         ui.render();
 
-        glfwSwapBuffers(window.pointer);
+        glfwSwapBuffers(win.pointer);
         glfwPollEvents();
     }
 

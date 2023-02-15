@@ -104,5 +104,12 @@ dmat3 inertia_eigvecs(const dmat3 &I, bool normalized = true)
              {v1[0],v1[1],v1[2]},
              {v2[0],v2[1],v2[2]}}};
 }
+//Sphere-sphere collision detection criterion. 
+bool sph_sph_collision(const double dist, const double R1, const double R2)
+{
+    if (dist <= R1 + R2)
+        return true;
+    return false;
+}
 
 #endif

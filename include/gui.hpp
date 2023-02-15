@@ -447,7 +447,7 @@ public:
         ImGui::SameLine();
         ImGui::PushItemWidth(100.0f);
             ImGui::PushID(19);
-                ImGui::InputDouble("", &ins.step, 0.0, 0.0,"%.5lf");
+                ImGui::InputDouble("", &ins.step, 0.0, 0.0,"%.9lf");
             ImGui::PopID();
         ImGui::PopItemWidth();
         ImGui::SameLine();
@@ -472,7 +472,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(21);
-                    ImGui::InputDouble("", &ins.relcart[0], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("", &ins.relcart[0], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::SameLine();
@@ -483,7 +483,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(22);
-                    ImGui::InputDouble("", &ins.relcart[1], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("", &ins.relcart[1], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::SameLine();
@@ -494,7 +494,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(23);
-                    ImGui::InputDouble("", &ins.relcart[2], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("", &ins.relcart[2], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::SameLine();
@@ -505,7 +505,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(24);
-                    ImGui::InputDouble("", &ins.relcart[3], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("", &ins.relcart[3], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::SameLine();
@@ -516,7 +516,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(25);
-                    ImGui::InputDouble("", &ins.relcart[4], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("", &ins.relcart[4], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::SameLine();
@@ -527,7 +527,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(26);
-                    ImGui::InputDouble("", &ins.relcart[5], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("", &ins.relcart[5], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::SameLine();
@@ -540,7 +540,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(27);
-                    ImGui::InputDouble("", &ins.relkep[0], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("", &ins.relkep[0], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::SameLine();
@@ -551,7 +551,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(28);
-                    ImGui::InputDouble("", &ins.relkep[1], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("", &ins.relkep[1], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::SameLine();
@@ -562,7 +562,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(29);
-                    ImGui::InputDouble("", &ins.relkep[2], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("", &ins.relkep[2], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::SameLine();
@@ -573,7 +573,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(30);
-                    ImGui::InputDouble("", &ins.relkep[3], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("", &ins.relkep[3], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::SameLine();
@@ -584,7 +584,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(31);
-                    ImGui::InputDouble("", &ins.relkep[4], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("", &ins.relkep[4], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::SameLine();
@@ -595,7 +595,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(32);
-                    ImGui::InputDouble("", &ins.relkep[5], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("", &ins.relkep[5], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::SameLine();
@@ -786,7 +786,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(49);
-                    ImGui::InputDouble("", &ins.w1i[0], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("", &ins.w1i[0], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::SameLine();
@@ -797,7 +797,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(50);
-                    ImGui::InputDouble("", &ins.w1i[1], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("", &ins.w1i[1], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::SameLine();
@@ -808,7 +808,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(51);
-                    ImGui::InputDouble("", &ins.w1i[2], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("", &ins.w1i[2], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::SameLine();
@@ -819,7 +819,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(52);
-                    ImGui::InputDouble("", &ins.w2i[0], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("", &ins.w2i[0], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::SameLine();
@@ -830,7 +830,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(53);
-                    ImGui::InputDouble("", &ins.w2i[1], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("", &ins.w2i[1], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::SameLine();
@@ -841,7 +841,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(54);
-                    ImGui::InputDouble("", &ins.w2i[2], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("", &ins.w2i[2], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::SameLine();
@@ -855,7 +855,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(55);
-                    ImGui::InputDouble("", &ins.w1b[0], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("", &ins.w1b[0], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::SameLine();
@@ -866,7 +866,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(56);
-                    ImGui::InputDouble("", &ins.w1b[1], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("", &ins.w1b[1], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::SameLine();
@@ -877,7 +877,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(57);
-                    ImGui::InputDouble("", &ins.w1b[2], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("", &ins.w1b[2], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::SameLine();
@@ -888,7 +888,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(58);
-                    ImGui::InputDouble("", &ins.w2b[0], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("", &ins.w2b[0], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::SameLine();
@@ -899,7 +899,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(59);
-                    ImGui::InputDouble("", &ins.w2b[1], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("", &ins.w2b[1], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::SameLine();
@@ -910,7 +910,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(60);
-                    ImGui::InputDouble("", &ins.w2b[2], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("", &ins.w2b[2], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::SameLine();
@@ -938,10 +938,6 @@ public:
         ImGui::PopItemWidth();
         ImGui::Dummy(ImVec2(0.0f,15.0f));
 
-        //mouse input : whether to assume a collision detection criterion or not
-        ImGui::Checkbox("Detect binary collision", &ins.detect_binary_collision);
-        ImGui::Dummy(ImVec2(0.0f,15.0f));
-
         //mouse input : whether to render OpenGL video or not
         ImGui::Checkbox("Playback video", &ins.playback_video);
         ImGui::Dummy(ImVec2(0.0f,20.0f));
@@ -951,12 +947,6 @@ public:
             ins.clicked_run = true;
 
         ImGui::End();
-    }
-
-    //KIMIN's log gui panel (messages).
-    void bottom_panel()
-    {
-
     }
 
      //KIMIN's right gui panel (3D graphics controls during the video).

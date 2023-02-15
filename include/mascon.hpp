@@ -1,6 +1,8 @@
 #ifndef MASCON_HPP
 #define MASCON_HPP
 
+#include<cmath>
+
 #include"constant.hpp"
 #include"typedef.hpp"
 #include"linalg.hpp"

@@ -9,8 +9,10 @@
 class glfw
 {
 public:
-    GLFWwindow *pointer; //unique pointer
-    const GLFWvidmode *mode; //this concerns the monitor
+    GLFWwindow *pointer; //unique window pointer
+    const GLFWvidmode *mode; 
+    static int width, height; //glfw window size
+    static float aspectratio; //glfw window aspect ratio, basically width/height
 
     //Costructor to run once a glfw (window) object is instantiated.
     glfw()
@@ -21,17 +23,24 @@ public:
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
         glfwWindowHint(GLFW_REFRESH_RATE, 60);
-        pointer = glfwCreateWindow(800, 800, "KIMIN", NULL, NULL);
+
+        //Although the window will be maximized due to the glfwWindowHint() call, we
+        //need to assign width and height some values for glfwCreateWindow() to work.
+        width = height = 600;
+        pointer = glfwCreateWindow(width, height, "KIMIN", NULL, NULL);
         if (pointer == NULL)
         {
             printf("Failed to create glfw window. Calling glfwTerminate().\n");
             glfwTerminate();
         }
+
         glfwMakeContextCurrent(pointer);
         glfwSwapInterval(1);
         glfwSetWindowSizeLimits(pointer, 300, 300, GLFW_DONT_CARE, GLFW_DONT_CARE);
+        glfwGetWindowSize(pointer, &width, &height);
+        aspectratio = width/(float)height;
         mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-
+        glfwSetWindowPos( pointer, (mode->width - width)/2, (mode->height - height)/2 );
         glewExperimental = GL_TRUE;
         if (glewInit() != GLEW_OK)
         {
@@ -57,7 +66,11 @@ public:
             w = 1;
         if (h == 0)
             h = 1;
-        
+
+        width  = w;
+        height = h;
+        aspectratio = (float)w/h;
+
         glViewport(0,0, w,h);
     }
 
@@ -73,5 +86,8 @@ public:
     }
 
 };
+
+int glfw::width, glfw::height;
+float glfw::aspectratio;
 
 #endif

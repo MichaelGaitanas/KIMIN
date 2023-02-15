@@ -51,11 +51,4 @@ std::vector<std::filesystem::path> lsfiles(const char *path)
     return paths;
 }
 
-//Create a directory.
-void mkdir(const char *path)
-{
-    std::filesystem::create_directories(path);
-    return;
-}
-
 #endif
