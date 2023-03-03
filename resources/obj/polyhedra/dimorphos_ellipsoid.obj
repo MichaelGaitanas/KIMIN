@@ -1,3 +1,47 @@
+#Model of the surface of Didymos B. File consists of vertices and facets. Facets are triangular and
+#connected by the right hand rule. The x, y, and z components of the vertices precede the
+#letter ‘v’ in the first part of the file. The number of each vertex is defined by the position
+#of the vertex in the list defined by the letter ’v’, where the first line in this list is the first vertex.
+#In the second half of the file, the three numbers following the letter ‘f’ are the vertex numbers
+#that make up each facet.
+#Number of Plates           = 3072
+#Number of Vertices         = 1538
+#Number of Edges            = 4608
+#Euler Polyhedron Formula   = 2
+#Surface Area               = 0.08674324469614840   km^2
+#Plate Area Mean            = 2.823673329952746e-05 km^2
+#Plate Area Min             = 2.189296074843742e-05 km^2
+#Plate Area Standard Dev    = 3.011747566250398e-06 km^2
+#Edge Length Mean           = 0.008438248698654756  km
+#Edge Length Max            = 0.01207486664557377   km
+#Edge Length Variance       = 2.234008644910798e-06 km^2
+#Surface Closed?            = Yes
+#Volume                     = 0.002308071031887155  km^3
+#Centroid [km]:
+#  [2.2363293637937105E-19, -1.9305065448133738E-19, -1.2873229286453539E-18]
+#Moment of Inertia Tensor Relative To Origin [kg km^2]:
+#  [4.984473727276177E-6, -2.3822801641527198E-23, -1.0257039595657543E-23]
+#  [-2.3822801641527198E-23, 7.011321767498426E-6, -1.3234889800848444E-24]
+#  [-1.0257039595657543E-23, -1.3234889800848444E-24, 7.920416631506854E-6]
+#Moment of Inertia Tensor Relative To Centroid [kg km^2]:
+#  [4.984473727276177E-6, -2.3822801641527198E-23, -1.0257039595657543E-23]
+#  [-2.3822801641527198E-23, 7.011321767498426E-6, -1.3234889800848438E-24]
+#  [-1.0257039595657543E-23, -1.3234889800848438E-24, 7.920416631506854E-6]
+#Principal Axis 0
+#  [0.0, 1.2212453270876722E-15, -1.0]
+#Principal Axis 1
+#  [0.0, -0.9999999999999999, -1.1657341758564144E-15]
+#Principal Axis 2
+#  [1.0, 0.0, 0.0]
+#Extent [km]:
+#  X: [-0.10400000214576721, 0.10400000214576721]
+#  Y: [-0.07999999821186066, 0.07999999821186066]
+#  Z: [-0.06650000065565109, 0.06650000065565109]
+#Model has 3072 facets.  This satisfies f = 3*4^n with n = 5.
+#Model has 1538 vertices and 3072 facets.  This satisfies v = f/2+2.
+#0 vertices have duplicates
+#0 unreferenced vertices found
+#0 zero area facets found
 v  -0.0529100000858307   0.0463999994099140   0.0423099994659424
 v  -0.0483699999749661   0.0424299985170364   0.0471299998462200
 v  -0.0453800000250340   0.0485000014305115   0.0442200005054474
