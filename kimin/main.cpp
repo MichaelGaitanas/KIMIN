@@ -35,9 +35,12 @@ int main()
             if (!errors.size())
             {
                 lg.add("Running physics...  ");
-                ins.propagate();
+                    ins.propagate();
                 lg.add("Done."); lg.add("\n");
-                //ins.export_files();
+
+                lg.add("Exporting json files...  ");
+                    ins.export_files();
+                lg.add("Done."); lg.add("\n");
             }
             else
             {

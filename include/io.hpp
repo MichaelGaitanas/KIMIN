@@ -165,7 +165,7 @@ public:
                M2(4.940814359692687e9),
                epoch(0.0),
                dur(30.0),
-               step(0.00138889),
+               step(0.001388888888888889),
                cart_kep_var{"Cartesian ", "Keplerian "},
                cart_kep_var_choice(0),
                relcart({1.19,0.0,0.0, 0.0,0.00017421523858789,0.0}),
@@ -393,28 +393,28 @@ public:
                 J1 = ell_integrals(M1, semiaxes1, 2);
                 J2 = ell_integrals(M2, semiaxes2, 2);
                 I1 = ell_inertia(M1, semiaxes1);
-                I1 = ell_inertia(M2, semiaxes2);
+                I2 = ell_inertia(M2, semiaxes2);
             }
             else if (ord3_checkbox)
             {
                 J1 = ell_integrals(M1, semiaxes1, 3);
                 J2 = ell_integrals(M2, semiaxes2, 3);
                 I1 = ell_inertia(M1, semiaxes1);
-                I1 = ell_inertia(M2, semiaxes2);
+                I2 = ell_inertia(M2, semiaxes2);
             }
             else if (ord4_checkbox)
             {
                 J1 = ell_integrals(M1, semiaxes1, 4);
                 J2 = ell_integrals(M2, semiaxes2, 4);
                 I1 = ell_inertia(M1, semiaxes1);
-                I1 = ell_inertia(M2, semiaxes2);
+                I2 = ell_inertia(M2, semiaxes2);
             }
             else
             {
                 masc1 = fill_ell_with_masc(semiaxes1, grid_reso1);
                 masc2 = fill_ell_with_masc(semiaxes2, grid_reso2);
                 I1 = masc_inertia(M1, masc1);
-                I1 = masc_inertia(M2, masc2);
+                I2 = masc_inertia(M2, masc2);
             }
             //Note : For an ellipsoid I = { {J[0][2][0] + J[0][0][2],             0,                        0           },
             //                              {           0,             J[2][0][0] + J[0][0][2],             0           },
@@ -540,7 +540,6 @@ public:
             w1b = iner2body(w1i, quat2mat(q1));
             w2b = iner2body(w2i, quat2mat(q2));
         }
-
         
         //////////////////////////////// Now everything is ready for the actual propagation. ////////////////////////////////
 
@@ -596,17 +595,13 @@ public:
                 break; //kill the propagation
             }
 
-            printf("[x,y,z] = [%lf, %lf, %lf]\n",state[0],state[1],state[2]);
             //3) update the state vector
             rkf78.do_step(std::bind(&inputs::odes, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, dt);
-            printf("[x,y,z] = [%lf, %lf, %lf]\n",state[0],state[1],state[2]);
-            getchar();
         }
 
         return;
     }
 
-    /*
     void export_files()
     {
         //1) create the 'simulations' directory that will store all other simulation directories
@@ -619,17 +614,22 @@ public:
 
         Json::Value jsonparams;
 
-        jsonparams["simulation name"] = str(simname);
+        jsonparams["Simulation name"] = str(simname);
 
-        jsonparams["semiaxes1"] = Json::Value(Json::arrayValue);
-        jsonparams["semiaxes1"].append(semiaxes1[0]);
-        jsonparams["semiaxes1"].append(semiaxes1[1]);
-        jsonparams["semiaxes1"].append(semiaxes1[2]);
-
-        jsonparams["semiaxes2"] = Json::Value(Json::arrayValue);
-        jsonparams["semiaxes2"].append(semiaxes2[0]);
-        jsonparams["semiaxes2"].append(semiaxes2[1]);
-        jsonparams["semiaxes2"].append(semiaxes2[2]);
+        if (ell_checkbox)
+        {
+            jsonparams["Shape model"] = "Ellipsoids";
+            jsonparams["Semiaxes"] = Json::Value(Json::arrayValue);
+            jsonparams["a1"].append(semiaxes1[0]);
+            jsonparams["b1"].append(semiaxes1[1]);
+            jsonparams["c1"].append(semiaxes1[2]);
+            jsonparams["a2"] = Json::Value(Json::arrayValue);
+            jsonparams["b2"].append(semiaxes2[0]);
+            jsonparams["c2"].append(semiaxes2[1]);
+            jsonparams["c22"].append(semiaxes2[2]);
+        }
+        else
+            jsonparams["Shape model"] = ".obj files";
 
         if (ord2_checkbox)
             jsonparams["theory"] = "order 2 expansion";
@@ -688,7 +688,6 @@ public:
 
         return;
     }
-    */
 };
 
 /*
