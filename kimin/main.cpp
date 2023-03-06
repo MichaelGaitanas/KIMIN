@@ -39,7 +39,8 @@ int main()
                 lg.add("Done."); lg.add("\n");
 
                 lg.add("Exporting json files...  ");
-                    ins.export_files();
+                    //ins.export_json();
+                    ins.export_txt();
                 lg.add("Done."); lg.add("\n");
             }
             else
