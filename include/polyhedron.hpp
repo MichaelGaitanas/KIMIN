@@ -34,7 +34,9 @@ bool in_poly(const dvec3 &r, const dmatnx3 &verts, const imatnx3 &faces)
         dvec3 p0 = verts[faces[j][0]];
         dvec3 p1 = verts[faces[j][1]];
         dvec3 p2 = verts[faces[j][2]];
-        dvec3 pj = { p0[0] + (p0[1]*norms[j][1] + p0[2]*norms[j][2] - r[1]*norms[j][1] - r[2]*norms[j][2])/norms[j][0], r[1], r[2] };
+        dvec3 pj = { p0[0] + ( (p0[1] - r[1])*norms[j][1] + (p0[2] - r[2])*norms[j][2] )/norms[j][0],
+                     r[1],
+                     r[2] };
 
         //form the following 3 triangles and calculate their area
         double Aj01 = 0.5*length(cross(p0-pj, p1-p0)); //pj -> p0 -> p1
@@ -42,15 +44,16 @@ bool in_poly(const dvec3 &r, const dmatnx3 &verts, const imatnx3 &faces)
         double Aj20 = 0.5*length(cross(p2-pj, p0-p2)); //pj -> p2 -> p0
         double A012 = 0.5*length(cross(p1-p0, p2-p1)); //p0 -> p1 -> p2
 
-        //if the sum of the 3 areas is equal to the area of the surface triangle, then pj sits on the surface of the triangle.
-        if ( fabs(Aj01 + Aj12 + Aj20 - A012) <= machine_zero && pj[0] > r[0])
+        //if the sum of the 3 areas is equal to the area of the surface triangle, then pj sits upon the surface of the triangle.
+        if ( fabs(Aj01 + Aj12 + Aj20 - A012) <= machine_zero && pj[0] > r[0] )
             ++intersections;
     }
+    
     //odd : (x,y,z) is inside the polyhdernon
     //even : (x,y,z) is outside the polyhdernon
     if (intersections%2 == 1)
         return true;
-        
+
     return false;
 }
 
@@ -71,13 +74,13 @@ dmatnx3 fill_poly_with_masc(const dmatnx3 &verts, const imatnx3 &faces, const iv
         if (verts[i][2] > rmax[2]) rmax[2] = verts[i][2];
     }
 
-    double xmin = rmin[0];
-    double ymin = rmin[1];
-    double zmin = rmin[2];
+    double xmin = rmin[0] + machine_zero;
+    double ymin = rmin[1] + machine_zero;
+    double zmin = rmin[2] + machine_zero;
 
-    double xmax = rmax[0];
-    double ymax = rmax[1];
-    double zmax = rmax[2];
+    double xmax = rmax[0] - machine_zero;
+    double ymax = rmax[1] - machine_zero;
+    double zmax = rmax[2] - machine_zero;
 
     dmatnx3 masc;
     for (int i = 0; i < grid_reso[0]; ++i)
