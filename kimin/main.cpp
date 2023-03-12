@@ -7,6 +7,7 @@
 #include"../include/glfw.hpp"
 #include"../include/gui.hpp"
 #include"../include/logger.hpp"
+#include"../include/plotter.hpp"
 #include"../include/io.hpp"
 
 int main()
@@ -20,6 +21,7 @@ int main()
 
     inputs ins;
     logger lg;
+    plotter plt;
 
     glClearColor(0.0f,0.0f,0.0f,1.0f);
     while (!glfwWindowShouldClose(win.pointer))
@@ -53,6 +55,10 @@ int main()
                 lg.add("\n");
             }
             
+        }
+        if (plt.show_relx_plot)
+        {
+            plt.plot_relx(ins.sol);
         }
         lg.draw("Log ", NULL, (char*)glGetString(GL_VENDOR), (char*)glGetString(GL_RENDERER), (char*)glGetString(GL_VERSION));
 

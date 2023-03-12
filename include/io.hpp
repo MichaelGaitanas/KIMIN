@@ -30,8 +30,8 @@ public:
     //Enable the close button on the root imgui window (not the glfw one). Once it is clicked, the game loop terminates.
     bool xclose; 
 
-    //'Simulation name' field. 50 characters available (plus the '\0' character).
-    char simname[51];
+    //'Simulation name' field. 30 characters available (plus the '\0' character).
+    char simname[31];
 
     //'Ellipsoids' checkbox state.
     bool ell_checkbox;
@@ -687,5 +687,6 @@ public:
         return;
     }
 };
+
 
 #endif

@@ -26,7 +26,7 @@ public:
 
         //Although the window will be maximized due to the glfwWindowHint() call, we
         //need to assign width and height some values for glfwCreateWindow() to work.
-        width = height = 600;
+        width = height = 800;
         pointer = glfwCreateWindow(width, height, "KIMIN", NULL, NULL);
         if (pointer == NULL)
         {
@@ -36,11 +36,11 @@ public:
 
         glfwMakeContextCurrent(pointer);
         glfwSwapInterval(1);
-        glfwSetWindowSizeLimits(pointer, 300, 300, GLFW_DONT_CARE, GLFW_DONT_CARE);
+        glfwSetWindowSizeLimits(pointer, 600, 600, GLFW_DONT_CARE, GLFW_DONT_CARE);
         glfwGetWindowSize(pointer, &width, &height);
         aspectratio = width/(float)height;
-        mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-        glfwSetWindowPos( pointer, (mode->width - width)/2, (mode->height - height)/2 );
+        //mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+        //glfwSetWindowPos( pointer, (mode->width - width)/2, (mode->height - height)/2 );
         glewExperimental = GL_TRUE;
         if (glewInit() != GLEW_OK)
         {
