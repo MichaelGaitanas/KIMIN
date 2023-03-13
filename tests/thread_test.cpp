@@ -15,7 +15,7 @@
 void run_physics(void)
 {
     printf("Started physics\n");
-    for (double z = 0.0; z < 200000.0; z += 0.001)
+    for (double z = 0.0; z < 20000.0; z += 0.001)
     {
         double y = exp(sin(sqrt(z*fabs(z)+ cos(z))));
     }

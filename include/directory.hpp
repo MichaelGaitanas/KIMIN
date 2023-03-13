@@ -6,6 +6,8 @@
 #include<fstream>
 #include<vector>
 
+#include"typedef.hpp"
+
 str os_name()
 {
     //Remember #ifdef and #endif instead of #if and #elif.
