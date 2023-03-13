@@ -11,13 +11,12 @@
 
 #include<cstdio>
 #include<cstdarg>
+
 #include"typedef.hpp"
-
 #include"directory.hpp"
-
 #include"properties.hpp"
 
-//KIMIN's log window
+//KIMIN's console window
 class down_panel
 {
 public:
@@ -883,9 +882,29 @@ public:
 class right_panel
 {
 public:
-    bool show_relx_plot = false;
-    bool show_w2bx_plot = false;
-    bool show_ener_plot = false;
+
+    bvec plot_relcart;
+    bvec plot_relkep;
+
+    bvec plot_rpy1, plot_rpy2;
+
+    bvec plot_w1i, plot_w2i;
+    bvec plot_w1b, plot_w2b;
+
+    bool plot_ener_rel_err;
+    bool plot_mom_rel_err;
+
+    right_panel() : plot_relcart({false,false,false,false,false,false}),
+                    plot_relkep({false,false,false,false,false,false}),
+                    plot_rpy1({false,false,false}),
+                    plot_rpy2({false,false,false}),
+                    plot_w1i({false,false,false}),
+                    plot_w2i({false,false,false}),
+                    plot_w1b({false,false,false}),
+                    plot_w2b({false,false,false}),
+                    plot_ener_rel_err(false),
+                    plot_mom_rel_err(false)
+    { }
 
     dvec get_t_sol(const dmat &sol)
     {
@@ -907,7 +926,6 @@ public:
         return result;
     }
 
-    //KIMIN's right gui panel (3D graphics controls during the video).
     void render(const properties &props)
     {
         const float win_width  = ImGui::GetIO().DisplaySize.x;
@@ -916,23 +934,27 @@ public:
         ImGui::SetNextWindowSize(ImVec2(win_width/7.0f, win_height), ImGuiCond_FirstUseEver);
         ImGui::Begin("Graphics", NULL);
 
-        ImGui::Checkbox("relx", &show_relx_plot);
-        ImGui::Checkbox("w2bz", &show_w2bx_plot);
-        ImGui::Checkbox("ener", &show_ener_plot);
-
-        if (show_relx_plot)
+        if (ImGui::CollapsingHeader("Plots"))
         {
-            ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
-            ImGui::Begin("relx plot", &show_relx_plot);
-            ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
-            if (ImPlot::BeginPlot("relx = relx(t)", plot_win_size))
+            ImGui::BulletText("Cartesian position");
+            ImGui::Checkbox("x(t)", &plot_relcart[0]);
+
+            if (plot_relcart[0])
             {
-                ImPlot::SetupAxes("t","relx");
-                ImPlot::PlotLine("", &get_t_sol(props.sol)[0], &get_relx_sol(props.sol)[0], props.sol.size());
-                ImPlot::EndPlot();  
+                ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
+                ImGui::Begin("relx plot", &plot_relcart[0]);
+                ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
+                if (ImPlot::BeginPlot("relx = relx(t)", plot_win_size))
+                {
+                    ImPlot::SetupAxes("t","relx");
+                    ImPlot::PlotLine("", &get_t_sol(props.sol)[0], &get_relx_sol(props.sol)[0], props.sol.size());
+                    ImPlot::EndPlot();  
+                }
+                ImGui::End();
             }
-            ImGui::End();
         }
+
+        
         
         ImGui::End();
     }

@@ -40,6 +40,6 @@ typedef std::vector<dmat> dtens; // nxnxn tensor of doubles (T[(0)-(n-1)][(0)-(n
 typedef std::complex<double> dcomplex; //complex double (double + i*double)
 typedef std::vector<dcomplex> dcomplexvec; //vector of n complex doubles
 
-typedef std::vector<bool> bvec; //vector of n complex doubles
+typedef std::vector<bool> bvec; //vector of n booleans
 
 #endif

@@ -1,11 +1,12 @@
+
 #include<cstdio>
 #include<cmath>
+#include<thread>
 
 #include<GL/glew.h>
 #include<GLFW/glfw3.h>
 
-#include<thread>
-
+#include"../include/typedef.hpp"
 #include"../include/glfw.hpp"
 #include"../include/gui.hpp"
 #include"../include/properties.hpp"
