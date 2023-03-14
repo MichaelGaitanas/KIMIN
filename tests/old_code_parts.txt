@@ -1,0 +1,23 @@
+ui.cons.render("Log ", NULL, (char*)glGetString(GL_VENDOR), (char*)glGetString(GL_RENDERER), (char*)glGetString(GL_VERSION));
+
+ImGui::SameLine();
+
+ImGui::Text("fps [ %.1f ], ", ImGui::GetIO().Framerate);
+ImGui::SameLine();
+ImGui::Text("Vendor [ %s ], ", vendor.c_str());
+ImGui::SameLine();
+ImGui::Text("Renderer [ %s ], ", renderer.c_str());
+ImGui::SameLine();
+ImGui::Text("OpenGL [ %s ], ", version.c_str());
+ImGui::SameLine();
+ImGui::Text("OS [ %s ] ", os_name().c_str()); //directory.hpp
+ImGui::SameLine();
+ImGui::Text(" %c", "|/-\\"[(int)(ImGui::GetTime()/0.1f) & 3]);
+
+ImGui::Separator();
+
+void render(const char *title, bool *popened = NULL, str vendor = "", str renderer = "", str version = "")  για την console
+
+gui.console.add("Running...  ");
+                    
+gui.console.add("Done."); gui.console.add("\n");

@@ -1,12 +1,12 @@
-#ifndef GLFW_HPP
-#define GLFW_HPP
+#ifndef WINDOW_HPP
+#define WINDOW_HPP
 
 #include<GL/glew.h>
 #include<GLFW/glfw3.h>
 
 #include<cstdio>
 
-class glfw
+class Window
 {
 public:
     GLFWwindow *pointer; //unique window pointer
@@ -15,7 +15,7 @@ public:
     static float aspectratio; //glfw window aspect ratio, basically width/height
 
     //Costructor to run once a glfw (window) object is instantiated.
-    glfw()
+    Window()
     {
         glfwInit();
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -24,8 +24,6 @@ public:
         glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
         glfwWindowHint(GLFW_REFRESH_RATE, 60);
 
-        //Although the window will be maximized due to the glfwWindowHint() call, we
-        //need to assign width and height some values for glfwCreateWindow() to work.
         width = height = 800;
         pointer = glfwCreateWindow(width, height, "KIMIN", NULL, NULL);
         if (pointer == NULL)
@@ -39,8 +37,7 @@ public:
         glfwSetWindowSizeLimits(pointer, 600, 600, GLFW_DONT_CARE, GLFW_DONT_CARE);
         glfwGetWindowSize(pointer, &width, &height);
         aspectratio = width/(float)height;
-        //mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-        //glfwSetWindowPos( pointer, (mode->width - width)/2, (mode->height - height)/2 );
+
         glewExperimental = GL_TRUE;
         if (glewInit() != GLEW_OK)
         {
@@ -80,14 +77,14 @@ public:
     }
 
     //Destructor.
-    ~glfw()
+    ~Window()
     {
         glfwTerminate();
     }
 
 };
 
-int glfw::width, glfw::height;
-float glfw::aspectratio;
+int Window::width, Window::height;
+float Window::aspectratio;
 
 #endif

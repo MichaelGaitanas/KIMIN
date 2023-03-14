@@ -11,24 +11,28 @@
 
 #include<cstdio>
 #include<cstdarg>
+#include<filesystem>
 
 #include"typedef.hpp"
-#include"directory.hpp"
-#include"properties.hpp"
+#include"constant.hpp"
+#include"linalg.hpp"
+#include"task.hpp"
+#include"obj.hpp"
+#include"conversion.hpp"
 
-class console
+class Console
 {
 public:
     ImGuiTextBuffer buffer;
     bool scroll_to_bottom;
 
-    //Clear the log.
+    //Clear the console.
     void cls()
     {
         buffer.clear();
     }
 
-    //Add formatted text to the log.
+    //Add formatted text to the console.
     void add(const char *format, ...) IM_FMTARGS(2)
     {
         va_list args;
@@ -39,7 +43,7 @@ public:
     }
 
     //Render the console imgui window.
-    void render(const char *title, bool *popened = NULL, str vendor = "", str renderer = "", str version = "")
+    void render(const char *title, bool *popened = NULL)
     {
         const float win_width  = ImGui::GetIO().DisplaySize.x;
         const float win_height = ImGui::GetIO().DisplaySize.y;
@@ -47,23 +51,13 @@ public:
         ImGui::SetNextWindowSize(ImVec2(win_width - 2*win_width/7.0f, win_height/7.0f), ImGuiCond_FirstUseEver);
         ImGui::Begin(title, popened);
 
-        //mouse input : clear the log
+        //mouse input : clear the console
         if (ImGui::Button("Clear "))
             cls();
         
         ImGui::SameLine();
 
-        ImGui::Text("fps [ %.1f ], ", ImGui::GetIO().Framerate);
-        ImGui::SameLine();
-        ImGui::Text("Vendor [ %s ], ", vendor.c_str());
-        ImGui::SameLine();
-        ImGui::Text("Renderer [ %s ], ", renderer.c_str());
-        ImGui::SameLine();
-        ImGui::Text("OpenGL [ %s ], ", version.c_str());
-        ImGui::SameLine();
-        ImGui::Text("OS [ %s ] ", os_name().c_str()); //directory.hpp
-        ImGui::SameLine();
-        ImGui::Text(" %c", "|/-\\"[(int)(ImGui::GetTime()/0.1f) & 3]);
+        ImGui::Text("FPS [ %.1f ], ", ImGui::GetIO().Framerate);
 
         ImGui::Separator();
 
@@ -78,7 +72,7 @@ public:
     }
 };
 
-class properties
+class Properties
 {
 public:
 
@@ -108,7 +102,7 @@ public:
     //Decide whether body 1 and body 2 will be loaded as polyhedra .obj
     bool clicked_poly1, clicked_poly2;
     
-    //Relative paths to mascons/ and polyhedron/ directories.
+    //Relative paths to mascons/ and polyhedra/ directories.
     std::vector<std::filesystem::path> path_to_masc_obj;
     std::vector<std::filesystem::path> path_to_poly_obj;
 
@@ -175,10 +169,10 @@ public:
     //'Run' button state.
     bool clicked_run;
 
-    //'Run' button state.
+    //'Kill' button state.
     bool clicked_kill;
 
-    properties() : xclose(true),
+    Properties() : xclose(true),
                    simname("test_sim"),
                    ell_checkbox(false),
                    clicked_ell_ok(false),
@@ -192,8 +186,8 @@ public:
                    clicked_poly2_index(-1),
                    clicked_poly1(false),
                    clicked_poly2(false),
-                   path_to_masc_obj(lsfiles("../obj/mascons/")),
-                   path_to_poly_obj(lsfiles("../obj/polyhedra/")),
+                   path_to_masc_obj(list_files("../obj/mascons/")),
+                   path_to_poly_obj(list_files("../obj/polyhedra/")),
                    obj_path1(""),
                    obj_path2(""),
                    vfnt1({false, false, false, false}),
@@ -257,7 +251,17 @@ public:
                 }
                 if (ImGui::MenuItem("State vector"))
                 {
-                    //Import a bunch of files (jsin or txt) that enhold state vector of one simulation run.
+                    //Import a bunch of files (json or txt) that enhold state vector of one simulation run.
+                }
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Theme"))
+            {
+                if (ImGui::MenuItem("Dark"))
+                {
+                }
+                if (ImGui::MenuItem("Light"))
+                {
                 }
                 ImGui::EndMenu();
             }
@@ -1142,7 +1146,7 @@ public:
 
 };
 
-class graphics
+class Graphics
 {
 public:
 
@@ -1157,7 +1161,7 @@ public:
     bool plot_ener_rel_err;
     bool plot_mom_rel_err;
 
-    graphics() : plot_relcart({false,false,false,false,false,false}),
+    Graphics() : plot_relcart({false,false,false,false,false,false}),
                  plot_relkep({false,false,false,false,false,false}),
                  plot_rpy1({false,false,false}),
                  plot_rpy2({false,false,false}),
@@ -1169,7 +1173,7 @@ public:
                  plot_mom_rel_err(false)
     { }
 
-    void render(const properties &props)
+    void render()
     {
         const float win_width  = ImGui::GetIO().DisplaySize.x;
         const float win_height = ImGui::GetIO().DisplaySize.y;
@@ -1239,13 +1243,13 @@ public:
     }
 };
 
-class gui
+class GUI
 {
 public:
     ImGuiIO &io; //this reference will be (and must be) initialized in the constructor gui(...)
-    properties props;
-    graphics graph;
-    console cons;
+    Properties properties;
+    Graphics graphics;
+    Console console;
 
     //We ought to call ImGui::CreateContext() before ImGui::GetIO(). But ImGui::GetIO() will be called once an instance of the class is created.
     //The following static member function serves the aforementioned purpose : To be able to call ImGui::CreateContext() without having an instance of the class.
@@ -1257,7 +1261,7 @@ public:
     }
 
     //Constructor and correct initialization of &io.
-    gui(GLFWwindow *pointer) : io(ImGui::GetIO())
+    GUI(GLFWwindow *pointer) : io(ImGui::GetIO())
     {
         io.IniFilename = NULL;
         io.Fonts->AddFontFromFileTTF("../font/arial.ttf", 15.0f);
@@ -1268,7 +1272,7 @@ public:
     }
 
     //Destructor
-    ~gui()
+    ~GUI()
     {
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplGlfw_Shutdown();

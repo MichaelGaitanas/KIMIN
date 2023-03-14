@@ -1,64 +1,62 @@
-
 #include<cstdio>
 #include<cmath>
+
 #include<thread>
 
 #include<GL/glew.h>
 #include<GLFW/glfw3.h>
 
 #include"../include/typedef.hpp"
-#include"../include/glfw.hpp"
+#include"../include/window.hpp"
 #include"../include/gui.hpp"
-#include"../include/properties.hpp"
+#include"../include/propagator.hpp"
 
 int main()
 {
-    glfw win;
-    win.add_key_callback();
-    win.add_framebuffer_size_callback();
+    Window window;
+    window.add_key_callback();
+    window.add_framebuffer_size_callback();
     
-    gui::create_imgui_context(); //static member function
-    gui ui(win.pointer);
-
-    //properties props;
+    GUI::create_imgui_context(); //static member function
+    GUI gui(window.pointer);
 
     glClearColor(0.0f,0.0f,0.0f,1.0f);
-    while (!glfwWindowShouldClose(win.pointer))
+    while (!glfwWindowShouldClose(window.pointer))
     {
         glClear(GL_COLOR_BUFFER_BIT);
-        ui.new_frame();
-        ui.cons.render(props, win.pointer);
-        ui.rp.render(props);
-        ui.dp.render("Log ", NULL, (char*)glGetString(GL_VENDOR), (char*)glGetString(GL_RENDERER), (char*)glGetString(GL_VERSION));
-        ui.render();
-        glfwSwapBuffers(win.pointer);
-        glfwPollEvents();
 
-        if (props.clicked_run)
+        gui.new_frame();
+        gui.console.render("Console ", NULL);
+        gui.properties.render(window.pointer);
+        gui.graphics.render();
+        gui.render();
+
+
+        if (gui.properties.clicked_run)
         {
-            strvec errors = props.validate();
+            strvec errors = gui.properties.validate();
             if (!errors.size())
             {
-                std::thread propagation_thread(std::bind(&properties::propagate, props));
-                propagation_thread.detach();
-                ui.dp.add("Running physics...  ");
-                    
-                ui.dp.add("Done."); ui.dp.add("\n");
-                ui.dp.add("Exporting txt files...  ");
-                    props.export_txt_files();
-                ui.dp.add("Done."); ui.dp.add("\n");
+                std::thread propagator_thread(std::bind(&Propagator::run, propagator));
+                propagator_thread.detach();
+
+                //export_txt_files(); //only after the propagatror_thread is done!
             }
             else
             {
                 for (int i = 0; i < errors.size(); ++i)
                 {
-                    ui.dp.add(errors[i].c_str());
-                    ui.dp.add("\n");
+                    gui.console.add(errors[i].c_str());
+                    gui.console.add("\n");
                 }
-                ui.dp.add("\n");
+                gui.console.add("\n");
             }
         }
-        props.clicked_run = false;
+        gui.properties.clicked_run = false;
+
+
+        glfwSwapBuffers(window.pointer);
+        glfwPollEvents();
     }
 
     return 0;

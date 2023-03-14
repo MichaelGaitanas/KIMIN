@@ -2,32 +2,33 @@
 #include<cstdio>
 #include<cmath>
 
-class properties
+class Properties
 {
 public:
     double M1,M2;
-    void assign_values()
-}
+};
 
-class propagator
+class Propagator
 {
 public:
     double x,y,z;
-
-    void build_params(const properties &props)
+    Propagator(const Properties &properties)
     {
-        printf("Started physics\n");
-        for (double z = 0.0; z < 20000.0; z += 0.001)
-        {
-            double y = exp(sin(sqrt(z*fabs(z)+ cos(z))));
-        }
-        printf("Finished physics\n");
-        return;
+        if (properties.M1 <= 0.0)
+            x = 17.0;
     }
 };
 
 int main()
 {
+    Properties properties;
+    properties.M1 =  -3.0;
+    properties.M2 = -34.0;
+
+    Propagator propagator(properties);
+
+    printf("x = %lf\n",propagator.x);
+
 	
 	return 0;
 }

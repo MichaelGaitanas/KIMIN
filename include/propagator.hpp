@@ -1,17 +1,16 @@
-#ifndef PROPERTIES_HPP
-#define PROPERTIES_HPP
+#ifndef PROPAGATOR_HPP
+#define PROPAGATOR_HPP
 
 #include<cstdio>
 #include<cmath>
 #include<filesystem>
 #include<vector>
 
-
 #include"typedef.hpp"
 #include"constant.hpp"
 #include"linalg.hpp"
-#include"directory.hpp"
-#include"obj.hpp"
+#include"task.hpp"
+
 #include"conversion.hpp"
 #include"polyhedron.hpp"
 #include"mascon.hpp"
@@ -24,112 +23,17 @@
 
 //#include<json/json.h>
 
-class properties
+class Propagator
 {
 public:
 
-    
-
-    //////////////////////////////////// Constructor non initialized variables ////////////////////////////////////
-
     dmatnx3 masc1, masc2; //mascon cloud coordinates
-    dtens J1, J2; //inertial integral tensors
+    dtens J1, J2; //inertial integrals
     dmat3 I1, I2; //moments of inertia
-    bool collision; //binary collision detection flag
-    dmat sol; //final solution matrix that contains all the state vector in time
+    bool collision; //binary collision flag
+    dmat sol; //final solution matrix of the binary
 
-    //Constructor
-    
-
-    
-
-    void odes(const boost::array<double, 20> &state, boost::array<double, 20> &dstate, double t)
-    {
-        dvec3 r  =  { state[0],  state[1],  state[2] };
-        dvec3 v  =  { state[3],  state[4],  state[5] };
-        dvec4 q1 =  { state[6],  state[7],  state[8],  state[9] };
-        dvec3 w1b = { state[10], state[11], state[12] };
-        dvec4 q2 =  { state[13], state[14], state[15], state[16] };
-        dvec3 w2b = { state[17], state[18], state[19] };
-
-        q1 = quat2unit(q1);
-        q2 = quat2unit(q2);
-
-        dmat3 A1 = quat2mat(q1);
-        dmat3 A2 = quat2mat(q2);
-
-        dvec3 force, tau1i;
-        if (ord2_checkbox)
-        {
-            force = mut_force_integrals_ord2(r, M1,J1,A1, M2,J2,A2);
-            tau1i = mut_torque_integrals_ord2(r, J1,A1, M2);
-        }
-        else if (ord3_checkbox)
-        {
-            force = mut_force_integrals_ord3(r, M1,J1,A1, M2,J2,A2);
-            tau1i = mut_torque_integrals_ord3(r, J1,A1, M2);
-        } 
-        else if (ord4_checkbox)
-        {
-            force = mut_force_integrals_ord4(r, M1,J1,A1, M2,J2,A2);
-            tau1i = mut_torque_integrals_ord4(r, M1,J1,A1, M2,J2,A2);
-        }
-        else
-        {
-            force = mut_force_masc(r, M1,masc1,A1, M2,masc2,A2);
-            tau1i = mut_torque_masc(r, M1,masc1,A1, M2,masc2,A2);
-        }
-
-        dvec3 tau2i = -tau1i - cross(r,force);
-
-        dvec3 tau1b = iner2body(tau1i,A1);
-        dvec3 tau2b = iner2body(tau2i,A2);
-
-        dvec4 dq1 = quat_rhs(q1,w1b);
-        dvec3 dw1b = euler_rhs(w1b,I1,tau1b);
-
-        dvec4 dq2 = quat_rhs(q2,w2b);
-        dvec3 dw2b = euler_rhs(w2b,I2,tau2b);
-
-        //relative position rhs (x,y,z)
-        dstate[0] = v[0];
-        dstate[1] = v[1];
-        dstate[2] = v[2];
-
-        //relative velocity rhs (vx,vy,vz)
-        dstate[3] = force[0]/(M1*M2/(M1+M2));
-        dstate[4] = force[1]/(M1*M2/(M1+M2));
-        dstate[5] = force[2]/(M1*M2/(M1+M2));
-
-        //quaternion rhs of rigid body 1 (q10,q11,q12,q13)
-        dstate[6] = dq1[0];
-        dstate[7] = dq1[1];
-        dstate[8] = dq1[2];
-        dstate[9] = dq1[3];
-
-        //Euler rhs of rigid body 1 (w11,w12,w13)
-        dstate[10] = dw1b[0];
-        dstate[11] = dw1b[1];
-        dstate[12] = dw1b[2];
-
-        //quaternion odes of rigid body 2 (q20,q21,q22,q23)
-        dstate[13] = dq2[0];
-        dstate[14] = dq2[1];
-        dstate[15] = dq2[2];
-        dstate[16] = dq2[3];
-
-        //Euler rhs of rigid body 2 (w21,w22,w23)
-        dstate[17] = dw2b[0];
-        dstate[18] = dw2b[1];
-        dstate[19] = dw2b[2];
-
-        return;
-    }
-
-    //This member function processes the (valid) inputs and decides what type of simulation the user intends to run. As a result, it sets up all
-    //necessary variables needed for that very simulation. Next, it propagates the state vector (integrates the odes) in time
-    //and ultimately constructs the final outputs object (class) of the simulation.
-    void propagate()
+    Propagator(const Properties &properties)
     {
         if (ell_checkbox)
         {
@@ -161,9 +65,6 @@ public:
                 I1 = masc_inertia(M1, masc1);
                 I2 = masc_inertia(M2, masc2);
             }
-            //Note : For an ellipsoid I = { {J[0][2][0] + J[0][0][2],             0,                        0           },
-            //                              {           0,             J[2][0][0] + J[0][0][2],             0           },
-            //                              {           0,                        0,             J[2][0][0] + J[0][2][0]} }
         }
         else //obj_checkbox
         {
@@ -285,10 +186,97 @@ public:
             w1b = iner2body(w1i, quat2mat(q1));
             w2b = iner2body(w2i, quat2mat(q2));
         }
-        
-        //////////////////////////////// Now everything is ready for the actual propagation. ////////////////////////////////
+    }
+    
+    void build_rhs(const boost::array<double, 20> &state, boost::array<double, 20> &dstate, double t)
+    {
+        //split the state vector
+        dvec3 r  =  { state[0],  state[1],  state[2] };
+        dvec3 v  =  { state[3],  state[4],  state[5] };
+        dvec4 q1 =  { state[6],  state[7],  state[8],  state[9] };
+        dvec3 w1b = { state[10], state[11], state[12] };
+        dvec4 q2 =  { state[13], state[14], state[15], state[16] };
+        dvec3 w2b = { state[17], state[18], state[19] };
 
+        //normalize the quaternions
+        q1 = quat2unit(q1);
+        q2 = quat2unit(q2);
 
+        //construct the rotation matrices
+        dmat3 A1 = quat2mat(q1);
+        dmat3 A2 = quat2mat(q2);
+
+        //calculate the foce and the torques, depending on the user's choice of the theory
+        dvec3 force, tau1i;
+        if (ord2_checkbox)
+        {
+            force = mut_force_integrals_ord2(r, M1,J1,A1, M2,J2,A2);
+            tau1i = mut_torque_integrals_ord2(r, J1,A1, M2);
+        }
+        else if (ord3_checkbox)
+        {
+            force = mut_force_integrals_ord3(r, M1,J1,A1, M2,J2,A2);
+            tau1i = mut_torque_integrals_ord3(r, J1,A1, M2);
+        } 
+        else if (ord4_checkbox)
+        {
+            force = mut_force_integrals_ord4(r, M1,J1,A1, M2,J2,A2);
+            tau1i = mut_torque_integrals_ord4(r, M1,J1,A1, M2,J2,A2);
+        }
+        else
+        {
+            force = mut_force_masc(r, M1,masc1,A1, M2,masc2,A2);
+            tau1i = mut_torque_masc(r, M1,masc1,A1, M2,masc2,A2);
+        }
+
+        dvec3 tau2i = -tau1i - cross(r,force);
+
+        dvec3 tau1b = iner2body(tau1i,A1);
+        dvec3 tau2b = iner2body(tau2i,A2);
+
+        dvec4 dq1 = quat_rhs(q1,w1b);
+        dvec3 dw1b = euler_rhs(w1b,I1,tau1b);
+
+        dvec4 dq2 = quat_rhs(q2,w2b);
+        dvec3 dw2b = euler_rhs(w2b,I2,tau2b);
+
+        //relative position rhs (x,y,z)
+        dstate[0] = v[0];
+        dstate[1] = v[1];
+        dstate[2] = v[2];
+
+        //relative velocity rhs (vx,vy,vz)
+        dstate[3] = force[0]/(M1*M2/(M1+M2));
+        dstate[4] = force[1]/(M1*M2/(M1+M2));
+        dstate[5] = force[2]/(M1*M2/(M1+M2));
+
+        //quaternion rhs of rigid body 1 (q10,q11,q12,q13)
+        dstate[6] = dq1[0];
+        dstate[7] = dq1[1];
+        dstate[8] = dq1[2];
+        dstate[9] = dq1[3];
+
+        //Euler rhs of rigid body 1 (w11,w12,w13)
+        dstate[10] = dw1b[0];
+        dstate[11] = dw1b[1];
+        dstate[12] = dw1b[2];
+
+        //quaternion odes of rigid body 2 (q20,q21,q22,q23)
+        dstate[13] = dq2[0];
+        dstate[14] = dq2[1];
+        dstate[15] = dq2[2];
+        dstate[16] = dq2[3];
+
+        //Euler rhs of rigid body 2 (w21,w22,w23)
+        dstate[17] = dw2b[0];
+        dstate[18] = dw2b[1];
+        dstate[19] = dw2b[2];
+
+        return;
+    }
+
+    void run()
+    {
         //initial conditions (boost::array<> must be used to call the integration method)
         boost::array<double, 20> state = { relcart[0], relcart[1], relcart[2],
                                            relcart[3], relcart[4], relcart[5],
@@ -347,90 +335,7 @@ public:
         return;
     }
 
-    void export_txt_files()
-    {
-        //1) create the 'simulations' directory that will store all other simulation directories
-        bool root_sim_dir = std::filesystem::create_directory("../simulations");
-
-        //2) create the current simulation directory 'simname' that will store the .txt files
-        bool current_sim_dir = std::filesystem::create_directory("../simulations/" + str(simname));
-
-        //3) create the txt content
-
-        FILE *fpt = fopen(("../simulations/" + str(simname) + "/time.txt").c_str(), "w");
-        FILE *fprv = fopen(("../simulations/" + str(simname) + "/pos_vel.txt").c_str(),"w");
-        FILE *fpq1 = fopen(("../simulations/" + str(simname) + "/quat1.txt").c_str(),"w");
-        FILE *fpw1i = fopen(("../simulations/" + str(simname) + "/w1i.txt").c_str(),"w");
-        FILE *fpw1b = fopen(("../simulations/" + str(simname) + "/w1b.txt").c_str(),"w");
-        FILE *fprpy1 = fopen(("../simulations/" + str(simname) + "/rpy1.txt").c_str(),"w");
-        FILE *fpq2 = fopen(("../simulations/" + str(simname) + "/quat2.txt").c_str(),"w");
-        FILE *fpw2i = fopen(("../simulations/" + str(simname) + "/w2i.txt").c_str(),"w");
-        FILE *fpw2b = fopen(("../simulations/" + str(simname) + "/w2b.txt").c_str(),"w");
-        FILE *fprpy2 = fopen(("../simulations/" + str(simname) + "/rpy2.txt").c_str(),"w");
-        FILE *fpEL = fopen(("../simulations/" + str(simname) + "/ener_mom.txt").c_str(),"w");
-        for (int i = 0; i < sol.size(); ++i)
-        {
-            double t = sol[i][0];
-            dvec3 r = {sol[i][1], sol[i][2], sol[i][3]};
-            dvec3 v = {sol[i][4], sol[i][5], sol[i][6]};
-            dvec4 q1 = {sol[i][7], sol[i][8], sol[i][9], sol[i][10]};
-            dvec3 w1b = {sol[i][11], sol[i][12], sol[i][13]};
-            dvec4 q2 = {sol[i][14], sol[i][15], sol[i][16], sol[i][17]};
-            dvec3 w2b = {sol[i][18], sol[i][19], sol[i][20]};
-            dmat3 A1 = quat2mat(q1);
-            dmat3 A2 = quat2mat(q2);
-            dvec3 w1i = body2iner(w1b,A1);
-            dvec3 w2i = body2iner(w2b,A2);
-            dvec3 rpy1 = quat2ang(q1);
-            dvec3 rpy2 = quat2ang(q2);
-
-            double ener;
-            if (ord2_checkbox)
-                ener = 0.5*((M1*M2)/(M1+M2))*dot(v,v) + 0.5*dot( dot(w1b,I1), w1b) + 0.5*dot( dot(w2b,I2), w2b) + mut_pot_integrals_ord2(r, M1,J1,A1, M2,J2,A2);
-            else if (ord3_checkbox)
-                ener = 0.5*((M1*M2)/(M1+M2))*dot(v,v) + 0.5*dot( dot(w1b,I1), w1b) + 0.5*dot( dot(w2b,I2), w2b) + mut_pot_integrals_ord3(r, M1,J1,A1, M2,J2,A2);
-            else if (ord4_checkbox)
-                ener = 0.5*((M1*M2)/(M1+M2))*dot(v,v) + 0.5*dot( dot(w1b,I1), w1b) + 0.5*dot( dot(w2b,I2), w2b) + mut_pot_integrals_ord4(r, M1,J1,A1, M2,J2,A2);
-            else
-                ener = ener = 0.5*((M1*M2)/(M1+M2))*dot(v,v) + 0.5*dot( dot(w1b,I1), w1b) + 0.5*dot( dot(w2b,I2), w2b) + mut_pot_masc(r, M1,masc1,A1, M2,masc2,A2);
-
-            //The momentum vector calculation does not depend on the order of the expansion, so it's always the same.
-            dvec3 mom = (M1*M2/(M1+M2))*cross(r,v) + dot(A1, dot(I1,w1b)) + dot(A2, dot(I2,w2b));
-
-            fprintf(fpt,"%.16lf\n",t);
-            fprintf(fprv,"%.16lf %.16lf %.16lf %.16lf %.16lf %.16lf\n",r[0],r[1],r[2], v[0],v[1],v[2]);
-            fprintf(fpq1,"%.16lf %.16lf %.16lf %.16lf\n",q1[0],q1[1],q1[2],q1[3]);
-            fprintf(fprpy1,"%.16lf %.16lf %.16lf\n",rpy1[0],rpy1[1],rpy1[2]);
-            fprintf(fpw1b,"%.16lf %.16lf %.16lf\n",w1b[0],w1b[1],w1b[2]);
-            fprintf(fpw1i,"%.16lf %.16lf %.16lf\n",w1i[0],w1i[1],w1i[2]);
-            fprintf(fpq2,"%.16lf %.16lf %.16lf %.16lf\n",q2[0],q2[1],q2[2],q2[3]);
-            fprintf(fprpy2,"%.16lf %.16lf %.16lf\n",rpy2[0],rpy2[1],rpy2[2]);
-            fprintf(fpw2b,"%.16lf %.16lf %.16lf\n",w2b[0],w2b[1],w2b[2]);
-            fprintf(fpw2i,"%.16lf %.16lf %.16lf\n",w2i[0],w2i[1],w2i[2]); 
-            fprintf(fpEL,"%.16lf %.16lf %.16lf %.16lf\n", ener, mom[0],mom[1],mom[2]);
-        }
-        fclose(fpt);
-        fclose(fprv);
-        fclose(fpq1);
-        fclose(fprpy1);
-        fclose(fpw1b);
-        fclose(fpw1i);
-        fclose(fpq2);
-        fclose(fprpy2);
-        fclose(fpw2b);
-        fclose(fpw2i);
-        fclose(fpEL);
-
-        FILE *fpsteps = fopen(("../simulations/" + str(simname) + "/steps.txt").c_str(),"w");
-        fprintf(fpsteps,"%d\n",(int)(sol.size() - 1));
-        fclose(fpsteps);
-
-        FILE *fpcollision = fopen(("../simulations/" + str(simname) + "/collision.txt").c_str(),"w");
-        fprintf(fpcollision,"%d\n",collision);
-        fclose(fpcollision);
-
-        return;
-    }
+    
 };
 
 
