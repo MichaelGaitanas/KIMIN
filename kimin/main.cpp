@@ -16,17 +16,18 @@ int main()
     glfw win;
     win.add_key_callback();
     win.add_framebuffer_size_callback();
+    
     gui::create_imgui_context(); //static member function
     gui ui(win.pointer);
 
-    properties props;
+    //properties props;
 
     glClearColor(0.0f,0.0f,0.0f,1.0f);
     while (!glfwWindowShouldClose(win.pointer))
     {
         glClear(GL_COLOR_BUFFER_BIT);
         ui.new_frame();
-        ui.lp.render(props, win.pointer);
+        ui.cons.render(props, win.pointer);
         ui.rp.render(props);
         ui.dp.render("Log ", NULL, (char*)glGetString(GL_VENDOR), (char*)glGetString(GL_RENDERER), (char*)glGetString(GL_VERSION));
         ui.render();

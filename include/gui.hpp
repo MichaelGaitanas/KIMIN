@@ -16,8 +16,7 @@
 #include"directory.hpp"
 #include"properties.hpp"
 
-//KIMIN's console window
-class down_panel
+class console
 {
 public:
     ImGuiTextBuffer buffer;
@@ -39,7 +38,7 @@ public:
         scroll_to_bottom = true;
     }
 
-    //Render the console imgui window on top (actually as part) of the glfw window.
+    //Render the console imgui window.
     void render(const char *title, bool *popened = NULL, str vendor = "", str renderer = "", str version = "")
     {
         const float win_width  = ImGui::GetIO().DisplaySize.x;
@@ -79,19 +78,172 @@ public:
     }
 };
 
-class left_panel
+class properties
 {
 public:
 
-    //KIMIN's left gui panel (mainly simulation inputs).
-    void render(properties &props, GLFWwindow *pointer)
+    //Enable the close button on the root imgui window (not the glfw one). Once it is clicked, the game loop terminates.
+    bool xclose; 
+
+    //'Simulation name' field. 30 characters available (plus the '\0' character).
+    char simname[31];
+
+    //'Ellipsoids' checkbox state.
+    bool ell_checkbox;
+    //Ellipsoids 'OK' button state (from the submenu).
+    bool clicked_ell_ok;
+
+    //Ellipsoids {'a1', 'b1', 'c1'}, {'a2', 'b2', 'c2'} fields.
+    dvec3 semiaxes1, semiaxes2;
+
+    //'.obj files' checkbox state.
+    bool obj_checkbox;
+    //.obj files 'Body 2' or 'Body 2' radiobuttons reference (1 or 2 only).
+    int obj_refer_to_body;
+
+    //Index of the clicked .obj path. -1 means no path is clicked. Only one path per body can be clicked.
+    int clicked_masc1_index, clicked_poly1_index;
+    int clicked_masc2_index, clicked_poly2_index;
+    
+    //Decide whether body 1 and body 2 will be loaded as polyhedra .obj
+    bool clicked_poly1, clicked_poly2;
+    
+    //Relative paths to mascons/ and polyhedron/ directories.
+    std::vector<std::filesystem::path> path_to_masc_obj;
+    std::vector<std::filesystem::path> path_to_poly_obj;
+
+    //Relative path to the 2 .obj models.
+    str obj_path1, obj_path2;
+
+    //fundamental contents of the 2 .obj files (vertices, faces, normals, textures).
+    bvec vfnt1, vfnt2;
+
+    //Cartesian grid resolutions (per axis) for filling the polyhedra with mascons.
+    ivec3 grid_reso1;
+    ivec3 grid_reso2;
+    ivec3 grid_reso_null;
+
+    //.obj 'OK' button state.
+    bool clicked_obj_ok;
+
+    //'Theory' checkboxes states.
+    bool ord2_checkbox, ord3_checkbox, ord4_checkbox, mascons_checkbox;
+
+    //'M1', 'M2' fields.
+    double M1, M2;
+
+    //'Epoch', 'Duration', 'Step' fields.
+    double epoch, dur, step;
+
+    //Nature of the relative position and velocity variables.
+    const char *cart_kep_var[2];
+    //Initial choice. 0 -> Cartesian, 1 -> Keplerian.
+    int cart_kep_var_choice;
+
+    //'x', 'y', 'z', 'vx', 'vy', 'vz' fields.
+    dvec6 relcart;
+    //'a', 'e', 'i', 'RAAN', 'w', 'M' fields.
+    dvec6 relkep;
+
+    //Nature of the orientation variables.
+    const char *orient_var[2];
+    //Initial choice. 0 -> Euler angles (roll, pitch, yaw), 1 -> Quaternions.
+    int orient_var_choice;
+
+    //'roll 1', 'pitch 1', 'yaw 1', 'roll 2', 'pitch 2', 'yaw 2' fields.
+    dvec3 rpy1, rpy2;
+    //'q1 0', 'q1 1', 'q1 2', 'q1 3', 'q2 0', 'q2 1', 'q2 2', 'q2 3' fields
+    dvec4 q1, q2;
+
+    //Nature of frames.
+    const char *frame_type[2];
+    //Initial choice. 0 -> Inertial frame, 1 -> Body frames.
+    int frame_type_choice;
+
+    //'w1x', 'w1y', 'w1z', 'w2x', 'w2y, 'w2z' fields.
+    dvec3 w1i, w2i;
+    //'w11', 'w12', 'w13', 'w21', 'w22, 'w23' fields.
+    dvec3 w1b, w2b;
+
+    //Integration methods.
+    const char *integ_method[4];
+    //Initial choice. 0 -> Runge-Kutta-Fehlberg 78, 1 -> Bulirsch-Stoer, etc..
+    int integ_method_choice;
+    //'tolerance' field.
+    double tol;
+
+    //'Run' button state.
+    bool clicked_run;
+
+    //'Run' button state.
+    bool clicked_kill;
+
+    properties() : xclose(true),
+                   simname("test_sim"),
+                   ell_checkbox(false),
+                   clicked_ell_ok(false),
+                   semiaxes1({0.416194, 0.418765, 0.39309}),
+                   semiaxes2({0.104, 0.080, 0.066}),
+                   obj_checkbox(false),
+                   obj_refer_to_body(1),
+                   clicked_masc1_index(-1),
+                   clicked_poly1_index(-1),
+                   clicked_masc2_index(-1),
+                   clicked_poly2_index(-1),
+                   clicked_poly1(false),
+                   clicked_poly2(false),
+                   path_to_masc_obj(lsfiles("../obj/mascons/")),
+                   path_to_poly_obj(lsfiles("../obj/polyhedra/")),
+                   obj_path1(""),
+                   obj_path2(""),
+                   vfnt1({false, false, false, false}),
+                   vfnt2({false, false, false, false}),
+                   grid_reso1({2,2,2}),
+                   grid_reso2({2,2,2}),
+                   grid_reso_null({0,0,0}),
+                   clicked_obj_ok(false),
+                   ord2_checkbox(false),
+                   ord3_checkbox(false),
+                   ord4_checkbox(false),
+                   mascons_checkbox(false),
+                   M1(5.320591856403073e11),
+                   M2(4.940814359692687e9),
+                   epoch(0.0),
+                   dur(30.0),
+                   step(0.001388888888888889),
+                   cart_kep_var{"Cartesian ", "Keplerian "},
+                   cart_kep_var_choice(0),
+                   relcart({1.19,0.0,0.0, 0.0,0.00017421523858789,0.0}),
+                   relkep({0.0,0.0,0.0,0.0,0.0,0.0,}),
+                   orient_var{"Euler angles", "Quaternions"},
+                   orient_var_choice(0),
+                   rpy1({0.0,0.0,0.0}),
+                   rpy2({0.0,0.0,0.0}),
+                   q1({1.0,0.0,0.0,0.0}),
+                   q2({1.0,0.0,0.0,0.0}),
+                   frame_type{"Inertial frame", "Body frames"},
+                   frame_type_choice(0),
+                   w1i({0.0,0.0,0.000772269580528465}),
+                   w2i({0.0,0.0,0.000146399360157891}),
+                   w1b({0.0,0.0,0.0}),
+                   w2b({0.0,0.0,0.0}),
+                   integ_method{"Runge-Kutta-Fehlberg 78 ", "Bulirsch-Stoer", "Dormand-Prince 5 ", "Runge-Kutta 4 (explicit)"},
+                   integ_method_choice(0),
+                   tol(1e-10),
+                   clicked_run(false),
+                   clicked_kill(false)
+    { }
+
+
+
+    void render(GLFWwindow *pointer)
     {
         const float win_width  = ImGui::GetIO().DisplaySize.x;
         const float win_height = ImGui::GetIO().DisplaySize.y;
         ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(win_width/7.0f, win_height), ImGuiCond_FirstUseEver);
-        ImGui::Begin("Properties ",&props.xclose, ImGuiWindowFlags_MenuBar);
-        if (!props.xclose)
+        ImGui::Begin("Properties ",&xclose, ImGuiWindowFlags_MenuBar);
+        if (!xclose)
             glfwSetWindowShouldClose(pointer, true);
 
         //classical menu bar section
@@ -114,18 +266,18 @@ public:
 
         ImGui::Text("Simulation name");
         ImGui::PushItemWidth(200);
-            ImGui::InputText(" ", props.simname, IM_ARRAYSIZE(props.simname));
+            ImGui::InputText(" ", simname, IM_ARRAYSIZE(simname));
         ImGui::PopItemWidth();
         ImGui::Dummy(ImVec2(0.0f,15.0f));
 
         ImGui::Text("Shape models");
-        if (ImGui::Checkbox("Ellipsoids", &props.ell_checkbox) && props.ell_checkbox)
+        if (ImGui::Checkbox("Ellipsoids", &ell_checkbox) && ell_checkbox)
         {
-            props.clicked_ell_ok = false;
+            clicked_ell_ok = false;
         }
-        if (props.ell_checkbox && !props.clicked_ell_ok)
+        if (ell_checkbox && !clicked_ell_ok)
         {
-            props.obj_checkbox = false; //untick the obj checkbox in case it is ticked
+            obj_checkbox = false; //untick the obj checkbox in case it is ticked
             ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver); 
             ImGui::SetNextWindowSize(ImVec2(300,300), ImGuiCond_FirstUseEver); 
             ImGui::Begin("Ellipsoid parameters");
@@ -137,7 +289,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(0);
-                    ImGui::InputDouble("[km]", &props.semiaxes1[0], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[km]", &semiaxes1[0], 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             //keyboard input : b1 semiaxis
@@ -145,7 +297,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(1);
-                    ImGui::InputDouble("[km]", &props.semiaxes1[1], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[km]", &semiaxes1[1], 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             //keyboard input : c1 semiaxis
@@ -153,7 +305,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(2);
-                    ImGui::InputDouble("[km]", &props.semiaxes1[2], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[km]", &semiaxes1[2], 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::Dummy(ImVec2(0.0f,10.0f));
@@ -163,7 +315,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(3);
-                    ImGui::InputDouble("[km]", &props.semiaxes2[0], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[km]", &semiaxes2[0], 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             //keyboard input : b2 semiaxis
@@ -171,7 +323,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(4);
-                    ImGui::InputDouble("[km]", &props.semiaxes2[1], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[km]", &semiaxes2[1], 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             //keyboard input : c2 semiaxis
@@ -179,7 +331,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(5);
-                    ImGui::InputDouble("[km]", &props.semiaxes2[2], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[km]", &semiaxes2[2], 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::Dummy(ImVec2(0.0f,15.0f));
@@ -187,19 +339,19 @@ public:
             //mouse input : ellipsoid submenu "OK" button
             if (ImGui::Button("OK", ImVec2(50.0f,30.0f)))
             {
-                props.clicked_ell_ok = true;
+                clicked_ell_ok = true;
             }
             ImGui::End();
         }
 
         //mouse input : .obj shape model (either mascons or polyhedra)
-        if (ImGui::Checkbox(".obj files", &props.obj_checkbox) && props.obj_checkbox)
+        if (ImGui::Checkbox(".obj files", &obj_checkbox) && obj_checkbox)
         {
-            props.clicked_obj_ok = false;
+            clicked_obj_ok = false;
         }
-        if (props.obj_checkbox && !props.clicked_obj_ok)
+        if (obj_checkbox && !clicked_obj_ok)
         {
-            props.ell_checkbox = false; //untick the ellipsoids checkbox in case it is ticked
+            ell_checkbox = false; //untick the ellipsoids checkbox in case it is ticked
             ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver); //display position of the obj files menu 
             ImGui::SetNextWindowSize(ImVec2(300,300), ImGuiCond_FirstUseEver); 
             ImGui::Begin(".obj parameters");
@@ -207,35 +359,35 @@ public:
             ImGui::Dummy(ImVec2(0.0f,10.0f));
 
             //mouse input : body1 or body2 via radio buttons
-            if (ImGui::RadioButton("Body 1", props.obj_refer_to_body == 1))
-                props.obj_refer_to_body = 1;
-            if (ImGui::RadioButton("Body 2", props.obj_refer_to_body == 2))
-                props.obj_refer_to_body = 2;
+            if (ImGui::RadioButton("Body 1", obj_refer_to_body == 1))
+                obj_refer_to_body = 1;
+            if (ImGui::RadioButton("Body 2", obj_refer_to_body == 2))
+                obj_refer_to_body = 2;
             
             if (ImGui::TreeNodeEx("Mascon models"))
             {
-                for (int i = 0; i < props.path_to_masc_obj.size(); ++i)
+                for (int i = 0; i < path_to_masc_obj.size(); ++i)
                 {
-                    if (props.obj_refer_to_body == 1)
+                    if (obj_refer_to_body == 1)
                     {
                         //mouse input : which .obj model path for body1
-                        if (ImGui::Selectable(props.path_to_masc_obj[i].string().c_str(), (props.clicked_masc1_index == i)))
+                        if (ImGui::Selectable(path_to_masc_obj[i].string().c_str(), (clicked_masc1_index == i)))
                         {
-                            props.clicked_poly1 = false;
-                            props.clicked_masc1_index = i;
-                            props.clicked_poly1_index = -1;
-                            props.obj_path1 = props.path_to_masc_obj[i].string();
+                            clicked_poly1 = false;
+                            clicked_masc1_index = i;
+                            clicked_poly1_index = -1;
+                            obj_path1 = path_to_masc_obj[i].string();
                         }
                     }
                     else
                     {
                         //mouse input : which .obj model path for body2
-                        if (ImGui::Selectable(props.path_to_masc_obj[i].string().c_str(), (props.clicked_masc2_index == i)))
+                        if (ImGui::Selectable(path_to_masc_obj[i].string().c_str(), (clicked_masc2_index == i)))
                         {
-                            props.clicked_poly2 = false;
-                            props.clicked_masc2_index = i;
-                            props.clicked_poly2_index = -1;
-                            props.obj_path2 = props.path_to_masc_obj[i].string();
+                            clicked_poly2 = false;
+                            clicked_masc2_index = i;
+                            clicked_poly2_index = -1;
+                            obj_path2 = path_to_masc_obj[i].string();
                         }
                     }
                 }
@@ -243,28 +395,28 @@ public:
             }
             if (ImGui::TreeNodeEx("Polyhedral models"))
             {
-                for (int i = 0; i < props.path_to_poly_obj.size(); ++i)
+                for (int i = 0; i < path_to_poly_obj.size(); ++i)
                 {
                     //mouse input : which .obj model path for body1
-                    if (props.obj_refer_to_body == 1)
+                    if (obj_refer_to_body == 1)
                     {
-                        if (ImGui::Selectable(props.path_to_poly_obj[i].string().c_str(), (props.clicked_poly1_index == i)))
+                        if (ImGui::Selectable(path_to_poly_obj[i].string().c_str(), (clicked_poly1_index == i)))
                         {
-                            props.clicked_poly1 = true;
-                            props.clicked_masc1_index = -1;
-                            props.clicked_poly1_index = i;
-                            props.obj_path1 = props.path_to_poly_obj[i].string();
+                            clicked_poly1 = true;
+                            clicked_masc1_index = -1;
+                            clicked_poly1_index = i;
+                            obj_path1 = path_to_poly_obj[i].string();
                         }
                     }
                     else
                     {
                         //mouse input : which .obj model path for body2
-                        if (ImGui::Selectable(props.path_to_poly_obj[i].string().c_str(), (props.clicked_poly2_index == i)))
+                        if (ImGui::Selectable(path_to_poly_obj[i].string().c_str(), (clicked_poly2_index == i)))
                         {
-                            props.clicked_poly2 = true;
-                            props.clicked_masc2_index = -1;
-                            props.clicked_poly2_index = i;
-                            props.obj_path2 = props.path_to_poly_obj[i].string();
+                            clicked_poly2 = true;
+                            clicked_masc2_index = -1;
+                            clicked_poly2_index = i;
+                            obj_path2 = path_to_poly_obj[i].string();
                         }
                     }
                 }
@@ -275,9 +427,9 @@ public:
             ImGui::Indent();
             ImGui::Text("Grid resolution ");
 
-            if ((props.obj_refer_to_body == 1 && !props.clicked_poly1) ||
-                (props.obj_refer_to_body == 2 && !props.clicked_poly2) ||
-                (!props.clicked_poly1 && !props.clicked_poly2))
+            if ((obj_refer_to_body == 1 && !clicked_poly1) ||
+                (obj_refer_to_body == 2 && !clicked_poly2) ||
+                (!clicked_poly1 && !clicked_poly2))
             {
                 //pseudo mouse or keyboard inputs (basically you cannot input anything if the following commands are executed)
 
@@ -286,7 +438,7 @@ public:
                     ImGui::SameLine();
                     ImGui::PushItemWidth(100.0f);
                         ImGui::PushID(6);
-                            ImGui::InputInt(" [ > 1 ]", &props.grid_reso_null[0]);
+                            ImGui::InputInt(" [ > 1 ]", &grid_reso_null[0]);
                         ImGui::PopID();
                     ImGui::PopItemWidth();
 
@@ -294,7 +446,7 @@ public:
                     ImGui::SameLine();
                     ImGui::PushItemWidth(100.0f);
                         ImGui::PushID(7);
-                            ImGui::InputInt(" [ > 1 ]", &props.grid_reso_null[1]);
+                            ImGui::InputInt(" [ > 1 ]", &grid_reso_null[1]);
                         ImGui::PopID();
                     ImGui::PopItemWidth();
 
@@ -302,19 +454,19 @@ public:
                     ImGui::SameLine();
                     ImGui::PushItemWidth(100.0f);
                         ImGui::PushID(8);
-                            ImGui::InputInt(" [ > 1 ]", &props.grid_reso_null[2]);
+                            ImGui::InputInt(" [ > 1 ]", &grid_reso_null[2]);
                         ImGui::PopID();
                     ImGui::PopItemWidth();
                 ImGui::EndDisabled();
             }
-            else if (props.obj_refer_to_body == 1 && props.clicked_poly1)
+            else if (obj_refer_to_body == 1 && clicked_poly1)
             {
                 //mouse or keyboard input : body1 x grid resolution for the raycast
                 ImGui::Text("x axis ");
                 ImGui::SameLine();
                 ImGui::PushItemWidth(100.0f);
                     ImGui::PushID(9);
-                        ImGui::InputInt(" [ > 1 ]", &props.grid_reso1[0]);
+                        ImGui::InputInt(" [ > 1 ]", &grid_reso1[0]);
                     ImGui::PopID();
                 ImGui::PopItemWidth();
 
@@ -323,7 +475,7 @@ public:
                 ImGui::SameLine();
                 ImGui::PushItemWidth(100.0f);
                     ImGui::PushID(10);
-                        ImGui::InputInt(" [ > 1 ]", &props.grid_reso1[1]);
+                        ImGui::InputInt(" [ > 1 ]", &grid_reso1[1]);
                     ImGui::PopID();
                 ImGui::PopItemWidth();
 
@@ -332,18 +484,18 @@ public:
                 ImGui::SameLine();
                 ImGui::PushItemWidth(100.0f);
                     ImGui::PushID(11);
-                        ImGui::InputInt(" [ > 1 ]", &props.grid_reso1[2]);
+                        ImGui::InputInt(" [ > 1 ]", &grid_reso1[2]);
                     ImGui::PopID();
                 ImGui::PopItemWidth();
             }
-            else if (props.obj_refer_to_body == 2 && props.clicked_poly2)
+            else if (obj_refer_to_body == 2 && clicked_poly2)
             {
                 //mouse or keyboard input : body2 x grid resolution for the raycast
                 ImGui::Text("x axis ");
                 ImGui::SameLine();
                 ImGui::PushItemWidth(100.0f);
                     ImGui::PushID(12);
-                        ImGui::InputInt(" [ > 1 ]", &props.grid_reso2[0]);
+                        ImGui::InputInt(" [ > 1 ]", &grid_reso2[0]);
                     ImGui::PopID();
                 ImGui::PopItemWidth();
 
@@ -352,7 +504,7 @@ public:
                 ImGui::SameLine();
                 ImGui::PushItemWidth(100.0f);
                     ImGui::PushID(13);
-                        ImGui::InputInt(" [ > 1 ]", &props.grid_reso2[1]);
+                        ImGui::InputInt(" [ > 1 ]", &grid_reso2[1]);
                     ImGui::PopID();
                 ImGui::PopItemWidth();
 
@@ -361,7 +513,7 @@ public:
                 ImGui::SameLine();
                 ImGui::PushItemWidth(100.0f);
                     ImGui::PushID(14);
-                        ImGui::InputInt(" [ > 1 ]", &props.grid_reso2[2]);
+                        ImGui::InputInt(" [ > 1 ]", &grid_reso2[2]);
                     ImGui::PopID();
                 ImGui::PopItemWidth();
             }
@@ -372,7 +524,7 @@ public:
             //mouse input : .obj submenu "OK" button
             if (ImGui::Button("OK", ImVec2(50.0f,30.0f)))   
             {
-                props.clicked_obj_ok = true;
+                clicked_obj_ok = true;
             }
 
             ImGui::End();
@@ -381,29 +533,29 @@ public:
 
         //mouse input : physics theory
         ImGui::Text("Theory");
-        if (ImGui::Checkbox("Order 2", &props.ord2_checkbox))
+        if (ImGui::Checkbox("Order 2", &ord2_checkbox))
         {
-            props.ord3_checkbox = false;
-            props.ord4_checkbox = false;
-            props.mascons_checkbox = false;
+            ord3_checkbox = false;
+            ord4_checkbox = false;
+            mascons_checkbox = false;
         }
-        if (ImGui::Checkbox("Order 3", &props.ord3_checkbox))
+        if (ImGui::Checkbox("Order 3", &ord3_checkbox))
         {
-            props.ord2_checkbox = false;
-            props.ord4_checkbox = false;
-            props.mascons_checkbox = false;
+            ord2_checkbox = false;
+            ord4_checkbox = false;
+            mascons_checkbox = false;
         }
-        if (ImGui::Checkbox("Order 4", &props.ord4_checkbox))
+        if (ImGui::Checkbox("Order 4", &ord4_checkbox))
         {
-            props.ord2_checkbox = false;
-            props.ord3_checkbox = false;
-            props.mascons_checkbox = false;
+            ord2_checkbox = false;
+            ord3_checkbox = false;
+            mascons_checkbox = false;
         }
-        if (ImGui::Checkbox("Mascons", &props.mascons_checkbox))
+        if (ImGui::Checkbox("Mascons", &mascons_checkbox))
         {
-            props.ord2_checkbox = false;
-            props.ord3_checkbox = false;
-            props.ord4_checkbox = false;
+            ord2_checkbox = false;
+            ord3_checkbox = false;
+            ord4_checkbox = false;
         }
         ImGui::Dummy(ImVec2(0.0f,15.0f));
 
@@ -414,7 +566,7 @@ public:
         ImGui::SameLine();
         ImGui::PushItemWidth(100.0f);
             ImGui::PushID(15);
-                ImGui::InputDouble("[kg]", &props.M1, 0.0, 0.0,"%.5lf");
+                ImGui::InputDouble("[kg]", &M1, 0.0, 0.0,"%.5lf");
             ImGui::PopID();
         ImGui::PopItemWidth();
         
@@ -423,7 +575,7 @@ public:
         ImGui::SameLine();
         ImGui::PushItemWidth(100.0f);
             ImGui::PushID(16);
-                ImGui::InputDouble("[kg]", &props.M2, 0.0, 0.0,"%.5lf");
+                ImGui::InputDouble("[kg]", &M2, 0.0, 0.0,"%.5lf");
             ImGui::PopID();
         ImGui::PopItemWidth();
 
@@ -434,7 +586,7 @@ public:
         ImGui::SameLine();
         ImGui::PushItemWidth(100.0f);
             ImGui::PushID(17);
-                ImGui::InputDouble(" [days]", &props.epoch, 0.0, 0.0,"%.5lf");
+                ImGui::InputDouble(" [days]", &epoch, 0.0, 0.0,"%.5lf");
             ImGui::PopID();
         ImGui::PopItemWidth();
 
@@ -443,7 +595,7 @@ public:
         ImGui::SameLine();
         ImGui::PushItemWidth(100.0f);
             ImGui::PushID(18);
-                ImGui::InputDouble("[days]", &props.dur, 0.0, 0.0,"%.5lf");
+                ImGui::InputDouble("[days]", &dur, 0.0, 0.0,"%.5lf");
             ImGui::PopID();
         ImGui::PopItemWidth();
 
@@ -452,7 +604,7 @@ public:
         ImGui::SameLine();
         ImGui::PushItemWidth(100.0f);
             ImGui::PushID(19);
-                ImGui::InputDouble("[days]", &props.step, 0.0, 0.0,"%.9lf");
+                ImGui::InputDouble("[days]", &step, 0.0, 0.0,"%.9lf");
             ImGui::PopID();
         ImGui::PopItemWidth();
 
@@ -463,18 +615,18 @@ public:
         //mouse input : position/velocity variables (combo)
         ImGui::PushItemWidth(200.0f);
             ImGui::PushID(20);
-                ImGui::Combo("  ", &props.cart_kep_var_choice, props.cart_kep_var, IM_ARRAYSIZE(props.cart_kep_var));
+                ImGui::Combo("  ", &cart_kep_var_choice, cart_kep_var, IM_ARRAYSIZE(cart_kep_var));
             ImGui::PopID();
         ImGui::PopItemWidth();
 
-        if (props.cart_kep_var_choice == 0)
+        if (cart_kep_var_choice == 0)
         {
             //keyboard input : relative position x
             ImGui::Text("x    ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(21);
-                    ImGui::InputDouble("[km]", &props.relcart[0], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[km]", &relcart[0], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -483,7 +635,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(22);
-                    ImGui::InputDouble("[km]", &props.relcart[1], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[km]", &relcart[1], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -492,7 +644,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(23);
-                    ImGui::InputDouble("[km]", &props.relcart[2], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[km]", &relcart[2], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -501,7 +653,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(24);
-                    ImGui::InputDouble("[km/sec]", &props.relcart[3], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[km/sec]", &relcart[3], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             
@@ -510,7 +662,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(25);
-                    ImGui::InputDouble("[km/sec]", &props.relcart[4], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[km/sec]", &relcart[4], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -519,19 +671,19 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(26);
-                    ImGui::InputDouble("[km/sec]", &props.relcart[5], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[km/sec]", &relcart[5], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
         }
-        else if (props.cart_kep_var_choice == 1)
+        else if (cart_kep_var_choice == 1)
         {
             //keyboard input : relative semi-major axis a
             ImGui::Text("a       ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(27);
-                    ImGui::InputDouble("[km]", &props.relkep[0], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[km]", &relkep[0], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
                         
@@ -540,7 +692,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(28);
-                    ImGui::InputDouble("[  ]", &props.relkep[1], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[  ]", &relkep[1], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -549,7 +701,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(29);
-                    ImGui::InputDouble("[deg]", &props.relkep[2], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[deg]", &relkep[2], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -558,7 +710,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(30);
-                    ImGui::InputDouble("[deg]", &props.relkep[3], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[deg]", &relkep[3], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -567,7 +719,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(31);
-                    ImGui::InputDouble("[deg]", &props.relkep[4], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[deg]", &relkep[4], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -576,7 +728,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(32);
-                    ImGui::InputDouble("[deg]", &props.relkep[5], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[deg]", &relkep[5], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
         }
@@ -586,18 +738,18 @@ public:
         //mouse input : orientation variables (combo)
         ImGui::PushItemWidth(200.0f);
             ImGui::PushID(33);
-                ImGui::Combo("  ", &props.orient_var_choice, props.orient_var, IM_ARRAYSIZE(props.orient_var));
+                ImGui::Combo("  ", &orient_var_choice, orient_var, IM_ARRAYSIZE(orient_var));
             ImGui::PopID();
         ImGui::PopItemWidth();
 
-        if (props.orient_var_choice == 0)
+        if (orient_var_choice == 0)
         {
             //keyboard input : roll 1 angle
             ImGui::Text("roll 1    ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(34);
-                    ImGui::InputDouble("[deg]", &props.rpy1[0], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[deg]", &rpy1[0], 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -606,7 +758,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0);
                 ImGui::PushID(35);
-                    ImGui::InputDouble("[deg]", &props.rpy1[1], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[deg]", &rpy1[1], 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             
@@ -615,7 +767,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(36);
-                    ImGui::InputDouble("[deg]", &props.rpy1[2], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[deg]", &rpy1[2], 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -624,7 +776,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(37);
-                    ImGui::InputDouble("[deg]", &props.rpy2[0], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[deg]", &rpy2[0], 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -633,7 +785,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(38);
-                    ImGui::InputDouble("[deg]", &props.rpy2[1], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[deg]", &rpy2[1], 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             
@@ -642,18 +794,18 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(39);
-                    ImGui::InputDouble("[deg]", &props.rpy2[2], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[deg]", &rpy2[2], 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
         }
-        else if (props.orient_var_choice == 1)
+        else if (orient_var_choice == 1)
         {
             //keyboard input : q10 quaternion component
             ImGui::Text("q10   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(40);
-                    ImGui::InputDouble("[  ]", &props.q1[0], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[  ]", &q1[0], 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -662,7 +814,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(41);
-                    ImGui::InputDouble("[  ]", &props.q1[1], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[  ]", &q1[1], 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -671,7 +823,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(42);
-                    ImGui::InputDouble("[  ]", &props.q1[2], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[  ]", &q1[2], 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             
@@ -680,7 +832,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(43);
-                    ImGui::InputDouble("[  ]", &props.q1[3], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[  ]", &q1[3], 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -689,7 +841,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(44);
-                    ImGui::InputDouble("[  ]", &props.q2[0], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[  ]", &q2[0], 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -698,7 +850,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(45);
-                    ImGui::InputDouble("[  ]", &props.q2[1], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[  ]", &q2[1], 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -707,7 +859,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(46);
-                    ImGui::InputDouble("[  ]", &props.q2[2], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[  ]", &q2[2], 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -716,7 +868,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(47);
-                    ImGui::InputDouble("[  ]", &props.q2[3], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[  ]", &q2[3], 0.0, 0.0,"%.5lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
         }
@@ -726,18 +878,18 @@ public:
         //mouse input : frame choice (combo)
         ImGui::PushItemWidth(200.0f);
             ImGui::PushID(48);
-                ImGui::Combo("  ", &props.frame_type_choice, props.frame_type, IM_ARRAYSIZE(props.frame_type));
+                ImGui::Combo("  ", &frame_type_choice, frame_type, IM_ARRAYSIZE(frame_type));
             ImGui::PopID();
         ImGui::PopItemWidth();
 
-        if (props.frame_type_choice == 0)
+        if (frame_type_choice == 0)
         {
             //keyboard input : w1x (inertial) angular velocity
             ImGui::Text("w1x   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(49);
-                    ImGui::InputDouble("[rad/sec]", &props.w1i[0], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[rad/sec]", &w1i[0], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -746,7 +898,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(50);
-                    ImGui::InputDouble("[rad/sec]", &props.w1i[1], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[rad/sec]", &w1i[1], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             
@@ -755,7 +907,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(51);
-                    ImGui::InputDouble("[rad/sec]", &props.w1i[2], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[rad/sec]", &w1i[2], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -764,7 +916,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(52);
-                    ImGui::InputDouble("[rad/sec]", &props.w2i[0], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[rad/sec]", &w2i[0], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -773,7 +925,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(53);
-                    ImGui::InputDouble("[rad/sec]", &props.w2i[1], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[rad/sec]", &w2i[1], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             
@@ -782,19 +934,19 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(54);
-                    ImGui::InputDouble("[rad/sec]", &props.w2i[2], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[rad/sec]", &w2i[2], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
         }
-        else if (props.frame_type_choice == 1)
+        else if (frame_type_choice == 1)
         {
             //keyboard input : w11 (body) angular velocity
             ImGui::Text("w11   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(55);
-                    ImGui::InputDouble("[rad/sec]", &props.w1b[0], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[rad/sec]", &w1b[0], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -803,7 +955,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(56);
-                    ImGui::InputDouble("[rad/sec]", &props.w1b[1], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[rad/sec]", &w1b[1], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -812,7 +964,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(57);
-                    ImGui::InputDouble("[rad/sec]", &props.w1b[2], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[rad/sec]", &w1b[2], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -821,7 +973,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(58);
-                    ImGui::InputDouble("[rad/sec]", &props.w2b[0], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[rad/sec]", &w2b[0], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -830,7 +982,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(59);
-                    ImGui::InputDouble("[rad/sec]", &props.w2b[1], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[rad/sec]", &w2b[1], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -839,7 +991,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(60);
-                    ImGui::InputDouble("[rad/sec]", &props.w2b[2], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[rad/sec]", &w2b[2], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
         }
@@ -851,7 +1003,7 @@ public:
         //mouse input : integration method
         ImGui::PushItemWidth(200.0f);
             ImGui::PushID(61);
-                ImGui::Combo("  ", &props.integ_method_choice, props.integ_method, IM_ARRAYSIZE(props.integ_method));
+                ImGui::Combo("  ", &integ_method_choice, integ_method, IM_ARRAYSIZE(integ_method));
             ImGui::PopID();
         ImGui::PopItemWidth();
 
@@ -860,26 +1012,137 @@ public:
         ImGui::SameLine();
         ImGui::PushItemWidth(200.0);
             ImGui::PushID(62);
-                ImGui::InputDouble("", &props.tol, 0.0, 0.0,"%e");
+                ImGui::InputDouble("", &tol, 0.0, 0.0,"%e");
             ImGui::PopID();
         ImGui::PopItemWidth();
         ImGui::Dummy(ImVec2(0.0f,15.0f));
 
         //mouse input : run button
         if (ImGui::Button("Run", ImVec2(50.0f,30.0f)))
-            props.clicked_run = true;
+            clicked_run = true;
 
         ImGui::SameLine();
 
         //mouse input : kill button
         if (ImGui::Button("Kill", ImVec2(50.0f,30.0f)))
-            props.clicked_kill = true;
+            clicked_kill = true;
 
         ImGui::End();
     }
+
+
+    //If all user inputs are valid, this member function returns an entirely empty vector of strings.
+    //Otherwise the returned vector contains string messages, each corresponding to an invalid input. In this case,
+    //the vector of strings will be displayed on the console and the simulation will not run.
+    strvec validate()
+    {
+        strvec errors;
+        
+        //simname[] errors (empty, pure tabs, begin with tab).
+        str simnname_copy = simname;
+        char first_char = simnname_copy[0];
+        char one_space = ' ';
+        if ( (simnname_copy.empty()) || (simnname_copy.find_first_not_of(' ') == str::npos) || (first_char == one_space) )
+            errors.push_back("[Error] :  'Simulation name' is invalid.");
+
+        //Theory model checkboxes error (at least one must be checked).
+        if (!ord2_checkbox && !ord3_checkbox && !ord4_checkbox && !mascons_checkbox)
+            errors.push_back("[Error] :  Neither 'Order 2', nor 'Order 3', nor 'Order 4', nor 'Mascons' theory is selected.");
+
+        //Shape model checkboxes error (at least one must be checked).
+        if (!ell_checkbox && !obj_checkbox)
+            errors.push_back("[Error] :  Neither 'Ellipsoids' nor '.obj files' is selected as shape models.");
+
+        //Ellipsoids semiaxes error (all semiaxes must be > 0.0).
+        if (ell_checkbox && (semiaxes1[0] <= 0.0 || semiaxes1[1] <= 0.0 || semiaxes1[2] <= 0.0))
+            errors.push_back("[Error] :  'a1', 'b1', 'c1' must be positive numbers.");
+        if (ell_checkbox && (semiaxes2[0] <= 0.0 || semiaxes2[1] <= 0.0 || semiaxes2[2] <= 0.0))
+            errors.push_back("[Error] :  'a2', 'b2', 'c2' must be positive numbers.");
+
+        //.obj files error (at least one .obj file per body must be selected by the user).
+        if(obj_checkbox && clicked_masc1_index == -1 && clicked_poly1_index == -1)
+            errors.push_back("[Error] :  No .obj file is selected for 'Body 1'.");
+        if(obj_checkbox && clicked_masc2_index == -1 && clicked_poly2_index == -1)
+            errors.push_back("[Error] :  No .obj file is selected for 'Body 2'.");
+
+        //.obj files error of mascons category (the .obj file must at least contain lines with the format 'v x y z' to be assumed as mascons).
+        if(obj_checkbox && clicked_masc1_index != -1)
+        {
+            vfnt1 = checkobj(obj_path1.c_str());
+            if (!vfnt1[0])
+                errors.push_back("[Error] : In 'Body 1' .obj file, no vertices were found in order to be assumed as mascons.");
+        }
+        if(obj_checkbox && clicked_masc2_index != -1)
+        {
+            vfnt2 = checkobj(obj_path2.c_str());
+            if (!vfnt2[0])
+                errors.push_back("[Error] : In 'Body 2' .obj file, no vertices were found in order to be assumed as mascons.");
+        }
+
+        //.obj files error of polyhedron category (the .obj file must at least contain lines with the
+        //format 'v x y z' AND ('f i j k' OR 'f i11/i12 i21/i22 i31/i32' OR 'f i11//i12 i21//i22 i31//i32' OR 'f i11/i12/i13 i21/i22/i23 i31/i32/i33') to be assumed as polyhedron).
+        if (obj_checkbox && clicked_poly1)
+        {
+            vfnt1 = checkobj(obj_path1.c_str());
+            if ( !(vfnt1[0] && vfnt1[1]) )
+                errors.push_back("[Error] :  In 'Body 1' .obj file, at least vertices and faces lines must be present.");
+        }
+        if (obj_checkbox && clicked_poly2)
+        {
+            vfnt2 = checkobj(obj_path2.c_str());
+            if ( !(vfnt2[0] && vfnt2[1]) )
+                errors.push_back("[Error] :  In 'Body 2' .obj file, at least vertices and faces lines must be present.");
+        }
+
+        //Raycast grid error (in order to successfully fill the polyhedron with mascons, the raycast grid resolution must be > 1 per axis)
+        if (obj_checkbox && clicked_poly1 && (grid_reso1[0] <= 1 || grid_reso1[1] <= 1 || grid_reso1[2] <= 1))
+            errors.push_back("[Error] :  Invalid 'x axis', 'y axis', 'z axis' resolution for 'Body 1'.");
+        if (obj_checkbox && clicked_poly2 && (grid_reso2[0] <= 1 || grid_reso2[1] <= 1 || grid_reso2[2] <= 1))
+            errors.push_back("[Error] :  Invalid 'x axis', 'y axis', 'z axis' resolution for 'Body 2'.");
+
+        //Masses error (both M1 and M2 must be > 0.0).
+        if (M1 <= 0.0)
+            errors.push_back("[Error] :  'M1' must be positive.");
+        if (M2 <= 0.0)
+            errors.push_back("[Error] :  'M2' must be positive.");
+
+        //Time parameters errors (must : epoch >= 0.0, dur >= 0.0, print_step <= dur)
+        if (!(epoch >= 0.0 && dur >= 0.0 && step <= dur))
+            errors.push_back("[Error] :  Invalid set of 'Epoch', 'Duration', 'Step'.");
+
+        //Relative position/velocity errors. Here, we assume that only the Keplerian elements 'a','e' might be invalid.
+        if (cart_kep_var_choice == 1 && relkep[0] <= 0.0)
+            errors.push_back("[Error] :  Invalid semi-major axis 'a'.");
+        if (cart_kep_var_choice == 1 && relkep[1] >= 1.0)
+            errors.push_back("[Error] :  Invalid eccentricity 'e'.");
+
+        //Quaternion errors (zero quaternion). In case of non normalized quaternions, the program normalizes it automatically.
+        if (orient_var_choice == 1) //that is, if the user chose quaternions as orientation variables
+        {
+            double normq1 = length(q1);
+            if (normq1 <= machine_zero) //error
+                errors.push_back("[Error] :  Quaternion 1 ('q10', 'q11', 'q12', 'q13') must be nonzero.");
+            else //normalize it no matter what
+                q1 = quat2unit(q1);
+
+            //the same for q2 ...
+            double normq2 = length(q2);
+            if (normq2 <= machine_zero)
+                errors.push_back("[Error] :  Quaternion 2 ('q20', 'q21', 'q22', 'q23') must be nonzero.");
+            else
+                q2 = quat2unit(q2);
+        }
+
+        //Tolerance error (must be > 0.0).
+        if (tol <= 0.0)
+            errors.push_back("[Error] :  Invalid tolerance 'tol'.");
+
+        return errors;
+    }
+
 };
 
-class right_panel
+class graphics
 {
 public:
 
@@ -894,37 +1157,17 @@ public:
     bool plot_ener_rel_err;
     bool plot_mom_rel_err;
 
-    right_panel() : plot_relcart({false,false,false,false,false,false}),
-                    plot_relkep({false,false,false,false,false,false}),
-                    plot_rpy1({false,false,false}),
-                    plot_rpy2({false,false,false}),
-                    plot_w1i({false,false,false}),
-                    plot_w2i({false,false,false}),
-                    plot_w1b({false,false,false}),
-                    plot_w2b({false,false,false}),
-                    plot_ener_rel_err(false),
-                    plot_mom_rel_err(false)
+    graphics() : plot_relcart({false,false,false,false,false,false}),
+                 plot_relkep({false,false,false,false,false,false}),
+                 plot_rpy1({false,false,false}),
+                 plot_rpy2({false,false,false}),
+                 plot_w1i({false,false,false}),
+                 plot_w2i({false,false,false}),
+                 plot_w1b({false,false,false}),
+                 plot_w2b({false,false,false}),
+                 plot_ener_rel_err(false),
+                 plot_mom_rel_err(false)
     { }
-
-    dvec get_t_sol(const dmat &sol)
-    {
-        dvec result;
-        for (int i = 0; i < sol.size(); ++i)
-        {
-            result.push_back(sol[i][0]);
-        }
-        return result;
-    }
-
-    dvec get_relx_sol(const dmat &sol)
-    {
-        dvec result;
-        for (int i = 0; i < sol.size(); ++i)
-        {
-            result.push_back(sol[i][1]);
-        }
-        return result;
-    }
 
     void render(const properties &props)
     {
@@ -936,9 +1179,9 @@ public:
 
         if (ImGui::CollapsingHeader("Plots"))
         {
-            ImGui::BulletText("Cartesian position");
-            ImGui::Checkbox("x(t)", &plot_relcart[0]);
-
+            ImGui::BulletText("Cartesian position/velocity");
+            /*
+            ImGui::Checkbox("x(t)",  &plot_relcart[0]);
             if (plot_relcart[0])
             {
                 ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
@@ -952,10 +1195,46 @@ public:
                 }
                 ImGui::End();
             }
-        }
+            */
 
-        
-        
+            ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+            ImGui::BulletText("Keplerian elements");
+            /*
+            ImGui::Checkbox("sma(t)",  &plot_relkep[0]);
+            if (plot_relcart[0])
+            {
+                ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
+                ImGui::Begin("relx plot", &plot_relcart[0]);
+                ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
+                if (ImPlot::BeginPlot("relx = relx(t)", plot_win_size))
+                {
+                    ImPlot::SetupAxes("t","relx");
+                    ImPlot::PlotLine("", &get_t_sol(props.sol)[0], &get_relx_sol(props.sol)[0], props.sol.size());
+                    ImPlot::EndPlot();  
+                }
+                ImGui::End();
+            }
+            */
+
+            ImGui::BulletText("Energy - momentum");
+            ImGui::Checkbox("error_at_E(t)",  &plot_ener_rel_err);
+            /*
+            if (plot_ener_rel_err)
+            {
+                ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
+                ImGui::Begin("relx plot", &plot_relcart[0]);
+                ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
+                if (ImPlot::BeginPlot("relx = relx(t)", plot_win_size))
+                {
+                    ImPlot::SetupAxes("t","relx");
+                    ImPlot::PlotLine("", &get_t_sol(props.sol)[0], &get_relx_sol(props.sol)[0], props.sol.size());
+                    ImPlot::EndPlot();  
+                }
+                ImGui::End();
+            }
+            */
+        }
         ImGui::End();
     }
 };
@@ -964,9 +1243,9 @@ class gui
 {
 public:
     ImGuiIO &io; //this reference will be (and must be) initialized in the constructor gui(...)
-    left_panel lp;
-    right_panel rp;
-    down_panel dp;
+    properties props;
+    graphics graph;
+    console cons;
 
     //We ought to call ImGui::CreateContext() before ImGui::GetIO(). But ImGui::GetIO() will be called once an instance of the class is created.
     //The following static member function serves the aforementioned purpose : To be able to call ImGui::CreateContext() without having an instance of the class.
