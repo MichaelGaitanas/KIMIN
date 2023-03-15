@@ -1,34 +1,31 @@
-
-#include<cstdio>
-#include<cmath>
+#include<iostream>
 
 class Properties
 {
 public:
-    double M1,M2;
+   int var1;
+   int var2;
+   Properties() : var1(5),
+                  var2(6)
+   { printf("Instantiated 'Properties' --> props\n"); }
 };
 
-class Propagator
+class Propagator : public Properties
 {
 public:
-    double x,y,z;
-    Propagator(const Properties &properties)
-    {
-        if (properties.M1 <= 0.0)
-            x = 17.0;
-    }
+   int var3;
+   Propagator(Properties &props)
+   {
+        if (props.var1 > 0)
+            var3 = 1;
+        else
+            var3 = -1;
+   }
 };
 
 int main()
 {
-    Properties properties;
-    properties.M1 =  -3.0;
-    properties.M2 = -34.0;
-
-    Propagator propagator(properties);
-
-    printf("x = %lf\n",propagator.x);
-
-	
-	return 0;
+   Properties props;
+   
+   return 0;
 }

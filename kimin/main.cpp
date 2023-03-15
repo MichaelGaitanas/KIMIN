@@ -37,10 +37,10 @@ int main()
             strvec errors = gui.properties.validate();
             if (!errors.size())
             {
-                std::thread propagator_thread(std::bind(&Propagator::run, propagator));
-                propagator_thread.detach();
-
-                //export_txt_files(); //only after the propagatror_thread is done!
+                Propagator propagator(gui.properties);
+                propagator.run();
+                //std::thread propagator_thread(std::bind(&Propagator::run, propagator));
+                //propagator_thread.detach();
             }
             else
             {
