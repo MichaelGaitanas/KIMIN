@@ -22,10 +22,10 @@
 
 class Console
 {
-public:
+private:
     ImGuiTextBuffer buffer;
     bool scroll_to_bottom;
-
+public:
     //Clear the console.
     void cls()
     {
@@ -135,9 +135,9 @@ public:
     int cart_kep_var_choice;
 
     //'x', 'y', 'z', 'vx', 'vy', 'vz' fields.
-    dvec6 relcart;
+    dvec6 cart;
     //'a', 'e', 'i', 'RAAN', 'w', 'M' fields.
-    dvec6 relkep;
+    dvec6 kep;
 
     //Nature of the orientation variables.
     const char *orient_var[2];
@@ -207,8 +207,8 @@ public:
                    step(0.001388888888888889),
                    cart_kep_var{"Cartesian ", "Keplerian "},
                    cart_kep_var_choice(0),
-                   relcart({1.19,0.0,0.0, 0.0,0.00017421523858789,0.0}),
-                   relkep({0.0,0.0,0.0,0.0,0.0,0.0,}),
+                   cart({1.19,0.0,0.0, 0.0,0.00017421523858789,0.0}),
+                   kep({0.0,0.0,0.0,0.0,0.0,0.0,}),
                    orient_var{"Euler angles", "Quaternions"},
                    orient_var_choice(0),
                    rpy1({0.0,0.0,0.0}),
@@ -228,7 +228,12 @@ public:
                    clicked_kill(false)
     { }
 
-
+    void import(const char *path)
+    {
+        //1) Read a user file that contains the desired 'properties'.
+        //2) Update the class member variables, so that the next frame renders the imported ones.
+        return;
+    }
 
     void render(GLFWwindow *pointer)
     {
@@ -630,7 +635,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(21);
-                    ImGui::InputDouble("[km]", &relcart[0], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[km]", &cart[0], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -639,7 +644,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(22);
-                    ImGui::InputDouble("[km]", &relcart[1], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[km]", &cart[1], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -648,7 +653,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(23);
-                    ImGui::InputDouble("[km]", &relcart[2], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[km]", &cart[2], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -657,7 +662,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(24);
-                    ImGui::InputDouble("[km/sec]", &relcart[3], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[km/sec]", &cart[3], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             
@@ -666,7 +671,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(25);
-                    ImGui::InputDouble("[km/sec]", &relcart[4], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[km/sec]", &cart[4], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -675,7 +680,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(26);
-                    ImGui::InputDouble("[km/sec]", &relcart[5], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[km/sec]", &cart[5], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -687,7 +692,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(27);
-                    ImGui::InputDouble("[km]", &relkep[0], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[km]", &kep[0], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
                         
@@ -696,7 +701,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(28);
-                    ImGui::InputDouble("[  ]", &relkep[1], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[  ]", &kep[1], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -705,7 +710,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(29);
-                    ImGui::InputDouble("[deg]", &relkep[2], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[deg]", &kep[2], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -714,7 +719,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(30);
-                    ImGui::InputDouble("[deg]", &relkep[3], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[deg]", &kep[3], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -723,7 +728,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(31);
-                    ImGui::InputDouble("[deg]", &relkep[4], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[deg]", &kep[4], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -732,7 +737,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(32);
-                    ImGui::InputDouble("[deg]", &relkep[5], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[deg]", &kep[5], 0.0, 0.0,"%.10lf");
                 ImGui::PopID();
             ImGui::PopItemWidth();
         }
@@ -1115,9 +1120,9 @@ public:
             errors.push_back("[Error] :  Invalid set of 'Epoch', 'Duration', 'Step'.");
 
         //Relative position/velocity errors. Here, we assume that only the Keplerian elements 'a','e' might be invalid.
-        if (cart_kep_var_choice == 1 && relkep[0] <= 0.0)
+        if (cart_kep_var_choice == 1 && kep[0] <= 0.0)
             errors.push_back("[Error] :  Invalid semi-major axis 'a'.");
-        if (cart_kep_var_choice == 1 && relkep[1] >= 1.0)
+        if (cart_kep_var_choice == 1 && kep[1] >= 1.0)
             errors.push_back("[Error] :  Invalid eccentricity 'e'.");
 
         //Quaternion errors (zero quaternion). In case of non normalized quaternions, the program normalizes it automatically.
@@ -1143,7 +1148,6 @@ public:
 
         return errors;
     }
-
 };
 
 class Graphics

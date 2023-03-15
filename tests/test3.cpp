@@ -1,4 +1,4 @@
-#include<iostream>
+#include<cstdio>
 
 class Properties
 {
@@ -7,25 +7,41 @@ public:
    int var2;
    Properties() : var1(5),
                   var2(6)
-   { printf("Instantiated 'Properties' --> props\n"); }
+   { }
+
+   void change_public_vars()
+   {
+      var1 = 15;
+      var2 = 16;
+   }
 };
 
 class Propagator : public Properties
 {
 public:
    int var3;
-   Propagator(Properties &props)
+
+   Propagator(const Properties &properties)
    {
-        if (props.var1 > 0)
-            var3 = 1;
-        else
-            var3 = -1;
+      var1 = properties.var1;
+      var2 = properties.var2;
+   }
+
+   void print_var1_and_var2()
+   {
+      printf("%d  %d\n",var1,var2);
+      return;
    }
 };
 
 int main()
 {
-   Properties props;
-   
+   Properties properties;
+   properties.change_public_vars();
+   printf("%d  %d\n",properties.var1, properties.var2);
+
+   Propagator propagator(properties);
+   propagator.print_var1_and_var2();
+
    return 0;
 }

@@ -1,7 +1,7 @@
 #include<cstdio>
 #include<cmath>
 
-#include<thread>
+//#include<thread>
 
 #include<GL/glew.h>
 #include<GLFW/glfw3.h>
