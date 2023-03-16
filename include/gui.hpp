@@ -9,14 +9,13 @@
 #include<GL/glew.h>
 #include<GLFW/glfw3.h>
 
-#include<cstdio>
 #include<cstdarg>
 #include<filesystem>
 
 #include"typedef.hpp"
 #include"constant.hpp"
 #include"linalg.hpp"
-#include"task.hpp"
+#include"osys.hpp"
 #include"obj.hpp"
 #include"conversion.hpp"
 
@@ -57,7 +56,11 @@ public:
         
         ImGui::SameLine();
 
-        ImGui::Text("FPS [ %.1f ], ", ImGui::GetIO().Framerate);
+        ImGui::Text("FPS [ %.1f ],  ", ImGui::GetIO().Framerate);
+
+        ImGui::SameLine();
+        
+        ImGui::Text("OS [ %s ]", os_name().c_str());
 
         ImGui::Separator();
 
@@ -1175,7 +1178,9 @@ public:
                  plot_w2b({false,false,false}),
                  plot_ener_rel_err(false),
                  plot_mom_rel_err(false)
-    { }
+    {
+
+    }
 
     void render()
     {
@@ -1273,6 +1278,9 @@ public:
         ImGui::StyleColorsDark();
         ImGui_ImplGlfw_InitForOpenGL(pointer, true);
         ImGui_ImplOpenGL3_Init("#version 330");
+        ImGuiStyle &imstyle = ImGui::GetStyle();
+        imstyle.FrameRounding = 5.0f;
+        imstyle.WindowRounding = 5.0f;
     }
 
     //Destructor

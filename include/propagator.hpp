@@ -3,14 +3,10 @@
 
 #include<cstdio>
 #include<cmath>
-#include<filesystem>
-#include<vector>
 
 #include"typedef.hpp"
 #include"constant.hpp"
 #include"linalg.hpp"
-#include"task.hpp"
-
 #include"conversion.hpp"
 #include"polyhedron.hpp"
 #include"mascon.hpp"
@@ -215,6 +211,12 @@ public:
             w2b = iner2body(w2i, quat2mat(q2));
         }
     }
+
+    void split_sol()
+    {
+
+        return;
+    }
     
     void build_rhs(const boost::array<double, 20> &state, boost::array<double, 20> &dstate, double t)
     {
@@ -360,10 +362,10 @@ public:
             rkf78.do_step(std::bind(&Propagator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, dt);
         }
 
+        split_sol();
+
         return;
     }
-
-    
 };
 
 

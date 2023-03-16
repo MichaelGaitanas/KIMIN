@@ -31,7 +31,7 @@ int main()
         gui.graphics.render();
         gui.render();
 
-
+        /*
         if (gui.properties.clicked_run)
         {
             strvec errors = gui.properties.validate();
@@ -53,6 +53,7 @@ int main()
             }
         }
         gui.properties.clicked_run = false;
+        */
 
 
         glfwSwapBuffers(window.pointer);
