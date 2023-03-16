@@ -10,7 +10,6 @@ class Window
 {
 public:
     GLFWwindow *pointer; //unique window pointer
-    const GLFWvidmode *mode; 
     static int width, height; //glfw window size
     static float aspectratio; //glfw window aspect ratio, basically width/height
 
@@ -46,17 +45,6 @@ public:
         }
     }
 
-    static void key_callback(GLFWwindow *pointer, int key, int scancode, int action, int mods)
-    {
-        if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-            glfwSetWindowShouldClose(pointer, true);
-    }
-
-    void add_key_callback()
-    {
-        glfwSetKeyCallback(pointer, key_callback);
-    }
-
     static void framebuffer_size_callback(GLFWwindow *pointer, int w, int h)
     {
         if (w == 0)
@@ -69,6 +57,17 @@ public:
         aspectratio = (float)w/h;
 
         glViewport(0,0, w,h);
+    }
+
+    static void key_callback(GLFWwindow *pointer, int key, int scancode, int action, int mods)
+    {
+        if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+            glfwSetWindowShouldClose(pointer, true);
+    }
+
+    void add_key_callback()
+    {
+        glfwSetKeyCallback(pointer, key_callback);
     }
 
     void add_framebuffer_size_callback()

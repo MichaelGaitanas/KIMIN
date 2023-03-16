@@ -42,7 +42,7 @@ public:
     }
 
     //Render the console imgui window.
-    void render(const char *title, bool *popened = NULL)
+    void render(const char *title = "Console ", bool *popened = NULL)
     {
         const float win_width  = ImGui::GetIO().DisplaySize.x;
         const float win_height = ImGui::GetIO().DisplaySize.y;

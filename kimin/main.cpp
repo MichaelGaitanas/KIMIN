@@ -26,7 +26,7 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         gui.new_frame();
-        gui.console.render("Console ", NULL);
+        gui.console.render();
         gui.properties.render(window.pointer);
         gui.graphics.render();
         gui.render();
