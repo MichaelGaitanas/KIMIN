@@ -6,15 +6,41 @@
 
 #include<cstdio>
 
+#include"gui.hpp"
+#include"typedef.hpp"
+
 class Window
 {
-public:
-    GLFWwindow *pointer; //unique window pointer
-    static int width, height; //glfw window size
-    static float aspectratio; //glfw window aspect ratio, basically width/height
+private:
 
-    //Costructor to run once a glfw (window) object is instantiated.
-    Window()
+    GLFWwindow *m_pointer;
+    int m_width, m_height;
+    float m_aspectratio;
+
+    static void framebuffer_size_callback(GLFWwindow *pointer, int width, int height)
+    {
+        Window *instance = static_cast<Window*>(glfwGetWindowUserPointer(pointer));
+        if (instance != NULL)
+        {
+            instance->m_width = width;
+            instance->m_height = height;
+            instance->m_aspectratio = width/(float)height;
+            glViewport(0,0, width,height);
+        }
+        return;
+    }
+
+    static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+    {
+        if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+            glfwSetWindowShouldClose(window, true);
+        return;
+    }
+
+public:
+
+    Window(int width = 800, int height = 600, const char* title = "KIMIN") : m_width(width),
+                                                                             m_height(height)
     {
         glfwInit();
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -23,19 +49,14 @@ public:
         glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
         glfwWindowHint(GLFW_REFRESH_RATE, 60);
 
-        width = height = 800;
-        pointer = glfwCreateWindow(width, height, "KIMIN", NULL, NULL);
-        if (pointer == NULL)
+        m_pointer = glfwCreateWindow(m_width, m_height, title, NULL, NULL);
+        if (m_pointer == NULL)
         {
             printf("Failed to create glfw window. Calling glfwTerminate().\n");
             glfwTerminate();
         }
-
-        glfwMakeContextCurrent(pointer);
+        glfwMakeContextCurrent(m_pointer);
         glfwSwapInterval(1);
-        glfwSetWindowSizeLimits(pointer, 600, 600, GLFW_DONT_CARE, GLFW_DONT_CARE);
-        glfwGetWindowSize(pointer, &width, &height);
-        aspectratio = width/(float)height;
 
         glewExperimental = GL_TRUE;
         if (glewInit() != GLEW_OK)
@@ -43,41 +64,41 @@ public:
             printf("Failed to initialize glew. Calling glfwTerminate().\n");
             glfwTerminate();
         }
+
+        glfwSetFramebufferSizeCallback(m_pointer, framebuffer_size_callback);
+        glfwSetKeyCallback(m_pointer, key_callback);
     }
 
-    static void framebuffer_size_callback(GLFWwindow *pointer, int w, int h)
-    {
-        width  = w;
-        height = h;
-        aspectratio = (float)w/h;
-        glViewport(0,0, w,h);
-    }
-
-    static void key_callback(GLFWwindow *pointer, int key, int scancode, int action, int mods)
-    {
-        if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-            glfwSetWindowShouldClose(pointer, true);
-    }
-
-    void add_key_callback()
-    {
-        glfwSetKeyCallback(pointer, key_callback);
-    }
-
-    void add_framebuffer_size_callback()
-    {
-        glfwSetFramebufferSizeCallback(pointer, framebuffer_size_callback);
-    }
-
-    //Destructor.
     ~Window()
     {
+        glfwDestroyWindow(m_pointer);
         glfwTerminate();
     }
 
+    void game_loop()
+    {
+        GUI gui(m_pointer);
+        glClearColor(0.2f,0.2f,0.2f,1.0f);
+        while (!glfwWindowShouldClose(m_pointer))
+        {
+            glClear(GL_COLOR_BUFFER_BIT);
+
+            gui.begin();
+            gui.properties.render(m_pointer);
+            gui.console.render();
+            gui.graphics.render();
+            gui.render();
+
+            gui.on_click_run();
+
+
+
+            glfwSwapBuffers(m_pointer);
+            glfwPollEvents();
+        }
+        return;
+    }
 };
 
-int Window::width, Window::height;
-float Window::aspectratio;
 
 #endif

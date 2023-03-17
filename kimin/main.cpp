@@ -1,16 +1,56 @@
 #include<cstdio>
 #include<cmath>
 
-//#include<thread>
-
-#include<GL/glew.h>
-#include<GLFW/glfw3.h>
-
-#include"../include/typedef.hpp"
 #include"../include/window.hpp"
-#include"../include/gui.hpp"
-#include"../include/propagator.hpp"
 
+int main()
+{
+    Window window;
+    window.game_loop();
+
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
 int main()
 {
     Window window;
@@ -31,7 +71,6 @@ int main()
         gui.graphics.render();
         gui.render();
 
-        /*
         if (gui.properties.clicked_run)
         {
             strvec errors = gui.properties.validate();
@@ -53,7 +92,6 @@ int main()
             }
         }
         gui.properties.clicked_run = false;
-        */
 
 
         glfwSwapBuffers(window.pointer);
@@ -62,3 +100,4 @@ int main()
 
     return 0;
 }
+*/

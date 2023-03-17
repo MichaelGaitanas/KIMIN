@@ -10,6 +10,7 @@
 
 //This function receives as input a path to a directory and as a result it returns a vector of paths, corresponding
 //to all the files (even child directories) found inside 'path/'
+/*
 std::vector<std::filesystem::path> list_files(const char *path)
 {
     std::vector<std::filesystem::path> paths; 
@@ -17,8 +18,10 @@ std::vector<std::filesystem::path> list_files(const char *path)
         paths.push_back(entry.path());
     return paths;
 }
+*/
 
 //This function identifies the operating system in which the program is running.
+/*
 str os_name()
 {
     #if defined(__APPLE__) || defined(__MACH__)
@@ -31,6 +34,7 @@ str os_name()
         return "Other OS";
     #endif
 }
+*/
 
 /*
 void export_txt_files()

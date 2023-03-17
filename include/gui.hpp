@@ -15,16 +15,19 @@
 #include"typedef.hpp"
 #include"constant.hpp"
 #include"linalg.hpp"
-#include"osys.hpp"
 #include"obj.hpp"
 #include"conversion.hpp"
 
 class Console
 {
+
 private:
+
     ImGuiTextBuffer buffer;
     bool scroll_to_bottom;
+
 public:
+
     //Clear the console.
     void cls()
     {
@@ -32,13 +35,27 @@ public:
     }
 
     //Add formatted text to the console.
-    void add(const char *format, ...) IM_FMTARGS(2)
+    void add_text(const char *format, ...) IM_FMTARGS(2)
     {
         va_list args;
         va_start(args, format);
             buffer.appendfv(format, args);
         va_end(args);
         scroll_to_bottom = true;
+    }
+
+    //This function identifies the operating system in which the program is running.
+    str os_name()
+    {
+        #if defined(__APPLE__) || defined(__MACH__)
+            return "Mac OSX";
+        #elif defined(__linux__) || defined(__unix) || defined(__unix__) || defined(__FreeBSD__)
+            return "Linux||Unix||FreeBSD";
+        #elif defined(_WIN32) || defined(_WIN64)
+            return "Windows";
+        #else
+            return "Other OS";
+        #endif
     }
 
     //Render the console imgui window.
@@ -55,13 +72,9 @@ public:
             cls();
         
         ImGui::SameLine();
-
-        ImGui::Text("FPS [ %.1f ],  ", ImGui::GetIO().Framerate);
-
+        ImGui::Text("FPS [ %.1f ], ", ImGui::GetIO().Framerate);
         ImGui::SameLine();
-        
         ImGui::Text("OS [ %s ]", os_name().c_str());
-
         ImGui::Separator();
 
         ImGui::BeginChild("Scroll", ImVec2(0.0f, 0.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
@@ -118,7 +131,7 @@ public:
     //Cartesian grid resolutions (per axis) for filling the polyhedra with mascons.
     ivec3 grid_reso1;
     ivec3 grid_reso2;
-    ivec3 grid_reso_null;
+    ivec3 grid_reso_inactive;
 
     //.obj 'OK' button state.
     bool clicked_obj_ok;
@@ -197,7 +210,7 @@ public:
                    vfnt2({false, false, false, false}),
                    grid_reso1({2,2,2}),
                    grid_reso2({2,2,2}),
-                   grid_reso_null({0,0,0}),
+                   grid_reso_inactive({0,0,0}),
                    clicked_obj_ok(false),
                    ord2_checkbox(false),
                    ord3_checkbox(false),
@@ -230,6 +243,16 @@ public:
                    clicked_run(false),
                    clicked_kill(false)
     { }
+
+    //This function receives as input a path to a directory and as a result it returns a vector of paths, corresponding
+    //to all the files (even child directories) found inside 'path/'
+    std::vector<std::filesystem::path> list_files(const char *path)
+    {
+        std::vector<std::filesystem::path> paths; 
+        for (const auto &entry : std::filesystem::recursive_directory_iterator(path))
+            paths.push_back(entry.path());
+        return paths;
+    }
 
     void import(const char *path)
     {
@@ -301,7 +324,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(0);
-                    ImGui::InputDouble("[km]", &semiaxes1[0], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[km]", &semiaxes1[0], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             //keyboard input : b1 semiaxis
@@ -309,7 +332,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(1);
-                    ImGui::InputDouble("[km]", &semiaxes1[1], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[km]", &semiaxes1[1], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             //keyboard input : c1 semiaxis
@@ -317,7 +340,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(2);
-                    ImGui::InputDouble("[km]", &semiaxes1[2], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[km]", &semiaxes1[2], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::Dummy(ImVec2(0.0f,10.0f));
@@ -327,7 +350,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(3);
-                    ImGui::InputDouble("[km]", &semiaxes2[0], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[km]", &semiaxes2[0], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             //keyboard input : b2 semiaxis
@@ -335,7 +358,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(4);
-                    ImGui::InputDouble("[km]", &semiaxes2[1], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[km]", &semiaxes2[1], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             //keyboard input : c2 semiaxis
@@ -343,7 +366,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(5);
-                    ImGui::InputDouble("[km]", &semiaxes2[2], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[km]", &semiaxes2[2], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             ImGui::Dummy(ImVec2(0.0f,15.0f));
@@ -450,7 +473,7 @@ public:
                     ImGui::SameLine();
                     ImGui::PushItemWidth(100.0f);
                         ImGui::PushID(6);
-                            ImGui::InputInt(" [ > 1 ]", &grid_reso_null[0]);
+                            ImGui::InputInt(" [ > 1 ]", &grid_reso_inactive[0]);
                         ImGui::PopID();
                     ImGui::PopItemWidth();
 
@@ -458,7 +481,7 @@ public:
                     ImGui::SameLine();
                     ImGui::PushItemWidth(100.0f);
                         ImGui::PushID(7);
-                            ImGui::InputInt(" [ > 1 ]", &grid_reso_null[1]);
+                            ImGui::InputInt(" [ > 1 ]", &grid_reso_inactive[1]);
                         ImGui::PopID();
                     ImGui::PopItemWidth();
 
@@ -466,7 +489,7 @@ public:
                     ImGui::SameLine();
                     ImGui::PushItemWidth(100.0f);
                         ImGui::PushID(8);
-                            ImGui::InputInt(" [ > 1 ]", &grid_reso_null[2]);
+                            ImGui::InputInt(" [ > 1 ]", &grid_reso_inactive[2]);
                         ImGui::PopID();
                     ImGui::PopItemWidth();
                 ImGui::EndDisabled();
@@ -576,20 +599,22 @@ public:
         //keyboard input : M1
         ImGui::Text("M1 ");
         ImGui::SameLine();
-        ImGui::PushItemWidth(100.0f);
+        ImGui::PushItemWidth(150.0f);
             ImGui::PushID(15);
-                ImGui::InputDouble("[kg]", &M1, 0.0, 0.0,"%.5lf");
+                ImGui::InputDouble("[kg]", &M1, 0.0, 0.0,"%g");
             ImGui::PopID();
         ImGui::PopItemWidth();
         
         //keyboard input : M2
         ImGui::Text("M2 ");
         ImGui::SameLine();
-        ImGui::PushItemWidth(100.0f);
+        ImGui::PushItemWidth(150.0f);
             ImGui::PushID(16);
-                ImGui::InputDouble("[kg]", &M2, 0.0, 0.0,"%.5lf");
+                ImGui::InputDouble("[kg]", &M2, 0.0, 0.0,"%g");
             ImGui::PopID();
         ImGui::PopItemWidth();
+
+        ImGui::Dummy(ImVec2(0.0f,15.0f));
 
         ImGui::Text("Integration time");
 
@@ -598,7 +623,7 @@ public:
         ImGui::SameLine();
         ImGui::PushItemWidth(100.0f);
             ImGui::PushID(17);
-                ImGui::InputDouble(" [days]", &epoch, 0.0, 0.0,"%.5lf");
+                ImGui::InputDouble(" [days]", &epoch, 0.0, 0.0,"%g");
             ImGui::PopID();
         ImGui::PopItemWidth();
 
@@ -607,7 +632,7 @@ public:
         ImGui::SameLine();
         ImGui::PushItemWidth(100.0f);
             ImGui::PushID(18);
-                ImGui::InputDouble("[days]", &dur, 0.0, 0.0,"%.5lf");
+                ImGui::InputDouble("[days]", &dur, 0.0, 0.0,"%g");
             ImGui::PopID();
         ImGui::PopItemWidth();
 
@@ -619,6 +644,8 @@ public:
                 ImGui::InputDouble("[days]", &step, 0.0, 0.0,"%.9lf");
             ImGui::PopID();
         ImGui::PopItemWidth();
+
+        ImGui::Dummy(ImVec2(0.0f,15.0f));
 
         ImGui::Text("Initial state");
         ImGui::Indent();
@@ -638,7 +665,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(21);
-                    ImGui::InputDouble("[km]", &cart[0], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[km]", &cart[0], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -647,7 +674,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(22);
-                    ImGui::InputDouble("[km]", &cart[1], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[km]", &cart[1], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -656,7 +683,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(23);
-                    ImGui::InputDouble("[km]", &cart[2], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[km]", &cart[2], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -665,7 +692,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(24);
-                    ImGui::InputDouble("[km/sec]", &cart[3], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[km/sec]", &cart[3], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             
@@ -674,7 +701,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(25);
-                    ImGui::InputDouble("[km/sec]", &cart[4], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[km/sec]", &cart[4], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -683,7 +710,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(26);
-                    ImGui::InputDouble("[km/sec]", &cart[5], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[km/sec]", &cart[5], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -695,7 +722,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(27);
-                    ImGui::InputDouble("[km]", &kep[0], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[km]", &kep[0], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
                         
@@ -704,7 +731,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(28);
-                    ImGui::InputDouble("[  ]", &kep[1], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[  ]", &kep[1], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -713,7 +740,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(29);
-                    ImGui::InputDouble("[deg]", &kep[2], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[deg]", &kep[2], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -722,7 +749,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(30);
-                    ImGui::InputDouble("[deg]", &kep[3], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[deg]", &kep[3], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -731,7 +758,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(31);
-                    ImGui::InputDouble("[deg]", &kep[4], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[deg]", &kep[4], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -740,7 +767,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(32);
-                    ImGui::InputDouble("[deg]", &kep[5], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[deg]", &kep[5], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
         }
@@ -761,7 +788,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(34);
-                    ImGui::InputDouble("[deg]", &rpy1[0], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[deg]", &rpy1[0], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -770,7 +797,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0);
                 ImGui::PushID(35);
-                    ImGui::InputDouble("[deg]", &rpy1[1], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[deg]", &rpy1[1], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             
@@ -779,7 +806,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(36);
-                    ImGui::InputDouble("[deg]", &rpy1[2], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[deg]", &rpy1[2], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -788,7 +815,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(37);
-                    ImGui::InputDouble("[deg]", &rpy2[0], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[deg]", &rpy2[0], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -797,7 +824,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(38);
-                    ImGui::InputDouble("[deg]", &rpy2[1], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[deg]", &rpy2[1], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             
@@ -806,7 +833,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(39);
-                    ImGui::InputDouble("[deg]", &rpy2[2], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[deg]", &rpy2[2], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
         }
@@ -817,7 +844,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(40);
-                    ImGui::InputDouble("[  ]", &q1[0], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[  ]", &q1[0], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -826,7 +853,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(41);
-                    ImGui::InputDouble("[  ]", &q1[1], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[  ]", &q1[1], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -835,7 +862,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(42);
-                    ImGui::InputDouble("[  ]", &q1[2], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[  ]", &q1[2], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             
@@ -844,7 +871,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(43);
-                    ImGui::InputDouble("[  ]", &q1[3], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[  ]", &q1[3], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -853,7 +880,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(44);
-                    ImGui::InputDouble("[  ]", &q2[0], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[  ]", &q2[0], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -862,7 +889,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(45);
-                    ImGui::InputDouble("[  ]", &q2[1], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[  ]", &q2[1], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -871,7 +898,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(46);
-                    ImGui::InputDouble("[  ]", &q2[2], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[  ]", &q2[2], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -880,7 +907,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(47);
-                    ImGui::InputDouble("[  ]", &q2[3], 0.0, 0.0,"%.5lf");
+                    ImGui::InputDouble("[  ]", &q2[3], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
         }
@@ -901,7 +928,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(49);
-                    ImGui::InputDouble("[rad/sec]", &w1i[0], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[rad/sec]", &w1i[0], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -910,7 +937,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(50);
-                    ImGui::InputDouble("[rad/sec]", &w1i[1], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[rad/sec]", &w1i[1], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             
@@ -919,7 +946,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(51);
-                    ImGui::InputDouble("[rad/sec]", &w1i[2], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[rad/sec]", &w1i[2], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -928,7 +955,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(52);
-                    ImGui::InputDouble("[rad/sec]", &w2i[0], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[rad/sec]", &w2i[0], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -937,7 +964,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(53);
-                    ImGui::InputDouble("[rad/sec]", &w2i[1], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[rad/sec]", &w2i[1], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
             
@@ -946,7 +973,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(54);
-                    ImGui::InputDouble("[rad/sec]", &w2i[2], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[rad/sec]", &w2i[2], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -958,7 +985,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(55);
-                    ImGui::InputDouble("[rad/sec]", &w1b[0], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[rad/sec]", &w1b[0], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -967,7 +994,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(56);
-                    ImGui::InputDouble("[rad/sec]", &w1b[1], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[rad/sec]", &w1b[1], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -976,7 +1003,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(57);
-                    ImGui::InputDouble("[rad/sec]", &w1b[2], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[rad/sec]", &w1b[2], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -985,7 +1012,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(58);
-                    ImGui::InputDouble("[rad/sec]", &w2b[0], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[rad/sec]", &w2b[0], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -994,7 +1021,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(59);
-                    ImGui::InputDouble("[rad/sec]", &w2b[1], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[rad/sec]", &w2b[1], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
@@ -1003,7 +1030,7 @@ public:
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(60);
-                    ImGui::InputDouble("[rad/sec]", &w2b[2], 0.0, 0.0,"%.10lf");
+                    ImGui::InputDouble("[rad/sec]", &w2b[2], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
         }
@@ -1020,11 +1047,11 @@ public:
         ImGui::PopItemWidth();
 
         //keyboard input : integration method tolerance
-        ImGui::Text("tolerance ");
+        ImGui::Text("Tolerance ");
         ImGui::SameLine();
-        ImGui::PushItemWidth(200.0);
+        ImGui::PushItemWidth(150.0);
             ImGui::PushID(62);
-                ImGui::InputDouble("", &tol, 0.0, 0.0,"%e");
+                ImGui::InputDouble("", &tol, 0.0, 0.0,"%g");
             ImGui::PopID();
         ImGui::PopItemWidth();
         ImGui::Dummy(ImVec2(0.0f,15.0f));
@@ -1193,60 +1220,9 @@ public:
         if (ImGui::CollapsingHeader("Plots"))
         {
             ImGui::BulletText("Cartesian position/velocity");
-            /*
-            ImGui::Checkbox("x(t)",  &plot_relcart[0]);
-            if (plot_relcart[0])
-            {
-                ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
-                ImGui::Begin("relx plot", &plot_relcart[0]);
-                ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
-                if (ImPlot::BeginPlot("relx = relx(t)", plot_win_size))
-                {
-                    ImPlot::SetupAxes("t","relx");
-                    ImPlot::PlotLine("", &get_t_sol(props.sol)[0], &get_relx_sol(props.sol)[0], props.sol.size());
-                    ImPlot::EndPlot();  
-                }
-                ImGui::End();
-            }
-            */
-
-            ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
             ImGui::BulletText("Keplerian elements");
-            /*
-            ImGui::Checkbox("sma(t)",  &plot_relkep[0]);
-            if (plot_relcart[0])
-            {
-                ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
-                ImGui::Begin("relx plot", &plot_relcart[0]);
-                ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
-                if (ImPlot::BeginPlot("relx = relx(t)", plot_win_size))
-                {
-                    ImPlot::SetupAxes("t","relx");
-                    ImPlot::PlotLine("", &get_t_sol(props.sol)[0], &get_relx_sol(props.sol)[0], props.sol.size());
-                    ImPlot::EndPlot();  
-                }
-                ImGui::End();
-            }
-            */
-
             ImGui::BulletText("Energy - momentum");
             ImGui::Checkbox("error_at_E(t)",  &plot_ener_rel_err);
-            /*
-            if (plot_ener_rel_err)
-            {
-                ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
-                ImGui::Begin("relx plot", &plot_relcart[0]);
-                ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
-                if (ImPlot::BeginPlot("relx = relx(t)", plot_win_size))
-                {
-                    ImPlot::SetupAxes("t","relx");
-                    ImPlot::PlotLine("", &get_t_sol(props.sol)[0], &get_relx_sol(props.sol)[0], props.sol.size());
-                    ImPlot::EndPlot();  
-                }
-                ImGui::End();
-            }
-            */
         }
         ImGui::End();
     }
@@ -1255,23 +1231,17 @@ public:
 class GUI
 {
 public:
-    ImGuiIO &io; //this reference will be (and must be) initialized in the constructor gui(...)
     Properties properties;
     Graphics graphics;
     Console console;
 
-    //We ought to call ImGui::CreateContext() before ImGui::GetIO(). But ImGui::GetIO() will be called once an instance of the class is created.
-    //The following static member function serves the aforementioned purpose : To be able to call ImGui::CreateContext() without having an instance of the class.
-    static void create_imgui_context()
+    //Constructor and correct initialization of &io.
+    GUI(GLFWwindow *pointer)
     {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
         ImPlot::CreateContext();
-    }
-
-    //Constructor and correct initialization of &io.
-    GUI(GLFWwindow *pointer) : io(ImGui::GetIO())
-    {
+        ImGuiIO &io = ImGui::GetIO();
         io.IniFilename = NULL;
         io.Fonts->AddFontFromFileTTF("../font/arial.ttf", 15.0f);
         (void)io;
@@ -1293,7 +1263,7 @@ public:
     }
 
     //Create an new imgui frame.
-    void new_frame()
+    void begin()
     {
         ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
@@ -1305,6 +1275,32 @@ public:
     {
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    }
+
+    void on_click_run()
+    {
+        if (properties.clicked_run)
+        {
+            strvec errors = properties.validate();
+            if (!errors.size())
+            {
+                //Propagator propagator(gui.properties);
+                //propagator.run();
+                //std::thread propagator_thread(std::bind(&Propagator::run, propagator));
+                //propagator_thread.detach();
+            }
+            else
+            {
+                for (int i = 0; i < errors.size(); ++i)
+                {
+                    console.add_text(errors[i].c_str());
+                    console.add_text("\n");
+                }
+                console.add_text("\n");
+            }
+            properties.clicked_run = false;
+        }
+        return;
     }
 };
 
