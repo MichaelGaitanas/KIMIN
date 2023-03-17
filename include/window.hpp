@@ -47,15 +47,9 @@ public:
 
     static void framebuffer_size_callback(GLFWwindow *pointer, int w, int h)
     {
-        if (w == 0)
-            w = 1;
-        if (h == 0)
-            h = 1;
-
         width  = w;
         height = h;
         aspectratio = (float)w/h;
-
         glViewport(0,0, w,h);
     }
 
