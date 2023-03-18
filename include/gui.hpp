@@ -17,6 +17,7 @@
 #include"linalg.hpp"
 #include"obj.hpp"
 #include"conversion.hpp"
+#include"propagator.hpp"
 
 class Console
 {
@@ -49,8 +50,10 @@ public:
     {
         #if defined(__APPLE__) || defined(__MACH__)
             return "Mac OSX";
-        #elif defined(__linux__) || defined(__unix) || defined(__unix__) || defined(__FreeBSD__)
-            return "Linux||Unix||FreeBSD";
+        #elif defined(__linux__) || defined(__unix) || defined(__unix__)
+            return "Linux||Unix";
+        #elif defined(__FreeBSD__)
+            return "FreeBSD";
         #elif defined(_WIN32) || defined(_WIN64)
             return "Windows";
         #else
@@ -108,7 +111,7 @@ public:
 
     //'.obj files' checkbox state.
     bool obj_checkbox;
-    //.obj files 'Body 2' or 'Body 2' radiobuttons reference (1 or 2 only).
+    //.obj files 'Body 1' or 'Body 2' radiobuttons reference (1 or 2 only).
     int obj_refer_to_body;
 
     //Index of the clicked .obj path. -1 means no path is clicked. Only one path per body can be clicked.
@@ -152,7 +155,7 @@ public:
 
     //'x', 'y', 'z', 'vx', 'vy', 'vz' fields.
     dvec6 cart;
-    //'a', 'e', 'i', 'RAAN', 'w', 'M' fields.
+    //'a', 'e', 'i', 'raan', 'w', 'M' fields.
     dvec6 kep;
 
     //Nature of the orientation variables.
@@ -208,8 +211,8 @@ public:
                    obj_path2(""),
                    vfnt1({false, false, false, false}),
                    vfnt2({false, false, false, false}),
-                   grid_reso1({2,2,2}),
-                   grid_reso2({2,2,2}),
+                   grid_reso1({10,10,10}),
+                   grid_reso2({10,10,10}),
                    grid_reso_inactive({0,0,0}),
                    clicked_obj_ok(false),
                    ord2_checkbox(false),
@@ -373,9 +376,8 @@ public:
 
             //mouse input : ellipsoid submenu "OK" button
             if (ImGui::Button("OK", ImVec2(50.0f,30.0f)))
-            {
                 clicked_ell_ok = true;
-            }
+
             ImGui::End();
         }
 
@@ -388,7 +390,7 @@ public:
         {
             ell_checkbox = false; //untick the ellipsoids checkbox in case it is ticked
             ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver); //display position of the obj files menu 
-            ImGui::SetNextWindowSize(ImVec2(300,300), ImGuiCond_FirstUseEver); 
+            ImGui::SetNextWindowSize(ImVec2(300,400), ImGuiCond_FirstUseEver); 
             ImGui::Begin(".obj parameters");
             ImGui::Text("KIMIN's .obj database\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t");
             ImGui::Dummy(ImVec2(0.0f,10.0f));
@@ -1184,6 +1186,8 @@ class Graphics
 {
 public:
 
+    Solution solution;
+
     bvec plot_relcart;
     bvec plot_relkep;
 
@@ -1205,8 +1209,12 @@ public:
                  plot_w2b({false,false,false}),
                  plot_ener_rel_err(false),
                  plot_mom_rel_err(false)
-    {
+    { }
 
+    void yield_solution(const Solution &solution)
+    {
+        this->solution = solution;
+        return;
     }
 
     void render()
@@ -1284,8 +1292,9 @@ public:
             strvec errors = properties.validate();
             if (!errors.size())
             {
-                //Propagator propagator(gui.properties);
-                //propagator.run();
+                Propagator propagator(properties);
+                Solution solution = propagator.run();
+                graphics.yield_solution(solution);
                 //std::thread propagator_thread(std::bind(&Propagator::run, propagator));
                 //propagator_thread.detach();
             }

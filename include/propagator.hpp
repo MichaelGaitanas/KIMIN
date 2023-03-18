@@ -7,17 +7,39 @@
 #include"typedef.hpp"
 #include"constant.hpp"
 #include"linalg.hpp"
+#include"obj.hpp"
 #include"conversion.hpp"
 #include"polyhedron.hpp"
 #include"mascon.hpp"
 #include"ellipsoid.hpp"
 #include"rigidbody.hpp"
+#include"potential.hpp"
 #include"force.hpp"
 #include"torque.hpp"
 
 #include<boost/numeric/odeint.hpp>
 
-//#include<json/json.h>
+#include"gui.hpp"
+
+class Solution
+{
+public:
+
+    dvec x,y,z,d;
+    dvec vx,vy,vz,v;
+    dvec a,e,i,raan,w,M;
+
+    dvec roll1,pitch1,yaw1;
+    dvec w1ix,w1iy,w1iz;
+    dvec w1bx,w1by,w1bz;
+
+    dvec roll2,pitch2,yaw2;
+    dvec w2ix,w2iy,w2iz;
+    dvec w2bx,w2by,w2bz;
+
+    dvec ener, ener_rel_err;
+    dvec mom, mom_rel_err;
+};
 
 class Propagator : public Properties
 {
@@ -26,41 +48,12 @@ public:
     dmatnx3 masc1, masc2; //mascon cloud coordinates
     dtens J1, J2; //inertial integrals
     dmat3 I1, I2; //moments of inertia
+
     bool collision; //binary collision flag
     dmat sol; //final solution matrix of the binary
 
-    Propagator(const Properties &properties)
+    Propagator(const Properties &properties) : Properties(properties)
     {
-        ell_checkbox = properties.ell_checkbox;
-        ord2_checkbox = properties.ord2_checkbox;
-        ord3_checkbox = properties.ord3_checkbox;
-        ord4_checkbox = properties.ord4_checkbox;
-        M1 = properties.M1;
-        M2 = properties.M2;
-        semiaxes1 = properties.semiaxes1;
-        semiaxes2 = properties.semiaxes2;
-        grid_reso1 = properties.grid_reso1;
-        grid_reso2 = properties.grid_reso2;
-        clicked_masc1_index = properties.clicked_masc1_index;
-        clicked_masc2_index = properties.clicked_masc2_index;
-        obj_path1 = properties.obj_path1;
-        obj_path2 = properties.obj_path2;
-        vfnt1 = properties.vfnt1;
-        vfnt2 = properties.vfnt2;
-        cart_kep_var_choice = properties.cart_kep_var_choice;
-        cart = properties.cart;
-        kep = properties.kep;
-        orient_var_choice =  properties.orient_var_choice;
-        q1 = properties.q1;
-        q2 = properties.q2;
-        rpy1 = properties.rpy1;
-        rpy2 = properties.rpy2;
-        frame_type_choice = properties.frame_type_choice;
-        w1b = properties.w1b;
-        w2b = properties.w2b;
-        w1i = properties.w1i;
-        w2i = properties.w2i;
-
         if (ell_checkbox)
         {
             if (ord2_checkbox)
@@ -211,12 +204,6 @@ public:
             w2b = iner2body(w2i, quat2mat(q2));
         }
     }
-
-    void split_sol()
-    {
-
-        return;
-    }
     
     void build_rhs(const boost::array<double, 20> &state, boost::array<double, 20> &dstate, double t)
     {
@@ -305,7 +292,7 @@ public:
         return;
     }
 
-    void run()
+    Solution run()
     {
         //initial conditions (boost::array<> must be used to call the integration method)
         boost::array<double, 20> state = { cart[0], cart[1], cart[2],
@@ -320,7 +307,6 @@ public:
         double dt = step*86400.0; //[sec]
 
         collision = false; //no collision initially
-
         sol.clear();
 
         boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 20>> rkf78; //integration method
@@ -362,9 +348,14 @@ public:
             rkf78.do_step(std::bind(&Propagator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, dt);
         }
 
-        split_sol();
+        Solution solution;
+        /*
+        solution.x = ...;
+        solution.y = ...;
+        ...
+        */
 
-        return;
+        return solution;
     }
 };
 

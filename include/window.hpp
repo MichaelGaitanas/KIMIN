@@ -7,10 +7,10 @@
 #include<cstdio>
 
 #include"gui.hpp"
-#include"typedef.hpp"
 
 class Window
 {
+    
 private:
 
     GLFWwindow *m_pointer;
@@ -90,7 +90,6 @@ public:
             gui.render();
 
             gui.on_click_run();
-
 
 
             glfwSwapBuffers(m_pointer);
