@@ -1186,36 +1186,25 @@ class Graphics
 {
 public:
 
-    Solution solution;
+    //Solution solution;
 
-    bvec plot_relcart;
-    bvec plot_relkep;
+    bool plot_x, plot_y, plot_z;
+    bool plot_ener, plot_mom;
 
-    bvec plot_rpy1, plot_rpy2;
-
-    bvec plot_w1i, plot_w2i;
-    bvec plot_w1b, plot_w2b;
-
-    bool plot_ener_rel_err;
-    bool plot_mom_rel_err;
-
-    Graphics() : plot_relcart({false,false,false,false,false,false}),
-                 plot_relkep({false,false,false,false,false,false}),
-                 plot_rpy1({false,false,false}),
-                 plot_rpy2({false,false,false}),
-                 plot_w1i({false,false,false}),
-                 plot_w2i({false,false,false}),
-                 plot_w1b({false,false,false}),
-                 plot_w2b({false,false,false}),
-                 plot_ener_rel_err(false),
-                 plot_mom_rel_err(false)
+    Graphics() : plot_x(false),
+                 plot_y(false),
+                 plot_z(false),
+                 plot_ener(false),
+                 plot_mom(false)
     { }
 
+    /*
     void yield_solution(const Solution &solution)
     {
         this->solution = solution;
         return;
     }
+    */
 
     void render()
     {
@@ -1227,10 +1216,25 @@ public:
 
         if (ImGui::CollapsingHeader("Plots"))
         {
-            ImGui::BulletText("Cartesian position/velocity");
-            ImGui::BulletText("Keplerian elements");
+            ImGui::BulletText("Cartesian position");
+            ImGui::Checkbox("x", &plot_x);
+            ImGui::Checkbox("y", &plot_y);
+            ImGui::Checkbox("z", &plot_z);
             ImGui::BulletText("Energy - momentum");
-            ImGui::Checkbox("error_at_E(t)",  &plot_ener_rel_err);
+            ImGui::Checkbox("Energy", &plot_ener);
+            if (plot_x)
+            {
+                ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
+                ImGui::Begin("Plot imgui window x", &plot_x);
+                ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
+                if (ImPlot::BeginPlot("x(t)", plot_win_size))
+                {
+                    ImPlot::SetupAxes("t","x");
+                    //ImPlot::PlotLine("", &(solution.t[0]), &(solution.x[0]), solution.t.size());
+                    ImPlot::EndPlot();  
+                }
+                ImGui::End();
+            }
         }
         ImGui::End();
     }
@@ -1293,8 +1297,8 @@ public:
             if (!errors.size())
             {
                 Propagator propagator(properties);
-                Solution solution = propagator.run();
-                graphics.yield_solution(solution);
+                //Solution solution = propagator.run();
+                //graphics.yield_solution(solution);
                 //std::thread propagator_thread(std::bind(&Propagator::run, propagator));
                 //propagator_thread.detach();
             }

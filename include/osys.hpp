@@ -8,34 +8,6 @@
 
 #include"typedef.hpp"
 
-//This function receives as input a path to a directory and as a result it returns a vector of paths, corresponding
-//to all the files (even child directories) found inside 'path/'
-/*
-std::vector<std::filesystem::path> list_files(const char *path)
-{
-    std::vector<std::filesystem::path> paths; 
-    for (const auto &entry : std::filesystem::recursive_directory_iterator(path))
-        paths.push_back(entry.path());
-    return paths;
-}
-*/
-
-//This function identifies the operating system in which the program is running.
-/*
-str os_name()
-{
-    #if defined(__APPLE__) || defined(__MACH__)
-        return "Mac OSX";
-    #elif defined(__linux__) || defined(__unix) || defined(__unix__) || defined(__FreeBSD__)
-        return "Linux||Unix||FreeBSD";
-    #elif defined(_WIN32) || defined(_WIN64)
-        return "Windows";
-    #else
-        return "Other OS";
-    #endif
-}
-*/
-
 /*
 void export_txt_files()
 {

@@ -21,9 +21,12 @@
 
 #include"gui.hpp"
 
+/*
 class Solution
 {
 public:
+
+    dvec t;
 
     dvec x,y,z,d;
     dvec vx,vy,vz,v;
@@ -40,17 +43,20 @@ public:
     dvec ener, ener_rel_err;
     dvec mom, mom_rel_err;
 };
+*/
 
 class Propagator : public Properties
 {
 public:
+
+    //bool ell_checkbox;
 
     dmatnx3 masc1, masc2; //mascon cloud coordinates
     dtens J1, J2; //inertial integrals
     dmat3 I1, I2; //moments of inertia
 
     bool collision; //binary collision flag
-    dmat sol; //final solution matrix of the binary
+    dmat minimal_sol; //final solution matrix of the binary
 
     Propagator(const Properties &properties) : Properties(properties)
     {
@@ -292,7 +298,8 @@ public:
         return;
     }
 
-    Solution run()
+    bool run()
+    //Solution run()
     {
         //initial conditions (boost::array<> must be used to call the integration method)
         boost::array<double, 20> state = { cart[0], cart[1], cart[2],
@@ -307,7 +314,7 @@ public:
         double dt = step*86400.0; //[sec]
 
         collision = false; //no collision initially
-        sol.clear();
+        minimal_sol.clear();
 
         boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 20>> rkf78; //integration method
 
@@ -315,27 +322,27 @@ public:
         for (double t = t0; t <= tmax; t += dt)
         {
             //1) save current state
-            sol.push_back({t,
-                        state[0],
-                        state[1],
-                        state[2],
-                        state[3],
-                        state[4],
-                        state[5],
-                        state[6],
-                        state[7],
-                        state[8],
-                        state[9],
-                        state[10],
-                        state[11],
-                        state[12],
-                        state[13],
-                        state[14],
-                        state[15],
-                        state[16],
-                        state[17],
-                        state[18],
-                        state[19]});
+            minimal_sol.push_back({t,
+                                state[0],
+                                state[1],
+                                state[2],
+                                state[3],
+                                state[4],
+                                state[5],
+                                state[6],
+                                state[7],
+                                state[8],
+                                state[9],
+                                state[10],
+                                state[11],
+                                state[12],
+                                state[13],
+                                state[14],
+                                state[15],
+                                state[16],
+                                state[17],
+                                state[18],
+                                state[19]});
 
             //2) check for sphere-sphere collision detection
             if (sph_sph_collision(length(dvec3{state[0],state[1],state[2]}), ell_brillouin(semiaxes1), ell_brillouin(semiaxes2)))
@@ -348,14 +355,48 @@ public:
             rkf78.do_step(std::bind(&Propagator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, dt);
         }
 
-        Solution solution;
         /*
-        solution.x = ...;
-        solution.y = ...;
-        ...
+        Solution solution;
+        for (int i = 0; i < minimal_sol.size(); ++i)
+        {
+            double t = minimal_sol[i][0];
+            dvec3 r = {minimal_sol[i][1], minimal_sol[i][2], minimal_sol[i][3]};
+            dvec3 v = {minimal_sol[i][4], minimal_sol[i][5], minimal_sol[i][6]};
+            dvec4 q1 = {minimal_sol[i][7], minimal_sol[i][8], minimal_sol[i][9], minimal_sol[i][10]};
+            dvec3 w1b = {minimal_sol[i][11], minimal_sol[i][12], minimal_sol[i][13]};
+            dvec4 q2 = {minimal_sol[i][14], minimal_sol[i][15], minimal_sol[i][16], minimal_sol[i][17]};
+            dvec3 w2b = {minimal_sol[i][18], minimal_sol[i][19], minimal_sol[i][20]};
+            dmat3 A1 = quat2mat(q1);
+            dmat3 A2 = quat2mat(q2);
+            dvec3 w1i = body2iner(w1b,A1);
+            dvec3 w2i = body2iner(w2b,A2);
+            dvec3 rpy1 = quat2ang(q1);
+            dvec3 rpy2 = quat2ang(q2);
+            
+            double ener = 0.5*((M1*M2)/(M1+M2))*dot(v,v) + 0.5*dot( dot(w1b,I1), w1b) + 0.5*dot( dot(w2b,I2), w2b);
+            if (ord2_checkbox)
+                ener += mut_pot_integrals_ord2(r, M1,J1,A1, M2,J2,A2);
+            else if (ord3_checkbox)
+                ener += mut_pot_integrals_ord3(r, M1,J1,A1, M2,J2,A2);
+            else if (ord4_checkbox)
+                ener += mut_pot_integrals_ord4(r, M1,J1,A1, M2,J2,A2);
+            else
+                ener += mut_pot_masc(r, M1,masc1,A1, M2,masc2,A2);
+
+            dvec3 mom = (M1*M2/(M1+M2))*cross(r,v) + dot(A1, dot(I1,w1b)) + dot(A2, dot(I2,w2b));
+            
+            solution.t.push_back(t);
+            solution.x.push_back(r[0]);
+            solution.y.push_back(r[1]);
+            solution.z.push_back(r[2]);
+
+            solution.ener.push_back(ener);
+            solution.mom.push_back(length(mom));
+        }
         */
 
-        return solution;
+        //return solution;
+        return true;
     }
 };
 
