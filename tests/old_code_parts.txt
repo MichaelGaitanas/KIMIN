@@ -21,3 +21,25 @@ void render(const char *title, bool *popened = NULL, str vendor = "", str render
 gui.console.add("Running...  ");
                     
 gui.console.add("Done."); gui.console.add("\n");
+
+
+class Propagator : public Properties
+{
+public:
+
+    //bool ell_checkbox;
+
+    dmatnx3 masc1, masc2; //mascon cloud coordinates
+    dtens J1, J2; //inertial integrals
+    dmat3 I1, I2; //moments of inertia
+
+    bool collision; //binary collision flag
+    dmat minimal_sol; //final solution matrix of the binary
+
+    Propagator(const Properties &properties) : Properties(properties)
+    {
+        if (ell_checkbox)
+
+        ...
+
+        

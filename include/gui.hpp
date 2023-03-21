@@ -17,7 +17,7 @@
 #include"linalg.hpp"
 #include"obj.hpp"
 #include"conversion.hpp"
-#include"propagator.hpp"
+#include"solution.hpp"
 
 class Console
 {
@@ -1186,7 +1186,7 @@ class Graphics
 {
 public:
 
-    //Solution solution;
+    Solution solution;
 
     bool plot_x, plot_y, plot_z;
     bool plot_ener, plot_mom;
@@ -1198,13 +1198,11 @@ public:
                  plot_mom(false)
     { }
 
-    /*
     void yield_solution(const Solution &solution)
     {
         this->solution = solution;
         return;
     }
-    */
 
     void render()
     {
@@ -1230,7 +1228,20 @@ public:
                 if (ImPlot::BeginPlot("x(t)", plot_win_size))
                 {
                     ImPlot::SetupAxes("t","x");
-                    //ImPlot::PlotLine("", &(solution.t[0]), &(solution.x[0]), solution.t.size());
+                    ImPlot::PlotLine("", &(solution.t[0]), &(solution.x[0]), solution.t.size());
+                    ImPlot::EndPlot();  
+                }
+                ImGui::End();
+            }
+            if (plot_ener)
+            {
+                ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
+                ImGui::Begin("Plot imgui window ener", &plot_ener);
+                ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
+                if (ImPlot::BeginPlot("ener(t)", plot_win_size))
+                {
+                    ImPlot::SetupAxes("t","ener");
+                    ImPlot::PlotLine("", &(solution.t[0]), &(solution.ener[0]), solution.t.size());
                     ImPlot::EndPlot();  
                 }
                 ImGui::End();
@@ -1289,6 +1300,7 @@ public:
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     }
 
+    /*
     void on_click_run()
     {
         if (properties.clicked_run)
@@ -1296,7 +1308,7 @@ public:
             strvec errors = properties.validate();
             if (!errors.size())
             {
-                Propagator propagator(properties);
+                Integrator integrator(properties);
                 //Solution solution = propagator.run();
                 //graphics.yield_solution(solution);
                 //std::thread propagator_thread(std::bind(&Propagator::run, propagator));
@@ -1315,6 +1327,7 @@ public:
         }
         return;
     }
+    */
 };
 
 #endif
