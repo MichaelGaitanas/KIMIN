@@ -17,12 +17,49 @@
 #include"force.hpp"
 #include"torque.hpp"
 #include"gui.hpp"
-#include"solution.hpp"
 
 #include<boost/numeric/odeint.hpp>
 
+class Solution
+{
+
+public:
+
+    //time
+    dvec t;
+
+    //positions
+    dvec x,y,z, dist;
+    dvec roll1,pitch1,yaw1; 
+    dvec roll2,pitch2,yaw2;
+    dvec q10,q11,q12,q13;
+    dvec q20,q21,q22,q23;
+    dvec a11,a12,a13, a21,a22,a23, a31,a32,a33;
+    dvec b11,b12,b13, b21,b22,b23, b31,b32,b33;
+
+    //velocities
+    dvec vx,vy,vz, vlen;
+    dvec w1ix,w1iy,w1iz;
+    dvec w1bx,w1by,w1bz;
+    dvec w2ix,w2iy,w2iz;
+    dvec w2bx,w2by,w2bz;
+
+    //Keplerian elements
+    dvec a,e,i,raan,w,M;
+
+    //energy relative error
+    dvec ener_rel_err;
+    //momentum length relative error
+    dvec mom_rel_err;
+
+    bool collision;
+
+    //Default constructor will be called for every dvec (i.e. std::vector<double>).
+};
+
 class Integrator : public Properties
 {
+
 public:
 
     dmatnx3 masc1, masc2; //mascon cloud coordinates
@@ -321,7 +358,7 @@ public:
             if (sph_sph_collision(length(dvec3{state[0],state[1],state[2]}), ell_brillouin(semiaxes1), ell_brillouin(semiaxes2)))
             {
                 collision = true;
-                break; //kill the integration
+                break; //stop the integration
             }
 
             //3) update the state vector
@@ -332,6 +369,7 @@ public:
         for (int i = 0; i < minimal_sol.size(); ++i)
         {
             double t = minimal_sol[i][0];
+
             dvec3 r = {minimal_sol[i][1], minimal_sol[i][2], minimal_sol[i][3]};
             dvec3 v = {minimal_sol[i][4], minimal_sol[i][5], minimal_sol[i][6]};
             dvec4 q1 = {minimal_sol[i][7], minimal_sol[i][8], minimal_sol[i][9], minimal_sol[i][10]};
@@ -344,6 +382,9 @@ public:
             dvec3 w2i = body2iner(w2b,A2);
             dvec3 rpy1 = quat2ang(q1);
             dvec3 rpy2 = quat2ang(q2);
+            double dist = length(r);
+            double vlen = length(v);
+            dvec6 kep = cart2kep({r[0],r[1],r[2], v[0],v[1],v[2]}, G*(M1+M2));
             
             double ener = 0.5*((M1*M2)/(M1+M2))*dot(v,v) + 0.5*dot( dot(w1b,I1), w1b) + 0.5*dot( dot(w2b,I2), w2b);
             if (ord2_checkbox)
@@ -359,12 +400,13 @@ public:
             
             solution.t.push_back(t);
             solution.x.push_back(r[0]);
-            solution.y.push_back(r[1]);
-            solution.z.push_back(r[2]);
+            //solution.y.push_back(r[1]);
+            //solution.z.push_back(r[2]);
 
             solution.ener.push_back(ener);
-            solution.mom.push_back(length(mom));
+            //solution.mom.push_back(length(mom));
         }
+        solution.collision = collision;
 
         return solution;
     }

@@ -6,9 +6,7 @@
 
 #include<cstdio>
 
-#include"typedef.hpp"
 #include"gui.hpp"
-#include"integrator.hpp"
 
 class Window
 {
@@ -91,30 +89,7 @@ public:
             gui.graphics.render();
             gui.render();
 
-            //gui.on_click_run();
-            if (gui.properties.clicked_run)
-            {
-                strvec errors = gui.properties.validate();
-                if (!errors.size())
-                {
-                    Integrator integrator(gui.properties);
-                    Solution solution = integrator.run();
-                    gui.graphics.yield_solution(solution);
-                    //std::thread propagator_thread(std::bind(&Propagator::run, propagator));
-                    //propagator_thread.detach();
-                }
-                else
-                {
-                    for (int i = 0; i < errors.size(); ++i)
-                    {
-                        gui.console.add_text(errors[i].c_str());
-                        gui.console.add_text("\n");
-                    }
-                    gui.console.add_text("\n");
-                }
-                gui.properties.clicked_run = false;
-            }
-
+            gui.on_click_run();
 
             glfwSwapBuffers(m_pointer);
             glfwPollEvents();

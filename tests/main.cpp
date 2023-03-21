@@ -1,10 +1,9 @@
 #include<cstdio>
 #include"ggg.hpp"
-#include"iii.hpp"
 
 int main()
 {
     GUI gui;
-    Integrator integrator(gui.properties);
+    gui.on_click();
     return 0;
 }

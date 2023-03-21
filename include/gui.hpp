@@ -17,7 +17,6 @@
 #include"linalg.hpp"
 #include"obj.hpp"
 #include"conversion.hpp"
-#include"solution.hpp"
 
 class Console
 {
@@ -93,6 +92,7 @@ public:
 
 class Properties
 {
+
 public:
 
     //Enable the close button on the root imgui window (not the glfw one). Once it is clicked, the game loop terminates.
@@ -1065,8 +1065,17 @@ public:
         ImGui::SameLine();
 
         //mouse input : kill button
-        if (ImGui::Button("Kill", ImVec2(50.0f,30.0f)))
-            clicked_kill = true;
+        if (clicked_run)
+        {
+            if (ImGui::Button("Kill", ImVec2(50.0f,30.0f)))
+                clicked_kill = true;
+        }
+        else
+        {
+            ImGui::BeginDisabled();
+                ImGui::Button("Kill", ImVec2(50.0f,30.0f));
+            ImGui::EndDisabled();
+        }
 
         ImGui::End();
     }
@@ -1182,20 +1191,20 @@ public:
     }
 };
 
+#include"integrator.hpp"
+
 class Graphics
 {
+    
 public:
 
     Solution solution;
 
-    bool plot_x, plot_y, plot_z;
-    bool plot_ener, plot_mom;
+    bool plot_x;//, plot_y, plot_z;
+    bool plot_ener;//, plot_mom;
 
     Graphics() : plot_x(false),
-                 plot_y(false),
-                 plot_z(false),
-                 plot_ener(false),
-                 plot_mom(false)
+                 plot_ener(false)
     { }
 
     void yield_solution(const Solution &solution)
@@ -1214,37 +1223,49 @@ public:
 
         if (ImGui::CollapsingHeader("Plots"))
         {
-            ImGui::BulletText("Cartesian position");
-            ImGui::Checkbox("x", &plot_x);
-            ImGui::Checkbox("y", &plot_y);
-            ImGui::Checkbox("z", &plot_z);
-            ImGui::BulletText("Energy - momentum");
-            ImGui::Checkbox("Energy", &plot_ener);
-            if (plot_x)
+            if (!solution.t.size())
             {
-                ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
-                ImGui::Begin("Plot imgui window x", &plot_x);
-                ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
-                if (ImPlot::BeginPlot("x(t)", plot_win_size))
-                {
-                    ImPlot::SetupAxes("t","x");
-                    ImPlot::PlotLine("", &(solution.t[0]), &(solution.x[0]), solution.t.size());
-                    ImPlot::EndPlot();  
-                }
-                ImGui::End();
+                ImGui::BeginDisabled();
+                    ImGui::BulletText("Cartesian position");
+                    ImGui::Checkbox("x", &plot_x);
+                    ImGui::BulletText("Energy - momentum");
+                    ImGui::Checkbox("Energy", &plot_ener);
+                ImGui::EndDisabled();
             }
-            if (plot_ener)
+            else
             {
-                ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
-                ImGui::Begin("Plot imgui window ener", &plot_ener);
-                ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
-                if (ImPlot::BeginPlot("ener(t)", plot_win_size))
+                ImGui::BulletText("Cartesian position");
+                ImGui::Checkbox("x", &plot_x);
+                //ImGui::Checkbox("y", &plot_y);
+                //ImGui::Checkbox("z", &plot_z);
+                ImGui::BulletText("Energy - momentum");
+                ImGui::Checkbox("Energy", &plot_ener);
+                if (plot_x)
                 {
-                    ImPlot::SetupAxes("t","ener");
-                    ImPlot::PlotLine("", &(solution.t[0]), &(solution.ener[0]), solution.t.size());
-                    ImPlot::EndPlot();  
+                    ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
+                    ImGui::Begin("Plot imgui window x", &plot_x);
+                    ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
+                    if (ImPlot::BeginPlot("x(t)", plot_win_size))
+                    {
+                        ImPlot::SetupAxes("t","x");
+                        ImPlot::PlotLine("", &(solution.t[0]), &(solution.x[0]), solution.t.size());
+                        ImPlot::EndPlot();  
+                    }
+                    ImGui::End();
                 }
-                ImGui::End();
+                if (plot_ener)
+                {
+                    ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
+                    ImGui::Begin("Plot imgui window ener", &plot_ener);
+                    ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
+                    if (ImPlot::BeginPlot("ener(t)", plot_win_size))
+                    {
+                        ImPlot::SetupAxes("t","ener");
+                        ImPlot::PlotLine("", &(solution.t[0]), &(solution.ener[0]), solution.t.size());
+                        ImPlot::EndPlot();  
+                    }
+                    ImGui::End();
+                }
             }
         }
         ImGui::End();
@@ -1300,7 +1321,6 @@ public:
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     }
 
-    /*
     void on_click_run()
     {
         if (properties.clicked_run)
@@ -1309,8 +1329,8 @@ public:
             if (!errors.size())
             {
                 Integrator integrator(properties);
-                //Solution solution = propagator.run();
-                //graphics.yield_solution(solution);
+                Solution solution = integrator.run();
+                graphics.yield_solution(solution);
                 //std::thread propagator_thread(std::bind(&Propagator::run, propagator));
                 //propagator_thread.detach();
             }
@@ -1325,9 +1345,9 @@ public:
             }
             properties.clicked_run = false;
         }
+
         return;
     }
-    */
 };
 
 #endif
