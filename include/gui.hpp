@@ -1200,11 +1200,77 @@ public:
 
     Solution solution;
 
-    bool plot_x;//, plot_y, plot_z;
-    bool plot_ener;//, plot_mom;
+    bool plot_x, plot_y, plot_z, plot_dist;
+    bool plot_roll1, plot_pitch1, plot_yaw1;
+    bool plot_roll2, plot_pitch2, plot_yaw2;
+    bool plot_q10, plot_q11, plot_q12, plot_q13;
+    bool plot_q20, plot_q21, plot_q22, plot_q23;
+
+    bool plot_vx, plot_vy, plot_vz, plot_vlen;
+    bool plot_w1ix, plot_w1iy, plot_w1iz;
+    bool plot_w1bx, plot_w1by, plot_w1bz;
+    bool plot_w2ix, plot_w2iy, plot_w2iz;
+    bool plot_w2bx, plot_w2by, plot_w2bz;
+
+    bool plot_a, plot_e, plot_i, plot_raan, plot_w, plot_M;
+
+    bool plot_ener_rel_err;
+
+    bool plot_mom_rel_err;
 
     Graphics() : plot_x(false),
-                 plot_ener(false)
+                 plot_y(false),
+                 plot_z(false),
+                 plot_dist(false),
+
+                 plot_roll1(false),
+                 plot_pitch1(false),
+                 plot_yaw1(false),
+
+                 plot_roll2(false),
+                 plot_pitch2(false),
+                 plot_yaw2(false),
+
+                 plot_q10(false),
+                 plot_q11(false),
+                 plot_q12(false),
+                 plot_q13(false),
+
+                 plot_q20(false),
+                 plot_q21(false),
+                 plot_q22(false),
+                 plot_q23(false),
+
+                 plot_vx(false),
+                 plot_vy(false),
+                 plot_vz(false),
+                 plot_vlen(false),
+                 
+                 plot_w1ix(false),
+                 plot_w1iy(false),
+                 plot_w1iz(false),
+                 
+                 plot_w1bx(false),
+                 plot_w1by(false),
+                 plot_w1bz(false),
+
+                 plot_w2ix(false),
+                 plot_w2iy(false),
+                 plot_w2iz(false),
+                 
+                 plot_w2bx(false),
+                 plot_w2by(false),
+                 plot_w2bz(false),
+
+                 plot_a(false),
+                 plot_e(false),
+                 plot_i(false),
+                 plot_raan(false),
+                 plot_w(false),
+                 plot_M(false),
+
+                 plot_ener_rel_err(false),
+                 plot_mom_rel_err(false)
     { }
 
     void yield_solution(const Solution &solution)
@@ -1226,20 +1292,164 @@ public:
             if (!solution.t.size())
             {
                 ImGui::BeginDisabled();
-                    ImGui::BulletText("Cartesian position");
-                    ImGui::Checkbox("x", &plot_x);
-                    ImGui::BulletText("Energy - momentum");
-                    ImGui::Checkbox("Energy", &plot_ener);
+                    ImGui::BulletText("Position variables");
+                    ImGui::Checkbox("x(t)", &plot_x);
+                    ImGui::SameLine();
+                    ImGui::Checkbox("y(t)", &plot_y);
+                    ImGui::SameLine();
+                    ImGui::Checkbox("z(t)", &plot_z);
+                    ImGui::SameLine();
+                    ImGui::Checkbox("dist(t)", &plot_dist);
+
+                    ImGui::Checkbox("roll1(t)", &plot_roll1);
+                    ImGui::SameLine();
+                    ImGui::Checkbox("pitch1(t)", &plot_pitch1);
+                    ImGui::SameLine();
+                    ImGui::Checkbox("yaw1(t)", &plot_yaw1);
+
+                    ImGui::Checkbox("roll2(t)", &plot_roll2);
+                    ImGui::SameLine();
+                    ImGui::Checkbox("pitch2(t)", &plot_pitch2);
+                    ImGui::SameLine();
+                    ImGui::Checkbox("yaw2(t)", &plot_yaw2);
+
+                    ImGui::Checkbox("q10(t)", &plot_q10);
+                    ImGui::SameLine();
+                    ImGui::Checkbox("q11(t)", &plot_q11);
+                    ImGui::SameLine();
+                    ImGui::Checkbox("q12(t)", &plot_q12);
+                    ImGui::SameLine();
+                    ImGui::Checkbox("q13(t)", &plot_q13);
+
+                    ImGui::Checkbox("q20(t)", &plot_q20);
+                    ImGui::SameLine();
+                    ImGui::Checkbox("q21(t)", &plot_q21);
+                    ImGui::SameLine();
+                    ImGui::Checkbox("q22(t)", &plot_q22);
+                    ImGui::SameLine();
+                    ImGui::Checkbox("q23(t)", &plot_q23);
+
+                    ImGui::BulletText("Velocity variables");
+                    ImGui::Checkbox("vx(t)", &plot_vx);
+                    ImGui::SameLine();
+                    ImGui::Checkbox("vy(t)", &plot_vy);
+                    ImGui::SameLine();
+                    ImGui::Checkbox("vz(t)", &plot_vz);
+                    ImGui::SameLine();
+                    ImGui::Checkbox("vlen(t)", &plot_vlen);
+
+                    ImGui::Checkbox("w1ix(t)", &plot_w1ix);
+                    ImGui::SameLine();
+                    ImGui::Checkbox("w1iy(t)", &plot_w1iy);
+                    ImGui::SameLine();
+                    ImGui::Checkbox("w1iz(t)", &plot_w1iz);
+
+                    ImGui::Checkbox("w1bx(t)", &plot_w1bx);
+                    ImGui::SameLine();
+                    ImGui::Checkbox("w1by(t)", &plot_w1by);
+                    ImGui::SameLine();
+                    ImGui::Checkbox("w1bz(t)", &plot_w1bz);
+
+                    ImGui::Checkbox("w2ix(t)", &plot_w2ix);
+                    ImGui::SameLine();
+                    ImGui::Checkbox("w2iy(t)", &plot_w2iy);
+                    ImGui::SameLine();
+                    ImGui::Checkbox("w2iz(t)", &plot_w2iz);
+
+                    ImGui::Checkbox("w2bx(t)", &plot_w2bx);
+                    ImGui::SameLine();
+                    ImGui::Checkbox("w2by(t)", &plot_w2by);
+                    ImGui::SameLine();
+                    ImGui::Checkbox("w2bz(t)", &plot_w2bz);
+
+                    ImGui::BulletText("Constants of motion");
+                    ImGui::Checkbox("ener_rel_err(t)", &plot_ener_rel_err);
+                    ImGui::SameLine();
+                    ImGui::Checkbox("mom_rel_err(t)", &plot_mom_rel_err);
                 ImGui::EndDisabled();
             }
             else
             {
-                ImGui::BulletText("Cartesian position");
-                ImGui::Checkbox("x", &plot_x);
-                //ImGui::Checkbox("y", &plot_y);
-                //ImGui::Checkbox("z", &plot_z);
-                ImGui::BulletText("Energy - momentum");
-                ImGui::Checkbox("Energy", &plot_ener);
+                ImGui::BulletText("Position variables");
+                ImGui::Checkbox("x(t)", &plot_x);
+                ImGui::SameLine();
+                ImGui::Checkbox("y(t)", &plot_y);
+                ImGui::SameLine();
+                ImGui::Checkbox("z(t)", &plot_z);
+                ImGui::SameLine();
+                ImGui::Checkbox("dist(t)", &plot_dist);
+
+                ImGui::Checkbox("roll1(t)", &plot_roll1);
+                ImGui::SameLine();
+                ImGui::Checkbox("pitch1(t)", &plot_pitch1);
+                ImGui::SameLine();
+                ImGui::Checkbox("yaw1(t)", &plot_yaw1);
+
+                ImGui::Checkbox("roll2(t)", &plot_roll2);
+                ImGui::SameLine();
+                ImGui::Checkbox("pitch2(t)", &plot_pitch2);
+                ImGui::SameLine();
+                ImGui::Checkbox("yaw2(t)", &plot_yaw2);
+
+                ImGui::Checkbox("q10(t)", &plot_q10);
+                ImGui::SameLine();
+                ImGui::Checkbox("q11(t)", &plot_q11);
+                ImGui::SameLine();
+                ImGui::Checkbox("q12(t)", &plot_q12);
+                ImGui::SameLine();
+                ImGui::Checkbox("q13(t)", &plot_q13);
+
+                ImGui::Checkbox("q20(t)", &plot_q20);
+                ImGui::SameLine();
+                ImGui::Checkbox("q21(t)", &plot_q21);
+                ImGui::SameLine();
+                ImGui::Checkbox("q22(t)", &plot_q22);
+                ImGui::SameLine();
+                ImGui::Checkbox("q23(t)", &plot_q23);
+
+                ImGui::BulletText("Velocity variables");
+                ImGui::Checkbox("vx(t)", &plot_vx);
+                ImGui::SameLine();
+                ImGui::Checkbox("vy(t)", &plot_vy);
+                ImGui::SameLine();
+                ImGui::Checkbox("vz(t)", &plot_vz);
+                ImGui::SameLine();
+                ImGui::Checkbox("vlen(t)", &plot_vlen);
+
+                ImGui::Checkbox("w1ix(t)", &plot_w1ix);
+                ImGui::SameLine();
+                ImGui::Checkbox("w1iy(t)", &plot_w1iy);
+                ImGui::SameLine();
+                ImGui::Checkbox("w1iz(t)", &plot_w1iz);
+
+                ImGui::Checkbox("w1bx(t)", &plot_w1bx);
+                ImGui::SameLine();
+                ImGui::Checkbox("w1by(t)", &plot_w1by);
+                ImGui::SameLine();
+                ImGui::Checkbox("w1bz(t)", &plot_w1bz);
+
+                ImGui::Checkbox("w2ix(t)", &plot_w2ix);
+                ImGui::SameLine();
+                ImGui::Checkbox("w2iy(t)", &plot_w2iy);
+                ImGui::SameLine();
+                ImGui::Checkbox("w2iz(t)", &plot_w2iz);
+
+                ImGui::Checkbox("w2bx(t)", &plot_w2bx);
+                ImGui::SameLine();
+                ImGui::Checkbox("w2by(t)", &plot_w2by);
+                ImGui::SameLine();
+                ImGui::Checkbox("w2bz(t)", &plot_w2bz);
+
+                ImGui::BulletText("Constants of motion");
+                ImGui::Checkbox("ener_rel_err(t)", &plot_ener_rel_err);
+                ImGui::SameLine();
+                ImGui::Checkbox("mom_rel_err(t)", &plot_mom_rel_err);
+
+
+                
+
+
+
                 if (plot_x)
                 {
                     ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);

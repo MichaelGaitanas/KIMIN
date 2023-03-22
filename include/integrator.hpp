@@ -34,8 +34,6 @@ public:
     dvec roll2,pitch2,yaw2;
     dvec q10,q11,q12,q13;
     dvec q20,q21,q22,q23;
-    dvec a11,a12,a13, a21,a22,a23, a31,a32,a33;
-    dvec b11,b12,b13, b21,b22,b23, b31,b32,b33;
 
     //velocities
     dvec vx,vy,vz, vlen;
