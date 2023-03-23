@@ -403,7 +403,7 @@ public:
             //solution.y.push_back(r[1]);
             //solution.z.push_back(r[2]);
 
-            solution.ener.push_back(ener);
+            //solution.ener.push_back(ener);
             //solution.mom.push_back(length(mom));
         }
         solution.collision = collision;

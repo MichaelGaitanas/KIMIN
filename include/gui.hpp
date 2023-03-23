@@ -1260,9 +1260,9 @@ public:
                     ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
                     if (ImPlot::BeginPlot("ener(t)", plot_win_size))
                     {
-                        ImPlot::SetupAxes("t","ener");
-                        ImPlot::PlotLine("", &(solution.t[0]), &(solution.ener[0]), solution.t.size());
-                        ImPlot::EndPlot();  
+                        //ImPlot::SetupAxes("t","ener");
+                        //ImPlot::PlotLine("", &(solution.t[0]), &(solution.ener[0]), solution.t.size());
+                        //ImPlot::EndPlot();  
                     }
                     ImGui::End();
                 }
