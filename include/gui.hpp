@@ -1359,6 +1359,19 @@ public:
                     ImGui::SameLine();
                     ImGui::Checkbox("w2bz(t)", &plot_w2bz);
 
+                    ImGui::BulletText("Keplerian elements");
+                    ImGui::Checkbox("a(t)", &plot_a);
+                    ImGui::SameLine();
+                    ImGui::Checkbox("e(t)", &plot_e);
+                    ImGui::SameLine();
+                    ImGui::Checkbox("i(t)", &plot_i);
+                    ImGui::SameLine();
+                    ImGui::Checkbox("Om(t)", &plot_Om);
+                    ImGui::SameLine();
+                    ImGui::Checkbox("w(t)", &plot_w);
+                    ImGui::SameLine();
+                    ImGui::Checkbox("M(t)", &plot_M);
+
                     ImGui::BulletText("Constants of motion");
                     ImGui::Checkbox("ener_rel_err(t)", &plot_ener_rel_err);
                     ImGui::SameLine();
@@ -1436,6 +1449,19 @@ public:
                 ImGui::Checkbox("w2by(t)", &plot_w2by);
                 ImGui::SameLine();
                 ImGui::Checkbox("w2bz(t)", &plot_w2bz);
+
+                ImGui::BulletText("Keplerian elements");
+                ImGui::Checkbox("a(t)", &plot_a);
+                ImGui::SameLine();
+                ImGui::Checkbox("e(t)", &plot_e);
+                ImGui::SameLine();
+                ImGui::Checkbox("i(t)", &plot_i);
+                ImGui::SameLine();
+                ImGui::Checkbox("Om(t)", &plot_Om);
+                ImGui::SameLine();
+                ImGui::Checkbox("w(t)", &plot_w);
+                ImGui::SameLine();
+                ImGui::Checkbox("M(t)", &plot_M);
 
                 ImGui::BulletText("Constants of motion");
                 ImGui::Checkbox("ener_rel_err(t)", &plot_ener_rel_err);

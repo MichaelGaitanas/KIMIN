@@ -37,14 +37,14 @@ public:
     dvec q20,q21,q22,q23;
 
     //velocities
-    dvec vx,vy,vz, vlen;
+    dvec vx,vy,vz, vdist;
     dvec w1ix,w1iy,w1iz;
     dvec w1bx,w1by,w1bz;
     dvec w2ix,w2iy,w2iz;
     dvec w2bx,w2by,w2bz;
 
     //Keplerian elements
-    dvec a,e,i,raan,w,M;
+    dvec a,e,inc,Om,w,M;
 
     //energy relative error
     dvec ener_rel_err;
@@ -75,21 +75,23 @@ public:
         FILE *file_w2i = fopen(("../simulations/" + str(simname) + "/w2i.txt").c_str(),"w");
         FILE *file_w2b = fopen(("../simulations/" + str(simname) + "/w2b.txt").c_str(),"w");
         FILE *file_rpy2 = fopen(("../simulations/" + str(simname) + "/rpy2.txt").c_str(),"w");
-        FILE *file_EL = fopen(("../simulations/" + str(simname) + "/ener_mom.txt").c_str(),"w");
-        for (int i = 0; i < sol.size(); ++i)
+        FILE *file_kep = fopen(("../simulations/" + str(simname) + "/kep.txt").c_str(),"w");
+        FILE *file_ener_mom = fopen(("../simulations/" + str(simname) + "/ener_mom.txt").c_str(),"w");
+        for (int i = 0; i < t.size(); ++i)
         {
-            fprintf(file_t,"%.16lf\n",t);
-            fprintf(file_r,"%.16lf %.16lf %.16lf\n",x,y,z, dist);
-            fprintf(file_v,"%.16lf %.16lf %.16lf\n",vx,vy,vz, vlen);
-            fprintf(file_q1,"%.16lf %.16lf %.16lf %.16lf\n",q1[0],q1[1],q1[2],q1[3]);
-            fprintf(file_rpy1,"%.16lf %.16lf %.16lf\n",rpy1[0],rpy1[1],rpy1[2]);
-            fprintf(file_w1b,"%.16lf %.16lf %.16lf\n",w1b[0],w1b[1],w1b[2]);
-            fprintf(file_w1i,"%.16lf %.16lf %.16lf\n",w1i[0],w1i[1],w1i[2]);
-            fprintf(file_q2,"%.16lf %.16lf %.16lf %.16lf\n",q2[0],q2[1],q2[2],q2[3]);
-            fprintf(file_rpy2,"%.16lf %.16lf %.16lf\n",rpy2[0],rpy2[1],rpy2[2]);
-            fprintf(file_w2b,"%.16lf %.16lf %.16lf\n",w2b[0],w2b[1],w2b[2]);
-            fprintf(file_w2i,"%.16lf %.16lf %.16lf\n",w2i[0],w2i[1],w2i[2]); 
-            fprintf(file_EL,"%.16lf %.16lf %.16lf %.16lf\n", ener, mom[0],mom[1],mom[2]);
+            fprintf(file_t,"%.16lf\n",t[i]);
+            fprintf(file_r,"%.16lf %.16lf %.16lf\n",x[i],y[i],z[i], dist[i]);
+            fprintf(file_v,"%.16lf %.16lf %.16lf\n",vx[i],vy[i],vz[i], vdist[i]);
+            fprintf(file_q1,"%.16lf %.16lf %.16lf %.16lf\n",q10[i],q11[i],q12[i],q13[i]);
+            fprintf(file_rpy1,"%.16lf %.16lf %.16lf\n",roll1[i],pitch1[i],yaw1[i]);
+            fprintf(file_w1b,"%.16lf %.16lf %.16lf\n",w1bx[i],w1by[i],w1bz[i]);
+            fprintf(file_w1i,"%.16lf %.16lf %.16lf\n",w1ix[i],w1iy[i],w1iz[i]);
+            fprintf(file_q2,"%.16lf %.16lf %.16lf %.16lf\n",q20[i],q21[i],q22[i],q23[i]);
+            fprintf(file_rpy2,"%.16lf %.16lf %.16lf\n",roll2[i],pitch2[i],yaw2[i]);
+            fprintf(file_w2b,"%.16lf %.16lf %.16lf\n",w2bx[i],w2by[i],w2bz[i]);
+            fprintf(file_w2i,"%.16lf %.16lf %.16lf\n",w2ix[i],w2iy[i],w2iz[i]);
+            fprintf(file_kep,"%.16lf %.16lf %.16lf %.16lf %.16lf %.16lf\n",a[i],e[i],inc[i],Om[i],w[i],M[i]); 
+            fprintf(file_ener_mom,"%.16lf %.16lf\n", ener_rel_err[i], mom_rel_err[i]);
         }
         fclose(file_t);
         fclose(file_r);
@@ -102,15 +104,16 @@ public:
         fclose(file_rpy2);
         fclose(file_w2b);
         fclose(file_w2i);
-        fclose(file_EL);
+        fclose(file_kep);
+        fclose(file_ener_mom);
 
-        FILE *fpsteps = fopen(("../simulations/" + str(simname) + "/steps.txt").c_str(),"w");
-        fprintf(fpsteps,"%d\n",(int)(sol.size() - 1));
-        fclose(fpsteps);
+        FILE *file_steps = fopen(("../simulations/" + str(simname) + "/steps.txt").c_str(),"w");
+        fprintf(file_steps,"%d\n",(int)(t.size() - 1));
+        fclose(file_steps);
 
-        FILE *fpcollision = fopen(("../simulations/" + str(simname) + "/collision.txt").c_str(),"w");
-        fprintf(fpcollision,"%d\n",collision);
-        fclose(fpcollision);
+        FILE *file_collision = fopen(("../simulations/" + str(simname) + "/collision.txt").c_str(),"w");
+        fprintf(file_collision,"%d\n",collision);
+        fclose(file_collision);
 
         return;
     }
@@ -467,6 +470,7 @@ public:
             solution.x.push_back(r[0]);
             solution.y.push_back(r[1]);
             solution.z.push_back(r[2]);
+            solution.dist.push_back(length(r));
             solution.roll1.push_back(rpy1[0]);
             solution.pitch1.push_back(rpy1[1]);
             solution.yaw1.push_back(rpy1[2]);
@@ -484,7 +488,7 @@ public:
             solution.vx.push_back(v[0]);
             solution.vy.push_back(v[1]);
             solution.vz.push_back(v[2]);
-            solution.vlen.push_back(vlen);
+            solution.vdist.push_back(length(v));
             solution.w1ix.push_back(w1i[0]);
             solution.w1iy.push_back(w1i[1]);
             solution.w1iz.push_back(w1i[2]);
@@ -499,8 +503,8 @@ public:
             solution.w2bz.push_back(w2b[2]);
             solution.a.push_back(kep[0]);
             solution.e.push_back(kep[1]);
-            solution.i.push_back(kep[2]);
-            solution.raan.push_back(kep[3]);
+            solution.inc.push_back(kep[2]);
+            solution.Om.push_back(kep[3]);
             solution.w.push_back(kep[4]);
             solution.M.push_back(kep[5]);
             solution.ener_rel_err.push_back(fabs((ener - ener0)/ener0));
