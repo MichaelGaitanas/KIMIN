@@ -61,13 +61,13 @@ public:
     }
 
     //Render the console imgui window.
-    void render(const char *title = "Console ", bool *popened = NULL)
+    void render()
     {
         const float win_width  = ImGui::GetIO().DisplaySize.x;
         const float win_height = ImGui::GetIO().DisplaySize.y;
         ImGui::SetNextWindowPos(ImVec2(win_width/7.0f, win_height - win_height/7.0f), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(win_width - 2*win_width/7.0f, win_height/7.0f), ImGuiCond_FirstUseEver);
-        ImGui::Begin(title, popened);
+        ImGui::Begin("Console", NULL);
 
         //mouse input : clear the console
         if (ImGui::Button("Clear "))
@@ -155,7 +155,7 @@ public:
 
     //'x', 'y', 'z', 'vx', 'vy', 'vz' fields.
     dvec6 cart;
-    //'a', 'e', 'i', 'raan', 'w', 'M' fields.
+    //'a', 'e', 'i', 'Om', 'w', 'M' fields.
     dvec6 kep;
 
     //Nature of the orientation variables.
@@ -175,7 +175,6 @@ public:
 
     //'w1x', 'w1y', 'w1z', 'w2x', 'w2y, 'w2z' fields.
     dvec3 w1i, w2i;
-    //'w11', 'w12', 'w13', 'w21', 'w22, 'w23' fields.
     dvec3 w1b, w2b;
 
     //Integration methods.
@@ -643,7 +642,7 @@ public:
         ImGui::SameLine();
         ImGui::PushItemWidth(100.0f);
             ImGui::PushID(19);
-                ImGui::InputDouble("[days]", &step, 0.0, 0.0,"%.9lf");
+                ImGui::InputDouble("[days]", &step, 0.0, 0.0,"%g");
             ImGui::PopID();
         ImGui::PopItemWidth();
 
@@ -746,8 +745,8 @@ public:
                 ImGui::PopID();
             ImGui::PopItemWidth();
 
-            //keyboard input : relative longitude of ascending node raan
-            ImGui::Text("raan  ");
+            //keyboard input : relative longitude of ascending node Om
+            ImGui::Text("Om    ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(30);
@@ -983,7 +982,7 @@ public:
         else if (frame_type_choice == 1)
         {
             //keyboard input : w11 (body) angular velocity
-            ImGui::Text("w11   ");
+            ImGui::Text("w1x   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(55);
@@ -992,7 +991,7 @@ public:
             ImGui::PopItemWidth();
 
             //keyboard input : w12 (body) angular velocity
-            ImGui::Text("w12   ");
+            ImGui::Text("w1y   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(56);
@@ -1001,7 +1000,7 @@ public:
             ImGui::PopItemWidth();
 
             //keyboard input : w13 (body) angular velocity
-            ImGui::Text("w13   ");
+            ImGui::Text("w1z   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(57);
@@ -1010,7 +1009,7 @@ public:
             ImGui::PopItemWidth();
 
             //keyboard input : w21 (body) angular velocity
-            ImGui::Text("w21   ");
+            ImGui::Text("w2x   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(58);
@@ -1019,7 +1018,7 @@ public:
             ImGui::PopItemWidth();
 
             //keyboard input : w22 (body) angular velocity
-            ImGui::Text("w22   ");
+            ImGui::Text("w2y   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(59);
@@ -1028,7 +1027,7 @@ public:
             ImGui::PopItemWidth();
 
             //keyboard input : w23 (body) angular velocity
-            ImGui::Text("w23   ");
+            ImGui::Text("w2z   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(60);
@@ -1206,17 +1205,15 @@ public:
     bool plot_q10, plot_q11, plot_q12, plot_q13;
     bool plot_q20, plot_q21, plot_q22, plot_q23;
 
-    bool plot_vx, plot_vy, plot_vz, plot_vlen;
+    bool plot_vx, plot_vy, plot_vz, plot_vdist;
     bool plot_w1ix, plot_w1iy, plot_w1iz;
     bool plot_w1bx, plot_w1by, plot_w1bz;
     bool plot_w2ix, plot_w2iy, plot_w2iz;
     bool plot_w2bx, plot_w2by, plot_w2bz;
 
-    bool plot_a, plot_e, plot_i, plot_raan, plot_w, plot_M;
+    bool plot_a, plot_e, plot_i, plot_Om, plot_w, plot_M;
 
-    bool plot_ener_rel_err;
-
-    bool plot_mom_rel_err;
+    bool plot_ener_rel_err, plot_mom_rel_err;
 
     Graphics() : plot_x(false),
                  plot_y(false),
@@ -1244,7 +1241,7 @@ public:
                  plot_vx(false),
                  plot_vy(false),
                  plot_vz(false),
-                 plot_vlen(false),
+                 plot_vdist(false),
                  
                  plot_w1ix(false),
                  plot_w1iy(false),
@@ -1265,7 +1262,7 @@ public:
                  plot_a(false),
                  plot_e(false),
                  plot_i(false),
-                 plot_raan(false),
+                 plot_Om(false),
                  plot_w(false),
                  plot_M(false),
 
@@ -1336,7 +1333,7 @@ public:
                     ImGui::SameLine();
                     ImGui::Checkbox("vz(t)", &plot_vz);
                     ImGui::SameLine();
-                    ImGui::Checkbox("vlen(t)", &plot_vlen);
+                    ImGui::Checkbox("vdist(t)", &plot_vdist);
 
                     ImGui::Checkbox("w1ix(t)", &plot_w1ix);
                     ImGui::SameLine();
@@ -1414,7 +1411,7 @@ public:
                 ImGui::SameLine();
                 ImGui::Checkbox("vz(t)", &plot_vz);
                 ImGui::SameLine();
-                ImGui::Checkbox("vlen(t)", &plot_vlen);
+                ImGui::Checkbox("vdist(t)", &plot_vdist);
 
                 ImGui::Checkbox("w1ix(t)", &plot_w1ix);
                 ImGui::SameLine();
@@ -1446,33 +1443,29 @@ public:
                 ImGui::Checkbox("mom_rel_err(t)", &plot_mom_rel_err);
 
 
-                
-
-
-
                 if (plot_x)
                 {
                     ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
-                    ImGui::Begin("Plot imgui window x", &plot_x);
+                    ImGui::Begin("Position x", &plot_x);
                     ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
                     if (ImPlot::BeginPlot("x(t)", plot_win_size))
                     {
-                        ImPlot::SetupAxes("t","x");
+                        ImPlot::SetupAxes("time [days]","x [km]");
                         ImPlot::PlotLine("", &(solution.t[0]), &(solution.x[0]), solution.t.size());
                         ImPlot::EndPlot();  
                     }
                     ImGui::End();
                 }
-                if (plot_ener)
+                if (plot_ener_rel_err)
                 {
                     ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
-                    ImGui::Begin("Plot imgui window ener", &plot_ener);
+                    ImGui::Begin("Energy relative error", &plot_ener_rel_err);
                     ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
-                    if (ImPlot::BeginPlot("ener(t)", plot_win_size))
+                    if (ImPlot::BeginPlot("ener_rel_err(t)", plot_win_size))
                     {
-                        //ImPlot::SetupAxes("t","ener");
-                        //ImPlot::PlotLine("", &(solution.t[0]), &(solution.ener[0]), solution.t.size());
-                        //ImPlot::EndPlot();  
+                        ImPlot::SetupAxes("time [days]","error [ ]");
+                        ImPlot::PlotLine("", &(solution.t[0]), &(solution.ener_rel_err[0]), solution.t.size());
+                        ImPlot::EndPlot();  
                     }
                     ImGui::End();
                 }

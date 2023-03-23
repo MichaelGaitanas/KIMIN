@@ -16,6 +16,7 @@
 #include"potential.hpp"
 #include"force.hpp"
 #include"torque.hpp"
+
 #include"gui.hpp"
 
 #include<boost/numeric/odeint.hpp>
@@ -53,6 +54,66 @@ public:
     bool collision;
 
     //Default constructor will be called for every dvec (i.e. std::vector<double>).
+
+    void export_txt_files(const char *simname)
+    {
+        //1) create the 'simulations' directory that will store all other simulation directories
+        bool root_sim_dir = std::filesystem::create_directory("../simulations");
+
+        //2) create the current simulation directory 'simname' that will store the .txt files
+        bool current_sim_dir = std::filesystem::create_directory("../simulations/" + str(simname));
+
+        //3) create the txt content
+        FILE *file_t = fopen(("../simulations/" + str(simname) + "/time.txt").c_str(), "w");
+        FILE *file_r = fopen(("../simulations/" + str(simname) + "/pos.txt").c_str(),"w");
+        FILE *file_v = fopen(("../simulations/" + str(simname) + "/vel.txt").c_str(),"w");
+        FILE *file_q1 = fopen(("../simulations/" + str(simname) + "/quat1.txt").c_str(),"w");
+        FILE *file_w1i = fopen(("../simulations/" + str(simname) + "/w1i.txt").c_str(),"w");
+        FILE *file_w1b = fopen(("../simulations/" + str(simname) + "/w1b.txt").c_str(),"w");
+        FILE *file_rpy1 = fopen(("../simulations/" + str(simname) + "/rpy1.txt").c_str(),"w");
+        FILE *file_q2 = fopen(("../simulations/" + str(simname) + "/quat2.txt").c_str(),"w");
+        FILE *file_w2i = fopen(("../simulations/" + str(simname) + "/w2i.txt").c_str(),"w");
+        FILE *file_w2b = fopen(("../simulations/" + str(simname) + "/w2b.txt").c_str(),"w");
+        FILE *file_rpy2 = fopen(("../simulations/" + str(simname) + "/rpy2.txt").c_str(),"w");
+        FILE *file_EL = fopen(("../simulations/" + str(simname) + "/ener_mom.txt").c_str(),"w");
+        for (int i = 0; i < sol.size(); ++i)
+        {
+            fprintf(file_t,"%.16lf\n",t);
+            fprintf(file_r,"%.16lf %.16lf %.16lf\n",x,y,z, dist);
+            fprintf(file_v,"%.16lf %.16lf %.16lf\n",vx,vy,vz, vlen);
+            fprintf(file_q1,"%.16lf %.16lf %.16lf %.16lf\n",q1[0],q1[1],q1[2],q1[3]);
+            fprintf(file_rpy1,"%.16lf %.16lf %.16lf\n",rpy1[0],rpy1[1],rpy1[2]);
+            fprintf(file_w1b,"%.16lf %.16lf %.16lf\n",w1b[0],w1b[1],w1b[2]);
+            fprintf(file_w1i,"%.16lf %.16lf %.16lf\n",w1i[0],w1i[1],w1i[2]);
+            fprintf(file_q2,"%.16lf %.16lf %.16lf %.16lf\n",q2[0],q2[1],q2[2],q2[3]);
+            fprintf(file_rpy2,"%.16lf %.16lf %.16lf\n",rpy2[0],rpy2[1],rpy2[2]);
+            fprintf(file_w2b,"%.16lf %.16lf %.16lf\n",w2b[0],w2b[1],w2b[2]);
+            fprintf(file_w2i,"%.16lf %.16lf %.16lf\n",w2i[0],w2i[1],w2i[2]); 
+            fprintf(file_EL,"%.16lf %.16lf %.16lf %.16lf\n", ener, mom[0],mom[1],mom[2]);
+        }
+        fclose(file_t);
+        fclose(file_r);
+        fclose(file_v);
+        fclose(file_q1);
+        fclose(file_rpy1);
+        fclose(file_w1b);
+        fclose(file_w1i);
+        fclose(file_q2);
+        fclose(file_rpy2);
+        fclose(file_w2b);
+        fclose(file_w2i);
+        fclose(file_EL);
+
+        FILE *fpsteps = fopen(("../simulations/" + str(simname) + "/steps.txt").c_str(),"w");
+        fprintf(fpsteps,"%d\n",(int)(sol.size() - 1));
+        fclose(fpsteps);
+
+        FILE *fpcollision = fopen(("../simulations/" + str(simname) + "/collision.txt").c_str(),"w");
+        fprintf(fpcollision,"%d\n",collision);
+        fclose(fpcollision);
+
+        return;
+    }
 };
 
 class Integrator : public Properties
@@ -65,7 +126,7 @@ public:
     dmat3 I1, I2; //moments of inertia
 
     bool collision; //binary collision flag
-    dmat minimal_sol; //final solution matrix of the binary
+    dmat msol; //final solution matrix of the binary
 
     Integrator(const Properties &properties) : Properties(properties)
     {
@@ -322,7 +383,7 @@ public:
         double dt = step*86400.0; //[sec]
 
         collision = false; //no collision initially
-        minimal_sol.clear();
+        msol.clear();
 
         boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 20>> rkf78; //integration method
 
@@ -330,7 +391,7 @@ public:
         for (double t = t0; t <= tmax; t += dt)
         {
             //1) save current state
-            minimal_sol.push_back({t,
+            msol.push_back({t,
                                 state[0],
                                 state[1],
                                 state[2],
@@ -364,16 +425,16 @@ public:
         }
 
         Solution solution;
-        for (int i = 0; i < minimal_sol.size(); ++i)
+        double ener0, mom0;
+        for (int i = 0; i < msol.size(); ++i)
         {
-            double t = minimal_sol[i][0];
-
-            dvec3 r = {minimal_sol[i][1], minimal_sol[i][2], minimal_sol[i][3]};
-            dvec3 v = {minimal_sol[i][4], minimal_sol[i][5], minimal_sol[i][6]};
-            dvec4 q1 = {minimal_sol[i][7], minimal_sol[i][8], minimal_sol[i][9], minimal_sol[i][10]};
-            dvec3 w1b = {minimal_sol[i][11], minimal_sol[i][12], minimal_sol[i][13]};
-            dvec4 q2 = {minimal_sol[i][14], minimal_sol[i][15], minimal_sol[i][16], minimal_sol[i][17]};
-            dvec3 w2b = {minimal_sol[i][18], minimal_sol[i][19], minimal_sol[i][20]};
+            double t = msol[i][0];
+            dvec3 r = {msol[i][1], msol[i][2], msol[i][3]};
+            dvec3 v = {msol[i][4], msol[i][5], msol[i][6]};
+            dvec4 q1 = {msol[i][7], msol[i][8], msol[i][9], msol[i][10]};
+            dvec3 w1b = {msol[i][11], msol[i][12], msol[i][13]};
+            dvec4 q2 = {msol[i][14], msol[i][15], msol[i][16], msol[i][17]};
+            dvec3 w2b = {msol[i][18], msol[i][19], msol[i][20]};
             dmat3 A1 = quat2mat(q1);
             dmat3 A2 = quat2mat(q2);
             dvec3 w1i = body2iner(w1b,A1);
@@ -393,16 +454,57 @@ public:
                 ener += mut_pot_integrals_ord4(r, M1,J1,A1, M2,J2,A2);
             else
                 ener += mut_pot_masc(r, M1,masc1,A1, M2,masc2,A2);
-
-            dvec3 mom = (M1*M2/(M1+M2))*cross(r,v) + dot(A1, dot(I1,w1b)) + dot(A2, dot(I2,w2b));
+            
+            double mom = length( (M1*M2/(M1+M2))*cross(r,v) + dot(A1, dot(I1,w1b)) + dot(A2, dot(I2,w2b)) );
+            
+            if (i == 0)
+            {
+                ener0 = ener;
+                mom0 = mom;
+            }
             
             solution.t.push_back(t);
             solution.x.push_back(r[0]);
-            //solution.y.push_back(r[1]);
-            //solution.z.push_back(r[2]);
-
-            //solution.ener.push_back(ener);
-            //solution.mom.push_back(length(mom));
+            solution.y.push_back(r[1]);
+            solution.z.push_back(r[2]);
+            solution.roll1.push_back(rpy1[0]);
+            solution.pitch1.push_back(rpy1[1]);
+            solution.yaw1.push_back(rpy1[2]);
+            solution.roll2.push_back(rpy2[0]);
+            solution.pitch2.push_back(rpy2[1]);
+            solution.yaw2.push_back(rpy2[2]);
+            solution.q10.push_back(q1[0]);
+            solution.q11.push_back(q1[1]);
+            solution.q12.push_back(q1[2]);
+            solution.q13.push_back(q1[3]);
+            solution.q20.push_back(q2[0]);
+            solution.q21.push_back(q2[1]);
+            solution.q22.push_back(q2[2]);
+            solution.q23.push_back(q2[3]);
+            solution.vx.push_back(v[0]);
+            solution.vy.push_back(v[1]);
+            solution.vz.push_back(v[2]);
+            solution.vlen.push_back(vlen);
+            solution.w1ix.push_back(w1i[0]);
+            solution.w1iy.push_back(w1i[1]);
+            solution.w1iz.push_back(w1i[2]);
+            solution.w1bx.push_back(w1b[0]);
+            solution.w1by.push_back(w1b[1]);
+            solution.w1bz.push_back(w1b[2]);
+            solution.w2ix.push_back(w2i[0]);
+            solution.w2iy.push_back(w2i[1]);
+            solution.w2iz.push_back(w2i[2]);
+            solution.w2bx.push_back(w2b[0]);
+            solution.w2by.push_back(w2b[1]);
+            solution.w2bz.push_back(w2b[2]);
+            solution.a.push_back(kep[0]);
+            solution.e.push_back(kep[1]);
+            solution.i.push_back(kep[2]);
+            solution.raan.push_back(kep[3]);
+            solution.w.push_back(kep[4]);
+            solution.M.push_back(kep[5]);
+            solution.ener_rel_err.push_back(fabs((ener - ener0)/ener0));
+            solution.mom_rel_err.push_back(fabs((mom - mom0)/mom0));
         }
         solution.collision = collision;
 
