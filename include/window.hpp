@@ -56,6 +56,7 @@ public:
             glfwTerminate();
         }
         glfwMakeContextCurrent(m_pointer);
+        //glfwSetWindowSizeLimits(m_pointer, 400, 400, GLFW_DONT_CARE, GLFW_DONT_CARE);
         glfwSwapInterval(1);
 
         glewExperimental = GL_TRUE;

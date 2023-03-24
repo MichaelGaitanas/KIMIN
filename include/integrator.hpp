@@ -444,8 +444,6 @@ public:
             dvec3 w2i = body2iner(w2b,A2);
             dvec3 rpy1 = quat2ang(q1);
             dvec3 rpy2 = quat2ang(q2);
-            double dist = length(r);
-            double vlen = length(v);
             dvec6 kep = cart2kep({r[0],r[1],r[2], v[0],v[1],v[2]}, G*(M1+M2));
             
             double ener = 0.5*((M1*M2)/(M1+M2))*dot(v,v) + 0.5*dot( dot(w1b,I1), w1b) + 0.5*dot( dot(w2b,I2), w2b);
