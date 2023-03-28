@@ -1,6 +1,3 @@
-#include<cstdio>
-#include<cmath>
-
 #include"../include/window.hpp"
 
 int main()

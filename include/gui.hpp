@@ -689,7 +689,7 @@ public:
             ImGui::PopItemWidth();
 
             //keyboard input : relative velocity vx
-            ImGui::Text("vx  ");
+            ImGui::Text("υx  ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(24);
@@ -698,7 +698,7 @@ public:
             ImGui::PopItemWidth();
             
             //keyboard input : relative velocity vy
-            ImGui::Text("vy  ");
+            ImGui::Text("υy  ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(25);
@@ -707,7 +707,7 @@ public:
             ImGui::PopItemWidth();
 
             //keyboard input : relative velocity vz
-            ImGui::Text("vz  ");
+            ImGui::Text("υz  ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(26);
@@ -746,7 +746,7 @@ public:
             ImGui::PopItemWidth();
 
             //keyboard input : relative longitude of ascending node Om
-            ImGui::Text("Om    ");
+            ImGui::Text("Ω   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(30);
@@ -755,7 +755,7 @@ public:
             ImGui::PopItemWidth();
 
             //keyboard input : relative argument of periapsis w
-            ImGui::Text("w       ");
+            ImGui::Text("ω       ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(31);
@@ -925,7 +925,7 @@ public:
         if (frame_type_choice == 0)
         {
             //keyboard input : w1x (inertial) angular velocity
-            ImGui::Text("w1x   ");
+            ImGui::Text("ω1x   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(49);
@@ -934,7 +934,7 @@ public:
             ImGui::PopItemWidth();
 
             //keyboard input : w1y (inertial) angular velocity
-            ImGui::Text("w1y   ");
+            ImGui::Text("ω1y   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(50);
@@ -943,7 +943,7 @@ public:
             ImGui::PopItemWidth();
             
             //keyboard input : w1z (inertial) angular velocity
-            ImGui::Text("w1z   ");
+            ImGui::Text("ω1z   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(51);
@@ -952,7 +952,7 @@ public:
             ImGui::PopItemWidth();
 
             //keyboard input : w2x (inertial) angular velocity
-            ImGui::Text("w2x   ");
+            ImGui::Text("ω2x   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(52);
@@ -961,7 +961,7 @@ public:
             ImGui::PopItemWidth();
 
             //keyboard input : w2y (inertial) angular velocity
-            ImGui::Text("w2y   ");
+            ImGui::Text("ω2y   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(53);
@@ -970,7 +970,7 @@ public:
             ImGui::PopItemWidth();
             
             //keyboard input : w2z (inertial) angular velocity
-            ImGui::Text("w2z   ");
+            ImGui::Text("ω2z   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(54);
@@ -982,7 +982,7 @@ public:
         else if (frame_type_choice == 1)
         {
             //keyboard input : w11 (body) angular velocity
-            ImGui::Text("w1x   ");
+            ImGui::Text("ω1x   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(55);
@@ -991,7 +991,7 @@ public:
             ImGui::PopItemWidth();
 
             //keyboard input : w12 (body) angular velocity
-            ImGui::Text("w1y   ");
+            ImGui::Text("ω1y   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(56);
@@ -1000,7 +1000,7 @@ public:
             ImGui::PopItemWidth();
 
             //keyboard input : w13 (body) angular velocity
-            ImGui::Text("w1z   ");
+            ImGui::Text("ω1z   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(57);
@@ -1009,7 +1009,7 @@ public:
             ImGui::PopItemWidth();
 
             //keyboard input : w21 (body) angular velocity
-            ImGui::Text("w2x   ");
+            ImGui::Text("ω2x   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(58);
@@ -1018,7 +1018,7 @@ public:
             ImGui::PopItemWidth();
 
             //keyboard input : w22 (body) angular velocity
-            ImGui::Text("w2y   ");
+            ImGui::Text("ω2y   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(59);
@@ -1027,7 +1027,7 @@ public:
             ImGui::PopItemWidth();
 
             //keyboard input : w23 (body) angular velocity
-            ImGui::Text("w2z   ");
+            ImGui::Text("ω2z   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(60);
@@ -1275,6 +1275,88 @@ public:
         this->solution = solution;
         return;
     }
+    
+    void plot_buttons()
+    {
+        ImGui::Text("Relative position");
+        if (ImGui::Button("    x    ")) plot_x = !plot_x; ImGui::SameLine();
+        if (ImGui::Button("    y    ")) plot_y = !plot_y; ImGui::SameLine();
+        if (ImGui::Button("    z    ")) plot_z = !plot_z; ImGui::SameLine();
+        if (ImGui::Button("distance")) plot_dist = !plot_dist;
+        ImGui::Separator();
+
+        ImGui::Text("Relative velocity");
+        if (ImGui::Button("   υx   ")) plot_vx = !plot_vx; ImGui::SameLine();
+        if (ImGui::Button("   υy   ")) plot_vy = !plot_vy; ImGui::SameLine();
+        if (ImGui::Button("   υz   ")) plot_vz = !plot_vz;
+        ImGui::Separator();
+
+        ImGui::Text("Relative Keplerian elements");
+        if (ImGui::Button("   a   ")) plot_a =  !plot_a;  ImGui::SameLine();
+        if (ImGui::Button("   e   ")) plot_e =  !plot_e;  ImGui::SameLine();
+        if (ImGui::Button("   i   ")) plot_i =  !plot_i;  ImGui::SameLine();
+        if (ImGui::Button("   Ω   ")) plot_Om = !plot_Om; ImGui::SameLine();
+        if (ImGui::Button("   ω   ")) plot_w =  !plot_w;  ImGui::SameLine();
+        if (ImGui::Button("   M   ")) plot_M =  !plot_M;
+        ImGui::Separator();
+
+        ImGui::Text("Euler angles (Body 1)");
+        if (ImGui::Button("roll 1"))  plot_roll1 =  !plot_roll1;  ImGui::SameLine();
+        if (ImGui::Button("pitch 1")) plot_pitch1 = !plot_pitch1; ImGui::SameLine();
+        if (ImGui::Button("yaw 1"))   plot_yaw1 =   !plot_yaw1;
+        ImGui::Separator();
+
+        ImGui::Text("Euler angles (Body 2)");
+        if (ImGui::Button("roll 2"))  plot_roll2 =  !plot_roll2;  ImGui::SameLine();
+        if (ImGui::Button("pitch 2")) plot_pitch2 = !plot_pitch2; ImGui::SameLine();
+        if (ImGui::Button("yaw 2"))   plot_yaw2 =   !plot_yaw2;
+        ImGui::Separator();
+        
+        ImGui::Text("Quaternion (Body 1)");
+        if (ImGui::Button(" q10 ")) plot_q10 = !plot_q10; ImGui::SameLine();
+        if (ImGui::Button(" q11 ")) plot_q11 = !plot_q11; ImGui::SameLine();
+        if (ImGui::Button(" q12 ")) plot_q12 = !plot_q12; ImGui::SameLine();
+        if (ImGui::Button(" q13 ")) plot_q13 = !plot_q13;
+        ImGui::Separator();
+        
+        ImGui::Text("Quaternion (Body 2)");
+        if (ImGui::Button(" q20 ")) plot_q20 = !plot_q20; ImGui::SameLine();
+        if (ImGui::Button(" q21 ")) plot_q21 = !plot_q21; ImGui::SameLine();
+        if (ImGui::Button(" q22 ")) plot_q22 = !plot_q22; ImGui::SameLine();
+        if (ImGui::Button(" q23 ")) plot_q23 = !plot_q23;
+        ImGui::Separator();
+
+        ImGui::Text("Angular velocity (Body 1, inertial frame)");
+        if (ImGui::Button(" ω1ix ")) plot_w1ix = !plot_w1ix; ImGui::SameLine();
+        if (ImGui::Button(" ω1iy ")) plot_w1iy = !plot_w1iy; ImGui::SameLine();
+        if (ImGui::Button(" ω1iz ")) plot_w1iz = !plot_w1iz;
+        ImGui::Separator();
+
+        ImGui::Text("Angular velocity (Body 2, inertial frame)");
+        if (ImGui::Button(" ω2ix ")) plot_w2ix = !plot_w2ix; ImGui::SameLine();
+        if (ImGui::Button(" ω2iy ")) plot_w2iy = !plot_w2iy; ImGui::SameLine();
+        if (ImGui::Button(" ω2iz ")) plot_w2iz = !plot_w2iz;
+        ImGui::Separator();
+
+        ImGui::Text("Angular velocity (Body 1, body frame)");
+        if (ImGui::Button(" ω1bx ")) plot_w1bx = !plot_w1bx; ImGui::SameLine();
+        if (ImGui::Button(" ω1by ")) plot_w1by = !plot_w1by; ImGui::SameLine();
+        if (ImGui::Button(" ω1bz ")) plot_w1bz = !plot_w1bz;
+        ImGui::Separator();
+
+        ImGui::Text("Angular velocity (Body 2, body frame)");
+        if (ImGui::Button(" ω2bx ")) plot_w2bx = !plot_w2bx; ImGui::SameLine();
+        if (ImGui::Button(" ω2by ")) plot_w2by = !plot_w2by; ImGui::SameLine();
+        if (ImGui::Button(" ω2bz ")) plot_w2bz = !plot_w2bz;
+        ImGui::Separator();
+
+        ImGui::Text("Constants of motion");
+        if (ImGui::Button("Energy"))   plot_ener_rel_err = !plot_ener_rel_err; ImGui::SameLine();
+        if (ImGui::Button("Momentum")) plot_mom_rel_err =  !plot_mom_rel_err;
+        ImGui::Separator();
+
+        return;
+    }
 
     void render()
     {
@@ -1286,67 +1368,16 @@ public:
 
         if (ImGui::CollapsingHeader("Plots"))
         {
-            if (solution.t.size())
+            if (!solution.t.size())
             {
-                if (ImGui::Button("x(t)")) plot_x = !plot_x;
-                if (ImGui::Button("y(t)")) plot_y = !plot_y;
-                if (ImGui::Button("z(t)")) plot_z = !plot_z;
-                if (ImGui::Button("dist(t)")) plot_dist = !plot_dist;
-
-                if (ImGui::Button("vx(t)"))  plot_vx = !plot_vx;
-                if (ImGui::Button("vy(t)"))  plot_vy = !plot_vy;
-                if (ImGui::Button("vz(t)")) plot_vz = !plot_vz;
-                if (ImGui::Button("vdist(t)")) plot_vdist = !plot_vdist;
-
-                if (ImGui::Button("roll1(t)")) plot_roll1 = !plot_roll1;
-                if (ImGui::Button("pitch1(t)")) plot_pitch1 = !plot_pitch1;
-                if (ImGui::Button("yaw1(t)"))   plot_yaw1 = !plot_yaw1;
-
-                if (ImGui::Button("roll2(t)"))  plot_roll2 = !plot_roll2;
-                if (ImGui::Button("pitch2(t)")) plot_pitch2 = !plot_pitch2;
-                if (ImGui::Button("yaw2(t)"))  plot_yaw2 = !plot_yaw2;
-                
-                if (ImGui::Button("q10(t)"))  plot_q10 = !plot_q10;
-                if (ImGui::Button("q11(t)"))  plot_q11 = !plot_q11;
-                if (ImGui::Button("q12(t)"))  plot_q12 = !plot_q12;
-                if (ImGui::Button("q13(t)"))  plot_q13 = !plot_q13;
-                
-                if (ImGui::Button("q20(t)"))  plot_q20 = !plot_q20;
-                if (ImGui::Button("q21(t)"))  plot_q21 = !plot_q21;
-                if (ImGui::Button("q22(t)"))  plot_q22 = !plot_q22;
-                if (ImGui::Button("q23(t)"))  plot_q23 = !plot_q23;
-
-                if (ImGui::Button("w1ix(t)")) plot_x = !plot_x;
-                if (ImGui::Button("w1iy(t)")) plot_x = !plot_x;
-                if (ImGui::Button("w1iz(t)")) plot_x = !plot_x;
-                if (ImGui::Button("w1bx(t)")) plot_x = !plot_x;
-                if (ImGui::Button("w1by(t)"))  plot_x = !plot_x;
-                if (ImGui::Button("w1bz(t)"))  plot_x = !plot_x;
-
-                if (ImGui::Button("w2ix(t)")) plot_x = !plot_x;
-                if (ImGui::Button("w2iy(t)")) plot_x = !plot_x;
-                if (ImGui::Button("w2iz(t)")) plot_x = !plot_x;
-                if (ImGui::Button("w2bx(t)")) plot_x = !plot_x;
-                if (ImGui::Button("w2by(t)"))  plot_x = !plot_x;
-                if (ImGui::Button("w2bz(t)"))  plot_x = !plot_x;
-            
-                if (ImGui::Button("a(t)")) plot_x = !plot_x;
-                if (ImGui::Button("e(t)")) plot_x = !plot_x;
-                if (ImGui::Button("i(t)")) plot_x = !plot_x;
-                if (ImGui::Button("Om(t)")) plot_x = !plot_x;
-                if (ImGui::Button("w(t)"))  plot_x = !plot_x;
-                if (ImGui::Button("M(t)"))  plot_x = !plot_x;
-
-                if (ImGui::Button("ener_rel_err(t)"))  plot_x = !plot_x;
-                if (ImGui::Button("mom_rel_err(t)"))  plot_x = !plot_x;
+                ImGui::BeginDisabled();
+                    plot_buttons();
+                ImGui::EndDisabled();
             }
             else
             {
-                ImGui::BeginDisabled();
+                plot_buttons();
                     
-                ImGui::EndDisabled();
-
-
                 if (plot_x)
                 {
                     ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
@@ -1394,8 +1425,8 @@ public:
         ImPlot::CreateContext();
         ImGuiIO &io = ImGui::GetIO();
         io.IniFilename = NULL;
-        io.Fonts->AddFontFromFileTTF("../font/arial.ttf", 15.0f);
-        (void)io;
+        io.Fonts->AddFontFromFileTTF("../font/Roboto-Regular.ttf", 15.0f, NULL, io.Fonts->GetGlyphRangesGreek());
+        //(void)io;
         ImGui::StyleColorsDark();
         ImGui_ImplGlfw_InitForOpenGL(pointer, true);
         ImGui_ImplOpenGL3_Init("#version 330");
