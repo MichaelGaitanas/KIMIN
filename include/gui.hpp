@@ -56,7 +56,7 @@ public:
         #elif defined(_WIN32) || defined(_WIN64)
             return "Windows";
         #else
-            return "Other OS";
+            return "Other";
         #endif
     }
 
@@ -265,6 +265,8 @@ public:
 
     void render(GLFWwindow *pointer)
     {
+        int id = 0;
+
         const float win_width  = ImGui::GetIO().DisplaySize.x;
         const float win_height = ImGui::GetIO().DisplaySize.y;
         ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_FirstUseEver);
@@ -325,7 +327,7 @@ public:
             ImGui::Text("a1 ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(0);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[km]", &semiaxes1[0], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -333,7 +335,7 @@ public:
             ImGui::Text("b1 ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(1);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[km]", &semiaxes1[1], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -341,7 +343,7 @@ public:
             ImGui::Text("c1 ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(2);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[km]", &semiaxes1[2], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -351,7 +353,7 @@ public:
             ImGui::Text("a2 ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(3);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[km]", &semiaxes2[0], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -359,7 +361,7 @@ public:
             ImGui::Text("b2 ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(4);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[km]", &semiaxes2[1], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -367,7 +369,7 @@ public:
             ImGui::Text("c2 ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(5);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[km]", &semiaxes2[2], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -473,7 +475,7 @@ public:
                     ImGui::Text("x axis ");
                     ImGui::SameLine();
                     ImGui::PushItemWidth(100.0f);
-                        ImGui::PushID(6);
+                        ImGui::PushID(id++);
                             ImGui::InputInt(" [ > 1 ]", &grid_reso_inactive[0]);
                         ImGui::PopID();
                     ImGui::PopItemWidth();
@@ -481,7 +483,7 @@ public:
                     ImGui::Text("y axis ");
                     ImGui::SameLine();
                     ImGui::PushItemWidth(100.0f);
-                        ImGui::PushID(7);
+                        ImGui::PushID(id++);
                             ImGui::InputInt(" [ > 1 ]", &grid_reso_inactive[1]);
                         ImGui::PopID();
                     ImGui::PopItemWidth();
@@ -489,7 +491,7 @@ public:
                     ImGui::Text("z axis ");
                     ImGui::SameLine();
                     ImGui::PushItemWidth(100.0f);
-                        ImGui::PushID(8);
+                        ImGui::PushID(id++);
                             ImGui::InputInt(" [ > 1 ]", &grid_reso_inactive[2]);
                         ImGui::PopID();
                     ImGui::PopItemWidth();
@@ -501,7 +503,7 @@ public:
                 ImGui::Text("x axis ");
                 ImGui::SameLine();
                 ImGui::PushItemWidth(100.0f);
-                    ImGui::PushID(9);
+                    ImGui::PushID(id++);
                         ImGui::InputInt(" [ > 1 ]", &grid_reso1[0]);
                     ImGui::PopID();
                 ImGui::PopItemWidth();
@@ -510,7 +512,7 @@ public:
                 ImGui::Text("y axis ");
                 ImGui::SameLine();
                 ImGui::PushItemWidth(100.0f);
-                    ImGui::PushID(10);
+                    ImGui::PushID(id++);
                         ImGui::InputInt(" [ > 1 ]", &grid_reso1[1]);
                     ImGui::PopID();
                 ImGui::PopItemWidth();
@@ -519,7 +521,7 @@ public:
                 ImGui::Text("z axis ");
                 ImGui::SameLine();
                 ImGui::PushItemWidth(100.0f);
-                    ImGui::PushID(11);
+                    ImGui::PushID(id++);
                         ImGui::InputInt(" [ > 1 ]", &grid_reso1[2]);
                     ImGui::PopID();
                 ImGui::PopItemWidth();
@@ -530,7 +532,7 @@ public:
                 ImGui::Text("x axis ");
                 ImGui::SameLine();
                 ImGui::PushItemWidth(100.0f);
-                    ImGui::PushID(12);
+                    ImGui::PushID(id++);
                         ImGui::InputInt(" [ > 1 ]", &grid_reso2[0]);
                     ImGui::PopID();
                 ImGui::PopItemWidth();
@@ -539,7 +541,7 @@ public:
                 ImGui::Text("y axis ");
                 ImGui::SameLine();
                 ImGui::PushItemWidth(100.0f);
-                    ImGui::PushID(13);
+                    ImGui::PushID(id++);
                         ImGui::InputInt(" [ > 1 ]", &grid_reso2[1]);
                     ImGui::PopID();
                 ImGui::PopItemWidth();
@@ -548,7 +550,7 @@ public:
                 ImGui::Text("z axis ");
                 ImGui::SameLine();
                 ImGui::PushItemWidth(100.0f);
-                    ImGui::PushID(14);
+                    ImGui::PushID(id++);
                         ImGui::InputInt(" [ > 1 ]", &grid_reso2[2]);
                     ImGui::PopID();
                 ImGui::PopItemWidth();
@@ -601,7 +603,7 @@ public:
         ImGui::Text("M1 ");
         ImGui::SameLine();
         ImGui::PushItemWidth(150.0f);
-            ImGui::PushID(15);
+            ImGui::PushID(id++);
                 ImGui::InputDouble("[kg]", &M1, 0.0, 0.0,"%g");
             ImGui::PopID();
         ImGui::PopItemWidth();
@@ -610,7 +612,7 @@ public:
         ImGui::Text("M2 ");
         ImGui::SameLine();
         ImGui::PushItemWidth(150.0f);
-            ImGui::PushID(16);
+            ImGui::PushID(id++);
                 ImGui::InputDouble("[kg]", &M2, 0.0, 0.0,"%g");
             ImGui::PopID();
         ImGui::PopItemWidth();
@@ -623,7 +625,7 @@ public:
         ImGui::Text("Epoch     ");
         ImGui::SameLine();
         ImGui::PushItemWidth(100.0f);
-            ImGui::PushID(17);
+            ImGui::PushID(id++);
                 ImGui::InputDouble(" [days]", &epoch, 0.0, 0.0,"%g");
             ImGui::PopID();
         ImGui::PopItemWidth();
@@ -632,7 +634,7 @@ public:
         ImGui::Text("Duration  ");
         ImGui::SameLine();
         ImGui::PushItemWidth(100.0f);
-            ImGui::PushID(18);
+            ImGui::PushID(id++);
                 ImGui::InputDouble("[days]", &dur, 0.0, 0.0,"%g");
             ImGui::PopID();
         ImGui::PopItemWidth();
@@ -641,7 +643,7 @@ public:
         ImGui::Text("Step        ");
         ImGui::SameLine();
         ImGui::PushItemWidth(100.0f);
-            ImGui::PushID(19);
+            ImGui::PushID(id++);
                 ImGui::InputDouble("[days]", &step, 0.0, 0.0,"%g");
             ImGui::PopID();
         ImGui::PopItemWidth();
@@ -654,7 +656,7 @@ public:
 
         //mouse input : position/velocity variables (combo)
         ImGui::PushItemWidth(200.0f);
-            ImGui::PushID(20);
+            ImGui::PushID(id++);
                 ImGui::Combo("  ", &cart_kep_var_choice, cart_kep_var, IM_ARRAYSIZE(cart_kep_var));
             ImGui::PopID();
         ImGui::PopItemWidth();
@@ -665,7 +667,7 @@ public:
             ImGui::Text("x    ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(21);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[km]", &cart[0], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -674,7 +676,7 @@ public:
             ImGui::Text("y    ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(22);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[km]", &cart[1], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -683,7 +685,7 @@ public:
             ImGui::Text("z    ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(23);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[km]", &cart[2], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -692,7 +694,7 @@ public:
             ImGui::Text("υx  ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(24);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[km/sec]", &cart[3], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -701,7 +703,7 @@ public:
             ImGui::Text("υy  ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(25);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[km/sec]", &cart[4], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -710,7 +712,7 @@ public:
             ImGui::Text("υz  ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(26);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[km/sec]", &cart[5], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -722,7 +724,7 @@ public:
             ImGui::Text("a       ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(27);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[km]", &kep[0], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -731,7 +733,7 @@ public:
             ImGui::Text("e       ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(28);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[  ]", &kep[1], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -740,7 +742,7 @@ public:
             ImGui::Text("i        ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(29);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[deg]", &kep[2], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -749,7 +751,7 @@ public:
             ImGui::Text("Ω   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(30);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[deg]", &kep[3], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -758,7 +760,7 @@ public:
             ImGui::Text("ω       ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(31);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[deg]", &kep[4], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -767,7 +769,7 @@ public:
             ImGui::Text("M      ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(32);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[deg]", &kep[5], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -777,7 +779,7 @@ public:
 
         //mouse input : orientation variables (combo)
         ImGui::PushItemWidth(200.0f);
-            ImGui::PushID(33);
+            ImGui::PushID(id++);
                 ImGui::Combo("  ", &orient_var_choice, orient_var, IM_ARRAYSIZE(orient_var));
             ImGui::PopID();
         ImGui::PopItemWidth();
@@ -788,7 +790,7 @@ public:
             ImGui::Text("roll 1    ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(34);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[deg]", &rpy1[0], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -797,7 +799,7 @@ public:
             ImGui::Text("pitch 1 ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0);
-                ImGui::PushID(35);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[deg]", &rpy1[1], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -806,7 +808,7 @@ public:
             ImGui::Text("yaw 1  ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(36);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[deg]", &rpy1[2], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -815,7 +817,7 @@ public:
             ImGui::Text("roll 2    ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(37);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[deg]", &rpy2[0], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -824,7 +826,7 @@ public:
             ImGui::Text("pitch 2 ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(38);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[deg]", &rpy2[1], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -833,7 +835,7 @@ public:
             ImGui::Text("yaw 2  ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(39);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[deg]", &rpy2[2], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -844,7 +846,7 @@ public:
             ImGui::Text("q10   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(40);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[  ]", &q1[0], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -853,7 +855,7 @@ public:
             ImGui::Text("q11   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(41);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[  ]", &q1[1], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -862,7 +864,7 @@ public:
             ImGui::Text("q12   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(42);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[  ]", &q1[2], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -871,7 +873,7 @@ public:
             ImGui::Text("q13   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(43);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[  ]", &q1[3], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -880,7 +882,7 @@ public:
             ImGui::Text("q20   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(44);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[  ]", &q2[0], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -889,7 +891,7 @@ public:
             ImGui::Text("q21   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(45);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[  ]", &q2[1], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -898,7 +900,7 @@ public:
             ImGui::Text("q22   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(46);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[  ]", &q2[2], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -907,7 +909,7 @@ public:
             ImGui::Text("q23   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(47);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[  ]", &q2[3], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -917,7 +919,7 @@ public:
 
         //mouse input : frame choice (combo)
         ImGui::PushItemWidth(200.0f);
-            ImGui::PushID(48);
+            ImGui::PushID(id++);
                 ImGui::Combo("  ", &frame_type_choice, frame_type, IM_ARRAYSIZE(frame_type));
             ImGui::PopID();
         ImGui::PopItemWidth();
@@ -928,7 +930,7 @@ public:
             ImGui::Text("ω1x   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(49);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[rad/sec]", &w1i[0], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -937,7 +939,7 @@ public:
             ImGui::Text("ω1y   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(50);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[rad/sec]", &w1i[1], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -946,7 +948,7 @@ public:
             ImGui::Text("ω1z   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(51);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[rad/sec]", &w1i[2], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -955,7 +957,7 @@ public:
             ImGui::Text("ω2x   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(52);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[rad/sec]", &w2i[0], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -964,7 +966,7 @@ public:
             ImGui::Text("ω2y   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(53);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[rad/sec]", &w2i[1], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -973,7 +975,7 @@ public:
             ImGui::Text("ω2z   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(54);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[rad/sec]", &w2i[2], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -985,7 +987,7 @@ public:
             ImGui::Text("ω1x   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(55);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[rad/sec]", &w1b[0], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -994,7 +996,7 @@ public:
             ImGui::Text("ω1y   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(56);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[rad/sec]", &w1b[1], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -1003,7 +1005,7 @@ public:
             ImGui::Text("ω1z   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(57);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[rad/sec]", &w1b[2], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -1012,7 +1014,7 @@ public:
             ImGui::Text("ω2x   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(58);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[rad/sec]", &w2b[0], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -1021,7 +1023,7 @@ public:
             ImGui::Text("ω2y   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(59);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[rad/sec]", &w2b[1], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -1030,7 +1032,7 @@ public:
             ImGui::Text("ω2z   ");
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(60);
+                ImGui::PushID(id++);
                     ImGui::InputDouble("[rad/sec]", &w2b[2], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
@@ -1042,7 +1044,7 @@ public:
 
         //mouse input : integration method
         ImGui::PushItemWidth(200.0f);
-            ImGui::PushID(61);
+            ImGui::PushID(id++);
                 ImGui::Combo("  ", &integ_method_choice, integ_method, IM_ARRAYSIZE(integ_method));
             ImGui::PopID();
         ImGui::PopItemWidth();
@@ -1051,7 +1053,7 @@ public:
         ImGui::Text("Tolerance ");
         ImGui::SameLine();
         ImGui::PushItemWidth(150.0);
-            ImGui::PushID(62);
+            ImGui::PushID(id++);
                 ImGui::InputDouble("", &tol, 0.0, 0.0,"%g");
             ImGui::PopID();
         ImGui::PopItemWidth();
