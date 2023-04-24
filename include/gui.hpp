@@ -1377,6 +1377,7 @@ public:
             else
             {
                 plot_buttons();
+
                     
                 if (plot_x)
                 {
@@ -1391,12 +1392,171 @@ public:
                     }
                     ImGui::End();
                 }
+                if (plot_y)
+                {
+                    ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
+                    ImGui::Begin("Position y", &plot_y);
+                    ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
+                    if (ImPlot::BeginPlot("y(t)", plot_win_size))
+                    {
+                        ImPlot::SetupAxes("time [days]","y [km]");
+                        ImPlot::PlotLine("", &(solution.t[0]), &(solution.y[0]), solution.t.size());
+                        ImPlot::EndPlot();  
+                    }
+                    ImGui::End();
+                }
+                if (plot_z)
+                {
+                    ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
+                    ImGui::Begin("Position z", &plot_z);
+                    ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
+                    if (ImPlot::BeginPlot("z(t)", plot_win_size))
+                    {
+                        ImPlot::SetupAxes("time [days]","z [km]");
+                        ImPlot::PlotLine("", &(solution.t[0]), &(solution.z[0]), solution.t.size());
+                        ImPlot::EndPlot();  
+                    }
+                    ImGui::End();
+                }
+                if (plot_vx)
+                {
+                    ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
+                    ImGui::Begin("Velocity υx", &plot_vx);
+                    ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
+                    if (ImPlot::BeginPlot("υx(t)", plot_win_size))
+                    {
+                        ImPlot::SetupAxes("time [days]","υx [km/sec]");
+                        ImPlot::PlotLine("", &(solution.t[0]), &(solution.vx[0]), solution.t.size());
+                        ImPlot::EndPlot();  
+                    }
+                    ImGui::End();
+                }
+                if (plot_vy)
+                {
+                    ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
+                    ImGui::Begin("Velocity υy", &plot_vy);
+                    ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
+                    if (ImPlot::BeginPlot("υy(t)", plot_win_size))
+                    {
+                        ImPlot::SetupAxes("time [days]","υy [km/sec]");
+                        ImPlot::PlotLine("", &(solution.t[0]), &(solution.vy[0]), solution.t.size());
+                        ImPlot::EndPlot();  
+                    }
+                    ImGui::End();
+                }
+                if (plot_vz)
+                {
+                    ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
+                    ImGui::Begin("Velocity υz", &plot_vz);
+                    ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
+                    if (ImPlot::BeginPlot("υz(t)", plot_win_size))
+                    {
+                        ImPlot::SetupAxes("time [days]","υz [km/sec]");
+                        ImPlot::PlotLine("", &(solution.t[0]), &(solution.vz[0]), solution.t.size());
+                        ImPlot::EndPlot();  
+                    }
+                    ImGui::End();
+                }
+                if (plot_a)
+                {
+                    ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
+                    ImGui::Begin("Semi-major axis a", &plot_a);
+                    ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
+                    if (ImPlot::BeginPlot("a(t)", plot_win_size))
+                    {
+                        ImPlot::SetupAxes("time [days]","a [km]");
+                        ImPlot::PlotLine("", &(solution.t[0]), &(solution.a[0]), solution.t.size());
+                        ImPlot::EndPlot();  
+                    }
+                    ImGui::End();
+                }
+                if (plot_e)
+                {
+                    ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
+                    ImGui::Begin("Eccentricity e", &plot_e);
+                    ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
+                    if (ImPlot::BeginPlot("e(t)", plot_win_size))
+                    {
+                        ImPlot::SetupAxes("time [days]","e [ ]");
+                        ImPlot::PlotLine("", &(solution.t[0]), &(solution.e[0]), solution.t.size());
+                        ImPlot::EndPlot();  
+                    }
+                    ImGui::End();
+                }
+                if (plot_i)
+                {
+                    ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
+                    ImGui::Begin("Inclination i", &plot_i);
+                    ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
+                    if (ImPlot::BeginPlot("i(t)", plot_win_size))
+                    {
+                        ImPlot::SetupAxes("time [days]","i [rad]");
+                        ImPlot::PlotLine("", &(solution.t[0]), &(solution.inc[0]), solution.t.size());
+                        ImPlot::EndPlot();  
+                    }
+                    ImGui::End();
+                }
+                if (plot_Om)
+                {
+                    ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
+                    ImGui::Begin("Longitude of ascending node Ω", &plot_Om);
+                    ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
+                    if (ImPlot::BeginPlot("Ω(t)", plot_win_size))
+                    {
+                        ImPlot::SetupAxes("time [days]","Ω [rad]");
+                        ImPlot::PlotLine("", &(solution.t[0]), &(solution.Om[0]), solution.t.size());
+                        ImPlot::EndPlot();  
+                    }
+                    ImGui::End();
+                }
+                if (plot_w)
+                {
+                    ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
+                    ImGui::Begin("Argument of periapsis ω", &plot_w);
+                    ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
+                    if (ImPlot::BeginPlot("ω(t)", plot_win_size))
+                    {
+                        ImPlot::SetupAxes("time [days]","ω [rad]");
+                        ImPlot::PlotLine("", &(solution.t[0]), &(solution.w[0]), solution.t.size());
+                        ImPlot::EndPlot();  
+                    }
+                    ImGui::End();
+                }
+                if (plot_M)
+                {
+                    ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
+                    ImGui::Begin("Mean anomaly M", &plot_M);
+                    ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
+                    if (ImPlot::BeginPlot("M(t)", plot_win_size))
+                    {
+                        ImPlot::SetupAxes("time [days]","M [rad]");
+                        ImPlot::PlotLine("", &(solution.t[0]), &(solution.M[0]), solution.t.size());
+                        ImPlot::EndPlot();  
+                    }
+                    ImGui::End();
+                }
+
+
+                
                 if (plot_ener_rel_err)
                 {
                     ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
                     ImGui::Begin("Energy relative error", &plot_ener_rel_err);
                     ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
                     if (ImPlot::BeginPlot("ener_rel_err(t)", plot_win_size))
+                    {
+                        ImPlot::SetupAxes("time [days]","error [ ]");
+                        ImPlot::PlotLine("", &(solution.t[0]), &(solution.ener_rel_err[0]), solution.t.size());
+                        ImPlot::EndPlot();  
+                    }
+                    ImGui::End();
+                }
+                if (plot_mom_rel_err)
+                {
+                    ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
+                    ImGui::Begin("Momentum relative error", &plot_mom_rel_err);
+                    ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
+                    if (ImPlot::BeginPlot("mom_rel_err(t)", plot_win_size))
                     {
                         ImPlot::SetupAxes("time [days]","error [ ]");
                         ImPlot::PlotLine("", &(solution.t[0]), &(solution.ener_rel_err[0]), solution.t.size());
@@ -1434,6 +1594,7 @@ public:
         imstyle.WindowMinSize = ImVec2(100.0f,100.0f);
         imstyle.FrameRounding = 5.0f;
         imstyle.WindowRounding = 5.0f;
+        imstyle.WindowMinSize = ImVec2(200.0f,200.0f);
     }
 
     //Destructor
