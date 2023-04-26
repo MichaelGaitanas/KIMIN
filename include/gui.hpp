@@ -122,8 +122,7 @@ public:
     bool clicked_poly1, clicked_poly2;
     
     //Relative paths to mascons/ and polyhedra/ directories.
-    std::vector<std::filesystem::path> path_to_masc_obj;
-    std::vector<std::filesystem::path> path_to_poly_obj;
+    std::vector<std::filesystem::path> path_to_masc_obj, path_to_poly_obj;
 
     //Relative path to the 2 .obj models.
     str obj_path1, obj_path2;
@@ -132,30 +131,28 @@ public:
     bvec vfnt1, vfnt2;
 
     //Cartesian grid resolutions (per axis) for filling the polyhedra with mascons.
-    ivec3 grid_reso1;
-    ivec3 grid_reso2;
-    ivec3 grid_reso_inactive;
+    ivec3 grid_reso1, grid_reso2, grid_reso_inactive;
 
     //.obj 'OK' button state.
     bool clicked_obj_ok;
 
-    //'Theory' checkboxes states.
-    bool ord2_checkbox, ord3_checkbox, ord4_checkbox, mascons_checkbox;
+    //'Theory' checkboxes states (i = 0,1,2,3 --> order 2, order 3, order 4, mascons).
+    bvec theory_checkbox;
 
     //'M1', 'M2' fields.
-    double M1, M2;
+    dvec2 aster_mass;
 
     //'Epoch', 'Duration', 'Step' fields.
-    double epoch, dur, step;
+    dvec3 time_param;
 
     //Nature of the relative position and velocity variables.
     const char *cart_kep_var[2];
     //Initial choice. 0 -> Cartesian, 1 -> Keplerian.
     int cart_kep_var_choice;
 
-    //'x', 'y', 'z', 'vx', 'vy', 'vz' fields.
+    //'x', 'y', 'z', 'υx', 'υy', 'υz' fields.
     dvec6 cart;
-    //'a', 'e', 'i', 'Om', 'w', 'M' fields.
+    //'a', 'e', 'i', 'Ω', 'ω', 'M' fields.
     dvec6 kep;
 
     //Nature of the orientation variables.
@@ -173,15 +170,11 @@ public:
     //Initial choice. 0 -> Inertial frame, 1 -> Body frames.
     int frame_type_choice;
 
-    //'w1x', 'w1y', 'w1z', 'w2x', 'w2y, 'w2z' fields.
+    //'ω1x', 'ω1y', 'ω1z', 'ω2x', 'ω2y, 'ω2z' fields (inertial or body frame).
     dvec3 w1i, w2i;
     dvec3 w1b, w2b;
 
-    //Integration methods.
-    const char *integ_method[4];
-    //Initial choice. 0 -> Runge-Kutta-Fehlberg 78, 1 -> Bulirsch-Stoer, etc..
-    int integ_method_choice;
-    //'tolerance' field.
+    //'tolerance' field of the intgration method.
     double tol;
 
     //'Run' button state.
@@ -214,15 +207,9 @@ public:
                    grid_reso2({10,10,10}),
                    grid_reso_inactive({0,0,0}),
                    clicked_obj_ok(false),
-                   ord2_checkbox(false),
-                   ord3_checkbox(false),
-                   ord4_checkbox(false),
-                   mascons_checkbox(false),
-                   M1(5.320591856403073e11),
-                   M2(4.940814359692687e9),
-                   epoch(0.0),
-                   dur(30.0),
-                   step(0.001388888888888889),
+                   theory_checkbox({false, false, false, false}),
+                   aster_mass({5.320591856403073e11, 4.940814359692687e9}),
+                   time_param({0.0, 30.0, 0.001388888888888889}),
                    cart_kep_var{"Cartesian ", "Keplerian "},
                    cart_kep_var_choice(0),
                    cart({1.19,0.0,0.0, 0.0,0.00017421523858789,0.0}),
@@ -239,8 +226,6 @@ public:
                    w2i({0.0,0.0,0.000146399360157891}),
                    w1b({0.0,0.0,0.0}),
                    w2b({0.0,0.0,0.0}),
-                   integ_method{"Runge-Kutta-Fehlberg 78 ", "Bulirsch-Stoer", "Dormand-Prince 5 ", "Runge-Kutta 4 (explicit)"},
-                   integ_method_choice(0),
                    tol(1e-10),
                    clicked_run(false),
                    clicked_kill(false)
@@ -304,7 +289,7 @@ public:
         }
 
         ImGui::Text("Simulation name");
-        ImGui::PushItemWidth(200);
+        ImGui::PushItemWidth(200.0f);
             ImGui::InputText(" ", simname, IM_ARRAYSIZE(simname));
         ImGui::PopItemWidth();
         ImGui::Dummy(ImVec2(0.0f,15.0f));
@@ -320,59 +305,33 @@ public:
             ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver); 
             ImGui::SetNextWindowSize(ImVec2(300,300), ImGuiCond_FirstUseEver); 
             ImGui::Begin("Ellipsoid parameters");
-                
+
             //ellipsoid semiaxes submenu
             ImGui::Text("Semiaxes");
             //keyboard input : a1 semiaxis
-            ImGui::Text("a1 ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[km]", &semiaxes1[0], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-            //keyboard input : b1 semiaxis
-            ImGui::Text("b1 ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[km]", &semiaxes1[1], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-            //keyboard input : c1 semiaxis
-            ImGui::Text("c1 ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[km]", &semiaxes1[2], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-            ImGui::Dummy(ImVec2(0.0f,10.0f));
+            for(int i = 0; i < 3; ++i)
+            {
+                ImGui::Text(str_ell_semiaxes1[i]);
+                ImGui::SameLine();
+                ImGui::PushItemWidth(100.0f);
+                    ImGui::PushID(id++);
+                        ImGui::InputDouble("[km]", &semiaxes1[i], 0.0, 0.0,"%g");
+                    ImGui::PopID();
+                ImGui::PopItemWidth();
+            }
+            ImGui::Dummy(ImVec2(0.0f,15.0f));
 
             //keyboard input : a2 semiaxis
-            ImGui::Text("a2 ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[km]", &semiaxes2[0], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-            //keyboard input : b2 semiaxis
-            ImGui::Text("b2 ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[km]", &semiaxes2[1], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-            //keyboard input : c2 semiaxis
-            ImGui::Text("c2 ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[km]", &semiaxes2[2], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
+            for(int i = 0; i < 3; ++i)
+            {
+                ImGui::Text(str_ell_semiaxes2[i]);
+                ImGui::SameLine();
+                ImGui::PushItemWidth(100.0f);
+                    ImGui::PushID(id++);
+                        ImGui::InputDouble("[km]", &semiaxes2[i], 0.0, 0.0,"%g");
+                    ImGui::PopID();
+                ImGui::PopItemWidth();
+            }
             ImGui::Dummy(ImVec2(0.0f,15.0f));
 
             //mouse input : ellipsoid submenu "OK" button
@@ -472,88 +431,43 @@ public:
                 //pseudo mouse or keyboard inputs (basically you cannot input anything if the following commands are executed)
 
                 ImGui::BeginDisabled();
-                    ImGui::Text("x axis ");
-                    ImGui::SameLine();
-                    ImGui::PushItemWidth(100.0f);
-                        ImGui::PushID(id++);
-                            ImGui::InputInt(" [ > 1 ]", &grid_reso_inactive[0]);
-                        ImGui::PopID();
-                    ImGui::PopItemWidth();
-
-                    ImGui::Text("y axis ");
-                    ImGui::SameLine();
-                    ImGui::PushItemWidth(100.0f);
-                        ImGui::PushID(id++);
-                            ImGui::InputInt(" [ > 1 ]", &grid_reso_inactive[1]);
-                        ImGui::PopID();
-                    ImGui::PopItemWidth();
-
-                    ImGui::Text("z axis ");
-                    ImGui::SameLine();
-                    ImGui::PushItemWidth(100.0f);
-                        ImGui::PushID(id++);
-                            ImGui::InputInt(" [ > 1 ]", &grid_reso_inactive[2]);
-                        ImGui::PopID();
-                    ImGui::PopItemWidth();
+                    for (int i = 0; i < 3; ++i)
+                    {
+                        ImGui::Text(str_raycast_axes[i]);
+                        ImGui::SameLine();
+                        ImGui::PushItemWidth(100.0f);
+                            ImGui::PushID(id++);
+                                ImGui::InputInt(" [ > 1 ]", &grid_reso_inactive[i]);
+                            ImGui::PopID();
+                        ImGui::PopItemWidth();
+                    }
                 ImGui::EndDisabled();
             }
             else if (obj_refer_to_body == 1 && clicked_poly1)
             {
-                //mouse or keyboard input : body1 x grid resolution for the raycast
-                ImGui::Text("x axis ");
-                ImGui::SameLine();
-                ImGui::PushItemWidth(100.0f);
-                    ImGui::PushID(id++);
-                        ImGui::InputInt(" [ > 1 ]", &grid_reso1[0]);
-                    ImGui::PopID();
-                ImGui::PopItemWidth();
-
-                //mouse or keyboard input : body1 y grid resolution for the raycast
-                ImGui::Text("y axis ");
-                ImGui::SameLine();
-                ImGui::PushItemWidth(100.0f);
-                    ImGui::PushID(id++);
-                        ImGui::InputInt(" [ > 1 ]", &grid_reso1[1]);
-                    ImGui::PopID();
-                ImGui::PopItemWidth();
-
-                //mouse or keyboard input : body1 z grid resolution for the raycast
-                ImGui::Text("z axis ");
-                ImGui::SameLine();
-                ImGui::PushItemWidth(100.0f);
-                    ImGui::PushID(id++);
-                        ImGui::InputInt(" [ > 1 ]", &grid_reso1[2]);
-                    ImGui::PopID();
-                ImGui::PopItemWidth();
+                for (int i = 0; i < 3; ++i)
+                {
+                    ImGui::Text(str_raycast_axes[i]);
+                    ImGui::SameLine();
+                    ImGui::PushItemWidth(100.0f);
+                        ImGui::PushID(id++);
+                            ImGui::InputInt(" [ > 1 ]", &grid_reso1[i]);
+                        ImGui::PopID();
+                    ImGui::PopItemWidth();
+                }
             }
             else if (obj_refer_to_body == 2 && clicked_poly2)
             {
-                //mouse or keyboard input : body2 x grid resolution for the raycast
-                ImGui::Text("x axis ");
-                ImGui::SameLine();
-                ImGui::PushItemWidth(100.0f);
-                    ImGui::PushID(id++);
-                        ImGui::InputInt(" [ > 1 ]", &grid_reso2[0]);
-                    ImGui::PopID();
-                ImGui::PopItemWidth();
-
-                //mouse or keyboard input : body2 y grid resolution for the raycast
-                ImGui::Text("y axis ");
-                ImGui::SameLine();
-                ImGui::PushItemWidth(100.0f);
-                    ImGui::PushID(id++);
-                        ImGui::InputInt(" [ > 1 ]", &grid_reso2[1]);
-                    ImGui::PopID();
-                ImGui::PopItemWidth();
-
-                //mouse or keyboard input : body2 z grid resolution for the raycast
-                ImGui::Text("z axis ");
-                ImGui::SameLine();
-                ImGui::PushItemWidth(100.0f);
-                    ImGui::PushID(id++);
-                        ImGui::InputInt(" [ > 1 ]", &grid_reso2[2]);
-                    ImGui::PopID();
-                ImGui::PopItemWidth();
+                for (int i = 0; i < 3; ++i)
+                {
+                    ImGui::Text(str_raycast_axes[i]);
+                    ImGui::SameLine();
+                    ImGui::PushItemWidth(100.0f);
+                        ImGui::PushID(id++);
+                            ImGui::InputInt(" [ > 1 ]", &grid_reso2[i]);
+                        ImGui::PopID();
+                    ImGui::PopItemWidth();
+                }
             }
             ImGui::Unindent();
 
@@ -571,30 +485,20 @@ public:
 
         //mouse input : physics theory
         ImGui::Text("Theory");
-        if (ImGui::Checkbox("Order 2", &ord2_checkbox))
+        for (int i = 0; i < 4; ++i)
         {
-            ord3_checkbox = false;
-            ord4_checkbox = false;
-            mascons_checkbox = false;
+            if (ImGui::Checkbox(str_theory[i], &theory[i]))
+            {
+                for (int j = 0; j < 4; ++j)
+                {
+                    if (i != j)
+                    {
+                        theory[i] = false;
+                    }
+                }
+            }
         }
-        if (ImGui::Checkbox("Order 3", &ord3_checkbox))
-        {
-            ord2_checkbox = false;
-            ord4_checkbox = false;
-            mascons_checkbox = false;
-        }
-        if (ImGui::Checkbox("Order 4", &ord4_checkbox))
-        {
-            ord2_checkbox = false;
-            ord3_checkbox = false;
-            mascons_checkbox = false;
-        }
-        if (ImGui::Checkbox("Mascons", &mascons_checkbox))
-        {
-            ord2_checkbox = false;
-            ord3_checkbox = false;
-            ord4_checkbox = false;
-        }
+        
         ImGui::Dummy(ImVec2(0.0f,15.0f));
 
         ImGui::Text("Mass");
@@ -621,33 +525,16 @@ public:
 
         ImGui::Text("Integration time");
 
-        //keyboard input : Epoch
-        ImGui::Text("Epoch     ");
-        ImGui::SameLine();
-        ImGui::PushItemWidth(100.0f);
-            ImGui::PushID(id++);
-                ImGui::InputDouble(" [days]", &epoch, 0.0, 0.0,"%g");
-            ImGui::PopID();
-        ImGui::PopItemWidth();
-
-        //keyboard input : Duration
-        ImGui::Text("Duration  ");
-        ImGui::SameLine();
-        ImGui::PushItemWidth(100.0f);
-            ImGui::PushID(id++);
-                ImGui::InputDouble("[days]", &dur, 0.0, 0.0,"%g");
-            ImGui::PopID();
-        ImGui::PopItemWidth();
-
-        //keyboard input : Step
-        ImGui::Text("Step        ");
-        ImGui::SameLine();
-        ImGui::PushItemWidth(100.0f);
-            ImGui::PushID(id++);
-                ImGui::InputDouble("[days]", &step, 0.0, 0.0,"%g");
-            ImGui::PopID();
-        ImGui::PopItemWidth();
-
+        for (int i = 0; i < 3; ++i)
+        {
+            ImGui::Text(str_time_params[i]);
+            ImGui::SameLine();
+            ImGui::PushItemWidth(100.0f);
+                ImGui::PushID(id++);
+                    ImGui::InputDouble(" [days]", &time_params[i], 0.0, 0.0,"%g");
+                ImGui::PopID();
+            ImGui::PopItemWidth();
+        }
         ImGui::Dummy(ImVec2(0.0f,15.0f));
 
         ImGui::Text("Initial state");
@@ -663,116 +550,29 @@ public:
 
         if (cart_kep_var_choice == 0)
         {
-            //keyboard input : relative position x
-            ImGui::Text("x    ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[km]", &cart[0], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-
-            //keyboard input : relative position y
-            ImGui::Text("y    ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[km]", &cart[1], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-
-            //keyboard input : relative position z
-            ImGui::Text("z    ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[km]", &cart[2], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-
-            //keyboard input : relative velocity vx
-            ImGui::Text("υx  ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[km/sec]", &cart[3], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-            
-            //keyboard input : relative velocity vy
-            ImGui::Text("υy  ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[km/sec]", &cart[4], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-
-            //keyboard input : relative velocity vz
-            ImGui::Text("υz  ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[km/sec]", &cart[5], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-
+            for (int i = 0; i < 6; ++i)
+            {
+                ImGui::Text(str_cart[i]);
+                ImGui::SameLine();
+                ImGui::PushItemWidth(100.0f);
+                    ImGui::PushID(id++);
+                        ImGui::InputDouble(str_cart_units[i], &cart[i], 0.0, 0.0,"%g");
+                    ImGui::PopID();
+                ImGui::PopItemWidth();
+            }
         }
-        else if (cart_kep_var_choice == 1)
+        else
         {
-            //keyboard input : relative semi-major axis a
-            ImGui::Text("a       ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[km]", &kep[0], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-                        
-            //keyboard input : relative eccentricity e
-            ImGui::Text("e       ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[  ]", &kep[1], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-
-            //keyboard input : relative inclination i
-            ImGui::Text("i        ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[deg]", &kep[2], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-
-            //keyboard input : relative longitude of ascending node Om
-            ImGui::Text("Ω   ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[deg]", &kep[3], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-
-            //keyboard input : relative argument of periapsis w
-            ImGui::Text("ω       ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[deg]", &kep[4], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-
-            //keyboard input : relative mean anomaly M
-            ImGui::Text("M      ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[deg]", &kep[5], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
+            for (int i = 0; i < 6; ++i)
+            {
+                ImGui::Text(str_kep[i]);
+                ImGui::SameLine();
+                ImGui::PushItemWidth(100.0f);
+                    ImGui::PushID(id++);
+                        ImGui::InputDouble(str_kep_units[i], &kep[i], 0.0, 0.0,"%g");
+                    ImGui::PopID();
+                ImGui::PopItemWidth();
+            }
         }
 
         ImGui::Text("Orientations");
@@ -786,133 +586,52 @@ public:
 
         if (orient_var_choice == 0)
         {
-            //keyboard input : roll 1 angle
-            ImGui::Text("roll 1    ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[deg]", &rpy1[0], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
+            for (int i = 0; i < 3; ++i)
+            {
+                ImGui::Text(str_rpy1[i]);
+                ImGui::SameLine();
+                ImGui::PushItemWidth(100.0f);
+                    ImGui::PushID(id++);
+                        ImGui::InputDouble("[deg]", &rpy1[i], 0.0, 0.0,"%g");
+                    ImGui::PopID();
+                ImGui::PopItemWidth();
+            }
 
-            //keyboard input : pitch 1 angle
-            ImGui::Text("pitch 1 ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[deg]", &rpy1[1], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-            
-            //keyboard input : yaw 1 angle
-            ImGui::Text("yaw 1  ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[deg]", &rpy1[2], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
+            for (int i = 0; i < 3; ++i)
+            {
+                ImGui::Text(str_rpy2[i]);
+                ImGui::SameLine();
+                ImGui::PushItemWidth(100.0f);
+                    ImGui::PushID(id++);
+                        ImGui::InputDouble("[deg]", &rpy2[i], 0.0, 0.0,"%g");
+                    ImGui::PopID();
+                ImGui::PopItemWidth();
+            }
 
-            //keyboard input : roll 2 angle
-            ImGui::Text("roll 2    ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[deg]", &rpy2[0], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-
-            //keyboard input : pitch 2 angle
-            ImGui::Text("pitch 2 ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[deg]", &rpy2[1], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-            
-            //keyboard input : yaw 2 angle
-            ImGui::Text("yaw 2  ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[deg]", &rpy2[2], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
         }
         else if (orient_var_choice == 1)
         {
-            //keyboard input : q10 quaternion component
-            ImGui::Text("q10   ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[  ]", &q1[0], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-
-            //keyboard input : q11 quaternion component
-            ImGui::Text("q11   ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[  ]", &q1[1], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-
-            //keyboard input : q12 quaternion component
-            ImGui::Text("q12   ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[  ]", &q1[2], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
+            for (int i = 0; i < 4; ++i)
+            {
+                ImGui::Text(str_q1[i]);
+                ImGui::SameLine();
+                ImGui::PushItemWidth(100.0f);
+                    ImGui::PushID(id++);
+                        ImGui::InputDouble("[  ]", &q1[i], 0.0, 0.0,"%g");
+                    ImGui::PopID();
+                ImGui::PopItemWidth();
+            }
             
-            //keyboard input : q13 quaternion component
-            ImGui::Text("q13   ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[  ]", &q1[3], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-
-            //keyboard input : q20 quaternion component
-            ImGui::Text("q20   ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[  ]", &q2[0], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-
-            //keyboard input : q21 quaternion component
-            ImGui::Text("q21   ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[  ]", &q2[1], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-
-            //keyboard input : q22 quaternion component
-            ImGui::Text("q22   ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[  ]", &q2[2], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-
-            //field : q23 quaternion component
-            ImGui::Text("q23   ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[  ]", &q2[3], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
+            for (int i = 0; i < 4; ++i)
+            {
+                ImGui::Text(str_q2[i]);
+                ImGui::SameLine();
+                ImGui::PushItemWidth(100.0f);
+                    ImGui::PushID(id++);
+                        ImGui::InputDouble("[  ]", &q2[i], 0.0, 0.0,"%g");
+                    ImGui::PopID();
+                ImGui::PopItemWidth();
+            }
         }
 
         ImGui::Text("Angular velocity");
@@ -926,116 +645,51 @@ public:
 
         if (frame_type_choice == 0)
         {
-            //keyboard input : w1x (inertial) angular velocity
-            ImGui::Text("ω1x   ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[rad/sec]", &w1i[0], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
+            for (int i = 0; i < 3; ++i)
+            {
+                ImGui::Text(str_w1[i]);
+                ImGui::SameLine();
+                ImGui::PushItemWidth(100.0f);
+                    ImGui::PushID(id++);
+                        ImGui::InputDouble("[rad/sec]", &w1i[i], 0.0, 0.0,"%g");
+                    ImGui::PopID();
+                ImGui::PopItemWidth();
+            }
 
-            //keyboard input : w1y (inertial) angular velocity
-            ImGui::Text("ω1y   ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[rad/sec]", &w1i[1], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-            
-            //keyboard input : w1z (inertial) angular velocity
-            ImGui::Text("ω1z   ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[rad/sec]", &w1i[2], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-
-            //keyboard input : w2x (inertial) angular velocity
-            ImGui::Text("ω2x   ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[rad/sec]", &w2i[0], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-
-            //keyboard input : w2y (inertial) angular velocity
-            ImGui::Text("ω2y   ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[rad/sec]", &w2i[1], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-            
-            //keyboard input : w2z (inertial) angular velocity
-            ImGui::Text("ω2z   ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[rad/sec]", &w2i[2], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-
+            for (int i = 0; i < 3; ++i)
+            {
+                ImGui::Text(str_w2[i]);
+                ImGui::SameLine();
+                ImGui::PushItemWidth(100.0f);
+                    ImGui::PushID(id++);
+                        ImGui::InputDouble("[rad/sec]", &w2i[i], 0.0, 0.0,"%g");
+                    ImGui::PopID();
+                ImGui::PopItemWidth();
+            }
         }
         else if (frame_type_choice == 1)
         {
-            //keyboard input : w11 (body) angular velocity
-            ImGui::Text("ω1x   ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[rad/sec]", &w1b[0], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
+            for (int i = 0; i < 3; ++i)
+            {
+                ImGui::Text(str_w1[i]);
+                ImGui::SameLine();
+                ImGui::PushItemWidth(100.0f);
+                    ImGui::PushID(id++);
+                        ImGui::InputDouble("[rad/sec]", &w1b[i], 0.0, 0.0,"%g");
+                    ImGui::PopID();
+                ImGui::PopItemWidth();
+            }
 
-            //keyboard input : w12 (body) angular velocity
-            ImGui::Text("ω1y   ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[rad/sec]", &w1b[1], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-
-            //keyboard input : w13 (body) angular velocity
-            ImGui::Text("ω1z   ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[rad/sec]", &w1b[2], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-
-            //keyboard input : w21 (body) angular velocity
-            ImGui::Text("ω2x   ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[rad/sec]", &w2b[0], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-
-            //keyboard input : w22 (body) angular velocity
-            ImGui::Text("ω2y   ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[rad/sec]", &w2b[1], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
-
-            //keyboard input : w23 (body) angular velocity
-            ImGui::Text("ω2z   ");
-            ImGui::SameLine();
-            ImGui::PushItemWidth(100.0f);
-                ImGui::PushID(id++);
-                    ImGui::InputDouble("[rad/sec]", &w2b[2], 0.0, 0.0,"%g");
-                ImGui::PopID();
-            ImGui::PopItemWidth();
+            for (int i = 0; i < 3; ++i)
+            {
+                ImGui::Text(str_w2[i]);
+                ImGui::SameLine();
+                ImGui::PushItemWidth(100.0f);
+                    ImGui::PushID(id++);
+                        ImGui::InputDouble("[rad/sec]", &w2b[i], 0.0, 0.0,"%g");
+                    ImGui::PopID();
+                ImGui::PopItemWidth();
+            }
         }
         ImGui::Dummy(ImVec2(0.0f, 10.0f));
         ImGui::Unindent();
@@ -1380,191 +1034,70 @@ public:
             {
                 plot_buttons();
 
-                    
-                if (plot_x)
+                for (int i = 0; i < 6; ++i)
                 {
-                    ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
-                    ImGui::Begin("Position x", &plot_x);
-                    ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
-                    if (ImPlot::BeginPlot("x(t)", plot_win_size))
+                    if (plot_cart[i])
                     {
-                        ImPlot::SetupAxes("time [days]","x [km]");
-                        ImPlot::PlotLine("", &(solution.t[0]), &(solution.x[0]), solution.t.size());
-                        ImPlot::EndPlot();  
+                        ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
+                        ImGui::Begin(str_plot1_cart[i], &plot_cart[i]);
+                        ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
+                        if (ImPlot::BeginPlot(str_plot2_cart[i], plot_win_size))
+                        {
+                            dvec cart_temp_col(solution.t.size());
+                            for (int j = 0; j < cart_temp_col.size(); ++j)
+                            {
+                                cart_temp_col[i] = cart[j][i];
+                            }
+                            ImPlot::SetupAxes("time [days]", str_plot3_cart[i]);
+                            ImPlot::PlotLine("", &(solution.t[0]), &cart_temp_col[0], solution.t.size());
+                            ImPlot::EndPlot();  
+                        }
+                        ImGui::End();
                     }
-                    ImGui::End();
-                }
-                if (plot_y)
-                {
-                    ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
-                    ImGui::Begin("Position y", &plot_y);
-                    ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
-                    if (ImPlot::BeginPlot("y(t)", plot_win_size))
-                    {
-                        ImPlot::SetupAxes("time [days]","y [km]");
-                        ImPlot::PlotLine("", &(solution.t[0]), &(solution.y[0]), solution.t.size());
-                        ImPlot::EndPlot();  
-                    }
-                    ImGui::End();
-                }
-                if (plot_z)
-                {
-                    ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
-                    ImGui::Begin("Position z", &plot_z);
-                    ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
-                    if (ImPlot::BeginPlot("z(t)", plot_win_size))
-                    {
-                        ImPlot::SetupAxes("time [days]","z [km]");
-                        ImPlot::PlotLine("", &(solution.t[0]), &(solution.z[0]), solution.t.size());
-                        ImPlot::EndPlot();  
-                    }
-                    ImGui::End();
-                }
-                if (plot_vx)
-                {
-                    ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
-                    ImGui::Begin("Velocity υx", &plot_vx);
-                    ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
-                    if (ImPlot::BeginPlot("υx(t)", plot_win_size))
-                    {
-                        ImPlot::SetupAxes("time [days]","υx [km/sec]");
-                        ImPlot::PlotLine("", &(solution.t[0]), &(solution.vx[0]), solution.t.size());
-                        ImPlot::EndPlot();  
-                    }
-                    ImGui::End();
-                }
-                if (plot_vy)
-                {
-                    ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
-                    ImGui::Begin("Velocity υy", &plot_vy);
-                    ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
-                    if (ImPlot::BeginPlot("υy(t)", plot_win_size))
-                    {
-                        ImPlot::SetupAxes("time [days]","υy [km/sec]");
-                        ImPlot::PlotLine("", &(solution.t[0]), &(solution.vy[0]), solution.t.size());
-                        ImPlot::EndPlot();  
-                    }
-                    ImGui::End();
-                }
-                if (plot_vz)
-                {
-                    ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
-                    ImGui::Begin("Velocity υz", &plot_vz);
-                    ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
-                    if (ImPlot::BeginPlot("υz(t)", plot_win_size))
-                    {
-                        ImPlot::SetupAxes("time [days]","υz [km/sec]");
-                        ImPlot::PlotLine("", &(solution.t[0]), &(solution.vz[0]), solution.t.size());
-                        ImPlot::EndPlot();  
-                    }
-                    ImGui::End();
-                }
-                if (plot_a)
-                {
-                    ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
-                    ImGui::Begin("Semi-major axis a", &plot_a);
-                    ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
-                    if (ImPlot::BeginPlot("a(t)", plot_win_size))
-                    {
-                        ImPlot::SetupAxes("time [days]","a [km]");
-                        ImPlot::PlotLine("", &(solution.t[0]), &(solution.a[0]), solution.t.size());
-                        ImPlot::EndPlot();  
-                    }
-                    ImGui::End();
-                }
-                if (plot_e)
-                {
-                    ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
-                    ImGui::Begin("Eccentricity e", &plot_e);
-                    ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
-                    if (ImPlot::BeginPlot("e(t)", plot_win_size))
-                    {
-                        ImPlot::SetupAxes("time [days]","e [ ]");
-                        ImPlot::PlotLine("", &(solution.t[0]), &(solution.e[0]), solution.t.size());
-                        ImPlot::EndPlot();  
-                    }
-                    ImGui::End();
-                }
-                if (plot_i)
-                {
-                    ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
-                    ImGui::Begin("Inclination i", &plot_i);
-                    ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
-                    if (ImPlot::BeginPlot("i(t)", plot_win_size))
-                    {
-                        ImPlot::SetupAxes("time [days]","i [rad]");
-                        ImPlot::PlotLine("", &(solution.t[0]), &(solution.inc[0]), solution.t.size());
-                        ImPlot::EndPlot();  
-                    }
-                    ImGui::End();
-                }
-                if (plot_Om)
-                {
-                    ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
-                    ImGui::Begin("Longitude of ascending node Ω", &plot_Om);
-                    ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
-                    if (ImPlot::BeginPlot("Ω(t)", plot_win_size))
-                    {
-                        ImPlot::SetupAxes("time [days]","Ω [rad]");
-                        ImPlot::PlotLine("", &(solution.t[0]), &(solution.Om[0]), solution.t.size());
-                        ImPlot::EndPlot();  
-                    }
-                    ImGui::End();
-                }
-                if (plot_w)
-                {
-                    ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
-                    ImGui::Begin("Argument of periapsis ω", &plot_w);
-                    ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
-                    if (ImPlot::BeginPlot("ω(t)", plot_win_size))
-                    {
-                        ImPlot::SetupAxes("time [days]","ω [rad]");
-                        ImPlot::PlotLine("", &(solution.t[0]), &(solution.w[0]), solution.t.size());
-                        ImPlot::EndPlot();  
-                    }
-                    ImGui::End();
-                }
-                if (plot_M)
-                {
-                    ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
-                    ImGui::Begin("Mean anomaly M", &plot_M);
-                    ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
-                    if (ImPlot::BeginPlot("M(t)", plot_win_size))
-                    {
-                        ImPlot::SetupAxes("time [days]","M [rad]");
-                        ImPlot::PlotLine("", &(solution.t[0]), &(solution.M[0]), solution.t.size());
-                        ImPlot::EndPlot();  
-                    }
-                    ImGui::End();
                 }
 
-
-                
-                if (plot_ener_rel_err)
+                for (int i = 0; i < 6; ++i)
                 {
-                    ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
-                    ImGui::Begin("Energy relative error", &plot_ener_rel_err);
-                    ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
-                    if (ImPlot::BeginPlot("ener_rel_err(t)", plot_win_size))
+                    if (plot_kep[i])
                     {
-                        ImPlot::SetupAxes("time [days]","error [ ]");
-                        ImPlot::PlotLine("", &(solution.t[0]), &(solution.ener_rel_err[0]), solution.t.size());
-                        ImPlot::EndPlot();  
+                        ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
+                        ImGui::Begin(str_plot1_kep[i], &plot_kep[i]);
+                        ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
+                        if (ImPlot::BeginPlot(str_plot2_kep[i], plot_win_size))
+                        {
+                            dvec kep_temp_col(solution.t.size());
+                            for (int j = 0; j < kep_temp_col.size(); ++j)
+                            {
+                                kep_temp_col[i] = kep[j][i];
+                            }
+                            ImPlot::SetupAxes("time [days]", str_plot3_kep[i]);
+                            ImPlot::PlotLine("", &(solution.t[0]), &kep_temp_col[0], solution.t.size());
+                            ImPlot::EndPlot();  
+                        }
+                        ImGui::End();
                     }
-                    ImGui::End();
                 }
-                if (plot_mom_rel_err)
+
+                for (int i = 0; i < 2; ++i)
                 {
-                    ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
-                    ImGui::Begin("Momentum relative error", &plot_mom_rel_err);
-                    ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
-                    if (ImPlot::BeginPlot("mom_rel_err(t)", plot_win_size))
+                    if (plot_ener_mom[i])
                     {
-                        ImPlot::SetupAxes("time [days]","error [ ]");
-                        ImPlot::PlotLine("", &(solution.t[0]), &(solution.ener_rel_err[0]), solution.t.size());
-                        ImPlot::EndPlot();  
+                        ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
+                        ImGui::Begin(str_plot1_ener_mom[i], &plot_ener_mom[i]);
+                        ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
+                        if (ImPlot::BeginPlot(str_plot2_ener_mom[i], plot_win_size))
+                        {
+                            dvec ener_mom_temp_col(solution.t.size());
+                            for (int j = 0; j < ener_mom_temp_col.size(); ++j)
+                            {
+                                ener_mom_temp_col[i] = ener_mom[j][i];
+                            }
+                            ImPlot::SetupAxes("time [days]","error [ ]");
+                            ImPlot::PlotLine("", &(solution.t[0]), &ener_mom_temp_col[0], solution.t.size());
+                            ImPlot::EndPlot();  
+                        }
+                        ImGui::End();
                     }
-                    ImGui::End();
                 }
             }
         }
