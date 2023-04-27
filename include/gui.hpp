@@ -73,7 +73,7 @@ public:
         if (ImGui::Button("Clear "))
             cls();
         
-        ImGui::SameLine();
+        //ImGui::SameLine();
         ImGui::Text("FPS [ %.1f ], ", ImGui::GetIO().Framerate);
         ImGui::SameLine();
         ImGui::Text("OS [ %s ]", os_name().c_str());
@@ -248,6 +248,66 @@ public:
         return;
     }
 
+    void common_dvec3(const char **field, const float item_width, int id, const char *unit, dvec3 &variable)
+    {
+        for (int i = 0; i < 3; ++i)
+        {
+            ImGui::Text(field[i]);
+            ImGui::SameLine();
+            ImGui::PushItemWidth(item_width);
+                ImGui::PushID(id++);
+                    ImGui::InputDouble(unit, &variable[i], 0.0, 0.0,"%g");
+                ImGui::PopID();
+            ImGui::PopItemWidth();
+        }
+        return;
+    }
+
+    void common_dvec4(const char **field, const float item_width, int id, const char *unit, dvec4 &variable)
+    {
+        for (int i = 0; i < 4; ++i)
+        {
+            ImGui::Text(field[i]);
+            ImGui::SameLine();
+            ImGui::PushItemWidth(item_width);
+                ImGui::PushID(id++);
+                    ImGui::InputDouble(unit, &variable[i], 0.0, 0.0,"%g");
+                ImGui::PopID();
+            ImGui::PopItemWidth();
+        }
+        return;
+    }
+
+    void common_dvec6(const char **field, const float item_width, int id, const char **unit, dvec6 &variable)
+    {
+        for (int i = 0; i < 6; ++i)
+        {
+            ImGui::Text(field[i]);
+            ImGui::SameLine();
+            ImGui::PushItemWidth(item_width);
+                ImGui::PushID(id++);
+                    ImGui::InputDouble(unit[i], &variable[i], 0.0, 0.0,"%g");
+                ImGui::PopID();
+            ImGui::PopItemWidth();
+        }
+        return;
+    }
+
+    void common_ivec3(const char **field, const float item_width, int id, const char *unit, ivec3 &variable)
+    {
+        for (int i = 0; i < 3; ++i)
+        {
+            ImGui::Text(field[i]);
+            ImGui::SameLine();
+            ImGui::PushItemWidth(item_width);
+                ImGui::PushID(id++);
+                    ImGui::InputInt(unit, &variable[i]);
+                ImGui::PopID();
+            ImGui::PopItemWidth();
+        }
+        return;
+    }
+
     void render(GLFWwindow *pointer)
     {
         int id = 0;
@@ -296,45 +356,22 @@ public:
 
         ImGui::Text("Shape models");
         if (ImGui::Checkbox("Ellipsoids", &ell_checkbox) && ell_checkbox)
-        {
             clicked_ell_ok = false;
-        }
+
         if (ell_checkbox && !clicked_ell_ok)
         {
             obj_checkbox = false; //untick the obj checkbox in case it is ticked
+
             ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver); 
             ImGui::SetNextWindowSize(ImVec2(300,300), ImGuiCond_FirstUseEver); 
             ImGui::Begin("Ellipsoid parameters");
-
-            //ellipsoid semiaxes submenu
+            //ellipsoids semiaxes submenu
             ImGui::Text("Semiaxes");
-            //keyboard input : a1 semiaxis
-            for(int i = 0; i < 3; ++i)
-            {
-                ImGui::Text(str_ell_semiaxes1[i]);
-                ImGui::SameLine();
-                ImGui::PushItemWidth(100.0f);
-                    ImGui::PushID(id++);
-                        ImGui::InputDouble("[km]", &semiaxes1[i], 0.0, 0.0,"%g");
-                    ImGui::PopID();
-                ImGui::PopItemWidth();
-            }
+            common_dvec3(str_ell_semiaxes1, 100.0f, id, "[km]", semiaxes1);
             ImGui::Dummy(ImVec2(0.0f,15.0f));
-
-            //keyboard input : a2 semiaxis
-            for(int i = 0; i < 3; ++i)
-            {
-                ImGui::Text(str_ell_semiaxes2[i]);
-                ImGui::SameLine();
-                ImGui::PushItemWidth(100.0f);
-                    ImGui::PushID(id++);
-                        ImGui::InputDouble("[km]", &semiaxes2[i], 0.0, 0.0,"%g");
-                    ImGui::PopID();
-                ImGui::PopItemWidth();
-            }
+            common_dvec3(str_ell_semiaxes1, 100.0f, id, "[km]", semiaxes1);
             ImGui::Dummy(ImVec2(0.0f,15.0f));
-
-            //mouse input : ellipsoid submenu "OK" button
+            //ellipsoids submenu "OK" button
             if (ImGui::Button("OK", ImVec2(50.0f,30.0f)))
                 clicked_ell_ok = true;
 
@@ -343,9 +380,8 @@ public:
 
         //mouse input : .obj shape model (either mascons or polyhedra)
         if (ImGui::Checkbox(".obj files", &obj_checkbox) && obj_checkbox)
-        {
             clicked_obj_ok = false;
-        }
+
         if (obj_checkbox && !clicked_obj_ok)
         {
             ell_checkbox = false; //untick the ellipsoids checkbox in case it is ticked
@@ -428,56 +464,21 @@ public:
                 (obj_refer_to_body == 2 && !clicked_poly2) ||
                 (!clicked_poly1 && !clicked_poly2))
             {
-                //pseudo mouse or keyboard inputs (basically you cannot input anything if the following commands are executed)
-
                 ImGui::BeginDisabled();
-                    for (int i = 0; i < 3; ++i)
-                    {
-                        ImGui::Text(str_raycast_axes[i]);
-                        ImGui::SameLine();
-                        ImGui::PushItemWidth(100.0f);
-                            ImGui::PushID(id++);
-                                ImGui::InputInt(" [ > 1 ]", &grid_reso_inactive[i]);
-                            ImGui::PopID();
-                        ImGui::PopItemWidth();
-                    }
+                common_ivec3(str_raycast_axes, 100.0f, id, " [ > 1 ]", grid_reso_inactive);
                 ImGui::EndDisabled();
             }
             else if (obj_refer_to_body == 1 && clicked_poly1)
-            {
-                for (int i = 0; i < 3; ++i)
-                {
-                    ImGui::Text(str_raycast_axes[i]);
-                    ImGui::SameLine();
-                    ImGui::PushItemWidth(100.0f);
-                        ImGui::PushID(id++);
-                            ImGui::InputInt(" [ > 1 ]", &grid_reso1[i]);
-                        ImGui::PopID();
-                    ImGui::PopItemWidth();
-                }
-            }
+                common_ivec3(str_raycast_axes, 100.0f, id, " [ > 1 ]", grid_reso1);
             else if (obj_refer_to_body == 2 && clicked_poly2)
-            {
-                for (int i = 0; i < 3; ++i)
-                {
-                    ImGui::Text(str_raycast_axes[i]);
-                    ImGui::SameLine();
-                    ImGui::PushItemWidth(100.0f);
-                        ImGui::PushID(id++);
-                            ImGui::InputInt(" [ > 1 ]", &grid_reso2[i]);
-                        ImGui::PopID();
-                    ImGui::PopItemWidth();
-                }
-            }
-            ImGui::Unindent();
+                common_ivec3(str_raycast_axes, 100.0f, id, " [ > 1 ]", grid_reso2);
 
+            ImGui::Unindent();
             ImGui::Dummy(ImVec2(0.0f, 15.0f));
 
             //mouse input : .obj submenu "OK" button
             if (ImGui::Button("OK", ImVec2(50.0f,30.0f)))   
-            {
                 clicked_obj_ok = true;
-            }
 
             ImGui::End();
         }
@@ -486,52 +487,33 @@ public:
         //mouse input : physics theory
         ImGui::Text("Theory");
         for (int i = 0; i < 4; ++i)
-        {
-            if (ImGui::Checkbox(str_theory[i], &theory[i]))
-            {
+            if (ImGui::Checkbox(str_theory[i], &theory_checkbox[i]))
                 for (int j = 0; j < 4; ++j)
-                {
                     if (i != j)
-                    {
-                        theory[i] = false;
-                    }
-                }
-            }
-        }
-        
+                        theory_checkbox[i] = false;
         ImGui::Dummy(ImVec2(0.0f,15.0f));
 
         ImGui::Text("Mass");
-
-        //keyboard input : M1
-        ImGui::Text("M1 ");
-        ImGui::SameLine();
-        ImGui::PushItemWidth(150.0f);
-            ImGui::PushID(id++);
-                ImGui::InputDouble("[kg]", &M1, 0.0, 0.0,"%g");
-            ImGui::PopID();
-        ImGui::PopItemWidth();
-        
-        //keyboard input : M2
-        ImGui::Text("M2 ");
-        ImGui::SameLine();
-        ImGui::PushItemWidth(150.0f);
-            ImGui::PushID(id++);
-                ImGui::InputDouble("[kg]", &M2, 0.0, 0.0,"%g");
-            ImGui::PopID();
-        ImGui::PopItemWidth();
-
+        for (int i = 0; i < 2; ++i)
+        {
+            ImGui::Text(str_aster_mass[i]);
+            ImGui::SameLine();
+            ImGui::PushItemWidth(150.0f);
+                ImGui::PushID(id++);
+                    ImGui::InputDouble("[kg]", &aster_mass[i], 0.0, 0.0,"%g");
+                ImGui::PopID();
+            ImGui::PopItemWidth();
+        }
         ImGui::Dummy(ImVec2(0.0f,15.0f));
 
         ImGui::Text("Integration time");
-
         for (int i = 0; i < 3; ++i)
         {
             ImGui::Text(str_time_params[i]);
             ImGui::SameLine();
             ImGui::PushItemWidth(100.0f);
                 ImGui::PushID(id++);
-                    ImGui::InputDouble(" [days]", &time_params[i], 0.0, 0.0,"%g");
+                    ImGui::InputDouble(" [days]", &time_param[i], 0.0, 0.0,"%g");
                 ImGui::PopID();
             ImGui::PopItemWidth();
         }
@@ -549,31 +531,9 @@ public:
         ImGui::PopItemWidth();
 
         if (cart_kep_var_choice == 0)
-        {
-            for (int i = 0; i < 6; ++i)
-            {
-                ImGui::Text(str_cart[i]);
-                ImGui::SameLine();
-                ImGui::PushItemWidth(100.0f);
-                    ImGui::PushID(id++);
-                        ImGui::InputDouble(str_cart_units[i], &cart[i], 0.0, 0.0,"%g");
-                    ImGui::PopID();
-                ImGui::PopItemWidth();
-            }
-        }
+            common_dvec6(str_cart, 100.0f, id, str_cart_units, cart);
         else
-        {
-            for (int i = 0; i < 6; ++i)
-            {
-                ImGui::Text(str_kep[i]);
-                ImGui::SameLine();
-                ImGui::PushItemWidth(100.0f);
-                    ImGui::PushID(id++);
-                        ImGui::InputDouble(str_kep_units[i], &kep[i], 0.0, 0.0,"%g");
-                    ImGui::PopID();
-                ImGui::PopItemWidth();
-            }
-        }
+            common_dvec6(str_kep, 100.0f, id, str_kep_units, kep);
 
         ImGui::Text("Orientations");
 

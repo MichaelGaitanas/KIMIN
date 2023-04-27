@@ -10,6 +10,10 @@ const char *str_ell_semiaxes2[] = {"a2 ", "b2 ", "c2 "};
 
 const char *str_raycast_axes[] = {"x axis ", "y axis ", "z axis "};
 
+const char *str_theory[] = {"Order 2", "Order 3", "Order 4", "Mascons"};
+
+const char *str_aster_mass[] = {"M1 ", "M2 "};
+
 const char *str_time_params[] = {"Epoch     ", "Duration  ", "Step        "};
 
 const char *str_cart[] = {"x    ", "y    ", "z    ", "υx  ", "υy  ", "υz  "};
