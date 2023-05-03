@@ -1,18 +1,20 @@
 #include<iostream>
+#include<vector>
 
-void func(const int for_reps, const char **str_field)
+bool func(int num, const bool temp)
 {
-    for (int i = 0; i < for_reps; ++i)
-    {
-        std::cout << str_field[i] << "\n";
-    }
-    return;
+    if (num == 1)
+        return true;
+    else
+        return false;
 }
 
 int main()
 {
-    const char *str_aster_mass[] = {"M1 ", "M2 "};
-    func(2, str_aster_mass);
+    std::vector<bool> cart = {false,false,false};
+    std:: cout << cart[0] << "  "  << cart[1] << "  " << cart[2] << "\n";
+    cart[0] = func(1, cart[0]);
+    std:: cout << cart[0] << "  "  << cart[1] << "  " << cart[2] << "\n";
 
     return 0;
 }

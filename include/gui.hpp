@@ -347,7 +347,6 @@ public:
             ImGui::End();
         }
 
-        //mouse input : .obj shape model (either mascons or polyhedra)
         if (ImGui::Checkbox(".obj files", &obj_checkbox) && obj_checkbox)
             clicked_obj_ok = false;
 
@@ -360,7 +359,6 @@ public:
             ImGui::Text("KIMIN's .obj database\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t");
             ImGui::Dummy(ImVec2(0.0f,10.0f));
 
-            //mouse input : body1 or body2 via radio buttons
             if (ImGui::RadioButton("Body 1", obj_refer_to_body == 1))
                 obj_refer_to_body = 1;
             if (ImGui::RadioButton("Body 2", obj_refer_to_body == 2))
@@ -372,7 +370,7 @@ public:
                 {
                     if (obj_refer_to_body == 1)
                     {
-                        //mouse input : which .obj model path for body1
+                        //which mascons .obj model path for body1
                         if (ImGui::Selectable(path_to_masc_obj[i].string().c_str(), (clicked_masc1_index == i)))
                         {
                             clicked_poly1 = false;
@@ -383,7 +381,7 @@ public:
                     }
                     else
                     {
-                        //mouse input : which .obj model path for body2
+                        //which mascons .obj model path for body2
                         if (ImGui::Selectable(path_to_masc_obj[i].string().c_str(), (clicked_masc2_index == i)))
                         {
                             clicked_poly2 = false;
@@ -399,7 +397,7 @@ public:
             {
                 for (int i = 0; i < path_to_poly_obj.size(); ++i)
                 {
-                    //mouse input : which .obj model path for body1
+                    //which polyhedral .obj model path for body1
                     if (obj_refer_to_body == 1)
                     {
                         if (ImGui::Selectable(path_to_poly_obj[i].string().c_str(), (clicked_poly1_index == i)))
@@ -412,7 +410,7 @@ public:
                     }
                     else
                     {
-                        //mouse input : which .obj model path for body2
+                        //which polyhedral .obj model path for body2
                         if (ImGui::Selectable(path_to_poly_obj[i].string().c_str(), (clicked_poly2_index == i)))
                         {
                             clicked_poly2 = true;
@@ -453,7 +451,6 @@ public:
             ImGui::Unindent();
             ImGui::Dummy(ImVec2(0.0f, 15.0f));
 
-            //mouse input : .obj submenu "OK" button
             if (ImGui::Button("OK", ImVec2(50.0f,30.0f)))   
                 clicked_obj_ok = true;
 
@@ -461,7 +458,7 @@ public:
         }
         ImGui::Dummy(ImVec2(0.0f, 15.0f));
 
-        //mouse input : physics theory
+        //physics theory
         ImGui::Text("Theory");
         if (ImGui::Checkbox("Order 2", &ord2_checkbox))
             ord3_checkbox = ord4_checkbox = mascons_checkbox = false;
@@ -479,8 +476,8 @@ public:
         ImGui::Dummy(ImVec2(0.0f,15.0f));
 
         ImGui::Text("Integration time");
-        double_field("Epoch     ", 100.0f, id, "[days]", epoch);
-        double_field("Duration  ", 100.0f, id, "[days]", dur);
+        double_field("Epoch     ",   100.0f, id, "[days]", epoch);
+        double_field("Duration  ",   100.0f, id, "[days]", dur);
         double_field("Step        ", 100.0f, id, "[days]", step);
         ImGui::Dummy(ImVec2(0.0f,15.0f));
 
@@ -488,26 +485,25 @@ public:
         ImGui::Indent();
         ImGui::Text("Relative position and velocity");
 
-        //mouse input : position/velocity variables (combo)
+        //position/velocity variables (combo)
         ImGui::PushItemWidth(200.0f);
             ImGui::PushID(id++);
                 ImGui::Combo("  ", &cart_kep_var_choice, cart_kep_var, IM_ARRAYSIZE(cart_kep_var));
             ImGui::PopID();
         ImGui::PopItemWidth();
-
         if (cart_kep_var_choice == 0)
         {
-            double_field("x    ", 100.0f, id, "[km]", cart[0]);
-            double_field("y    ", 100.0f, id, "[km]", cart[1]);
-            double_field("z    ", 100.0f, id, "[km]", cart[2]);
+            double_field("x    ", 100.0f, id, "[km]",     cart[0]);
+            double_field("y    ", 100.0f, id, "[km]",     cart[1]);
+            double_field("z    ", 100.0f, id, "[km]",     cart[2]);
             double_field("υx  " , 100.0f, id, "[km/sec]", cart[3]);
             double_field("υy  " , 100.0f, id, "[km/sec]", cart[4]);
             double_field("υz  " , 100.0f, id, "[km/sec]", cart[5]);
         }
         else
         {
-            double_field("a       " , 100.0f, id, "km", kep[0]);
-            double_field("e       " , 100.0f, id, "[  ]", kep[1]);
+            double_field("a       " , 100.0f, id, "[km]",  kep[0]);
+            double_field("e       " , 100.0f, id, "[  ]",  kep[1]);
             double_field("i        ", 100.0f, id, "[deg]", kep[2]);
             double_field("Ω   "     , 100.0f, id, "[deg]", kep[3]);
             double_field("ω       " , 100.0f, id, "[deg]", kep[4]);
@@ -516,13 +512,12 @@ public:
 
         ImGui::Text("Orientations");
 
-        //mouse input : orientation variables (combo)
+        //orientation variables (combo)
         ImGui::PushItemWidth(200.0f);
             ImGui::PushID(id++);
                 ImGui::Combo("  ", &orient_var_choice, orient_var, IM_ARRAYSIZE(orient_var));
             ImGui::PopID();
         ImGui::PopItemWidth();
-
         if (orient_var_choice == 0)
         {
             double_field("roll 1    " , 100.0f, id, "[deg]", rpy1[0]);
@@ -547,13 +542,12 @@ public:
 
         ImGui::Text("Angular velocity");
 
-        //mouse input : frame choice (combo)
+        //angular velocities reference frames (combo)
         ImGui::PushItemWidth(200.0f);
             ImGui::PushID(id++);
                 ImGui::Combo("  ", &frame_type_choice, frame_type, IM_ARRAYSIZE(frame_type));
             ImGui::PopID();
         ImGui::PopItemWidth();
-
         if (frame_type_choice == 0)
         {
             double_field("ω1x   " , 100.0f, id, "[rad/sec]", w1i[0]);
@@ -575,18 +569,18 @@ public:
         ImGui::Dummy(ImVec2(0.0f, 10.0f));
         ImGui::Unindent();
 
-        //keyboard input : integration tolerance
+        //integration tolerance
         ImGui::Text("Integrator");
         double_field("Tolerance " , 150.0f, id, "", tol);
         ImGui::Dummy(ImVec2(0.0f,15.0f));
 
-        //mouse input : run button
+        //run button
         if (ImGui::Button("Run", ImVec2(50.0f,30.0f)))
             clicked_run = true;
 
         ImGui::SameLine();
 
-        //mouse input : kill button
+        //kill button
         if (clicked_run)
         {
             if (ImGui::Button("Kill", ImVec2(50.0f,30.0f)))
@@ -707,7 +701,7 @@ public:
 
         //Tolerance error (must be > 0.0).
         if (tol <= 0.0)
-            errors.push_back("[Error] :  Invalid tolerance 'tol'.");
+            errors.push_back("[Error] :  Invalid 'Tolerance'.");
 
         return errors;
     }
@@ -720,20 +714,27 @@ class Graphics
     
 public:
 
-    //orbit data
-    Solution solution;
-
-    //x, y, z, r magnitude (distance), υx, υy,υz, υ magnitude
+    //x(t), y(t), z(t), r(t) magnitude (distance), υx(t), υy(t),υz(t), υ(t) magnitude
     bvec plot_cart;
 
+    //a(t), e(t), i(t), Ω(t), ω(t), M(t)
     bvec plot_kep;
+
+    //roll1(t), pitch1(t), yaw1(t), roll2(t), pitch2(t), yaw2(t)
     bvec plot_rpy1, plot_rpy2;
+    //q10(t), q11(t), q12(t), q13(t), q20(t), q21(t), q22(t), q23(t)
     bvec plot_q1, plot_q2;
 
+    //ω1ix(t), ω1iy(t), ω1iz(t),  ω1bx(t), ω1by(t), ω1bz(t)
     bvec plot_w1i, plot_w1b;
+    //ω2ix(t), ω2ix(t), ω2ix(t),  ω2bx(t), ω2by(t), ω2bz(t)
     bvec plot_w2i, plot_w2b;
 
+    //energy and momentum (magnitude) relative errors
     bvec plot_ener_mom_rel_err;
+
+    //orbit data
+    Solution solution;
 
     Graphics() : plot_cart({false,false,false,false, false,false,false,false}),
                  plot_kep({false,false,false,false,false,false}),
@@ -764,10 +765,10 @@ public:
         ImGui::Separator();
 
         ImGui::Text("Relative velocity");
-        if (ImGui::Button("   υx   "))    plot_cart[4] = !plot_cart[4]; ImGui::SameLine();
-        if (ImGui::Button("   υy   "))    plot_cart[5] = !plot_cart[5]; ImGui::SameLine();
-        if (ImGui::Button("   υz   "))    plot_cart[6] = !plot_cart[6]; ImGui::SameLine();
-        if (ImGui::Button("υ magnitude")) plot_cart[7] = !plot_cart[7];
+        if (ImGui::Button("   υx   ")) plot_cart[4] = !plot_cart[4]; ImGui::SameLine();
+        if (ImGui::Button("   υy   ")) plot_cart[5] = !plot_cart[5]; ImGui::SameLine();
+        if (ImGui::Button("   υz   ")) plot_cart[6] = !plot_cart[6]; ImGui::SameLine();
+        if (ImGui::Button("υ mag"))    plot_cart[7] = !plot_cart[7];
         ImGui::Separator();
 
         ImGui::Text("Relative Keplerian elements");
@@ -805,51 +806,52 @@ public:
         if (ImGui::Button(" q23 ")) plot_q2[3] = !plot_q2[3];
         ImGui::Separator();
 
-        ImGui::Text("Angular velocity (Body 1, inertial frame)");
+        ImGui::Text("Angular velocity (Body 1, Inertial)");
         if (ImGui::Button(" ω1ix ")) plot_w1i[0] = !plot_w1i[0]; ImGui::SameLine();
         if (ImGui::Button(" ω1iy ")) plot_w1i[1] = !plot_w1i[1]; ImGui::SameLine();
         if (ImGui::Button(" ω1iz ")) plot_w1i[2] = !plot_w1i[2];
         ImGui::Separator();
 
-        ImGui::Text("Angular velocity (Body 2, inertial frame)");
-        if (ImGui::Button(" ω2ix ")) plot_w2i[0] = !plot_w2i[0]; ImGui::SameLine();
-        if (ImGui::Button(" ω2iy ")) plot_w2i[1] = !plot_w2i[1]; ImGui::SameLine();
-        if (ImGui::Button(" ω2iz ")) plot_w2i[2] = !plot_w2i[2];
-        ImGui::Separator();
-
-        ImGui::Text("Angular velocity (Body 1, body frame)");
+        ImGui::Text("Angular velocity (Body 1, Body)");
         if (ImGui::Button(" ω1bx ")) plot_w1b[0] = !plot_w1b[0]; ImGui::SameLine();
         if (ImGui::Button(" ω1by ")) plot_w1b[1] = !plot_w1b[1]; ImGui::SameLine();
         if (ImGui::Button(" ω1bz ")) plot_w1b[2] = !plot_w1b[2];
         ImGui::Separator();
 
-        ImGui::Text("Angular velocity (Body 2, body frame)");
+        ImGui::Text("Angular velocity (Body 2, Inertial)");
+        if (ImGui::Button(" ω2ix ")) plot_w2i[0] = !plot_w2i[0]; ImGui::SameLine();
+        if (ImGui::Button(" ω2iy ")) plot_w2i[1] = !plot_w2i[1]; ImGui::SameLine();
+        if (ImGui::Button(" ω2iz ")) plot_w2i[2] = !plot_w2i[2];
+        ImGui::Separator();
+
+        ImGui::Text("Angular velocity (Body 2, Body)");
         if (ImGui::Button(" ω2bx ")) plot_w2b[0] = !plot_w2b[0]; ImGui::SameLine();
         if (ImGui::Button(" ω2by ")) plot_w2b[1] = !plot_w2b[1]; ImGui::SameLine();
         if (ImGui::Button(" ω2bz ")) plot_w2b[2] = !plot_w2b[2];
         ImGui::Separator();
 
         ImGui::Text("Constants of motion");
-        if (ImGui::Button("Energy"))   plot_ener_mom_rel_err[0] = !plot_ener_mom_rel_err[0]; ImGui::SameLine();
-        if (ImGui::Button("Momentum")) plot_ener_mom_rel_err[1] = !plot_ener_mom_rel_err[1];
+        if (ImGui::Button("Energy"))       plot_ener_mom_rel_err[0] = !plot_ener_mom_rel_err[0]; ImGui::SameLine();
+        if (ImGui::Button("Momentum mag")) plot_ener_mom_rel_err[1] = !plot_ener_mom_rel_err[1];
         ImGui::Separator();
 
         return;
     }
 
-    void common_plot(const char *msg1, const char *msg2, const char *msg3, bool &bool_plot_func, dvec &plot_func)
+    bool common_plot(const char *begin_id, const char *begin_plot_id, const char *yaxis_str, const bool bool_plot_func, dvec &plot_func)
     {
+        bool temp_bool_plot_func = bool_plot_func;
         ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
-        ImGui::Begin(msg1, &bool_plot_func);
+        ImGui::Begin(begin_id, &temp_bool_plot_func);
         ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
-        if (ImPlot::BeginPlot(msg2, plot_win_size))
+        if (ImPlot::BeginPlot(begin_plot_id, plot_win_size))
         {
-            ImPlot::SetupAxes("time [days]", msg3);
+            ImPlot::SetupAxes("time [days]", yaxis_str);
             ImPlot::PlotLine("", &(solution.t[0]), &plot_func[0], solution.t.size());
             ImPlot::EndPlot();
         }
         ImGui::End();
-        return;
+        return temp_bool_plot_func;
     }
 
     void render()
@@ -872,10 +874,12 @@ public:
             {
                 plot_buttons();
 
-                if (plot_x)
-                {
-                    common_plot("Position x", "x(t)", "x [km]", plot_x, solution.x)
-                }
+                ///////////////////////// HEREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+
+                if (plot_cart[0]) plot_cart[0] = common_plot("##Position x", " ", "x [km]", plot_cart[0], solution.x);
+                if (plot_cart[1]) plot_cart[1] = common_plot("Position y", "  ", "y [km]", plot_cart[1], solution.y);
+                if (plot_cart[2]) plot_cart[2] = common_plot("##Position z", "   ", "z [km]", plot_cart[2], solution.z);
+                if (plot_cart[3]) plot_cart[3] = common_plot("Distance d", "    ", "dist [km]", plot_cart[3], solution.dist);
             }
         }
         ImGui::End();

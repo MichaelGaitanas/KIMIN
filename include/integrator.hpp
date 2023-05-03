@@ -37,7 +37,7 @@ public:
     dvec q20,q21,q22,q23;
 
     //velocities
-    dvec vx,vy,vz, vdist;
+    dvec vx,vy,vz, vmag;
     dvec w1ix,w1iy,w1iz;
     dvec w1bx,w1by,w1bz;
     dvec w2ix,w2iy,w2iz;
@@ -46,10 +46,8 @@ public:
     //Keplerian elements
     dvec a,e,inc,Om,w,M;
 
-    //energy relative error
-    dvec ener_rel_err;
-    //momentum length relative error
-    dvec mom_rel_err;
+    //constants of motion relative errors
+    dvec ener_rel_err, mom_rel_err;
 
     bool collision;
 
@@ -64,38 +62,38 @@ public:
         bool current_sim_dir = std::filesystem::create_directory("../simulations/" + str(simname));
 
         //3) create the txt content
-        FILE *file_t = fopen(("../simulations/" + str(simname) + "/time.txt").c_str(), "w");
-        FILE *file_r = fopen(("../simulations/" + str(simname) + "/pos.txt").c_str(),"w");
-        FILE *file_v = fopen(("../simulations/" + str(simname) + "/vel.txt").c_str(),"w");
-        FILE *file_q1 = fopen(("../simulations/" + str(simname) + "/quat1.txt").c_str(),"w");
-        FILE *file_w1i = fopen(("../simulations/" + str(simname) + "/w1i.txt").c_str(),"w");
-        FILE *file_w1b = fopen(("../simulations/" + str(simname) + "/w1b.txt").c_str(),"w");
-        FILE *file_rpy1 = fopen(("../simulations/" + str(simname) + "/rpy1.txt").c_str(),"w");
-        FILE *file_q2 = fopen(("../simulations/" + str(simname) + "/quat2.txt").c_str(),"w");
-        FILE *file_w2i = fopen(("../simulations/" + str(simname) + "/w2i.txt").c_str(),"w");
-        FILE *file_w2b = fopen(("../simulations/" + str(simname) + "/w2b.txt").c_str(),"w");
-        FILE *file_rpy2 = fopen(("../simulations/" + str(simname) + "/rpy2.txt").c_str(),"w");
-        FILE *file_kep = fopen(("../simulations/" + str(simname) + "/kep.txt").c_str(),"w");
+        FILE *file_t        = fopen(("../simulations/" + str(simname) + "/time.txt"    ).c_str(),"w");
+        FILE *file_pos      = fopen(("../simulations/" + str(simname) + "/pos.txt"     ).c_str(),"w");
+        FILE *file_vel      = fopen(("../simulations/" + str(simname) + "/vel.txt"     ).c_str(),"w");
+        FILE *file_q1       = fopen(("../simulations/" + str(simname) + "/quat1.txt"   ).c_str(),"w");
+        FILE *file_w1i      = fopen(("../simulations/" + str(simname) + "/w1i.txt"     ).c_str(),"w");
+        FILE *file_w1b      = fopen(("../simulations/" + str(simname) + "/w1b.txt"     ).c_str(),"w");
+        FILE *file_rpy1     = fopen(("../simulations/" + str(simname) + "/rpy1.txt"    ).c_str(),"w");
+        FILE *file_q2       = fopen(("../simulations/" + str(simname) + "/quat2.txt"   ).c_str(),"w");
+        FILE *file_w2i      = fopen(("../simulations/" + str(simname) + "/w2i.txt"     ).c_str(),"w");
+        FILE *file_w2b      = fopen(("../simulations/" + str(simname) + "/w2b.txt"     ).c_str(),"w");
+        FILE *file_rpy2     = fopen(("../simulations/" + str(simname) + "/rpy2.txt"    ).c_str(),"w");
+        FILE *file_kep      = fopen(("../simulations/" + str(simname) + "/kep.txt"     ).c_str(),"w");
         FILE *file_ener_mom = fopen(("../simulations/" + str(simname) + "/ener_mom.txt").c_str(),"w");
         for (int i = 0; i < t.size(); ++i)
         {
-            fprintf(file_t,"%.16lf\n",t[i]);
-            fprintf(file_r,"%.16lf %.16lf %.16lf\n",x[i],y[i],z[i], dist[i]);
-            fprintf(file_v,"%.16lf %.16lf %.16lf\n",vx[i],vy[i],vz[i], vdist[i]);
-            fprintf(file_q1,"%.16lf %.16lf %.16lf %.16lf\n",q10[i],q11[i],q12[i],q13[i]);
-            fprintf(file_rpy1,"%.16lf %.16lf %.16lf\n",roll1[i],pitch1[i],yaw1[i]);
-            fprintf(file_w1b,"%.16lf %.16lf %.16lf\n",w1bx[i],w1by[i],w1bz[i]);
-            fprintf(file_w1i,"%.16lf %.16lf %.16lf\n",w1ix[i],w1iy[i],w1iz[i]);
-            fprintf(file_q2,"%.16lf %.16lf %.16lf %.16lf\n",q20[i],q21[i],q22[i],q23[i]);
-            fprintf(file_rpy2,"%.16lf %.16lf %.16lf\n",roll2[i],pitch2[i],yaw2[i]);
-            fprintf(file_w2b,"%.16lf %.16lf %.16lf\n",w2bx[i],w2by[i],w2bz[i]);
-            fprintf(file_w2i,"%.16lf %.16lf %.16lf\n",w2ix[i],w2iy[i],w2iz[i]);
-            fprintf(file_kep,"%.16lf %.16lf %.16lf %.16lf %.16lf %.16lf\n",a[i],e[i],inc[i],Om[i],w[i],M[i]); 
-            fprintf(file_ener_mom,"%.16lf %.16lf\n", ener_rel_err[i], mom_rel_err[i]);
+            fprintf(file_t,        "%.16lf\n",t[i]);
+            fprintf(file_pos,      "%.16lf %.16lf %.16lf\n",                      x[i],y[i],z[i], dist[i]);
+            fprintf(file_vel,      "%.16lf %.16lf %.16lf\n",                      vx[i],vy[i],vz[i], vmag[i]);
+            fprintf(file_q1,       "%.16lf %.16lf %.16lf %.16lf\n",               q10[i],q11[i],q12[i],q13[i]);
+            fprintf(file_rpy1,     "%.16lf %.16lf %.16lf\n",                      roll1[i],pitch1[i],yaw1[i]);
+            fprintf(file_w1b,      "%.16lf %.16lf %.16lf\n",                      w1bx[i],w1by[i],w1bz[i]);
+            fprintf(file_w1i,      "%.16lf %.16lf %.16lf\n",                      w1ix[i],w1iy[i],w1iz[i]);
+            fprintf(file_q2,       "%.16lf %.16lf %.16lf %.16lf\n",               q20[i],q21[i],q22[i],q23[i]);
+            fprintf(file_rpy2,     "%.16lf %.16lf %.16lf\n",                      roll2[i],pitch2[i],yaw2[i]);
+            fprintf(file_w2b,      "%.16lf %.16lf %.16lf\n",                      w2bx[i],w2by[i],w2bz[i]);
+            fprintf(file_w2i,      "%.16lf %.16lf %.16lf\n",                      w2ix[i],w2iy[i],w2iz[i]);
+            fprintf(file_kep,      "%.16lf %.16lf %.16lf %.16lf %.16lf %.16lf\n", a[i],e[i],inc[i],Om[i],w[i],M[i]); 
+            fprintf(file_ener_mom, "%.16lf %.16lf\n",                             ener_rel_err[i], mom_rel_err[i]);
         }
         fclose(file_t);
-        fclose(file_r);
-        fclose(file_v);
+        fclose(file_pos);
+        fclose(file_vel);
         fclose(file_q1);
         fclose(file_rpy1);
         fclose(file_w1b);
@@ -486,7 +484,7 @@ public:
             solution.vx.push_back(v[0]);
             solution.vy.push_back(v[1]);
             solution.vz.push_back(v[2]);
-            solution.vdist.push_back(length(v));
+            solution.vmag.push_back(length(v));
             solution.w1ix.push_back(w1i[0]);
             solution.w1iy.push_back(w1i[1]);
             solution.w1iz.push_back(w1i[2]);
