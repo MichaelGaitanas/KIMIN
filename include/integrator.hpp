@@ -51,7 +51,7 @@ public:
 
     bool collision;
 
-    //Default constructor will be called for every dvec (i.e. std::vector<double>).
+    //Default constructor will be called for the members.
 
     void export_txt_files(const char *simname)
     {
@@ -77,7 +77,7 @@ public:
         FILE *file_ener_mom = fopen(("../simulations/" + str(simname) + "/ener_mom.txt").c_str(),"w");
         for (int i = 0; i < t.size(); ++i)
         {
-            fprintf(file_t,        "%.16lf\n",t[i]);
+            fprintf(file_t,        "%.16lf\n",                                    t[i]);
             fprintf(file_pos,      "%.16lf %.16lf %.16lf\n",                      x[i],y[i],z[i], dist[i]);
             fprintf(file_vel,      "%.16lf %.16lf %.16lf\n",                      vx[i],vy[i],vz[i], vmag[i]);
             fprintf(file_q1,       "%.16lf %.16lf %.16lf %.16lf\n",               q10[i],q11[i],q12[i],q13[i]);
@@ -164,7 +164,7 @@ public:
         }
         else //obj_checkbox
         {
-            //temporary variables to load essential stuff from the .obj files
+            //temporary variables to load essential data from the .obj files
             dmatnx3 verts;
             dmatnx3 norms;
             dmatnx2 texs;
@@ -202,7 +202,7 @@ public:
                 }
 
                 masc1 = fill_poly_with_masc(verts,facesnx3, grid_reso1);
-                //Don't forget to correct the mascon distribution.
+                //Don't forget to correct the mascon distribution.  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
                 //Pull the center of mass towards 0 and rotate the axes to the principal ones.
             }
 
@@ -236,7 +236,7 @@ public:
                 }
 
                 masc2 = fill_poly_with_masc(verts,facesnx3, grid_reso2);
-                //Don't forget to correct the mascon distribution.
+                //Don't forget to correct the mascon distribution.  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
                 //Pull the center of mass towards 0 and rotate the axes to the principal ones.
             }
 
@@ -393,26 +393,26 @@ public:
         {
             //1) save current state
             msol.push_back({t,
-                                state[0],
-                                state[1],
-                                state[2],
-                                state[3],
-                                state[4],
-                                state[5],
-                                state[6],
-                                state[7],
-                                state[8],
-                                state[9],
-                                state[10],
-                                state[11],
-                                state[12],
-                                state[13],
-                                state[14],
-                                state[15],
-                                state[16],
-                                state[17],
-                                state[18],
-                                state[19]});
+                            state[0],
+                            state[1],
+                            state[2],
+                            state[3],
+                            state[4],
+                            state[5],
+                            state[6],
+                            state[7],
+                            state[8],
+                            state[9],
+                            state[10],
+                            state[11],
+                            state[12],
+                            state[13],
+                            state[14],
+                            state[15],
+                            state[16],
+                            state[17],
+                            state[18],
+                            state[19]});
 
             //2) check for sphere-sphere collision detection
             if (sph_sph_collision(length(dvec3{state[0],state[1],state[2]}), ell_brillouin(semiaxes1), ell_brillouin(semiaxes2)))

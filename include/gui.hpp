@@ -214,7 +214,7 @@ public:
                    step(0.001388888888888889),
                    cart_kep_var{"Cartesian ", "Keplerian "},
                    cart_kep_var_choice(0),
-                   cart({1.19,0.0,0.0, 0.0,0.00017421523858789,0.0}),
+                   cart({1.19,0.0,0.0, 0.0,0.0001375,0.0}),
                    kep({0.0,0.0,0.0,0.0,0.0,0.0,}),
                    orient_var{"Euler angles", "Quaternions"},
                    orient_var_choice(0),
@@ -848,6 +848,8 @@ public:
         {
             ImPlot::SetupAxes("time [days]", yaxis_str);
             ImPlot::PlotLine("", &(solution.t[0]), &plot_func[0], solution.t.size());
+            if (solution.collision)
+                ImPlot::PlotScatter("Collision", &(solution.t[solution.t.size()-1]), &(plot_func[solution.t.size()-1]), 1, 2.0);
             ImPlot::EndPlot();
         }
         ImGui::End();
@@ -891,12 +893,41 @@ public:
                 if (plot_kep[5]) plot_kep[5] = common_plot("##27", "##28", "M [deg]", plot_kep[5], solution.M);
 
                 if (plot_rpy1[0]) plot_rpy1[0] = common_plot("##29", "##30", "roll 1 [deg]",  plot_rpy1[0], solution.roll1);
-                if (plot_rpy1[1]) plot_rpy1[1] = common_plot("##31", "##32", "pitch 1 [deg]",  plot_rpy1[1], solution.pitch1);
-                if (plot_rpy1[2]) plot_rpy1[2] = common_plot("##33", "##34", "yaw 1 [deg]", plot_rpy1[2], solution.yaw1);
+                if (plot_rpy1[1]) plot_rpy1[1] = common_plot("##31", "##32", "pitch 1 [deg]", plot_rpy1[1], solution.pitch1);
+                if (plot_rpy1[2]) plot_rpy1[2] = common_plot("##33", "##34", "yaw 1 [deg]",   plot_rpy1[2], solution.yaw1);
 
-                if (plot_rpy2[0]) plot_rpy2[0] = common_plot("##35", "##36", "roll 2 [deg]", plot_rpy2[0], solution.roll2);
+                if (plot_rpy2[0]) plot_rpy2[0] = common_plot("##35", "##36", "roll 2 [deg]",  plot_rpy2[0], solution.roll2);
                 if (plot_rpy2[1]) plot_rpy2[1] = common_plot("##37", "##38", "pitch 2 [deg]", plot_rpy2[1], solution.pitch2);
-                if (plot_rpy2[2]) plot_rpy2[2] = common_plot("##38", "##40", "yaw 2 [deg]", plot_rpy2[2], solution.yaw2);
+                if (plot_rpy2[2]) plot_rpy2[2] = common_plot("##38", "##40", "yaw 2 [deg]",   plot_rpy2[2], solution.yaw2);
+
+                if (plot_q1[0]) plot_q1[0] = common_plot("##41", "##42", "q10 [  ]", plot_q1[0], solution.q10);
+                if (plot_q1[1]) plot_q1[1] = common_plot("##43", "##44", "q11 [  ]", plot_q1[1], solution.q11);
+                if (plot_q1[2]) plot_q1[2] = common_plot("##45", "##46", "q12 [  ]", plot_q1[2], solution.q12);
+                if (plot_q1[3]) plot_q1[3] = common_plot("##47", "##48", "q13 [  ]", plot_q1[3], solution.q13);
+
+                if (plot_q2[0]) plot_q2[0] = common_plot("##49", "##50", "q20 [  ]", plot_q2[0], solution.q20);
+                if (plot_q2[1]) plot_q2[1] = common_plot("##51", "##52", "q21 [  ]", plot_q2[1], solution.q21);
+                if (plot_q2[2]) plot_q2[2] = common_plot("##53", "##54", "q22 [  ]", plot_q2[2], solution.q22);
+                if (plot_q2[3]) plot_q2[3] = common_plot("##55", "##56", "q23 [  ]", plot_q2[3], solution.q23);
+
+                if (plot_w1i[0]) plot_w1i[0] = common_plot("##57", "##58", "ω1ix [rad/sec]", plot_w1i[0], solution.w1ix);
+                if (plot_w1i[1]) plot_w1i[1] = common_plot("##59", "##60", "ω1iy [rad/sec]", plot_w1i[1], solution.w1iy);
+                if (plot_w1i[2]) plot_w1i[2] = common_plot("##61", "##62", "ω1iz [rad/sec]", plot_w1i[2], solution.w1iz);
+
+                if (plot_w1b[0]) plot_w1b[0] = common_plot("##63", "##64", "ω1bx [rad/sec]", plot_w1b[0], solution.w1bx);
+                if (plot_w1b[1]) plot_w1b[1] = common_plot("##65", "##66", "ω1by [rad/sec]", plot_w1b[1], solution.w1by);
+                if (plot_w1b[2]) plot_w1b[2] = common_plot("##67", "##68", "ω1bz [rad/sec]", plot_w1b[2], solution.w1bz);
+
+                if (plot_w2i[0]) plot_w2i[0] = common_plot("##69", "##70", "ω2ix [rad/sec]", plot_w2i[0], solution.w2ix);
+                if (plot_w2i[1]) plot_w2i[1] = common_plot("##71", "##72", "ω2iy [rad/sec]", plot_w2i[1], solution.w2iy);
+                if (plot_w2i[2]) plot_w2i[2] = common_plot("##73", "##74", "ω2iz [rad/sec]", plot_w2i[2], solution.w2iz);
+
+                if (plot_w2b[0]) plot_w2b[0] = common_plot("##75", "##76", "ω2bx [rad/sec]", plot_w2b[0], solution.w2bx);
+                if (plot_w2b[1]) plot_w2b[1] = common_plot("##77", "##78", "ω2by [rad/sec]", plot_w2b[1], solution.w2by);
+                if (plot_w2b[2]) plot_w2b[2] = common_plot("##79", "##80", "ω2bz [rad/sec]", plot_w2b[2], solution.w2bz);
+
+                if (plot_ener_mom_rel_err[0]) plot_ener_mom_rel_err[0] = common_plot("##81", "##82", "energy error [  ]",   plot_ener_mom_rel_err[0], solution.ener_rel_err);
+                if (plot_ener_mom_rel_err[1]) plot_ener_mom_rel_err[1] = common_plot("##83", "##84", "momentum error [  ]", plot_ener_mom_rel_err[1], solution.mom_rel_err);
             }
         }
         ImGui::End();
@@ -964,8 +995,9 @@ public:
                 Integrator integrator(properties);
                 Solution solution = integrator.run();
                 graphics.yield_solution(solution);
-                //std::thread propagator_thread(std::bind(&Propagator::run, propagator));
-                //propagator_thread.detach();
+                //std::thread integrator_thread(std::bind(&Integrator::run, integrator));
+                //integrator_thread.detach();
+                //graphics.yield_solution(solution);
             }
             else
             {
