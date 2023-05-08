@@ -11,6 +11,7 @@
 
 #include<cstdarg>
 #include<filesystem>
+#include<future>
 
 #include"typedef.hpp"
 #include"constant.hpp"
@@ -179,6 +180,8 @@ public:
 
     //'Kill' button state.
     bool clicked_kill;
+
+    //std::future<short> pfuture;
 
     Properties() : simname("test_sim"),
                    ell_checkbox(false),
@@ -838,6 +841,12 @@ public:
         return;
     }
 
+    void video_buttons()
+    {
+        
+        return;
+    }
+
     bool common_plot(const char *begin_id, const char *begin_plot_id, const char *yaxis_str, const bool bool_plot_func, dvec &plot_func)
     {
         bool temp_bool_plot_func = bool_plot_func;
@@ -930,6 +939,33 @@ public:
                 if (plot_ener_mom_rel_err[1]) plot_ener_mom_rel_err[1] = common_plot("##83", "##84", "momentum error [  ]", plot_ener_mom_rel_err[1], solution.mom_rel_err);
             }
         }
+
+
+
+
+
+        if (ImGui::CollapsingHeader("Video"))
+        {
+            if (!solution.t.size())
+            {
+                ImGui::BeginDisabled();
+                    video_buttons();
+                ImGui::EndDisabled();
+            }
+            else
+            {
+                video_buttons();
+
+            }
+        }
+
+
+
+
+
+
+
+
         ImGui::End();
     }
 };
@@ -993,11 +1029,14 @@ public:
             if (!errors.size())
             {
                 Integrator integrator(properties);
+
+                //console.add_text("Running... ");
                 Solution solution = integrator.run();
-                graphics.yield_solution(solution);
                 //std::thread integrator_thread(std::bind(&Integrator::run, integrator));
                 //integrator_thread.detach();
-                //graphics.yield_solution(solution);
+                
+                graphics.yield_solution(solution);
+                
             }
             else
             {
