@@ -4,6 +4,10 @@
 #include<GL/glew.h>
 #include<GLFW/glfw3.h>
 
+#include<glm/glm.hpp>
+#include<glm/gtc/matrix_transform.hpp>
+#include<glm/gtc/type_ptr.hpp>
+
 #include<cstdio>
 
 #include"gui.hpp"
@@ -91,7 +95,7 @@ public:
         glClearColor(0.2f,0.2f,0.2f,1.0f);
         while (!glfwWindowShouldClose(m_pointer))
         {
-            glClear(GL_COLOR_BUFFER_BIT);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             gui.begin();
             gui.properties.render(m_pointer);

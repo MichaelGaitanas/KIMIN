@@ -11,13 +11,20 @@
 
 #include<cstdarg>
 #include<filesystem>
-#include<future>
+//#include<future>
 
 #include"typedef.hpp"
 #include"constant.hpp"
 #include"linalg.hpp"
 #include"obj.hpp"
 #include"conversion.hpp"
+
+#include<glm/glm.hpp>
+#include<glm/gtc/matrix_transform.hpp>
+#include<glm/gtc/type_ptr.hpp>
+
+#include"shader.hpp"
+#include"mesh.hpp"
 
 class Console
 {
@@ -736,6 +743,8 @@ public:
     //energy and momentum (magnitude) relative errors
     bvec plot_ener_mom_rel_err;
 
+    bool play_video;
+
     //orbit data
     Solution solution;
 
@@ -749,7 +758,8 @@ public:
                  plot_w1b({false,false,false}),
                  plot_w2i({false,false,false}),
                  plot_w2b({false,false,false}),
-                 plot_ener_mom_rel_err({false,false})
+                 plot_ener_mom_rel_err({false,false}),
+                 play_video(false)
     { }
 
     void yield_solution(const Solution &solution)
@@ -843,7 +853,7 @@ public:
 
     void video_buttons()
     {
-        
+        if (ImGui::Button("Play video")) play_video = !play_video;
         return;
     }
 
@@ -863,6 +873,39 @@ public:
         }
         ImGui::End();
         return temp_bool_plot_func;
+    }
+
+    bool video_content(const bool play_video)
+    {
+        bool temp_play_video = play_video;
+        static meshvfn sphere("../obj/polyhedra/bennu196k.obj");
+        static shader shad("../shaders/vertex/trans_mvpn.vert", "../shaders/fragment/dir_light_ad.frag");
+        shad.use();
+
+        glm::vec3 light_col = glm::vec3(1.0f,1.0f,1.0f);
+        glm::vec3 model_col = glm::vec3(0.1f,0.5f,0.9f);
+        glm::vec3 cam_pos = glm::vec3(0.0f,-1.0f,0.0f);
+        glm::vec3 cam_aim = glm::vec3(0.0f,0.0f,0.0f);
+        glm::vec3 cam_up = glm::vec3(0.0f,0.0f,1.0f);
+
+        glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1920.0f/1080.0f, 0.01f,100.0f);
+        glm::mat4 view = glm::lookAt(cam_pos, cam_aim, cam_up);
+        glm::mat4 model = glm::mat4(1.0f);
+
+        shad.set_mat4_uniform("projection", projection);
+        shad.set_mat4_uniform("view", view);
+        shad.set_mat4_uniform("model", model);
+        
+        shad.set_vec3_uniform("light_col", light_col);
+        shad.set_vec3_uniform("model_col", model_col);
+                
+        //model = glm::scale(model, glm::vec3(3.0f,1.0f,0.5f));
+        
+        glm::vec3 light_dir = glm::vec3(cos(glfwGetTime()),sin(glfwGetTime()),0.0f);
+        shad.set_vec3_uniform("light_dir", light_dir);
+        sphere.draw_triangles();
+
+        return temp_play_video;
     }
 
     void render()
@@ -955,6 +998,7 @@ public:
             else
             {
                 video_buttons();
+                if (play_video) play_video = video_content(play_video);
 
             }
         }
