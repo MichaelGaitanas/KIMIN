@@ -853,6 +853,24 @@ public:
 
     void video_buttons()
     {
+        if (ImGui::TreeNodeEx("Camera"))
+        {
+            if (ImGui::Button("Right ( + x )"))       { }
+            else if (ImGui::Button("Left ( - x )"))   { }
+            else if (ImGui::Button("Front ( + y )"))  { }
+            else if (ImGui::Button("Back ( - y )"))   { }
+            else if (ImGui::Button("Top ( + z )"))    { }
+            else if (ImGui::Button("Bottom ( - z )")) { }
+            else if (ImGui::Button("Panoramic"))      { }
+            ImGui::TreePop();
+        }
+        if (ImGui::TreeNodeEx("Axes"))
+        {
+            if (ImGui::Button("Body 1")) { }
+            if (ImGui::Button("Body 2")) { }
+            ImGui::TreePop();
+        }
+
         if (ImGui::Button("Play video")) play_video = !play_video;
         return;
     }
@@ -982,10 +1000,6 @@ public:
                 if (plot_ener_mom_rel_err[1]) plot_ener_mom_rel_err[1] = common_plot("##83", "##84", "momentum error [  ]", plot_ener_mom_rel_err[1], solution.mom_rel_err);
             }
         }
-
-
-
-
 
         if (ImGui::CollapsingHeader("Video"))
         {

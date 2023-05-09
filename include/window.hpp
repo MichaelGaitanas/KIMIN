@@ -92,25 +92,22 @@ public:
     void game_loop()
     {
         GUI gui(m_pointer);
+        glEnable(GL_DEPTH_TEST);
         glClearColor(0.2f,0.2f,0.2f,1.0f);
         while (!glfwWindowShouldClose(m_pointer))
         {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
             gui.begin();
             gui.properties.render(m_pointer);
             gui.console.render();
             gui.graphics.render();
             gui.render();
-
             gui.on_click_run();
-
             glfwSwapBuffers(m_pointer);
             glfwPollEvents();
         }
         return;
     }
 };
-
 
 #endif
