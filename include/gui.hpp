@@ -767,21 +767,32 @@ public:
         this->solution = solution;
         return;
     }
+
+    bool common_plot_button(const char *label, bool plot_func)
+    {
+        if (plot_func)
+            ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered));
+        else
+            ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_Button));
+        if (ImGui::Button(label)) plot_func = !plot_func;
+        ImGui::PopStyleColor();
+        return plot_func;
+    }
     
     void plot_buttons()
     {
         ImGui::Text("Relative position");
-        if (ImGui::Button("    x    ")) plot_cart[0] = !plot_cart[0]; ImGui::SameLine();
-        if (ImGui::Button("    y    ")) plot_cart[1] = !plot_cart[1]; ImGui::SameLine();
-        if (ImGui::Button("    z    ")) plot_cart[2] = !plot_cart[2]; ImGui::SameLine();
-        if (ImGui::Button("distance"))  plot_cart[3] = !plot_cart[3];
+        plot_cart[0] = common_plot_button("    x    ", plot_cart[0]); ImGui::SameLine();
+        plot_cart[1] = common_plot_button("    y    ", plot_cart[1]); ImGui::SameLine();
+        plot_cart[2] = common_plot_button("    z    ", plot_cart[2]); ImGui::SameLine();
+        plot_cart[3] = common_plot_button("distance",  plot_cart[3]);
         ImGui::Separator();
 
         ImGui::Text("Relative velocity");
-        if (ImGui::Button("   υx   ")) plot_cart[4] = !plot_cart[4]; ImGui::SameLine();
-        if (ImGui::Button("   υy   ")) plot_cart[5] = !plot_cart[5]; ImGui::SameLine();
-        if (ImGui::Button("   υz   ")) plot_cart[6] = !plot_cart[6]; ImGui::SameLine();
-        if (ImGui::Button("υ mag"))    plot_cart[7] = !plot_cart[7];
+        plot_cart[4] = common_plot_button("   υx   ", plot_cart[4]); ImGui::SameLine();
+        plot_cart[5] = common_plot_button("   υy   ", plot_cart[5]); ImGui::SameLine();
+        plot_cart[6] = common_plot_button("   υz   ", plot_cart[6]); ImGui::SameLine();
+        plot_cart[7] = common_plot_button("υ mag",    plot_cart[7]);
         ImGui::Separator();
 
         ImGui::Text("Relative Keplerian elements");
@@ -864,22 +875,15 @@ public:
             else if (ImGui::Button("Panoramic"))      { }
             ImGui::TreePop();
         }
-        if (ImGui::TreeNodeEx("Axes"))
-        {
-            if (ImGui::Button("Body 1")) { }
-            if (ImGui::Button("Body 2")) { }
-            ImGui::TreePop();
-        }
 
         if (ImGui::Button("Play video")) play_video = !play_video;
         return;
     }
 
-    bool common_plot(const char *begin_id, const char *begin_plot_id, const char *yaxis_str, const bool bool_plot_func, dvec &plot_func)
+    bool common_plot(const char *begin_id, const char *begin_plot_id, const char *yaxis_str, bool bool_plot_func, dvec &plot_func)
     {
-        bool temp_bool_plot_func = bool_plot_func;
         ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
-        ImGui::Begin(begin_id, &temp_bool_plot_func);
+        ImGui::Begin(begin_id, &bool_plot_func);
         ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
         if (ImPlot::BeginPlot(begin_plot_id, plot_win_size))
         {
@@ -890,7 +894,7 @@ public:
             ImPlot::EndPlot();
         }
         ImGui::End();
-        return temp_bool_plot_func;
+        return bool_plot_func;
     }
 
     bool video_content(const bool play_video)
