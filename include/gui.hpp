@@ -796,67 +796,67 @@ public:
         ImGui::Separator();
 
         ImGui::Text("Relative Keplerian elements");
-        if (ImGui::Button("   a   ")) plot_kep[0] = !plot_kep[0]; ImGui::SameLine();
-        if (ImGui::Button("   e   ")) plot_kep[1] = !plot_kep[1]; ImGui::SameLine();
-        if (ImGui::Button("   i   ")) plot_kep[2] = !plot_kep[2]; ImGui::SameLine();
-        if (ImGui::Button("   Ω   ")) plot_kep[3] = !plot_kep[3]; ImGui::SameLine();
-        if (ImGui::Button("   ω   ")) plot_kep[4] = !plot_kep[4]; ImGui::SameLine();
-        if (ImGui::Button("   M   ")) plot_kep[5] = !plot_kep[5];
+        plot_kep[0] = common_plot_button("   a   ", plot_kep[0]); ImGui::SameLine();
+        plot_kep[1] = common_plot_button("   e   ", plot_kep[1]); ImGui::SameLine();
+        plot_kep[2] = common_plot_button("   i   ", plot_kep[2]); ImGui::SameLine();
+        plot_kep[3] = common_plot_button("   Ω   ", plot_kep[3]); ImGui::SameLine();
+        plot_kep[4] = common_plot_button("   ω   ", plot_kep[4]); ImGui::SameLine();
+        plot_kep[5] = common_plot_button("   M   ", plot_kep[5]);
         ImGui::Separator();
 
         ImGui::Text("Euler angles (Body 1)");
-        if (ImGui::Button("roll 1"))  plot_rpy1[0] = !plot_rpy1[0]; ImGui::SameLine();
-        if (ImGui::Button("pitch 1")) plot_rpy1[1] = !plot_rpy1[1]; ImGui::SameLine();
-        if (ImGui::Button("yaw 1"))   plot_rpy1[2] = !plot_rpy1[2];
+        plot_rpy1[0] = common_plot_button("roll 1",  plot_rpy1[0]); ImGui::SameLine();
+        plot_rpy1[1] = common_plot_button("pitch 1", plot_rpy1[1]); ImGui::SameLine();
+        plot_rpy1[2] = common_plot_button("yaw 1",   plot_rpy1[2]);
         ImGui::Separator();
 
         ImGui::Text("Euler angles (Body 2)");
-        if (ImGui::Button("roll 2"))  plot_rpy2[0] = !plot_rpy2[0]; ImGui::SameLine();
-        if (ImGui::Button("pitch 2")) plot_rpy2[1] = !plot_rpy2[1]; ImGui::SameLine();
-        if (ImGui::Button("yaw 2"))   plot_rpy2[2] = !plot_rpy2[2];
+        plot_rpy2[0] = common_plot_button("roll 2",  plot_rpy2[0]); ImGui::SameLine();
+        plot_rpy2[1] = common_plot_button("pitch 2", plot_rpy2[1]); ImGui::SameLine();
+        plot_rpy2[2] = common_plot_button("yaw 2",   plot_rpy2[2]);
         ImGui::Separator();
         
         ImGui::Text("Quaternion (Body 1)");
-        if (ImGui::Button(" q10 ")) plot_q1[0] = !plot_q1[0]; ImGui::SameLine();
-        if (ImGui::Button(" q11 ")) plot_q1[1] = !plot_q1[1]; ImGui::SameLine();
-        if (ImGui::Button(" q12 ")) plot_q1[2] = !plot_q1[2]; ImGui::SameLine();
-        if (ImGui::Button(" q13 ")) plot_q1[3] = !plot_q1[3];
+        plot_q1[0] = common_plot_button("q10", plot_q1[0]); ImGui::SameLine();
+        plot_q1[1] = common_plot_button("q11", plot_q1[1]); ImGui::SameLine();
+        plot_q1[2] = common_plot_button("q12", plot_q1[2]); ImGui::SameLine();
+        plot_q1[3] = common_plot_button("q13", plot_q1[3]);
         ImGui::Separator();
         
         ImGui::Text("Quaternion (Body 2)");
-        if (ImGui::Button(" q20 ")) plot_q2[0] = !plot_q2[0]; ImGui::SameLine();
-        if (ImGui::Button(" q21 ")) plot_q2[1] = !plot_q2[1]; ImGui::SameLine();
-        if (ImGui::Button(" q22 ")) plot_q2[2] = !plot_q2[2]; ImGui::SameLine();
-        if (ImGui::Button(" q23 ")) plot_q2[3] = !plot_q2[3];
+        plot_q2[0] = common_plot_button("q20", plot_q2[0]); ImGui::SameLine();
+        plot_q2[1] = common_plot_button("q21", plot_q2[1]); ImGui::SameLine();
+        plot_q2[2] = common_plot_button("q22", plot_q2[2]); ImGui::SameLine();
+        plot_q2[3] = common_plot_button("q23", plot_q2[3]);
         ImGui::Separator();
 
         ImGui::Text("Angular velocity (Body 1, Inertial)");
-        if (ImGui::Button(" ω1ix ")) plot_w1i[0] = !plot_w1i[0]; ImGui::SameLine();
-        if (ImGui::Button(" ω1iy ")) plot_w1i[1] = !plot_w1i[1]; ImGui::SameLine();
-        if (ImGui::Button(" ω1iz ")) plot_w1i[2] = !plot_w1i[2];
+        plot_w1i[0] = common_plot_button(" ω1ix ", plot_w1i[0]); ImGui::SameLine();
+        plot_w1i[1] = common_plot_button(" ω1iy ", plot_w1i[1]); ImGui::SameLine();
+        plot_w1i[2] = common_plot_button(" ω1iz ", plot_w1i[2]);
         ImGui::Separator();
 
         ImGui::Text("Angular velocity (Body 1, Body)");
-        if (ImGui::Button(" ω1bx ")) plot_w1b[0] = !plot_w1b[0]; ImGui::SameLine();
-        if (ImGui::Button(" ω1by ")) plot_w1b[1] = !plot_w1b[1]; ImGui::SameLine();
-        if (ImGui::Button(" ω1bz ")) plot_w1b[2] = !plot_w1b[2];
+        plot_w1b[0] = common_plot_button(" ω1bx ", plot_w1b[0]); ImGui::SameLine();
+        plot_w1b[1] = common_plot_button(" ω1by ", plot_w1b[1]); ImGui::SameLine();
+        plot_w1b[2] = common_plot_button(" ω1bz ", plot_w1b[2]);
         ImGui::Separator();
 
         ImGui::Text("Angular velocity (Body 2, Inertial)");
-        if (ImGui::Button(" ω2ix ")) plot_w2i[0] = !plot_w2i[0]; ImGui::SameLine();
-        if (ImGui::Button(" ω2iy ")) plot_w2i[1] = !plot_w2i[1]; ImGui::SameLine();
-        if (ImGui::Button(" ω2iz ")) plot_w2i[2] = !plot_w2i[2];
+        plot_w2i[0] = common_plot_button(" ω2ix ", plot_w2i[0]); ImGui::SameLine();
+        plot_w2i[1] = common_plot_button(" ω2iy ", plot_w2i[1]); ImGui::SameLine();
+        plot_w2i[2] = common_plot_button(" ω2iz ", plot_w2i[2]);
         ImGui::Separator();
 
         ImGui::Text("Angular velocity (Body 2, Body)");
-        if (ImGui::Button(" ω2bx ")) plot_w2b[0] = !plot_w2b[0]; ImGui::SameLine();
-        if (ImGui::Button(" ω2by ")) plot_w2b[1] = !plot_w2b[1]; ImGui::SameLine();
-        if (ImGui::Button(" ω2bz ")) plot_w2b[2] = !plot_w2b[2];
+        plot_w2b[0] = common_plot_button(" ω2bx ", plot_w2b[0]); ImGui::SameLine();
+        plot_w2b[1] = common_plot_button(" ω2by ", plot_w2b[1]); ImGui::SameLine();
+        plot_w2b[2] = common_plot_button(" ω2bz ", plot_w2b[2]);
         ImGui::Separator();
 
         ImGui::Text("Constants of motion");
-        if (ImGui::Button("Energy"))       plot_ener_mom_rel_err[0] = !plot_ener_mom_rel_err[0]; ImGui::SameLine();
-        if (ImGui::Button("Momentum mag")) plot_ener_mom_rel_err[1] = !plot_ener_mom_rel_err[1];
+        plot_ener_mom_rel_err[0] = common_plot_button("Energy",       plot_ener_mom_rel_err[0]); ImGui::SameLine();
+        plot_ener_mom_rel_err[1] = common_plot_button("Momentum mag", plot_ener_mom_rel_err[1]);
         ImGui::Separator();
 
         return;

@@ -6,6 +6,8 @@
 #include<string>
 #include<fstream>
 #include<vector>
+#define STB_IMAGE_IMPLEMENTATION
+#include"stb_image.h"
 
 class meshvf
 {
@@ -198,6 +200,135 @@ public:
         glBindVertexArray(vao);
         glDrawArrays(GL_TRIANGLES, 0, draw_size);
         glBindVertexArray(0);
+    }
+};
+
+class skybox
+{
+
+public:
+
+    unsigned int vao, vbo, ebo, tao;
+    std::vector<float> main_buffer;
+    unsigned int draw_size;
+
+    skybox()
+    {
+        //vertices are hard coded because they are always the same
+        float verts[] = { -1.0f, -1.0f,  1.0f,
+                           1.0f, -1.0f,  1.0f,
+                           1.0f, -1.0f, -1.0f,
+                          -1.0f, -1.0f, -1.0f,
+                          -1.0f,  1.0f,  1.0f,
+                           1.0f,  1.0f,  1.0f,
+                           1.0f,  1.0f, -1.0f,
+                          -1.0f,  1.0f, -1.0f };
+
+        //indices as well
+        unsigned int inds[] = { //right
+                                1, 2, 6,
+                                6, 5, 1,
+                                //left
+                                0, 4, 7,
+                                7, 3, 0,
+                                //top
+                                4, 5, 6,
+                                6, 7, 4,
+                                //bottom
+                                0, 3, 2,
+                                2, 1, 0,
+                                //back
+                                0, 1, 5,
+                                5, 4, 0,
+                                //front
+                                3, 7, 6,
+                                6, 2, 3  };
+
+        glGenVertexArrays(1, &vao);
+        glGenBuffers(1, &vbo);
+        glGenBuffers(1, &ebo);
+        glBindVertexArray(vao);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(verts), &verts, GL_STATIC_DRAW);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(inds), &inds, GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+
+        //All the faces of the cubemap (make sure they are in this exact order)
+        std::string facesCubemap[6] =
+        {
+            "../skybox/starfield_4k/right.jpg",
+            "../skybox/starfield_4k/left.jpg",
+            "../skybox/starfield_4k/top.jpg",
+            "../skybox/starfield_4k/bottom.jpg",
+            "../skybox/starfield_4k/front.jpg",
+            "../skybox/starfield_4k/back.jpg"
+        };
+
+        // Creates the cubemap texture object
+        unsigned int tao;
+        glGenTextures(1, &tao);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, tao);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        // These are very important to prevent seams
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        // This might help with seams on some systems
+        //glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
+        // Cycles through all the textures and attaches them to the cubemap object
+        for (unsigned int i = 0; i < 6; i++)
+        {
+            int width, height, nrChannels;
+            unsigned char* data = stbi_load(facesCubemap[i].c_str(), &width, &height, &nrChannels, 0);
+            if (data)
+            {
+                stbi_set_flip_vertically_on_load(false);
+                glTexImage2D
+                (
+                    GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+                    0,
+                    GL_RGB,
+                    width,
+                    height,
+                    0,
+                    GL_RGB,
+                    GL_UNSIGNED_BYTE,
+                    data
+                );
+                stbi_image_free(data);
+            }
+            else
+            {
+                std::cout << "Failed to load texture: " << facesCubemap[i] << std::endl;
+                stbi_image_free(data);
+            }
+        }
+    }
+
+    //delete the skybox
+    ~skybox()
+    {
+        glDeleteVertexArrays(1, &vao);
+        glDeleteBuffers(1, &vbo);
+        glDeleteBuffers(1, &ebo);
+    }
+
+    //draw the skybox
+    void draw()
+    {
+        glBindVertexArray(vao);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, tao);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
     }
 };
 
