@@ -4,6 +4,10 @@
 #include<GL/glew.h>
 #include<GLFW/glfw3.h>
 
+#include<glm/glm.hpp>
+#include<glm/gtc/matrix_transform.hpp>
+#include<glm/gtc/type_ptr.hpp>
+
 #include<cstdio>
 
 #include"gui.hpp"
@@ -27,10 +31,13 @@ private:
             instance->m_aspectratio = width/(float)height;
             glViewport(0,0, width,height);
         }
+        else
+            printf("'glfwGetWindowUserPointer(pointer)' is NULL. Exiting framebuffer_size_callback()...\n");
+
         return;
     }
 
-    static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+    static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
     {
         if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
             glfwSetWindowShouldClose(window, true);
@@ -39,8 +46,7 @@ private:
 
 public:
 
-    Window(int width = 800, int height = 600, const char* title = "KIMIN") : m_width(width),
-                                                                             m_height(height)
+    Window()
     {
         glfwInit();
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -49,14 +55,21 @@ public:
         glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
         glfwWindowHint(GLFW_REFRESH_RATE, 60);
 
-        m_pointer = glfwCreateWindow(m_width, m_height, title, NULL, NULL);
+        GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+        const GLFWvidmode *mode = glfwGetVideoMode(monitor);
+
+        m_width = mode->width;
+        m_height = mode->height;
+
+        m_pointer = glfwCreateWindow(m_width, m_height, "KIMIN", NULL, NULL);
         if (m_pointer == NULL)
         {
             printf("Failed to create glfw window. Calling glfwTerminate().\n");
             glfwTerminate();
         }
+        glfwSetWindowUserPointer(m_pointer, this);
         glfwMakeContextCurrent(m_pointer);
-        //glfwSetWindowSizeLimits(m_pointer, 400, 400, GLFW_DONT_CARE, GLFW_DONT_CARE);
+        glfwSetWindowSizeLimits(m_pointer, 400, 400, GLFW_DONT_CARE, GLFW_DONT_CARE);
         glfwSwapInterval(1);
 
         glewExperimental = GL_TRUE;
@@ -79,25 +92,22 @@ public:
     void game_loop()
     {
         GUI gui(m_pointer);
+        glEnable(GL_DEPTH_TEST);
         glClearColor(0.2f,0.2f,0.2f,1.0f);
         while (!glfwWindowShouldClose(m_pointer))
         {
-            glClear(GL_COLOR_BUFFER_BIT);
-
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             gui.begin();
             gui.properties.render(m_pointer);
             gui.console.render();
             gui.graphics.render();
             gui.render();
-
             gui.on_click_run();
-
             glfwSwapBuffers(m_pointer);
             glfwPollEvents();
         }
         return;
     }
 };
-
 
 #endif
