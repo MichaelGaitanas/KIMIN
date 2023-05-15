@@ -185,9 +185,6 @@ public:
     //'Run' button state.
     bool clicked_run;
 
-    //'Kill' button state.
-    bool clicked_kill;
-
     //std::future<short> pfuture;
 
     Properties() : simname("test_sim"),
@@ -239,8 +236,7 @@ public:
                    w1b({0.0,0.0,0.0}),
                    w2b({0.0,0.0,0.0}),
                    tol(1e-10),
-                   clicked_run(false),
-                   clicked_kill(false)
+                   clicked_run(false)
     { }
 
     //This function receives as input a path to a directory and as a result it returns a vector of paths, corresponding
@@ -251,13 +247,6 @@ public:
         for (const auto &entry : std::filesystem::recursive_directory_iterator(path))
             paths.push_back(entry.path());
         return paths;
-    }
-
-    void import(const char *path)
-    {
-        //1) Read a user file that contains the desired 'properties'.
-        //2) Update the class member variables, so that the next frame renders the imported ones.
-        return;
     }
 
     void double_field(const char *label, const float iwidth, int &id, const char *unit, double &variable)
@@ -293,34 +282,6 @@ public:
         ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(win_width/7.0f, win_height), ImGuiCond_FirstUseEver);
         ImGui::Begin("Properties ", NULL, ImGuiWindowFlags_MenuBar);
-
-        //classical menu bar section
-        if (ImGui::BeginMenuBar())
-        {
-            if (ImGui::BeginMenu("Import"))
-            {
-                if (ImGui::MenuItem("Properties"))
-                {
-                    //Import ONE file (json or txt) which contains a standard (example-like) set of all the member variables of the 'inputs' class.
-                }
-                if (ImGui::MenuItem("State vector"))
-                {
-                    //Import a bunch of files (json or txt) that enhold state vector of one simulation run.
-                }
-                ImGui::EndMenu();
-            }
-            if (ImGui::BeginMenu("Theme"))
-            {
-                if (ImGui::MenuItem("Dark"))
-                {
-                }
-                if (ImGui::MenuItem("Light"))
-                {
-                }
-                ImGui::EndMenu();
-            }
-            ImGui::EndMenuBar();
-        }
 
         ImGui::Text("Simulation name");
         ImGui::PushItemWidth(200.0f);
@@ -588,21 +549,6 @@ public:
         if (ImGui::Button("Run", ImVec2(50.0f,30.0f)))
             clicked_run = true;
 
-        ImGui::SameLine();
-
-        //kill button
-        if (clicked_run)
-        {
-            if (ImGui::Button("Kill", ImVec2(50.0f,30.0f)))
-                clicked_kill = true;
-        }
-        else
-        {
-            ImGui::BeginDisabled();
-                ImGui::Button("Kill", ImVec2(50.0f,30.0f));
-            ImGui::EndDisabled();
-        }
-
         ImGui::End();
     }
 
@@ -636,23 +582,23 @@ public:
             errors.push_back("[Error] :  'a2', 'b2', 'c2' must be positive numbers.");
 
         //.obj files error (at least one .obj file per body must be selected by the user).
-        if(obj_checkbox && clicked_masc1_index == -1 && clicked_poly1_index == -1)
-            errors.push_back("[Error] :  No .obj file is selected for 'Body 1'.");
-        if(obj_checkbox && clicked_masc2_index == -1 && clicked_poly2_index == -1)
-            errors.push_back("[Error] :  No .obj file is selected for 'Body 2'.");
+        if (obj_checkbox && clicked_masc1_index == -1 && clicked_poly1_index == -1)
+             errors.push_back("[Error] :  No .obj file is selected for 'Body 1'.");
+        if (obj_checkbox && clicked_masc2_index == -1 && clicked_poly2_index == -1)
+             errors.push_back("[Error] :  No .obj file is selected for 'Body 2'.");
 
         //.obj files error of mascons category (the .obj file must at least contain lines with the format 'v x y z' to be assumed as mascons).
-        if(obj_checkbox && clicked_masc1_index != -1)
+        if (obj_checkbox && clicked_masc1_index != -1)
         {
-            vfnt1 = checkobj(obj_path1.c_str());
-            if (!vfnt1[0])
-                errors.push_back("[Error] : In 'Body 1' .obj file, no vertices were found in order to be assumed as mascons.");
+             vfnt1 = checkobj(obj_path1.c_str());
+             if (!vfnt1[0])
+                 errors.push_back("[Error] : In 'Body 1' .obj file, no vertices were found in order to be assumed as mascons.");
         }
-        if(obj_checkbox && clicked_masc2_index != -1)
+        if (obj_checkbox && clicked_masc2_index != -1)
         {
-            vfnt2 = checkobj(obj_path2.c_str());
-            if (!vfnt2[0])
-                errors.push_back("[Error] : In 'Body 2' .obj file, no vertices were found in order to be assumed as mascons.");
+             vfnt2 = checkobj(obj_path2.c_str());
+             if (!vfnt2[0])
+                 errors.push_back("[Error] : In 'Body 2' .obj file, no vertices were found in order to be assumed as mascons.");
         }
 
         //.obj files error of polyhedron category (the .obj file must at least contain lines with the
@@ -743,6 +689,8 @@ public:
     //energy and momentum (magnitude) relative errors
     bvec plot_ener_mom_rel_err;
 
+    bool view_panom, view_r, view_l, view_f, view_b, view_t, view_d;
+
     bool play_video;
 
     //orbit data
@@ -759,6 +707,13 @@ public:
                  plot_w2i({false,false,false}),
                  plot_w2b({false,false,false}),
                  plot_ener_mom_rel_err({false,false}),
+                 view_panom(true),
+                 view_r(false),
+                 view_l(false),
+                 view_f(false),
+                 view_b(false),
+                 view_t(false),
+                 view_d(false),
                  play_video(false)
     { }
 
@@ -862,24 +817,6 @@ public:
         return;
     }
 
-    void video_buttons()
-    {
-        if (ImGui::TreeNodeEx("Camera"))
-        {
-            if (ImGui::Button("Right ( + x )"))       { }
-            else if (ImGui::Button("Left ( - x )"))   { }
-            else if (ImGui::Button("Front ( + y )"))  { }
-            else if (ImGui::Button("Back ( - y )"))   { }
-            else if (ImGui::Button("Top ( + z )"))    { }
-            else if (ImGui::Button("Bottom ( - z )")) { }
-            else if (ImGui::Button("Panoramic"))      { }
-            ImGui::TreePop();
-        }
-
-        if (ImGui::Button("Play video")) play_video = !play_video;
-        return;
-    }
-
     bool common_plot(const char *begin_id, const char *begin_plot_id, const char *yaxis_str, bool bool_plot_func, dvec &plot_func)
     {
         ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
@@ -896,6 +833,8 @@ public:
         ImGui::End();
         return bool_plot_func;
     }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     bool video_content(const bool play_video)
     {
@@ -928,6 +867,70 @@ public:
         sphere.draw_triangles();
 
         return temp_play_video;
+    }
+
+    void video_buttons()
+    {
+        if (ImGui::TreeNodeEx("Camera"))
+        {
+            if (ImGui::Checkbox("Panoramic", &view_panom))
+            {
+                if (!view_r && !view_l && !view_f && !view_b && !view_t && !view_d)
+                    view_panom = true;
+                else
+                    view_r = view_l = view_f = view_b = view_t = view_d = false;
+            }
+            if (ImGui::Checkbox("Right ( + x )", &view_r))
+            {
+                if (!view_panom && !view_l && !view_f && !view_b && !view_t && !view_d)
+                    view_r = true;
+                else
+                    view_panom = view_l = view_f = view_b = view_t = view_d = false;
+            }
+            if (ImGui::Checkbox("Left ( - x )", &view_l))
+            {
+                if (!view_panom && !view_r && !view_f && !view_b && !view_t && !view_d)
+                    view_l = true;
+                else
+                    view_panom = view_r = view_f = view_b = view_t = view_d = false;
+            }
+            if (ImGui::Checkbox("Front ( + y )", &view_f))
+            {
+                if (!view_panom && !view_r && !view_l && !view_b && !view_t && !view_d)
+                    view_f = true;
+                else
+                    view_panom = view_r = view_l = view_b = view_t = view_d = false;
+            }
+            if (ImGui::Checkbox("Back ( - y )", &view_b))
+            {
+                if (!view_panom && !view_r && !view_l && !view_f && !view_t && !view_d)
+                    view_b = true;
+                else
+                    view_panom = view_r = view_l = view_f = view_t = view_d = false;
+            }
+            if (ImGui::Checkbox("Top ( + z )", &view_t))
+            {
+                if (!view_panom && !view_r && !view_l && !view_f && !view_b && !view_d)
+                    view_t = true;
+                else
+                    view_panom = view_r = view_l = view_f = view_b = view_d = false;
+            }
+            if (ImGui::Checkbox("Down ( - z )", &view_d))
+            {
+                if (!view_panom && !view_r && !view_l && !view_f && !view_b && !view_t)
+                    view_d = true;
+                else
+                    view_panom = view_r = view_l = view_f = view_b = view_t = false;
+            }
+            
+
+            ImGui::TreePop();
+        }
+        ImGui::Dummy(ImVec2(0.0f,15.0f));
+
+        if (ImGui::Button("Play video")) play_video = !play_video;
+        
+        return;
     }
 
     void render()
