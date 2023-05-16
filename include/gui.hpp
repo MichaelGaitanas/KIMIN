@@ -11,7 +11,6 @@
 
 #include<cstdarg>
 #include<filesystem>
-//#include<future>
 
 #include"typedef.hpp"
 #include"constant.hpp"
@@ -693,6 +692,8 @@ public:
 
     bool play_video;
 
+    Properties properties;
+
     //orbit data
     Solution solution;
 
@@ -716,6 +717,12 @@ public:
                  view_d(false),
                  play_video(false)
     { }
+
+    void yield_properties(const Properties &properties)
+    {
+        this->properties = properties;
+        return;
+    }
 
     void yield_solution(const Solution &solution)
     {
@@ -839,18 +846,37 @@ public:
     bool video_content(const bool play_video)
     {
         bool temp_play_video = play_video;
-        static meshvfn sphere("../obj/polyhedra/bennu196k.obj");
+
+        //static meshvfn aster1(verts, faces);
+        //static meshvfn aster2(verts, faces);
+        static meshvfn sphere("../obj/polyhedra.icosphere.obj");
+
         static shader shad("../shaders/vertex/trans_mvpn.vert", "../shaders/fragment/dir_light_ad.frag");
         shad.use();
 
         glm::vec3 light_col = glm::vec3(1.0f,1.0f,1.0f);
-        glm::vec3 model_col = glm::vec3(0.1f,0.5f,0.9f);
-        glm::vec3 cam_pos = glm::vec3(0.0f,-1.0f,0.0f);
+        glm::vec3 model_col = glm::vec3(0.5f,0.5f,0.5f);
+
+        //glm::vec3 cam_pos = glm::vec3(0.0f,-1.0f,0.0f);
         glm::vec3 cam_aim = glm::vec3(0.0f,0.0f,0.0f);
         glm::vec3 cam_up = glm::vec3(0.0f,0.0f,1.0f);
 
         glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1920.0f/1080.0f, 0.01f,100.0f);
-        glm::mat4 view = glm::lookAt(cam_pos, cam_aim, cam_up);
+        glm::mat4 view;
+        if (view_panom)
+           view = glm::lookAt(glm::vec3(2.0f,2.0f,2.0f), cam_aim, cam_up);
+        else if (view_r)
+           view = glm::lookAt(glm::vec3(2.0f,0.0f,0.0f), cam_aim, cam_up);
+        else if (view_l)
+           view = glm::lookAt(glm::vec3(-2.0f,0.0f,0.0f), cam_aim, cam_up);
+        else if (view_f)
+           view = glm::lookAt(glm::vec3(0.0f,2.0f,0.0f), cam_aim, cam_up);
+        else if (view_b)
+           view = glm::lookAt(glm::vec3(0.0f,-2.0f,0.0f), cam_aim, cam_up);
+        else if (view_t)
+           view = glm::lookAt(glm::vec3(0.0f,-0.01f,2.0f), cam_aim, cam_up);
+        else if (view_d)
+           view = glm::lookAt(glm::vec3(0.0f,-0.01f,-2.0f), cam_aim, cam_up);
         glm::mat4 model = glm::mat4(1.0f);
 
         shad.set_mat4_uniform("projection", projection);
@@ -1097,9 +1123,11 @@ public:
 
                 //console.add_text("Running... ");
                 Solution solution = integrator.run();
+                solution.export_txt_files(properties.simname);
                 //std::thread integrator_thread(std::bind(&Integrator::run, integrator));
                 //integrator_thread.detach();
                 
+                graphics.yield_properties(properties);
                 graphics.yield_solution(solution);
                 
             }
