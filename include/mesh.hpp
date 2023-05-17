@@ -19,8 +19,9 @@ public:
     std::vector<float> main_buffer; //final form of the geometry data to draw
     unsigned int draw_size;
 
-    meshvfn(const dmatnx3 &verts, const imatnx3 &inds)
-    {
+    //meshvfn(const dmatnx3 &verts, const imatnx3 &inds)
+    //{
+        /*
         dmatnx3 norms(inds.size());
         dvec3 perp;
         for (int i = 0; i < norms.size(); ++i)
@@ -31,8 +32,52 @@ public:
             perp = cross(p1-p0, p2-p1);
             norms[i] = perp/length(perp);
         }
+        */
 
-        
+       meshvfn(const char *objpath)
+        {
+        std::ifstream fp;
+        fp.open(objpath);
+        if (!fp.is_open())
+        {
+            printf("'%s' not found. Exiting...\n", objpath);
+            exit(EXIT_FAILURE);
+        }
+
+        //vertices (format : v x y z)
+        std::vector<std::vector<float>> verts;
+        float x,y,z;
+
+        //normals (format : vn nx ny nz)
+        std::vector<std::vector<float>> norms;
+        float nx,ny,nz;
+
+        //indices (format : f i11//i12 i21//i22 i31//i32)
+        std::vector<std::vector<unsigned int>> inds;
+        unsigned int i11,i12, i21,i22, i31,i32;
+
+        std::string line;
+        while (getline(fp, line))
+        {
+            if (line[0] == 'v' && line[1] == ' ') //then we have a vertex line
+            {
+                const char *tmp_line = line.c_str();
+                sscanf(tmp_line, "v %f %f %f", &x,&y,&z);
+                verts.push_back({x,y,z});
+            }
+            else if (line[0] == 'v' && line[1] == 'n') //then we have a normal line
+            {
+                const char *tmp_line = line.c_str();
+                sscanf(tmp_line, "vn %f %f %f", &nx,&ny,&nz);
+                norms.push_back({nx,ny,nz});
+            }
+            else if (line[0] == 'f') //then we have an indices line
+            {
+                const char *tmp_line = line.c_str();
+                sscanf(tmp_line, "f %d//%d %d//%d %d//%d", &i11,&i12, &i21,&i22, &i31,&i32);
+                inds.push_back({i11-1, i12-1, i21-1, i22-1, i31-1, i32-1});
+            }
+        }
 
         //Combine verts[][], norms[][] and inds[][] to construct the main buffer main_buffer[]
         //which will have all the main_buffer needed for drawing.

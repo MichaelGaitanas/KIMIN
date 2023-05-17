@@ -13,6 +13,7 @@
 #include<filesystem>
 
 #include"typedef.hpp"
+
 #include"constant.hpp"
 #include"linalg.hpp"
 #include"obj.hpp"
@@ -51,7 +52,7 @@ public:
         scroll_to_bottom = true;
     }
 
-    //This function identifies the operating system in which the program is running.
+    //Identify the operating system in which the program is running.
     str os_name()
     {
         #if defined(__APPLE__) || defined(__MACH__)
@@ -70,13 +71,11 @@ public:
     //Render the console imgui window.
     void render()
     {
-        const float win_width  = ImGui::GetIO().DisplaySize.x;
-        const float win_height = ImGui::GetIO().DisplaySize.y;
-        ImGui::SetNextWindowPos(ImVec2(win_width/7.0f, win_height - win_height/7.0f), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2(win_width - 2*win_width/7.0f, win_height/7.0f), ImGuiCond_FirstUseEver);
-        ImGui::Begin("Console", NULL);
+        ImGui::SetNextWindowPos( ImVec2(     ImGui::GetIO().DisplaySize.x/7.0f, 6.0f*ImGui::GetIO().DisplaySize.y/7.0f), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(5.0f*ImGui::GetIO().DisplaySize.x/7.0f,      ImGui::GetIO().DisplaySize.y/7.0f), ImGuiCond_FirstUseEver);
+        ImGui::Begin("Console", nullptr);
 
-        //mouse input : clear the console
+        //Mouse input : Clear the console.
         if (ImGui::Button("Clear "))
             cls();
         
@@ -272,15 +271,13 @@ public:
         return;
     }
 
-    void render(GLFWwindow *pointer)
+    void render()
     {
         int id = 0;
 
-        const float win_width  = ImGui::GetIO().DisplaySize.x;
-        const float win_height = ImGui::GetIO().DisplaySize.y;
-        ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2(win_width/7.0f, win_height), ImGuiCond_FirstUseEver);
-        ImGui::Begin("Properties ", NULL, ImGuiWindowFlags_MenuBar);
+        ImGui::SetNextWindowPos( ImVec2(0.0f, 0.0f), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f, ImGui::GetIO().DisplaySize.y), ImGuiCond_FirstUseEver);
+        ImGui::Begin("Properties ", nullptr);
 
         ImGui::Text("Simulation name");
         ImGui::PushItemWidth(200.0f);
@@ -845,11 +842,13 @@ public:
 
     bool video_content(const bool play_video)
     {
+        glClear(GL_DEPTH_BUFFER_BIT);
+
         bool temp_play_video = play_video;
 
         //static meshvfn aster1(verts, faces);
         //static meshvfn aster2(verts, faces);
-        static meshvfn sphere("../obj/polyhedra.icosphere.obj");
+        static meshvfn sphere("../obj/polyhedra/bennu196k.obj");
 
         static shader shad("../shaders/vertex/trans_mvpn.vert", "../shaders/fragment/dir_light_ad.frag");
         shad.use();
@@ -961,11 +960,9 @@ public:
 
     void render()
     {
-        const float win_width  = ImGui::GetIO().DisplaySize.x;
-        const float win_height = ImGui::GetIO().DisplaySize.y;
-        ImGui::SetNextWindowPos(ImVec2(win_width - win_width/7.0f, 0.0f), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2(win_width/7.0f, win_height), ImGuiCond_FirstUseEver);
-        ImGui::Begin("Graphics", NULL);
+        ImGui::SetNextWindowPos( ImVec2(6.0f*ImGui::GetIO().DisplaySize.x/7.0f, 0.0f), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(     ImGui::GetIO().DisplaySize.x/7.0f, ImGui::GetIO().DisplaySize.y), ImGuiCond_FirstUseEver);
+        ImGui::Begin("Graphics", nullptr);
 
         if (ImGui::CollapsingHeader("Plots"))
         {
@@ -1063,7 +1060,9 @@ public:
 
 class GUI
 {
+
 public:
+
     Properties properties;
     Graphics graphics;
     Console console;
@@ -1075,8 +1074,8 @@ public:
         ImGui::CreateContext();
         ImPlot::CreateContext();
         ImGuiIO &io = ImGui::GetIO();
-        io.IniFilename = NULL;
-        io.Fonts->AddFontFromFileTTF("../font/Roboto-Regular.ttf", 15.0f, NULL, io.Fonts->GetGlyphRangesGreek());
+        io.IniFilename = nullptr;
+        io.Fonts->AddFontFromFileTTF("../font/Roboto-Regular.ttf", 15.0f, nullptr, io.Fonts->GetGlyphRangesGreek());
         //(void)io;
         ImGui::StyleColorsDark();
         ImGui_ImplGlfw_InitForOpenGL(pointer, true);
@@ -1112,36 +1111,33 @@ public:
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     }
 
-    void on_click_run()
+    void when_run_is_clicked()
     {
-        if (properties.clicked_run)
+        strvec errors = properties.validate();
+        if (!errors.size())
         {
-            strvec errors = properties.validate();
-            if (!errors.size())
-            {
-                Integrator integrator(properties);
+            Integrator integrator(properties);
 
-                //console.add_text("Running... ");
-                Solution solution = integrator.run();
-                solution.export_txt_files(properties.simname);
-                //std::thread integrator_thread(std::bind(&Integrator::run, integrator));
-                //integrator_thread.detach();
-                
-                graphics.yield_properties(properties);
-                graphics.yield_solution(solution);
-                
-            }
-            else
+            //console.add_text("Running... ");
+            Solution solution = integrator.run();
+            solution.export_txt_files(properties.simname);
+            //std::thread integrator_thread(std::bind(&Integrator::run, integrator));
+            //integrator_thread.detach();
+            
+            graphics.yield_properties(properties);
+            graphics.yield_solution(solution);
+            
+        }
+        else
+        {
+            for (int i = 0; i < errors.size(); ++i)
             {
-                for (int i = 0; i < errors.size(); ++i)
-                {
-                    console.add_text(errors[i].c_str());
-                    console.add_text("\n");
-                }
+                console.add_text(errors[i].c_str());
                 console.add_text("\n");
             }
-            properties.clicked_run = false;
+            console.add_text("\n");
         }
+        properties.clicked_run = false;
 
         return;
     }
