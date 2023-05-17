@@ -52,7 +52,7 @@ public:
         scroll_to_bottom = true;
     }
 
-    //Identify the operating system in which the program is running.
+    //Identify the operating system.
     str os_name()
     {
         #if defined(__APPLE__) || defined(__MACH__)
@@ -79,10 +79,9 @@ public:
         if (ImGui::Button("Clear "))
             cls();
         
+        //Display FPS and OS.
         ImGui::SameLine();
-        ImGui::Text("FPS [ %.1f ], ", ImGui::GetIO().Framerate);
-        ImGui::SameLine();
-        ImGui::Text("OS [ %s ]", os_name().c_str());
+        ImGui::Text("FPS [ %.1f ] ,  OS [ %s ] ", ImGui::GetIO().Framerate, os_name().c_str());
         ImGui::Separator();
 
         ImGui::BeginChild("Scroll", ImVec2(0.0f, 0.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
@@ -1104,7 +1103,7 @@ public:
 		ImGui::NewFrame();
     }
 
-    //Render the gui stuff.
+    //Render the gui.
     void render()
     {
         ImGui::Render();
@@ -1118,8 +1117,9 @@ public:
         {
             Integrator integrator(properties);
 
-            //console.add_text("Running... ");
+            console.add_text("Running... ");
             Solution solution = integrator.run();
+            console.add_text("Done. "); console.add_text("\n");
             solution.export_txt_files(properties.simname);
             //std::thread integrator_thread(std::bind(&Integrator::run, integrator));
             //integrator_thread.detach();

@@ -8,60 +8,73 @@
 
 #include"typedef.hpp"
 
-//Traverse an obj file and write down in a boolean vector if it contains [v,f,n,t] elements.
-bvec checkobj(const char *path)
+class Obj
 {
-    std::ifstream file(path);
-    if (!file.is_open())
-    {
-        printf("'%s' not found. Exiting...\n", path);
-        exit(EXIT_FAILURE);
-    }
-    
-    bvec vfnt = {false, false, false, false}; //initially assuming that the obj file contains nothing
-    str line;
-    while (getline(file, line))
-    {
-        if (line[0] == 'v' && line[1] == ' ' && !vfnt[0]) //then we have a vertex line for the first time
-            vfnt[0] = true;
-        else if (line[0] == 'f' && line[1] == ' ' && !vfnt[1]) //then we have a face line for the first time
-            vfnt[1] = true;
-        else if (line[0] == 'v' && line[1] == 'n' && line[2] == ' '  && !vfnt[2]) //then we have a normal line for the first time
-            vfnt[2] = true;
-        else if (line[0] == 'v' && line[1] == 't' && line[2] == ' '  && !vfnt[3]) //then we have a texture line for the first time
-            vfnt[3] = true;
-    }
-    file.close();
 
-    return vfnt;
-}
+public:
 
-//Load the vertices (format : 'v x y z') from an obj file.
-dmatnx3 loadobjv(const char *path)
-{
-    std::ifstream file(path);
-    if (!file.is_open())
-    {
-        printf("'%s' not found. Exiting...\n", path);
-        exit(EXIT_FAILURE);
-    }
-
+    str path;
+    bvec vfnt;
     dmatnx3 verts;
-    double x,y,z;
-    const char *format = "v %lf %lf %lf";
+    imatnx3 faces;
+    dmatnx3 norms;
+    dmatnx2 texs;
 
-    str line;
-    while (getline(file, line))
+    Obj(const char *cpath) : path(cpath),
+                             vfnt({false, false, false, false})
     {
-        if (line[0] == 'v' && line[1] == ' ') //then we have a vertex line
+        std::ifstream file(cpath);
+        if (!file.is_open())
         {
-            sscanf(line.c_str(), format, &x, &y, &z);
-            verts.push_back({x,y,z});
+            printf("'%s' not found. Exiting...\n", cpath);
+            exit(EXIT_FAILURE); //Handle it better... Don't just kill the whole app.
         }
+        
+        //Traverse the obj file and write down in the vfnt[] vector if it contains [v,f,n,t] elements.
+        str line;
+        while (getline(file, line))
+        {
+            if (line[0] == 'v' && line[1] == ' ' && !vfnt[0]) //then we have a vertex line for the first time
+                vfnt[0] = true;
+            else if (line[0] == 'f' && line[1] == ' ' && !vfnt[1]) //then we have a face line for the first time
+                vfnt[1] = true;
+            else if (line[0] == 'v' && line[1] == 'n' && line[2] == ' '  && !vfnt[2]) //then we have a normal line for the first time
+                vfnt[2] = true;
+            else if (line[0] == 'v' && line[1] == 't' && line[2] == ' '  && !vfnt[3]) //then we have a texture line for the first time
+                vfnt[3] = true;
+        }
+        file.close();
     }
-    file.close();
-    return verts;
-}
+
+    //In case we want to load ONLY the vertices, we call the following function.
+    void loadv()
+    {
+        std::ifstream file(path); //path is known because it was copied from the constructor
+        if (!file.is_open())
+        {
+            printf("'%s' not found. Exiting...\n", path);
+            exit(EXIT_FAILURE); //Handle it better... Don't just kill the whole app.
+        }
+
+        double x,y,z;
+        const char *format = "v %lf %lf %lf";
+
+        str line;
+        while (getline(file, line))
+        {
+            if (line[0] == 'v' && line[1] == ' ') //then we have a vertex line
+            {
+                sscanf(line.c_str(), format, &x, &y, &z);
+                verts.push_back({x,y,z});
+            }
+        }
+        file.close();
+        return verts;
+    }
+
+};
+
+
 
 //Load the vertices and the faces (format : 'v x y z', 'f i1 i2 i3') from an obj file.
 void loadobjvf(const char *path, dmatnx3 &verts, imatnx3 &faces)
