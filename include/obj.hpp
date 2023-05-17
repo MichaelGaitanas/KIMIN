@@ -7,6 +7,7 @@
 #include<fstream>
 
 #include"typedef.hpp"
+#include"polyhedron.hpp"
 
 class Obj
 {
@@ -18,7 +19,6 @@ public:
     dmatnx3 verts;
     imatnx3 faces;
     dmatnx3 norms;
-    dmatnx2 texs;
 
     Obj(const char *cpath) : path(cpath),
                              vfnt({false, false, false, false})
@@ -46,15 +46,17 @@ public:
         file.close();
     }
 
-    //In case we want to load ONLY the vertices, we call the following function.
+    //In case we want to load only the vertices, we call the following function.
     void loadv()
     {
-        std::ifstream file(path); //path is known because it was copied from the constructor
+        std::ifstream file(path);
         if (!file.is_open())
         {
             printf("'%s' not found. Exiting...\n", path);
-            exit(EXIT_FAILURE); //Handle it better... Don't just kill the whole app.
+            exit(EXIT_FAILURE);
         }
+
+        verts.clear();
 
         double x,y,z;
         const char *format = "v %lf %lf %lf";
@@ -69,53 +71,57 @@ public:
             }
         }
         file.close();
-        return verts;
+        return;
+    }
+
+    void loadvf()
+    {
+        std::ifstream file(path);
+        if (!file.is_open())
+        {
+            printf("'%s' not found. Exiting...\n", path);
+            exit(EXIT_FAILURE);
+        }
+
+        verts.clear();
+        faces.clear();
+
+        //vertices
+        double x,y,z;
+        const char *vformat = "v %lf %lf %lf";
+
+        //faces
+        int i1,i2,i3;
+        const char *fformat = "f %d %d %d";
+
+        str line;
+        while (getline(file, line))
+        {
+            if (line[0] == 'v' && line[1] == ' ') //then we have a vertex line
+            {
+                sscanf(line.c_str(), vformat, &x, &y, &z);
+                verts.push_back({x,y,z});
+            }
+            else if (line[0] == 'f' && line[1] == ' ') //then we have a face line
+            {
+                sscanf(line.c_str(), fformat, &i1,&i2,&i3);
+                faces.push_back({i1-1, i2-1, i3-1});
+            }
+        }
+        file.close();
+        //verts[][] and faces[][] are now filled
+
+        norms = poly_norms(verts, faces);
+        //norms[][] is also filled
+
+        return;
     }
 
 };
 
 
 
-//Load the vertices and the faces (format : 'v x y z', 'f i1 i2 i3') from an obj file.
-void loadobjvf(const char *path, dmatnx3 &verts, imatnx3 &faces)
-{
-    std::ifstream file(path);
-    if (!file.is_open())
-    {
-        printf("'%s' not found. Exiting...\n", path);
-        exit(EXIT_FAILURE);
-    }
 
-    verts.clear();
-    faces.clear();
-
-    //vertices
-    double x,y,z;
-    const char *vformat = "v %lf %lf %lf";
-
-    //faces
-    int i1,i2,i3;
-    const char *fformat = "f %d %d %d";
-
-    str line;
-    while (getline(file, line))
-    {
-        if (line[0] == 'v' && line[1] == ' ') //then we have a vertex line
-        {
-            sscanf(line.c_str(), vformat, &x, &y, &z);
-            verts.push_back({x,y,z});
-        }
-        else if (line[0] == 'f' && line[1] == ' ') //then we have a face line
-        {
-            sscanf(line.c_str(), fformat, &i1,&i2,&i3);
-            faces.push_back({i1-1, i2-1, i3-1});
-        }
-    }
-    file.close();
-
-    //verts[][] and faces[][] are now filled
-    return;
-}
 
 //Load the vertices, the faces and the norms (format : 'v x y z', 'f i11//i12 i21//i22 i31//i32', 'vn nx ny nz') from an obj file.
 void loadobjvfn(const char *path, dmatnx3 &verts, imatnx6 &faces, dmatnx3 &norms)
