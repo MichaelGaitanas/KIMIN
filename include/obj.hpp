@@ -15,13 +15,13 @@ class Obj
 public:
 
     str path;
-    bvec vfnt;
+    bvec vf;
     dmatnx3 verts;
     imatnx3 faces;
     dmatnx3 norms;
 
     Obj(const char *cpath) : path(cpath),
-                             vfnt({false, false, false, false})
+                             vf({false, false})
     {
         std::ifstream file(cpath);
         if (!file.is_open())
@@ -30,18 +30,14 @@ public:
             exit(EXIT_FAILURE); //Handle it better... Don't just kill the whole app.
         }
         
-        //Traverse the obj file and write down in the vfnt[] vector if it contains [v,f,n,t] elements.
+        //Traverse the obj file and write down in the vf[] vector if it contains [v,f] elements.
         str line;
         while (getline(file, line))
         {
-            if (line[0] == 'v' && line[1] == ' ' && !vfnt[0]) //then we have a vertex line for the first time
-                vfnt[0] = true;
-            else if (line[0] == 'f' && line[1] == ' ' && !vfnt[1]) //then we have a face line for the first time
-                vfnt[1] = true;
-            else if (line[0] == 'v' && line[1] == 'n' && line[2] == ' '  && !vfnt[2]) //then we have a normal line for the first time
-                vfnt[2] = true;
-            else if (line[0] == 'v' && line[1] == 't' && line[2] == ' '  && !vfnt[3]) //then we have a texture line for the first time
-                vfnt[3] = true;
+            if (line[0] == 'v' && line[1] == ' ' && !vf[0]) //then we have a vertex line for the first time
+                vf[0] = true;
+            else if (line[0] == 'f' && line[1] == ' ' && !vf[1]) //then we have a face line for the first time
+                vf[1] = true;
         }
         file.close();
     }
