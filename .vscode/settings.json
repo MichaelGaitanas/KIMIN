@@ -96,6 +96,7 @@
         "variant": "cpp",
         "*.ipp": "cpp",
         "any": "cpp",
-        "future": "cpp"
+        "future": "cpp",
+        "xhash": "cpp"
     }
 }

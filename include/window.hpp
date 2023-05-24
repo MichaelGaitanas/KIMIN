@@ -93,11 +93,13 @@ public:
     void game_loop()
     {
         GUI gui(pointer);
+        
         glEnable(GL_DEPTH_TEST);
         glClearColor(0.01f,0.01f,0.01f,1.0f);
         while (!glfwWindowShouldClose(pointer))
         {
             glClear(GL_COLOR_BUFFER_BIT);
+            //The depth buffer is cleared when the 3D content is displayed.
 
             //Render the gui.
             gui.begin();

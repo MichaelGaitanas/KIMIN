@@ -7,31 +7,31 @@
 #include<fstream>
 
 #include"typedef.hpp"
-#include"polyhedron.hpp"
+#include"constant.hpp"
+#include"linalg.hpp"
 
 class Obj
 {
 
 public:
 
-    str path;
-    bvec vf;
     dmatnx3 verts;
     imatnx3 faces;
     dmatnx3 norms;
 
-    Obj(const char *cpath) : path(cpath),
-                             vf({false, false})
+    //This function will be used only after the 'Run' button to check if the .obj file is ok to be loaded.
+    static bvec vf_status(const char *path)
     {
-        std::ifstream file(cpath);
+        std::ifstream file(path);
         if (!file.is_open())
         {
-            printf("'%s' not found. Exiting...\n", cpath);
-            exit(EXIT_FAILURE); //Handle it better... Don't just kill the whole app.
+            printf("'%s' not found. Exiting...\n", path);
+            exit(EXIT_FAILURE);
         }
         
-        //Traverse the obj file and write down in the vf[] vector if it contains [v,f] elements.
+        //Traverse the obj file and write down in the vf[] vector if it contains 'v x y z' and 'f i j k' lines.
         str line;
+        bvec vf = {false, false};
         while (getline(file, line))
         {
             if (line[0] == 'v' && line[1] == ' ' && !vf[0]) //then we have a vertex line for the first time
@@ -40,37 +40,13 @@ public:
                 vf[1] = true;
         }
         file.close();
+
+        return vf; //and call it like : obj.vf = Obj::vf_status(path);
     }
 
-    //In case we want to load only the vertices, we call the following function.
-    void loadv()
-    {
-        std::ifstream file(path);
-        if (!file.is_open())
-        {
-            printf("'%s' not found. Exiting...\n", path);
-            exit(EXIT_FAILURE);
-        }
-
-        verts.clear();
-
-        double x,y,z;
-        const char *format = "v %lf %lf %lf";
-
-        str line;
-        while (getline(file, line))
-        {
-            if (line[0] == 'v' && line[1] == ' ') //then we have a vertex line
-            {
-                sscanf(line.c_str(), format, &x, &y, &z);
-                verts.push_back({x,y,z});
-            }
-        }
-        file.close();
-        return;
-    }
-
-    void loadvf()
+    //Constructor : Load the .obj file assuming it has the classical form 'v x y z' and 'f i j k'.
+    //Any other .obj content (comments, normals, textures, etc...) is ignored.
+    Obj(const char *path)
     {
         std::ifstream file(path);
         if (!file.is_open())
@@ -107,181 +83,95 @@ public:
         file.close();
         //verts[][] and faces[][] are now filled
 
-        norms = poly_norms(verts, faces);
-        //norms[][] is filled too
-
-        return;
+        //Finally, compute the normals.
+        norms.resize(faces.size());
+        dvec3 perp;
+        for (int i = 0; i < norms.size(); ++i)
+        {
+            dvec3 p0 = verts[faces[i][0]];
+            dvec3 p1 = verts[faces[i][1]];
+            dvec3 p2 = verts[faces[i][2]];
+            perp = cross(p1-p0, p2-p1);
+            norms[i] = perp/length(perp);
+        }
     }
 
-    //what?
-    void loadvfn(const char *path, dmatnx3 &verts, imatnx6 &faces, dmatnx3 &norms)
+    //Decide whether a point r(x,y,z) is inside the obj polyhedron or not by raycasting.
+    bool is_inside(const dvec3 &r)
     {
-        std::ifstream file(path);
-        if (!file.is_open())
+        int intersections = 0;
+
+        //loop through all the triangulated faces in search for intersection
+        for (int j = 0; j < faces.size(); ++j)
         {
-            printf("'%s' not found. Exiting...\n", path);
-            exit(EXIT_FAILURE);
+            //define the triangle j from 3 points p0,p1,p2
+            dvec3 p0 = verts[faces[j][0]];
+            dvec3 p1 = verts[faces[j][1]];
+            dvec3 p2 = verts[faces[j][2]];
+            dvec3 pj = { p0[0] + ( (p0[1] - r[1])*norms[j][1] + (p0[2] - r[2])*norms[j][2] )/norms[j][0], //This is very dangerous...
+                         r[1],
+                         r[2] };
+
+            //form the following 3 triangles and calculate their area
+            double Aj01 = 0.5*length(cross(p0-pj, p1-p0)); //pj -> p0 -> p1
+            double Aj12 = 0.5*length(cross(p1-pj, p2-p1)); //pj -> p1 -> p2
+            double Aj20 = 0.5*length(cross(p2-pj, p0-p2)); //pj -> p2 -> p0
+            double A012 = 0.5*length(cross(p1-p0, p2-p1)); //p0 -> p1 -> p2
+
+            //if the sum of the 3 areas is equal to the area of the surface triangle, then pj sits upon the surface of the triangle.
+            if ( fabs(Aj01 + Aj12 + Aj20 - A012) <= machine_zero && pj[0] > r[0] )
+                ++intersections;
         }
+        
+        //odd  : (x,y,z) is inside the obj
+        //even : (x,y,z) is outside the obj
+        if (intersections%2 == 1)
+            return true;
 
-        verts.clear();
-        faces.clear();
-        norms.clear();
-
-        //vertices
-        double x,y,z;
-        const char *vformat = "v %lf %lf %lf";
-
-        //norms
-        double nx,ny,nz;
-        const char *nformat = "vn %lf %lf %lf";
-
-        //faces
-        int i11,i12, i21,i22, i31,i32;
-        const char *fformat = "f %d//%d %d//%d %d//%d";
-
-        str line;
-        while (getline(file, line))
-        {
-            if (line[0] == 'v' && line[1] == ' ') //then we have a vertex line
-            {
-                sscanf(line.c_str(), vformat, &x, &y, &z);
-                verts.push_back({x,y,z});
-            }
-            else if (line[0] == 'v' && line[1] == 'n' && line[2] == ' ') //then we have a norm line
-            {
-                sscanf(line.c_str(), nformat, &nx, &ny, &nz);
-                norms.push_back({nx,ny,nz});
-            }
-            else if (line[0] == 'f' && line[1] == ' ') //then we have a face line
-            {
-                sscanf(line.c_str(), fformat, &i11,&i12, &i21,&i22, &i31,&i32);
-                faces.push_back({i11-1, i12-1, i21-1, i22-1, i31-1, i32-1});
-            }
-        }
-        file.close();
-
-        //verts[][], norms[][] and faces[][] are now filled
-        return;
+        return false;
     }
 
+    //Fill the obj polyhedron(verts, faces) with mascons assuming 'grid_reso' Cartesian grid resolution.
+    dmatnx3 fill_with_masc(const ivec3 &grid_reso)
+    {
+        dvec3 rmin = verts[0], rmax = verts[0];
+        for (int i = 1; i < verts.size(); ++i)
+        {
+            if (verts[i][0] < rmin[0]) rmin[0] = verts[i][0];
+            if (verts[i][1] < rmin[1]) rmin[1] = verts[i][1];
+            if (verts[i][2] < rmin[2]) rmin[2] = verts[i][2];
+
+            if (verts[i][0] > rmax[0]) rmax[0] = verts[i][0];
+            if (verts[i][1] > rmax[1]) rmax[1] = verts[i][1];
+            if (verts[i][2] > rmax[2]) rmax[2] = verts[i][2];
+        }
+
+        double xmin = rmin[0] + machine_zero;
+        double ymin = rmin[1] + machine_zero;
+        double zmin = rmin[2] + machine_zero;
+
+        double xmax = rmax[0] - machine_zero;
+        double ymax = rmax[1] - machine_zero;
+        double zmax = rmax[2] - machine_zero;
+
+        dmatnx3 masc;
+        for (int i = 0; i < grid_reso[0]; ++i)
+        {
+            double x = xmin + i*(xmax - xmin)/((double)grid_reso[0] - 1.0);
+            for (int j = 0; j < grid_reso[1]; ++j)
+            {
+                double y = ymin + j*(ymax - ymin)/((double)grid_reso[1] - 1.0);
+                for (int k = 0; k < grid_reso[2]; ++k)
+                {
+                    double z = zmin + k*(zmax - zmin)/((double)grid_reso[2] - 1.0);
+                    dvec3 r = {x,y,z}; //current point of the grid
+                    if (is_inside(r))
+                        masc.push_back(r);
+                }
+            }
+        }
+        return masc;
+    }
 };
-
-
-
-
-
-
-
-//Load the vertices, the faces and texs (format : 'v x y z', 'f i11/i12 i21/i22 i31/i32', 'vt tx ty') from an obj file.
-void loadobjvft(const char *path, dmatnx3 &verts, imatnx6 &faces, dmatnx2 &texs)
-{
-    std::ifstream file(path);
-    if (!file.is_open())
-    {
-        printf("'%s' not found. Exiting...\n", path);
-        exit(EXIT_FAILURE);
-    }
-
-    verts.clear();
-    faces.clear();
-    texs.clear();
-
-    //vertices
-    double x,y,z;
-    const char *vformat = "v %lf %lf %lf";
-
-    //textures
-    double tx,ty;
-    const char *tformat = "vt %lf %lf";
-
-    //faces
-    int i11,i12, i21,i22, i31,i32;
-    const char *fformat = "f %d/%d %d/%d %d/%d";
-
-    str line;
-    while (getline(file, line))
-    {
-        if (line[0] == 'v' && line[1] == ' ') //then we have a vertex line
-        {
-            sscanf(line.c_str(), vformat, &x, &y, &z);
-            verts.push_back({x,y,z});
-        }
-        else if (line[0] == 'v' && line[1] == 't' && line[2] == ' ') //then we have a texture line
-        {
-            sscanf(line.c_str(), tformat, &tx, &ty);
-            texs.push_back({tx,ty});
-        }
-        else if (line[0] == 'f' && line[1] == ' ') //then we have a face line
-        {
-            sscanf(line.c_str(), fformat, &i11,&i12, &i21,&i22, &i31,&i32);
-            faces.push_back({i11-1, i12-1, i21-1, i22-1, i31-1, i32-1});
-        }
-    }
-    file.close();
-
-    //verts[][], texs[][] and faces[][] are now filled
-    return;
-}
-
-//Load the vertices the faces, the norms and texs (format : 'v x y z', 'f i11/i12/i13 i21/i22/i23 i31/i32/i33', 'vn nx ny nz', 'vt tx ty') from an obj file.
-void loadobjvfnt(const char *path, dmatnx3 &verts, imatnx9 &faces, dmatnx3 &norms, dmatnx2 &texs)
-{
-    std::ifstream file(path);
-    if (!file.is_open())
-    {
-        printf("'%s' not found. Exiting...\n", path);
-        exit(EXIT_FAILURE);
-    }
-
-    verts.clear();
-    faces.clear();
-    norms.clear();
-    texs.clear();
-
-    //vertices
-    double x,y,z;
-    const char *vformat = "v %lf %lf %lf";
-
-    //norms
-    double nx,ny,nz;
-    const char *nformat = "vn %lf %lf %lf";
-
-    //textures
-    double tx,ty;
-    const char *tformat = "vt %lf %lf";
-
-    //faces
-    int i11,i12,i13, i21,i22,i23, i31,i32,i33;
-    const char *fformat = "f %d/%d/%d %d/%d/%d %d/%d/%d";
-
-    str line;
-    while (getline(file, line))
-    {
-        if (line[0] == 'v' && line[1] == ' ') //then we have a vertex line
-        {
-            sscanf(line.c_str(), vformat, &x, &y, &z);
-            verts.push_back({x,y,z});
-        }
-        else if (line[0] == 'v' && line[1] == 'n' && line[2] == ' ') //then we have a norm line
-        {
-            sscanf(line.c_str(), nformat, &nx, &ny, &nz);
-            norms.push_back({nx,ny,nz});
-        }
-        else if (line[0] == 'v' && line[1] == 't' && line[2] == ' ') //then we have a texture line
-        {
-            sscanf(line.c_str(), tformat, &tx, &ty);
-            texs.push_back({tx,ty});
-        }
-        else if (line[0] == 'f' && line[1] == ' ') //then we have a face line
-        {
-            sscanf(line.c_str(), fformat, &i11,&i12,&i13, &i21,&i22,&i23, &i31,&i32,&i33);
-            faces.push_back({i11-1, i12-1, i13-1, i21-1, i22-1, i23-1, i31-1, i32-1, i33-1});
-        }
-    }
-    file.close();
-
-    //verts[][], norms[][], texs[][] and faces[][] are now filled
-    return;
-}
 
 #endif

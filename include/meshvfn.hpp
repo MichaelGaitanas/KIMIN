@@ -18,7 +18,7 @@ private:
 
 public:
 
-    Meshvfn(Obj &objmodel)
+    Meshvfn(Obj &obj)
     {
         dmatnx3 norms(inds.size());
         dvec3 perp;
@@ -31,38 +31,38 @@ public:
             norms[i] = perp/length(perp);
         }
 
-        //Combine verts[][], norms[][] and inds[][] to construct the main buffer main_buffer[]
-        //which will have all the main_buffer needed for drawing.
+        //Combine verts[][], norms[][] and inds[][] to construct the buffer[]
+        //which will have all the buffer needed for drawing.
         for (int i = 0; i < inds.size(); ++i)
         {
-            main_buffer.push_back( (float)verts[ inds[i][0] ][0] );
-            main_buffer.push_back( (float)verts[ inds[i][0] ][1] );
-            main_buffer.push_back( (float)verts[ inds[i][0] ][2] );
-            main_buffer.push_back( (float)norms[ inds[i][1] ][0] );
-            main_buffer.push_back( (float)norms[ inds[i][1] ][1] );
-            main_buffer.push_back( (float)norms[ inds[i][1] ][2] );
+            buffer.push_back( (float)verts[ inds[i][0] ][0] );
+            buffer.push_back( (float)verts[ inds[i][0] ][1] );
+            buffer.push_back( (float)verts[ inds[i][0] ][2] );
+            buffer.push_back( (float)norms[ inds[i][1] ][0] );
+            buffer.push_back( (float)norms[ inds[i][1] ][1] );
+            buffer.push_back( (float)norms[ inds[i][1] ][2] );
 
-            main_buffer.push_back( (float)verts[ inds[i][2] ][0] );
-            main_buffer.push_back( (float)verts[ inds[i][2] ][1] );
-            main_buffer.push_back( (float)verts[ inds[i][2] ][2] );
-            main_buffer.push_back( (float)norms[ inds[i][3] ][0] );
-            main_buffer.push_back( (float)norms[ inds[i][3] ][1] );
-            main_buffer.push_back( (float)norms[ inds[i][3] ][2] );
+            buffer.push_back( (float)verts[ inds[i][2] ][0] );
+            buffer.push_back( (float)verts[ inds[i][2] ][1] );
+            buffer.push_back( (float)verts[ inds[i][2] ][2] );
+            buffer.push_back( (float)norms[ inds[i][3] ][0] );
+            buffer.push_back( (float)norms[ inds[i][3] ][1] );
+            buffer.push_back( (float)norms[ inds[i][3] ][2] );
 
-            main_buffer.push_back( (float)verts[ inds[i][4] ][0] );
-            main_buffer.push_back( (float)verts[ inds[i][4] ][1] );
-            main_buffer.push_back( (float)verts[ inds[i][4] ][2] );
-            main_buffer.push_back( (float)norms[ inds[i][5] ][0] );
-            main_buffer.push_back( (float)norms[ inds[i][5] ][1] );
-            main_buffer.push_back( (float)norms[ inds[i][5] ][2] );
+            buffer.push_back( (float)verts[ inds[i][4] ][0] );
+            buffer.push_back( (float)verts[ inds[i][4] ][1] );
+            buffer.push_back( (float)verts[ inds[i][4] ][2] );
+            buffer.push_back( (float)norms[ inds[i][5] ][0] );
+            buffer.push_back( (float)norms[ inds[i][5] ][1] );
+            buffer.push_back( (float)norms[ inds[i][5] ][2] );
         }
-        //main_buffer[] has now the form : {x1,y1,z1, nx1,ny1,nz1, x2,y2,z2, nx2,ny2,nz2 ... }
+        //buffer[] has now the form : {x1,y1,z1, nx1,ny1,nz1, x2,y2,z2, nx2,ny2,nz2 ... }
 
         glGenVertexArrays(1, &vao);
         glBindVertexArray(vao);
         glGenBuffers(1, &vbo);
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, main_buffer.size()*sizeof(float), &main_buffer[0], GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, buffer.size()*sizeof(float), &buffer[0], GL_STATIC_DRAW);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)0);
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)(3*sizeof(float)));
