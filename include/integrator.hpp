@@ -17,7 +17,6 @@
 #include"torque.hpp"
 
 #include"properties.hpp"
-#include"solution.hpp"
 
 #include<boost/numeric/odeint.hpp>
 
@@ -207,7 +206,7 @@ public:
         return;
     }
 
-    Solution run()
+    void run()
     {
         //initial conditions (boost::array<> must be used to call the integration method)
         boost::array<double, 20> state = { cart[0], cart[1], cart[2],
@@ -263,92 +262,8 @@ public:
             rkf78.do_step(std::bind(&Integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, dt);
         }
 
-        Solution solution;
-        double ener0, mom0;
-        for (int i = 0; i < msol.size(); ++i)
-        {
-            double t = msol[i][0];
-            dvec3 r = {msol[i][1], msol[i][2], msol[i][3]};
-            dvec3 v = {msol[i][4], msol[i][5], msol[i][6]};
-            dvec4 q1 = {msol[i][7], msol[i][8], msol[i][9], msol[i][10]};
-            dvec3 w1b = {msol[i][11], msol[i][12], msol[i][13]};
-            dvec4 q2 = {msol[i][14], msol[i][15], msol[i][16], msol[i][17]};
-            dvec3 w2b = {msol[i][18], msol[i][19], msol[i][20]};
-            dmat3 A1 = quat2mat(q1);
-            dmat3 A2 = quat2mat(q2);
-            dvec3 w1i = body2iner(w1b,A1);
-            dvec3 w2i = body2iner(w2b,A2);
-            dvec3 rpy1 = quat2ang(q1);
-            dvec3 rpy2 = quat2ang(q2);
-            dvec6 kep = cart2kep({r[0],r[1],r[2], v[0],v[1],v[2]}, G*(M1+M2));
-            
-            double ener = 0.5*((M1*M2)/(M1+M2))*dot(v,v) + 0.5*dot( dot(w1b,I1), w1b) + 0.5*dot( dot(w2b,I2), w2b);
-            if (ord2_checkbox)
-                ener += mut_pot_integrals_ord2(r, M1,J1,A1, M2,J2,A2);
-            else if (ord3_checkbox)
-                ener += mut_pot_integrals_ord3(r, M1,J1,A1, M2,J2,A2);
-            else if (ord4_checkbox)
-                ener += mut_pot_integrals_ord4(r, M1,J1,A1, M2,J2,A2);
-            else
-                ener += mut_pot_masc(r, M1,masc1,A1, M2,masc2,A2);
-            
-            double mom = length( (M1*M2/(M1+M2))*cross(r,v) + dot(A1, dot(I1,w1b)) + dot(A2, dot(I2,w2b)) );
-            
-            if (i == 0)
-            {
-                ener0 = ener;
-                mom0 = mom;
-            }
-            
-            solution.t.push_back(t);
-            solution.x.push_back(r[0]);
-            solution.y.push_back(r[1]);
-            solution.z.push_back(r[2]);
-            solution.dist.push_back(length(r));
-            solution.roll1.push_back(rpy1[0]);
-            solution.pitch1.push_back(rpy1[1]);
-            solution.yaw1.push_back(rpy1[2]);
-            solution.roll2.push_back(rpy2[0]);
-            solution.pitch2.push_back(rpy2[1]);
-            solution.yaw2.push_back(rpy2[2]);
-            solution.q10.push_back(q1[0]);
-            solution.q11.push_back(q1[1]);
-            solution.q12.push_back(q1[2]);
-            solution.q13.push_back(q1[3]);
-            solution.q20.push_back(q2[0]);
-            solution.q21.push_back(q2[1]);
-            solution.q22.push_back(q2[2]);
-            solution.q23.push_back(q2[3]);
-            solution.vx.push_back(v[0]);
-            solution.vy.push_back(v[1]);
-            solution.vz.push_back(v[2]);
-            solution.vmag.push_back(length(v));
-            solution.w1ix.push_back(w1i[0]);
-            solution.w1iy.push_back(w1i[1]);
-            solution.w1iz.push_back(w1i[2]);
-            solution.w1bx.push_back(w1b[0]);
-            solution.w1by.push_back(w1b[1]);
-            solution.w1bz.push_back(w1b[2]);
-            solution.w2ix.push_back(w2i[0]);
-            solution.w2iy.push_back(w2i[1]);
-            solution.w2iz.push_back(w2i[2]);
-            solution.w2bx.push_back(w2b[0]);
-            solution.w2by.push_back(w2b[1]);
-            solution.w2bz.push_back(w2b[2]);
-            solution.a.push_back(kep[0]);
-            solution.e.push_back(kep[1]);
-            solution.inc.push_back(kep[2]);
-            solution.Om.push_back(kep[3]);
-            solution.w.push_back(kep[4]);
-            solution.M.push_back(kep[5]);
-            solution.ener_rel_err.push_back(fabs((ener - ener0)/ener0));
-            solution.mom_rel_err.push_back(fabs((mom - mom0)/mom0));
-        }
-        solution.collision = collision;
-
-        return solution;
+        return;
     }
 };
-
 
 #endif

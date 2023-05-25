@@ -9,9 +9,6 @@
 #include<GL/glew.h>
 #include<GLFW/glfw3.h>
 
-#include<cstdarg>
-#include<filesystem>
-
 #include"typedef.hpp"
 
 #include"constant.hpp"

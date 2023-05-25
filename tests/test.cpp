@@ -1,24 +1,42 @@
-
-#include<cstdio>
-#include<cstdlib>
-#include<cstring>
-#include<fstream>
 #include<iostream>
 
-#include"../include/typedef.hpp"
-#include"../include/obj.hpp"
+class Properties
+{
+public:
+    double p;
+    Properties() : p(1.23) { };
+};
+
+class Integrator : public Properties
+{
+public:
+    int i;
+    Integrator(const Properties &properties) : Properties(properties)
+    {
+        p = 36.0;
+        i = 37;
+    }
+};
+
+class Solution : public Integrator
+{
+public:
+    double s;
+    Solution(const Integrator &integrator) : Integrator(integrator)
+    {
+        p = 1.1;
+        i = 2;
+        s = 3.0;
+    }
+};
 
 int main()
 {
-    bvec vf = Obj::vf_status("../obj/gerasimenko256k.obj");
-    Obj cube("../obj/gerasimenko256k.obj");
+    Properties props;
+    Integrator integ(props);
+    Solution sol(integ);
 
-    dmatnx3 masc = cube.fill_with_masc({21,22,23});
-    FILE *fp = fopen("mascons.obj","w");
-    for (int i = 0; i < masc.size(); ++i)
-        fprintf(fp, "v %lf %lf %lf\n", masc[i][0], masc[i][1], masc[i][2]);
-    fclose(fp);
-
+    std::cout << sol.p << "  " << sol.i << "  " << sol.s << "\n";
 
     return 0;
 }

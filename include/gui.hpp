@@ -13,9 +13,9 @@
 
 #include"console.hpp"
 #include"properties.hpp"
-//#include"graphics.hpp"
 #include"integrator.hpp"
 #include"solution.hpp"
+#include"graphics.hpp"
 
 class GUI
 {
@@ -23,7 +23,7 @@ class GUI
 public:
 
     Properties properties;
-    //Graphics graphics;
+    Graphics graphics;
     Console console;
 
     //Constructor and correct initialization of &io.
@@ -77,7 +77,8 @@ public:
         {
             console.add_text("Running... ");
                 Integrator integrator(properties);
-                Solution solution = integrator.run();
+                integrator.run();
+                Solution solution(integrator);
                 solution.export_txt_files(properties.simname);
             console.add_text("Done. ");
             console.add_text("\n");
