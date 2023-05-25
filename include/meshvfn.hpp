@@ -7,6 +7,7 @@
 #include<vector>
 
 #include"typedef.hpp"
+#include"obj.hpp"
 
 class Meshvfn
 {
@@ -20,41 +21,30 @@ public:
 
     Meshvfn(Obj &obj)
     {
-        dmatnx3 norms(inds.size());
-        dvec3 perp;
-        for (int i = 0; i < norms.size(); ++i)
-        {
-            dvec3 p0 = verts[inds[i][0]];
-            dvec3 p1 = verts[inds[i][1]];
-            dvec3 p2 = verts[inds[i][2]];
-            perp = cross(p1-p0, p2-p1);
-            norms[i] = perp/length(perp);
-        }
-
-        //Combine verts[][], norms[][] and inds[][] to construct the buffer[]
+        //Combine verts[][], norms[][] and faces[][] to construct the buffer[]
         //which will have all the buffer needed for drawing.
-        for (int i = 0; i < inds.size(); ++i)
+        for (int i = 0; i < obj.faces.size(); ++i)
         {
-            buffer.push_back( (float)verts[ inds[i][0] ][0] );
-            buffer.push_back( (float)verts[ inds[i][0] ][1] );
-            buffer.push_back( (float)verts[ inds[i][0] ][2] );
-            buffer.push_back( (float)norms[ inds[i][1] ][0] );
-            buffer.push_back( (float)norms[ inds[i][1] ][1] );
-            buffer.push_back( (float)norms[ inds[i][1] ][2] );
+            buffer.push_back( (float)obj.verts[ obj.faces[i][0] ][0] );
+            buffer.push_back( (float)obj.verts[ obj.faces[i][0] ][1] );
+            buffer.push_back( (float)obj.verts[ obj.faces[i][0] ][2] );
+            buffer.push_back( (float)obj.norms[ obj.norms[i][0] ][0] );
+            buffer.push_back( (float)obj.norms[ obj.norms[i][0] ][1] );
+            buffer.push_back( (float)obj.norms[ obj.norms[i][0] ][2] );
 
-            buffer.push_back( (float)verts[ inds[i][2] ][0] );
-            buffer.push_back( (float)verts[ inds[i][2] ][1] );
-            buffer.push_back( (float)verts[ inds[i][2] ][2] );
-            buffer.push_back( (float)norms[ inds[i][3] ][0] );
-            buffer.push_back( (float)norms[ inds[i][3] ][1] );
-            buffer.push_back( (float)norms[ inds[i][3] ][2] );
+            buffer.push_back( (float)obj.verts[ obj.faces[i][1] ][0] );
+            buffer.push_back( (float)obj.verts[ obj.faces[i][1] ][1] );
+            buffer.push_back( (float)obj.verts[ obj.faces[i][1] ][2] );
+            buffer.push_back( (float)obj.norms[ obj.norms[i][1] ][0] );
+            buffer.push_back( (float)obj.norms[ obj.norms[i][1] ][1] );
+            buffer.push_back( (float)obj.norms[ obj.norms[i][1] ][2] );
 
-            buffer.push_back( (float)verts[ inds[i][4] ][0] );
-            buffer.push_back( (float)verts[ inds[i][4] ][1] );
-            buffer.push_back( (float)verts[ inds[i][4] ][2] );
-            buffer.push_back( (float)norms[ inds[i][5] ][0] );
-            buffer.push_back( (float)norms[ inds[i][5] ][1] );
-            buffer.push_back( (float)norms[ inds[i][5] ][2] );
+            buffer.push_back( (float)obj.verts[ obj.faces[i][2] ][0] );
+            buffer.push_back( (float)obj.verts[ obj.faces[i][2] ][1] );
+            buffer.push_back( (float)obj.verts[ obj.faces[i][2] ][2] );
+            buffer.push_back( (float)obj.norms[ obj.norms[i][2] ][0] );
+            buffer.push_back( (float)obj.norms[ obj.norms[i][2] ][1] );
+            buffer.push_back( (float)obj.norms[ obj.norms[i][2] ][2] );
         }
         //buffer[] has now the form : {x1,y1,z1, nx1,ny1,nz1, x2,y2,z2, nx2,ny2,nz2 ... }
 
@@ -70,14 +60,14 @@ public:
     }
 
     //delete the mesh
-    ~meshvfn()
+    ~Meshvfn()
     {
         glDeleteVertexArrays(1, &vao);
         glDeleteBuffers(1, &vbo);
     }
 
     //draw the mesh (triangles)
-    void draw_triangles()
+    void draw()
     {
         glBindVertexArray(vao);
         glDrawArrays(GL_TRIANGLES, 0, (unsigned int)(buffer.size()/6));

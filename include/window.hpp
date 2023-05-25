@@ -105,7 +105,7 @@ public:
             gui.begin();
                 gui.properties.render();
                 gui.console.render();
-                gui.graphics.render();
+                //gui.graphics.render();
             gui.render();
 
             //In case 'Run' button is clicked, handle the event through the following function.

@@ -9,8 +9,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include"stb_image.h"
 
-//#include"typedef.hpp"
-
 class Skybox
 {
 
@@ -126,8 +124,8 @@ public:
         glDeleteBuffers(1, &vbo);
     }
 
-    //Draw the skybox.
-    void draw_elements()
+    //Draw the skybox (elements).
+    void draw()
     {
         glBindVertexArray(vao);
 		glActiveTexture(GL_TEXTURE0);

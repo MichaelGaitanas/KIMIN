@@ -41,7 +41,7 @@ public:
         }
         file.close();
 
-        return vf; //and call it like : obj.vf = Obj::vf_status(path);
+        return vf; //and call it like : bvec vf = Obj::vf_status(path); WITHOUT having an Obj instance of the class
     }
 
     //Constructor : Load the .obj file assuming it has the classical form 'v x y z' and 'f i j k'.

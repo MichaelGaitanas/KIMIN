@@ -9,7 +9,6 @@
 #include"linalg.hpp"
 #include"obj.hpp"
 #include"conversion.hpp"
-#include"polyhedron.hpp"
 #include"mascon.hpp"
 #include"ellipsoid.hpp"
 #include"rigidbody.hpp"
@@ -17,105 +16,10 @@
 #include"force.hpp"
 #include"torque.hpp"
 
-#include"gui.hpp"
+#include"properties.hpp"
+#include"solution.hpp"
 
 #include<boost/numeric/odeint.hpp>
-
-class Solution
-{
-
-public:
-
-    //time
-    dvec t;
-
-    //positions
-    dvec x,y,z, dist;
-    dvec roll1,pitch1,yaw1; 
-    dvec roll2,pitch2,yaw2;
-    dvec q10,q11,q12,q13;
-    dvec q20,q21,q22,q23;
-
-    //velocities
-    dvec vx,vy,vz, vmag;
-    dvec w1ix,w1iy,w1iz;
-    dvec w1bx,w1by,w1bz;
-    dvec w2ix,w2iy,w2iz;
-    dvec w2bx,w2by,w2bz;
-
-    //Keplerian elements
-    dvec a,e,inc,Om,w,M;
-
-    //constants of motion relative errors
-    dvec ener_rel_err, mom_rel_err;
-
-    bool collision;
-
-    //Default constructor will be called for the members.
-
-    void export_txt_files(const char *simname)
-    {
-        //1) create the 'simulations' directory that will store all other simulation directories
-        bool root_sim_dir = std::filesystem::create_directory("../simulations");
-
-        //2) create the current simulation directory 'simname' that will store the .txt files
-        bool current_sim_dir = std::filesystem::create_directory("../simulations/" + str(simname));
-
-        //3) create the txt content
-        FILE *file_t        = fopen(("../simulations/" + str(simname) + "/time.txt"    ).c_str(),"w");
-        FILE *file_pos      = fopen(("../simulations/" + str(simname) + "/pos.txt"     ).c_str(),"w");
-        FILE *file_vel      = fopen(("../simulations/" + str(simname) + "/vel.txt"     ).c_str(),"w");
-        FILE *file_q1       = fopen(("../simulations/" + str(simname) + "/quat1.txt"   ).c_str(),"w");
-        FILE *file_w1i      = fopen(("../simulations/" + str(simname) + "/w1i.txt"     ).c_str(),"w");
-        FILE *file_w1b      = fopen(("../simulations/" + str(simname) + "/w1b.txt"     ).c_str(),"w");
-        FILE *file_rpy1     = fopen(("../simulations/" + str(simname) + "/rpy1.txt"    ).c_str(),"w");
-        FILE *file_q2       = fopen(("../simulations/" + str(simname) + "/quat2.txt"   ).c_str(),"w");
-        FILE *file_w2i      = fopen(("../simulations/" + str(simname) + "/w2i.txt"     ).c_str(),"w");
-        FILE *file_w2b      = fopen(("../simulations/" + str(simname) + "/w2b.txt"     ).c_str(),"w");
-        FILE *file_rpy2     = fopen(("../simulations/" + str(simname) + "/rpy2.txt"    ).c_str(),"w");
-        FILE *file_kep      = fopen(("../simulations/" + str(simname) + "/kep.txt"     ).c_str(),"w");
-        FILE *file_ener_mom = fopen(("../simulations/" + str(simname) + "/ener_mom.txt").c_str(),"w");
-        for (int i = 0; i < t.size(); ++i)
-        {
-            fprintf(file_t,        "%.16lf\n",                                    t[i]);
-            fprintf(file_pos,      "%.16lf %.16lf %.16lf\n",                      x[i],y[i],z[i], dist[i]);
-            fprintf(file_vel,      "%.16lf %.16lf %.16lf\n",                      vx[i],vy[i],vz[i], vmag[i]);
-            fprintf(file_q1,       "%.16lf %.16lf %.16lf %.16lf\n",               q10[i],q11[i],q12[i],q13[i]);
-            fprintf(file_rpy1,     "%.16lf %.16lf %.16lf\n",                      roll1[i],pitch1[i],yaw1[i]);
-            fprintf(file_w1b,      "%.16lf %.16lf %.16lf\n",                      w1bx[i],w1by[i],w1bz[i]);
-            fprintf(file_w1i,      "%.16lf %.16lf %.16lf\n",                      w1ix[i],w1iy[i],w1iz[i]);
-            fprintf(file_q2,       "%.16lf %.16lf %.16lf %.16lf\n",               q20[i],q21[i],q22[i],q23[i]);
-            fprintf(file_rpy2,     "%.16lf %.16lf %.16lf\n",                      roll2[i],pitch2[i],yaw2[i]);
-            fprintf(file_w2b,      "%.16lf %.16lf %.16lf\n",                      w2bx[i],w2by[i],w2bz[i]);
-            fprintf(file_w2i,      "%.16lf %.16lf %.16lf\n",                      w2ix[i],w2iy[i],w2iz[i]);
-            fprintf(file_kep,      "%.16lf %.16lf %.16lf %.16lf %.16lf %.16lf\n", a[i],e[i],inc[i],Om[i],w[i],M[i]); 
-            fprintf(file_ener_mom, "%.16lf %.16lf\n",                             ener_rel_err[i], mom_rel_err[i]);
-        }
-        fclose(file_t);
-        fclose(file_pos);
-        fclose(file_vel);
-        fclose(file_q1);
-        fclose(file_rpy1);
-        fclose(file_w1b);
-        fclose(file_w1i);
-        fclose(file_q2);
-        fclose(file_rpy2);
-        fclose(file_w2b);
-        fclose(file_w2i);
-        fclose(file_kep);
-        fclose(file_ener_mom);
-
-        FILE *file_steps = fopen(("../simulations/" + str(simname) + "/steps.txt").c_str(),"w");
-        fprintf(file_steps,"%d\n",(int)(t.size() - 1));
-        fclose(file_steps);
-
-        FILE *file_collision = fopen(("../simulations/" + str(simname) + "/collision.txt").c_str(),"w");
-        fprintf(file_collision,"%d\n",collision);
-        fclose(file_collision);
-
-        return;
-    }
-};
 
 class Integrator : public Properties
 {
@@ -127,7 +31,7 @@ public:
     dmat3 I1, I2; //moments of inertia
 
     bool collision; //binary collision flag
-    dmat msol; //final solution matrix of the binary
+    dmat msol; //minimal solution matrix of the binary
 
     Integrator(const Properties &properties) : Properties(properties)
     {
@@ -164,81 +68,15 @@ public:
         }
         else //obj_checkbox
         {
-            //temporary variables to load essential data from the .obj files
-            dmatnx3 verts;
-            dmatnx3 norms;
-            dmatnx2 texs;
-            imatnx3 facesnx3; //for the vf cases
-            imatnx6 facesnx6; //for the vfn or vft cases
-            imatnx9 facesnx9; //for the vfnt cases
+            Obj poly1(obj_path1.c_str());
+            masc1 = poly1.fill_with_masc(grid_reso1);
+            correct_masc_com(masc1);
+            correct_masc_inertia(M1, masc1);
 
-            //body 1
-            if (clicked_masc1_index != -1) //then the user clicked a mascon model from the database for body 1
-                masc1 = loadobjv(obj_path1.c_str());
-            else //the user clicked polyhedron model from the database for body 1
-            {
-                if (!vfnt1[2] && !vfnt1[3]) //vertices and faces
-                    loadobjvf(obj_path1.c_str(), verts,facesnx3);
-                else if (vfnt1[2] && !vfnt1[3]) //vertices, faces, norms
-                {
-                    loadobjvfn(obj_path1.c_str(), verts,facesnx6,norms);
-                    //preserve only face indices
-                    for (int i = 0; i < facesnx6.size(); ++i)
-                        facesnx3.push_back({facesnx6[i][0], facesnx6[i][2], facesnx6[i][4]});
-                }
-                else if (!vfnt1[2] && vfnt1[3]) //vertices, faces, textures
-                {
-                    loadobjvft(obj_path1.c_str(), verts,facesnx6,texs);
-                    //preserve only face indices
-                    for (int i = 0; i < facesnx6.size(); ++i)
-                        facesnx3.push_back({facesnx6[i][0], facesnx6[i][2], facesnx6[i][4]});
-                }
-                else if (vfnt1[2] && vfnt1[3]) //vertices, faces, norms, textures
-                {
-                    loadobjvfnt(obj_path1.c_str(), verts,facesnx9,norms,texs);
-                    //preserve only face indices
-                    for (int i = 0; i < facesnx9.size(); ++i)
-                        facesnx3.push_back({facesnx9[i][0], facesnx9[i][3], facesnx9[i][6]});
-                }
-
-                masc1 = fill_poly_with_masc(verts,facesnx3, grid_reso1);
-                //Don't forget to correct the mascon distribution.  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-                //Pull the center of mass towards 0 and rotate the axes to the principal ones.
-            }
-
-            //body 2
-            if (clicked_masc2_index != -1) //then the user clicked a mascon model from the database for body 2
-                masc2 = loadobjv(obj_path2.c_str());
-            else //the user clicked polyhedron model from the database for body 2
-            {
-                if (!vfnt2[2] && !vfnt2[3]) //vertices and faces
-                    loadobjvf(obj_path2.c_str(), verts,facesnx3);
-                else if (vfnt2[2] && !vfnt2[3]) //vertices, faces, norms
-                {
-                    loadobjvfn(obj_path2.c_str(), verts,facesnx6,norms);
-                    //preserve only face indices
-                    for (int i = 0; i < facesnx6.size(); ++i)
-                        facesnx3.push_back({facesnx6[i][0], facesnx6[i][2], facesnx6[i][4]});
-                }
-                else if (!vfnt2[2] && vfnt2[3]) //vertices, faces, textures
-                {
-                    loadobjvft(obj_path2.c_str(), verts,facesnx6,texs);
-                    //preserve only face indices
-                    for (int i = 0; i < facesnx6.size(); ++i)
-                        facesnx3.push_back({facesnx6[i][0], facesnx6[i][2], facesnx6[i][4]});
-                }
-                else if (vfnt2[2] && vfnt2[3]) //vertices, faces, norms, textures
-                {
-                    loadobjvfnt(obj_path2.c_str(), verts,facesnx9,norms,texs);
-                    //preserve only face indices
-                    for (int i = 0; i < facesnx9.size(); ++i)
-                        facesnx3.push_back({facesnx9[i][0], facesnx9[i][3], facesnx9[i][6]});
-                }
-
-                masc2 = fill_poly_with_masc(verts,facesnx3, grid_reso2);
-                //Don't forget to correct the mascon distribution.  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-                //Pull the center of mass towards 0 and rotate the axes to the principal ones.
-            }
+            Obj poly2(obj_path2.c_str());
+            masc2 = poly2.fill_with_masc(grid_reso2);
+            correct_masc_com(masc2);
+            correct_masc_inertia(M2, masc2);
 
             if (ord2_checkbox)
             {
@@ -261,7 +99,7 @@ public:
                 I1 = masc_inertia(M1, masc1);
                 I2 = masc_inertia(M2, masc2);
             }
-            //If pure mascons theory is selected, no additional parameter must be computed. masc1 and masc2 suffice. 
+            //If pure mascons theory is selected, no additional parameter must be computed. masc1[][] and masc2[][] suffice. 
         }
         
         if (cart_kep_var_choice == 1) //the user chose Keplerian elements as ic
