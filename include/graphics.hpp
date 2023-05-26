@@ -10,11 +10,12 @@
 #include<GLFW/glfw3.h>
 
 #include"typedef.hpp"
-
 #include"constant.hpp"
 #include"linalg.hpp"
 #include"obj.hpp"
 #include"conversion.hpp"
+
+#include"solution.hpp"
 
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
@@ -48,10 +49,10 @@ public:
 
     bool play_video;
 
-    Properties properties;
+    //Properties properties;
 
     //orbit data
-    //Solution solution;
+    Solution solution;
 
     Graphics() : plot_cart({false,false,false,false, false,false,false,false}),
                  plot_kep({false,false,false,false,false,false}),
@@ -80,13 +81,13 @@ public:
         this->properties = properties;
         return;
     }
+    */
 
     void yield_solution(const Solution &solution)
     {
         this->solution = solution;
         return;
     }
-    */
 
     bool common_plot_button(const char *label, bool plot_func)
     {
@@ -182,20 +183,19 @@ public:
         return;
     }
 
-
     bool common_plot(const char *begin_id, const char *begin_plot_id, const char *yaxis_str, bool bool_plot_func, dvec &plot_func)
     {
         ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
         ImGui::Begin(begin_id, &bool_plot_func);
         ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
-        //if (ImPlot::BeginPlot(begin_plot_id, plot_win_size))
-        //{
-        //    ImPlot::SetupAxes("time [days]", yaxis_str);
-        //    ImPlot::PlotLine("", &(solution.t[0]), &plot_func[0], solution.t.size());
-        //    if (solution.collision)
-        //        ImPlot::PlotScatter("Collision", &(solution.t[solution.t.size()-1]), &(plot_func[solution.t.size()-1]), 1, 2.0);
-        //    ImPlot::EndPlot();
-        //}
+        if (ImPlot::BeginPlot(begin_plot_id, plot_win_size))
+        {
+            ImPlot::SetupAxes("time [days]", yaxis_str);
+            ImPlot::PlotLine("", &(solution.t[0]), &plot_func[0], solution.t.size());
+            if (solution.collision)
+                ImPlot::PlotScatter("Collision", &(solution.t[solution.t.size()-1]), &(plot_func[solution.t.size()-1]), 1, 2.0);
+            ImPlot::EndPlot();
+        }
         ImGui::End();
         return bool_plot_func;
     }

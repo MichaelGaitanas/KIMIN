@@ -80,11 +80,10 @@ public:
                 integrator.run();
                 Solution solution(integrator);
                 solution.export_txt_files(properties.simname);
+                //graphics.yield_properties(properties);
+                graphics.yield_solution(solution);
             console.add_text("Done. ");
             console.add_text("\n");
-            
-            //graphics.yield_properties(properties);
-            //graphics.yield_solution(solution);
         }
         else
         {

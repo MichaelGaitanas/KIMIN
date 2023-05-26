@@ -32,6 +32,8 @@ public:
     bool collision; //binary collision flag
     dmat msol; //minimal solution matrix of the binary
 
+    Integrator() { }
+
     Integrator(const Properties &properties) : Properties(properties)
     {
         if (ell_checkbox)
@@ -208,6 +210,11 @@ public:
 
     void run()
     {
+        //apply the β correction to the initial relative velocity
+        cart[0] += (M1 + M2)*beta*M_impact*v_impact[0]/M2;
+        cart[1] += (M1 + M2)*beta*M_impact*v_impact[1]/M2;
+        cart[2] += (M1 + M2)*beta*M_impact*v_impact[2]/M2;
+
         //initial conditions (boost::array<> must be used to call the integration method)
         boost::array<double, 20> state = { cart[0], cart[1], cart[2],
                                            cart[3], cart[4], cart[5],

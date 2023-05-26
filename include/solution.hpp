@@ -45,6 +45,8 @@ public:
 
     //constants of motion relative errors
     dvec ener_rel_err, mom_rel_err;
+    
+    Solution() { }
 
     Solution(const Integrator &integrator) : Integrator(integrator)
     {

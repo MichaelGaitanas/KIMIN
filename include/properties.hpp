@@ -64,6 +64,11 @@ public:
     //'M1', 'M2' fields.
     double M1,M2;
 
+    //Impactor parameters : 'υx', 'υy', 'υz', 'Mass', 'β value'
+    dvec3 v_impact;
+    double M_impact;
+    double beta;
+
     //'Epoch', 'Duration', 'Step' fields.
     double epoch, dur, step;
 
@@ -125,6 +130,9 @@ public:
                    mascons_checkbox(false),
                    M1(5.320591856403073e11),
                    M2(4.940814359692687e9),
+                   v_impact({0.0,0.0,0.0}),
+                   M_impact(0.0),
+                   beta(1.0),
                    epoch(0.0),
                    dur(30.0),
                    step(0.001388888888888889),
@@ -321,6 +329,14 @@ public:
         double_field("M2 ", 150.0f, id, "[kg]", M2);
         ImGui::Dummy(ImVec2(0.0f,15.0f));
 
+        ImGui::Text("Impactor parameters");
+        double_field("υx          ", 100.0f, id, "[km/sec]", v_impact[0]);
+        double_field("υy          ", 100.0f, id, "[km/sec]", v_impact[1]);
+        double_field("υz          ", 100.0f, id, "[km/sec]", v_impact[2]);
+        double_field("Mass    ", 100.0f, id, "[kg]", M_impact);
+        double_field("β value ", 100.0f, id, "[  ]", beta);
+        ImGui::Dummy(ImVec2(0.0f,15.0f));
+
         ImGui::Text("Integration time");
         double_field("Epoch     ",   100.0f, id, "[days]", epoch);
         double_field("Duration  ",   100.0f, id, "[days]", dur);
@@ -483,6 +499,12 @@ public:
             errors.push_back("[Error] :  'M1' must be positive.");
         if (M2 <= 0.0)
             errors.push_back("[Error] :  'M2' must be positive.");
+
+        //Impactor's parameters errors (both Mass and β be non negative).
+        if (M_impact < 0.0)
+            errors.push_back("[Error] : Impactor's 'Mass' must be non negative.");
+        if (beta < 0.0)
+            errors.push_back("[Error] : 'β value' must be non negative.");
 
         //Time parameters errors (must : epoch >= 0.0, dur >= 0.0, print_step <= dur)
         if (!(epoch >= 0.0 && dur >= 0.0 && step <= dur))
