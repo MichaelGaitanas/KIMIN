@@ -57,19 +57,23 @@ public:
     //Render the console imgui window.
     void render()
     {
-        ImGui::SetNextWindowPos( ImVec2(     ImGui::GetIO().DisplaySize.x/7.0f, 6.0f*ImGui::GetIO().DisplaySize.y/7.0f), ImGuiCond_FirstUseEver);
+        float offsety = 0;
+        float ysize = ImGui::GetIO().DisplaySize.y/7.0f;
+        if ( ysize < 200){
+            offsety = 200 - ysize;
+        }
+        ImGui::SetNextWindowPos( ImVec2(     ImGui::GetIO().DisplaySize.x/7.0f, 6.0f*ImGui::GetIO().DisplaySize.y/7.0f - offsety), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(5.0f*ImGui::GetIO().DisplaySize.x/7.0f,      ImGui::GetIO().DisplaySize.y/7.0f), ImGuiCond_FirstUseEver);
         ImGui::Begin("Console", nullptr);
-
         //Mouse input : Clear the console.
         if (ImGui::Button("Clear "))
             cls();
         
         //Display FPS and OS.
         ImGui::SameLine();
-        ImGui::Text("FPS [ %.1f ] ,  OS [ %s ] ", ImGui::GetIO().Framerate, os_name().c_str());
+        ImGui::Text("FPS [ %.1f ] ,  OS [ %s ] ,  GPU [ %s ] ", ImGui::GetIO().Framerate, os_name().c_str(), glGetString(GL_RENDERER));
         ImGui::Separator();
-
+        
         ImGui::BeginChild("Scroll", ImVec2(0.0f, 0.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
         ImGui::TextUnformatted(buffer.begin());
         if (scroll_to_bottom)

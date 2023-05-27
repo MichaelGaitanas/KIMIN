@@ -70,12 +70,19 @@ public:
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
         //Skybox images (make sure they are in this exact order)
-        std::string path[6] = { "../skybox/starfield_4k/right.jpg",
-                                "../skybox/starfield_4k/left.jpg",
-                                "../skybox/starfield_4k/top.jpg",
-                                "../skybox/starfield_4k/bottom.jpg",
-                                "../skybox/starfield_4k/front.jpg",
-                                "../skybox/starfield_4k/back.jpg" };
+        // std::string path[6] = { "../skybox/starfield_4k/right.jpg",
+                                // "../skybox/starfield_4k/left.jpg",
+                                // "../skybox/starfield_4k/top.jpg",
+                                // "../skybox/starfield_4k/bottom.jpg",
+                                // "../skybox/starfield_4k/front.jpg",
+                                // "../skybox/starfield_4k/back.jpg" };
+        //Skybox images (make sure they are in this exact order)
+        std::string path[6] = { "../skybox/galaxy/right.png",
+                                "../skybox/galaxy/left.png",
+                                "../skybox/galaxy/top.png",
+                                "../skybox/galaxy/bottom.png",
+                                "../skybox/galaxy/front.png",
+                                "../skybox/galaxy/back.png" };
         //Why not const char *path[6] = {"...", "...", ... }; ? And then remove the .c_str() from stbi_load()
 
         //Create the skybox texture object
@@ -110,7 +117,7 @@ public:
             }
             else
             {
-                printf("Failed to load texture '%s'\n", path[i]);
+                printf("Failed to load texture '%s'\n", path[i].c_str());
                 stbi_image_free(data);
             }
         }

@@ -11,7 +11,7 @@ void main()
     float ambient = 0.15f;
 
     //diffuse color component
-    vec3 light_dir = vec3(1.0f,1.0f,1.0f);
+    vec3 light_dir = vec3(10.0f,10.0f,10.0f);
     vec3 norm = normalize(normal);
     vec3 light_dir_norm = normalize(light_dir); //light direction with respect to model coordinates
     float diffuse = max(dot(norm, light_dir_norm), 0.0f);

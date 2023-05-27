@@ -87,7 +87,7 @@ public:
                 mom0 = mom;
             }
             
-            t.push_back(temp_t);
+            t.push_back(temp_t/86400.0);
             x.push_back(temp_r[0]);
             y.push_back(temp_r[1]);
             z.push_back(temp_r[2]);

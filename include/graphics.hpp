@@ -18,6 +18,7 @@
 #include"solution.hpp"
 #include"meshvfn.hpp"
 #include"shader.hpp"
+#include"skybox.hpp"
 
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
@@ -51,6 +52,10 @@ public:
 
     bool play_video;
 
+    int current_frame;
+
+    bool isVideoPaused;
+
     //Properties properties;
 
     //orbit data
@@ -74,7 +79,9 @@ public:
                  view_b(false),
                  view_t(false),
                  view_d(false),
-                 play_video(false)
+                 play_video(false),
+                 isVideoPaused(false),
+                 current_frame(0)
     { }
 
     //void yield_properties(const Properties &properties)
@@ -185,14 +192,18 @@ public:
 
     bool common_plot(const char *begin_id, const char *begin_plot_id, const char *yaxis_str, bool bool_plot_func, dvec &plot_func)
     {
-        ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x - ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x/2.0f - ImGui::GetIO().DisplaySize.x/6.0f, ImGui::GetIO().DisplaySize.y/3.0), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/3.0f, 3.0f*ImGui::GetIO().DisplaySize.x/12.0f), ImGuiCond_FirstUseEver);
         ImGui::Begin(begin_id, &bool_plot_func);
         ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
         if (ImPlot::BeginPlot(begin_plot_id, plot_win_size))
         {
             ImPlot::SetupAxes("time [days]", yaxis_str);
             ImPlot::PlotLine("", &(solution.t[0]), &plot_func[0], solution.t.size());
+            ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 4.0, ImVec4(0.0,1.0,0.0,1.0), -1.0, ImVec4(0.0,1.0,0.0,1.0));
+            ImPlot::PlotScatter("Collision", &(solution.t[current_frame]), &(plot_func[current_frame]), 1, 2.0);
             if (solution.collision)
+                ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 4.0, ImVec4(1.0,0.0,0.0,1.0), -1.0, ImVec4(1.0,0.0,0.0,1.0));
                 ImPlot::PlotScatter("Collision", &(solution.t[solution.t.size()-1]), &(plot_func[solution.t.size()-1]), 1, 2.0);
             ImPlot::EndPlot();
         }
@@ -210,10 +221,11 @@ public:
 
         static Meshvfn aster1(solution.obj_path1.c_str());
         static Meshvfn aster2(solution.obj_path2.c_str());
-
+        static Skybox sky;
         static shader shad("../shaders/vertex/trans_mvpn.vert", "../shaders/fragment/dir_light_ad.frag");
-        shad.use();
+        static shader skyshad("../shaders/vertex/skybox.vert" , "../shaders/fragment/skybox.frag");
 
+        
         glm::vec3 cam_aim = glm::vec3(0.0f,0.0f,0.0f);
         glm::vec3 cam_up = glm::vec3(0.0f,0.0f,1.0f);
         glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1920.0f/1080.0f, 0.01f,100.0f);
@@ -232,19 +244,48 @@ public:
            view = glm::lookAt(glm::vec3(0.0f,-0.01f,4.0f), cam_aim, cam_up);
         else if (view_d)
            view = glm::lookAt(glm::vec3(0.0f,-0.01f,-4.0f), cam_aim, cam_up);
-        glm::mat4 model = glm::mat4(1.0f);
+        
+        shad.use();
 
         shad.set_mat4_uniform("projection", projection);
         shad.set_mat4_uniform("view", view);
-        shad.set_mat4_uniform("model", model);
-                 
-        //model = glm::scale(model, glm::vec3(3.0f,1.0f,0.5f));
+
+        double cm1fac = -solution.M2/(solution.M1 + solution.M2);
+        double cm2fac =  solution.M1/(solution.M1 + solution.M2);
         
+        int max_frame = solution.x.size();
+        
+        if(current_frame == max_frame || isVideoPaused ){
+
+        } else{
+
+            current_frame++;
+        };           
+        
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3((float)cm1fac*solution.x[current_frame],(float)cm1fac*solution.y[current_frame],(float)cm1fac* solution.z[current_frame]));
+        model = glm::rotate(model, (float)solution.yaw1[current_frame]  , glm::vec3(0.0f,0.0f,1.0f));
+        model = glm::rotate(model, (float)solution.pitch1[current_frame], glm::vec3(0.0f,1.0f,0.0f));
+        model = glm::rotate(model, (float)solution.roll1[current_frame] , glm::vec3(1.0f,0.0f,0.0f));
+        shad.set_mat4_uniform("model", model);
         aster1.draw();
 
-        model = glm::translate(model, glm::vec3(2.0f,0.0f,0.0f));
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3((float)cm2fac*solution.x[current_frame],(float)cm2fac*solution.y[current_frame],(float)cm2fac* solution.z[current_frame]));
+        model = glm::rotate(model, (float)solution.yaw2[current_frame]   , glm::vec3(0.0f,0.0f,1.0f));
+        model = glm::rotate(model, (float)solution.pitch2[current_frame] , glm::vec3(0.0f,1.0f,0.0f));
+        model = glm::rotate(model, (float)solution.roll2[current_frame]  , glm::vec3(1.0f,0.0f,0.0f));
         shad.set_mat4_uniform("model", model);
         aster2.draw();
+        // Skybox
+        glDepthFunc(GL_LEQUAL);
+        skyshad.use();
+        skyshad.set_int_uniform("skybox", 0);
+        glm::mat4 viewsky = glm::mat4(glm::mat3(view));
+        skyshad.set_mat4_uniform("projection", projection);
+        skyshad.set_mat4_uniform("view", viewsky);
+        sky.draw();
+        glDepthFunc(GL_LESS);
 
         return temp_play_video;
     }
@@ -308,7 +349,17 @@ public:
         }
         ImGui::Dummy(ImVec2(0.0f,15.0f));
 
-        if (ImGui::Button("Play video")) play_video = !play_video;
+        if (ImGui::Button("Play")) play_video = !play_video;
+        ImGui::SameLine();
+        if (ImGui::Button("Pause")) {
+            isVideoPaused = !isVideoPaused;
+
+        };
+        ImGui::SameLine();
+        if (ImGui::Button("Reset")) {
+            current_frame = 0;
+
+        };
         
         return;
     }
@@ -411,6 +462,9 @@ public:
 
         ImGui::End();
     }
+
+
+
 };
 
 #endif

@@ -75,23 +75,23 @@ public:
             buffer.push_back( (float)verts[ faces[i][0] ][0] );
             buffer.push_back( (float)verts[ faces[i][0] ][1] );
             buffer.push_back( (float)verts[ faces[i][0] ][2] );
-            buffer.push_back( (float)norms[ norms[i][0] ][0] );
-            buffer.push_back( (float)norms[ norms[i][0] ][1] );
-            buffer.push_back( (float)norms[ norms[i][0] ][2] );
+            buffer.push_back( (float)norms[i][0] );
+            buffer.push_back( (float)norms[i][1] );
+            buffer.push_back( (float)norms[i][2] );
 
             buffer.push_back( (float)verts[ faces[i][1] ][0] );
             buffer.push_back( (float)verts[ faces[i][1] ][1] );
             buffer.push_back( (float)verts[ faces[i][1] ][2] );
-            buffer.push_back( (float)norms[ norms[i][1] ][0] );
-            buffer.push_back( (float)norms[ norms[i][1] ][1] );
-            buffer.push_back( (float)norms[ norms[i][1] ][2] );
+            buffer.push_back( (float)norms[i][0] );
+            buffer.push_back( (float)norms[i][1] );
+            buffer.push_back( (float)norms[i][2] );
 
             buffer.push_back( (float)verts[ faces[i][2] ][0] );
             buffer.push_back( (float)verts[ faces[i][2] ][1] );
             buffer.push_back( (float)verts[ faces[i][2] ][2] );
-            buffer.push_back( (float)norms[ norms[i][2] ][0] );
-            buffer.push_back( (float)norms[ norms[i][2] ][1] );
-            buffer.push_back( (float)norms[ norms[i][2] ][2] );
+            buffer.push_back( (float)norms[i][0] );
+            buffer.push_back( (float)norms[i][1] );
+            buffer.push_back( (float)norms[i][2] );
         }
 
         //buffer[] has now the form : {x1,y1,z1, nx1,ny1,nz1, x2,y2,z2, nx2,ny2,nz2 ... }
