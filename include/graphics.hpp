@@ -16,6 +16,8 @@
 #include"conversion.hpp"
 
 #include"solution.hpp"
+#include"meshvfn.hpp"
+#include"shader.hpp"
 
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
@@ -75,13 +77,11 @@ public:
                  play_video(false)
     { }
 
-    /*
-    void yield_properties(const Properties &properties)
-    {
-        this->properties = properties;
-        return;
-    }
-    */
+    //void yield_properties(const Properties &properties)
+    //{
+    //    this->properties = properties;
+    //    return;
+    //}
 
     void yield_solution(const Solution &solution)
     {
@@ -208,50 +208,43 @@ public:
 
         bool temp_play_video = play_video;
 
-        //static meshvfn aster1(verts, faces);
-        //static meshvfn aster2(verts, faces);
-        //static meshvfn sphere("../obj/polyhedra/bennu196k.obj");
+        static Meshvfn aster1(solution.obj_path1.c_str());
+        static Meshvfn aster2(solution.obj_path2.c_str());
 
-        //static shader shad("../shaders/vertex/trans_mvpn.vert", "../shaders/fragment/dir_light_ad.frag");
-        //shad.use();
+        static shader shad("../shaders/vertex/trans_mvpn.vert", "../shaders/fragment/dir_light_ad.frag");
+        shad.use();
 
-        glm::vec3 light_col = glm::vec3(1.0f,1.0f,1.0f);
-        glm::vec3 model_col = glm::vec3(0.5f,0.5f,0.5f);
-
-        //glm::vec3 cam_pos = glm::vec3(0.0f,-1.0f,0.0f);
         glm::vec3 cam_aim = glm::vec3(0.0f,0.0f,0.0f);
         glm::vec3 cam_up = glm::vec3(0.0f,0.0f,1.0f);
-
         glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1920.0f/1080.0f, 0.01f,100.0f);
         glm::mat4 view;
         if (view_panom)
-           view = glm::lookAt(glm::vec3(2.0f,2.0f,2.0f), cam_aim, cam_up);
+           view = glm::lookAt(glm::vec3(4.0f,4.0f,4.0f), cam_aim, cam_up);
         else if (view_r)
-           view = glm::lookAt(glm::vec3(2.0f,0.0f,0.0f), cam_aim, cam_up);
+           view = glm::lookAt(glm::vec3(4.0f,0.0f,0.0f), cam_aim, cam_up);
         else if (view_l)
-           view = glm::lookAt(glm::vec3(-2.0f,0.0f,0.0f), cam_aim, cam_up);
+           view = glm::lookAt(glm::vec3(-4.0f,0.0f,0.0f), cam_aim, cam_up);
         else if (view_f)
-           view = glm::lookAt(glm::vec3(0.0f,2.0f,0.0f), cam_aim, cam_up);
+           view = glm::lookAt(glm::vec3(0.0f,4.0f,0.0f), cam_aim, cam_up);
         else if (view_b)
-           view = glm::lookAt(glm::vec3(0.0f,-2.0f,0.0f), cam_aim, cam_up);
+           view = glm::lookAt(glm::vec3(0.0f,-4.0f,0.0f), cam_aim, cam_up);
         else if (view_t)
-           view = glm::lookAt(glm::vec3(0.0f,-0.01f,2.0f), cam_aim, cam_up);
+           view = glm::lookAt(glm::vec3(0.0f,-0.01f,4.0f), cam_aim, cam_up);
         else if (view_d)
-           view = glm::lookAt(glm::vec3(0.0f,-0.01f,-2.0f), cam_aim, cam_up);
+           view = glm::lookAt(glm::vec3(0.0f,-0.01f,-4.0f), cam_aim, cam_up);
         glm::mat4 model = glm::mat4(1.0f);
 
-        //shad.set_mat4_uniform("projection", projection);
-        //shad.set_mat4_uniform("view", view);
-        //shad.set_mat4_uniform("model", model);
-        
-        //shad.set_vec3_uniform("light_col", light_col);
-        //shad.set_vec3_uniform("model_col", model_col);
-                
+        shad.set_mat4_uniform("projection", projection);
+        shad.set_mat4_uniform("view", view);
+        shad.set_mat4_uniform("model", model);
+                 
         //model = glm::scale(model, glm::vec3(3.0f,1.0f,0.5f));
         
-        glm::vec3 light_dir = glm::vec3(cos(glfwGetTime()),sin(glfwGetTime()),0.0f);
-        //shad.set_vec3_uniform("light_dir", light_dir);
-        //sphere.draw_triangles();
+        aster1.draw();
+
+        model = glm::translate(model, glm::vec3(2.0f,0.0f,0.0f));
+        shad.set_mat4_uniform("model", model);
+        aster2.draw();
 
         return temp_play_video;
     }
