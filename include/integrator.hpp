@@ -109,8 +109,8 @@ public:
         if (orient_var_choice == 0) //orientation variables were chosen to be Euler angles
         {
             //transform Euler angles (roll, pitch, yaw) to quaternions because the f2bp odes is written in quaternionic structure
-            q1 = ang2quat(rpy1);
-            q2 = ang2quat(rpy2);
+            q1 = ang2quat(rpy1*pi/180.0);
+            q2 = ang2quat(rpy2*pi/180.0);
         }
 
         if (frame_type_choice == 0) //angular velocities were given in the "world" inertial frame
