@@ -1,4 +1,5 @@
 kimin/BuildFiles/
 simulations/
+kimin/*.obj
 *.exe
 *.dll

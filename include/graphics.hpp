@@ -192,18 +192,20 @@ public:
 
     bool common_plot(const char *begin_id, const char *begin_plot_id, const char *yaxis_str, bool bool_plot_func, dvec &plot_func)
     {
-        ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x/2.0f - ImGui::GetIO().DisplaySize.x/6.0f, ImGui::GetIO().DisplaySize.y/3.0), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/3.0f, 3.0f*ImGui::GetIO().DisplaySize.x/12.0f), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f, 0.0f), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(0.8f*ImGui::GetIO().DisplaySize.x/3.0f, 0.8f*3.0f*ImGui::GetIO().DisplaySize.x/12.0f), ImGuiCond_FirstUseEver);
         ImGui::Begin(begin_id, &bool_plot_func);
         ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
         if (ImPlot::BeginPlot(begin_plot_id, plot_win_size))
         {
             ImPlot::SetupAxes("time [days]", yaxis_str);
             ImPlot::PlotLine("", &(solution.t[0]), &plot_func[0], solution.t.size());
-            ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 4.0, ImVec4(0.0,1.0,0.0,1.0), -1.0, ImVec4(0.0,1.0,0.0,1.0));
+            ImVec4 ForestGreen(0.2,0.6,0.2,1.0);
+            ImVec4 DarkRed(0.6,0.2,0.2,1.0);
+            ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 3.5, ForestGreen, -1.0, ForestGreen);
             ImPlot::PlotScatter("Collision", &(solution.t[current_frame]), &(plot_func[current_frame]), 1, 2.0);
             if (solution.collision)
-                ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 4.0, ImVec4(1.0,0.0,0.0,1.0), -1.0, ImVec4(1.0,0.0,0.0,1.0));
+                ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 3.5, DarkRed, -1.0, DarkRed);
                 ImPlot::PlotScatter("Collision", &(solution.t[solution.t.size()-1]), &(plot_func[solution.t.size()-1]), 1, 2.0);
             ImPlot::EndPlot();
         }
