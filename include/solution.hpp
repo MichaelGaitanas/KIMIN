@@ -45,6 +45,9 @@ public:
 
     //constants of motion relative errors
     dvec ener_rel_err, mom_rel_err;
+
+    //plotting parameters
+    double max_dist;
     
     Solution() { }
 
@@ -131,6 +134,7 @@ public:
             ener_rel_err.push_back(fabs((ener - ener0)/ener0));
             mom_rel_err.push_back(fabs((mom - mom0)/mom0));
         }
+        max_dist = *max_element(dist.begin(), dist.end());
     }
 
     void export_txt_files(const char *simname)

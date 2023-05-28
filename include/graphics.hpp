@@ -371,9 +371,13 @@ public:
 
         if (ImGui::Button("Show")) play_video = !play_video;
         ImGui::SameLine();
-        if (ImGui::Button("Pause")) {
-            isVideoPaused = !isVideoPaused;
-        };
+        if (isVideoPaused)
+            ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered));
+        else
+            ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_Button));
+        if (ImGui::Button("Pause"))  isVideoPaused = !isVideoPaused;
+        ImGui::PopStyleColor();
+         
         ImGui::SameLine();
         if (ImGui::Button("Reset")) {
             current_frame = 0;
@@ -385,7 +389,7 @@ public:
         ImGui::LabelText("##","Video Speed");
         ImGui::SliderInt("[FPS]", &solution_frame_rate, 1, 60);
         ImGui::LabelText("##","Camera Distance");
-        ImGui::SliderFloat("[km]", &camera_distance, 1.0, 10.0);
+        ImGui::SliderFloat("[km]", &camera_distance, 0.5 * solution.max_dist, 5.0*solution.max_dist);
     }
 
     void render()
