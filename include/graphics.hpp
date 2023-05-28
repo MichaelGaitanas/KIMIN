@@ -50,11 +50,19 @@ public:
 
     bool view_panom, view_r, view_l, view_f, view_b, view_t, view_d;
 
+    // video setup
+
     bool play_video;
 
     int current_frame;
 
+    int solution_frame_rate;
+
     bool isVideoPaused;
+
+    double previous_time;
+
+    float camera_distance;
 
     //Properties properties;
 
@@ -81,7 +89,10 @@ public:
                  view_d(false),
                  play_video(false),
                  isVideoPaused(false),
-                 current_frame(0)
+                 current_frame(0),
+                 solution_frame_rate(60),
+                 previous_time(0.0),
+                 camera_distance(4.0f)
     { }
 
     //void yield_properties(const Properties &properties)
@@ -203,10 +214,11 @@ public:
             ImVec4 ForestGreen(0.2,0.6,0.2,1.0);
             ImVec4 DarkRed(0.6,0.2,0.2,1.0);
             ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 3.5, ForestGreen, -1.0, ForestGreen);
-            ImPlot::PlotScatter("Collision", &(solution.t[current_frame]), &(plot_func[current_frame]), 1, 2.0);
-            if (solution.collision)
+            ImPlot::PlotScatter("Current Frame", &(solution.t[current_frame]), &(plot_func[current_frame]), 1, 2.0);
+            if (solution.collision){
                 ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 3.5, DarkRed, -1.0, DarkRed);
                 ImPlot::PlotScatter("Collision", &(solution.t[solution.t.size()-1]), &(plot_func[solution.t.size()-1]), 1, 2.0);
+            }
             ImPlot::EndPlot();
         }
         ImGui::End();
@@ -233,19 +245,19 @@ public:
         glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1920.0f/1080.0f, 0.01f,100.0f);
         glm::mat4 view;
         if (view_panom)
-           view = glm::lookAt(glm::vec3(4.0f,4.0f,4.0f), cam_aim, cam_up);
+           view = glm::lookAt(glm::vec3(camera_distance,camera_distance,camera_distance), cam_aim, cam_up);
         else if (view_r)
-           view = glm::lookAt(glm::vec3(4.0f,0.0f,0.0f), cam_aim, cam_up);
+           view = glm::lookAt(glm::vec3(camera_distance,0.0f,0.0f), cam_aim, cam_up);
         else if (view_l)
-           view = glm::lookAt(glm::vec3(-4.0f,0.0f,0.0f), cam_aim, cam_up);
+           view = glm::lookAt(glm::vec3(-camera_distance,0.0f,0.0f), cam_aim, cam_up);
         else if (view_f)
-           view = glm::lookAt(glm::vec3(0.0f,4.0f,0.0f), cam_aim, cam_up);
+           view = glm::lookAt(glm::vec3(0.0f,camera_distance,0.0f), cam_aim, cam_up);
         else if (view_b)
-           view = glm::lookAt(glm::vec3(0.0f,-4.0f,0.0f), cam_aim, cam_up);
+           view = glm::lookAt(glm::vec3(0.0f,-camera_distance,0.0f), cam_aim, cam_up);
         else if (view_t)
-           view = glm::lookAt(glm::vec3(0.0f,-0.01f,4.0f), cam_aim, cam_up);
+           view = glm::lookAt(glm::vec3(0.0f,-0.01f,camera_distance), cam_aim, cam_up);
         else if (view_d)
-           view = glm::lookAt(glm::vec3(0.0f,-0.01f,-4.0f), cam_aim, cam_up);
+           view = glm::lookAt(glm::vec3(0.0f,-0.01f,-camera_distance), cam_aim, cam_up);
         
         shad.use();
 
@@ -255,14 +267,20 @@ public:
         double cm1fac = -solution.M2/(solution.M1 + solution.M2);
         double cm2fac =  solution.M1/(solution.M1 + solution.M2);
         
-        int max_frame = solution.x.size();
+        int max_frame = solution.x.size()-1;
         
-        if(current_frame == max_frame || isVideoPaused ){
+        double now_time = glfwGetTime();
+        double delta_time = now_time - previous_time;
+        if( delta_time > 1.0f/solution_frame_rate){
 
-        } else{
+            if(current_frame == max_frame || isVideoPaused ){
 
-            current_frame++;
-        };           
+            } else{
+
+                current_frame++;
+            }
+            previous_time = now_time;
+        }           
         
         glm::mat4 model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3((float)cm1fac*solution.x[current_frame],(float)cm1fac*solution.y[current_frame],(float)cm1fac* solution.z[current_frame]));
@@ -351,19 +369,23 @@ public:
         }
         ImGui::Dummy(ImVec2(0.0f,15.0f));
 
-        if (ImGui::Button("Play")) play_video = !play_video;
+        if (ImGui::Button("Show")) play_video = !play_video;
         ImGui::SameLine();
         if (ImGui::Button("Pause")) {
             isVideoPaused = !isVideoPaused;
-
         };
         ImGui::SameLine();
         if (ImGui::Button("Reset")) {
             current_frame = 0;
-
         };
-        
-        return;
+        ImGui::Separator();
+        ImGui::LabelText("##","Current Frame");
+        ImGui::SliderInt("[# Frame]", &current_frame, 0, solution.x.size()-1);
+        ImGui::Separator();
+        ImGui::LabelText("##","Video Speed");
+        ImGui::SliderInt("[FPS]", &solution_frame_rate, 1, 60);
+        ImGui::LabelText("##","Camera Distance");
+        ImGui::SliderFloat("[km]", &camera_distance, 1.0, 10.0);
     }
 
     void render()
