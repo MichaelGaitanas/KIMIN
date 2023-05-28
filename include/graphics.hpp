@@ -232,9 +232,10 @@ public:
         glClear(GL_DEPTH_BUFFER_BIT);
 
         bool temp_play_video = play_video;
-
+     
         static Meshvfn aster1(solution.obj_path1.c_str());
         static Meshvfn aster2(solution.obj_path2.c_str());
+
         static Skybox sky;
         static shader shad("../shaders/vertex/trans_mvpn.vert", "../shaders/fragment/dir_light_ad.frag");
         static shader skyshad("../shaders/vertex/skybox.vert" , "../shaders/fragment/skybox.frag");
@@ -287,6 +288,9 @@ public:
         model = glm::rotate(model, (float)solution.yaw1[current_frame]  , glm::vec3(0.0f,0.0f,1.0f));
         model = glm::rotate(model, (float)solution.pitch1[current_frame], glm::vec3(0.0f,1.0f,0.0f));
         model = glm::rotate(model, (float)solution.roll1[current_frame] , glm::vec3(1.0f,0.0f,0.0f));
+        if(solution.ell_checkbox){
+            model = glm::scale(model,glm::vec3(solution.semiaxes1[0],solution.semiaxes1[1],solution.semiaxes1[2]));
+        }
         shad.set_mat4_uniform("model", model);
         aster1.draw();
 
@@ -295,6 +299,9 @@ public:
         model = glm::rotate(model, (float)solution.yaw2[current_frame]   , glm::vec3(0.0f,0.0f,1.0f));
         model = glm::rotate(model, (float)solution.pitch2[current_frame] , glm::vec3(0.0f,1.0f,0.0f));
         model = glm::rotate(model, (float)solution.roll2[current_frame]  , glm::vec3(1.0f,0.0f,0.0f));
+        if(solution.ell_checkbox){
+            model = glm::scale(model,glm::vec3(solution.semiaxes2[0],solution.semiaxes2[1],solution.semiaxes2[2]));
+        }
         shad.set_mat4_uniform("model", model);
         aster2.draw();
         // Skybox

@@ -53,6 +53,11 @@ public:
 
     Solution(const Integrator &integrator) : Integrator(integrator)
     {
+        if(ell_checkbox){
+            obj_path1 = "../obj/sphere.obj";
+            obj_path2 = "../obj/sphere.obj";
+        }
+        
         double ener0, mom0;
         for (int i = 0; i < msol.size(); ++i)
         {

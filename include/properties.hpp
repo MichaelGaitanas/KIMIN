@@ -197,6 +197,12 @@ public:
         ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f, ImGui::GetIO().DisplaySize.y), ImGuiCond_FirstUseEver);
         ImGui::Begin("Properties ", nullptr);
 
+        //run button
+        ImGui::Indent(75.0f);
+        if (ImGui::Button("Run", ImVec2(100.0f,50.0f)))
+            clicked_run = true;
+        ImGui::Unindent(75.0f);
+
         ImGui::Text("Simulation name");
         ImGui::PushItemWidth(200.0f);
             ImGui::InputText(" ", simname, IM_ARRAYSIZE(simname));
@@ -430,10 +436,6 @@ public:
         }
         ImGui::Dummy(ImVec2(0.0f, 10.0f));
         ImGui::Unindent();
-
-        //run button
-        if (ImGui::Button("Run", ImVec2(50.0f,30.0f)))
-            clicked_run = true;
 
         ImGui::End();
     }
