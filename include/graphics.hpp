@@ -235,12 +235,8 @@ public:
      
         static Meshvfn aster1(solution.obj_path1.c_str());
         static Meshvfn aster2(solution.obj_path2.c_str());
+        static shader aster_shad("../shaders/vertex/trans_mvpn.vert", "../shaders/fragment/dir_light_ad.frag");
 
-        static Skybox sky;
-        static shader shad("../shaders/vertex/trans_mvpn.vert", "../shaders/fragment/dir_light_ad.frag");
-        static shader skyshad("../shaders/vertex/skybox.vert" , "../shaders/fragment/skybox.frag");
-
-        
         glm::vec3 cam_aim = glm::vec3(0.0f,0.0f,0.0f);
         glm::vec3 cam_up = glm::vec3(0.0f,0.0f,1.0f);
         glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1920.0f/1080.0f, 0.01f,100.0f);
@@ -260,10 +256,10 @@ public:
         else if (view_d)
            view = glm::lookAt(glm::vec3(0.0f,-0.01f,-camera_distance), cam_aim, cam_up);
         
-        shad.use();
+        aster_shad.use();
 
-        shad.set_mat4_uniform("projection", projection);
-        shad.set_mat4_uniform("view", view);
+        aster_shad.set_mat4_uniform("projection", projection);
+        aster_shad.set_mat4_uniform("view", view);
 
         double cm1fac = -solution.M2/(solution.M1 + solution.M2);
         double cm2fac =  solution.M1/(solution.M1 + solution.M2);
@@ -291,7 +287,7 @@ public:
         if(solution.ell_checkbox){
             model = glm::scale(model,glm::vec3(solution.semiaxes1[0],solution.semiaxes1[1],solution.semiaxes1[2]));
         }
-        shad.set_mat4_uniform("model", model);
+        aster_shad.set_mat4_uniform("model", model);
         aster1.draw();
 
         model = glm::mat4(1.0f);
@@ -302,16 +298,22 @@ public:
         if(solution.ell_checkbox){
             model = glm::scale(model,glm::vec3(solution.semiaxes2[0],solution.semiaxes2[1],solution.semiaxes2[2]));
         }
-        shad.set_mat4_uniform("model", model);
+        aster_shad.set_mat4_uniform("model", model);
         aster2.draw();
+
+
         // Skybox
+        static Skybox sky;
+        static shader sky_shad("../shaders/vertex/skybox.vert" , "../shaders/fragment/skybox.frag");
         glDepthFunc(GL_LEQUAL);
-        skyshad.use();
-        skyshad.set_int_uniform("skybox", 0);
-        glm::mat4 viewsky = glm::mat4(glm::mat3(view));
-        skyshad.set_mat4_uniform("projection", projection);
-        skyshad.set_mat4_uniform("view", viewsky);
-        sky.draw();
+            sky_shad.use();
+            projection = glm::perspective(glm::radians(45.0f), 1920.0f/1080.0f, 0.01f, 100.0f);
+            if (view_panom)
+               view = glm::mat4(glm::mat3(glm::lookAt(glm::vec3(camera_distance,camera_distance,camera_distance), cam_aim, cam_up)));
+            
+            sky_shad.set_mat4_uniform("projection", projection);
+            sky_shad.set_mat4_uniform("view", view);
+            sky.draw();
         glDepthFunc(GL_LESS);
 
         return temp_play_video;

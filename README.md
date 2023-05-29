@@ -1,6 +1,6 @@
 # KIMIN
 
-g++ main.cpp -o main.exe C:\Users\micha\github\KIMIN\imgui\imgui*.cpp C:\Users\micha\github\KIMIN\imgui\implot*.cpp -I C:\Users\micha\github\KIMIN\imgui -lopengl32 -lglfw3 -lglew32
+g++ main.cpp -o main.exe C:\Users\Michalis\github\KIMIN\imgui\imgui*.cpp C:\Users\Michalis\github\KIMIN\imgui\implot*.cpp -I C:\Users\Michalis\github\KIMIN\imgui -lopengl32 -lglfw3 -lglew32
 
 ToDoList :
 1) Run detached // Kill // Status-Run
