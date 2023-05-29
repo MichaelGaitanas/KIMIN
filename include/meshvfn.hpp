@@ -16,11 +16,23 @@ private:
 
     unsigned int vao, vbo; //vertex array and buffer objects
     std::vector<float> buffer; //final form of the data to draw
+    bool is_init;
 
 public:
 
-    Meshvfn(const char *path)
+    Meshvfn() {
+        is_init = false;
+    }
+
+    void update_mesh(const char *path)
     { 
+
+        if(is_init){
+            glDeleteVertexArrays(1, &vao);
+            glDeleteBuffers(1, &vbo);
+            buffer.clear();
+        }
+            
         std::ifstream file(path);
         if (!file.is_open())
         {
@@ -105,6 +117,8 @@ public:
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)(3*sizeof(float)));
         glEnableVertexAttribArray(1);
+
+        is_init = true;
     }
 
     //delete the mesh

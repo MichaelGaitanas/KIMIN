@@ -51,18 +51,15 @@ public:
     bool view_panom, view_r, view_l, view_f, view_b, view_t, view_d;
 
     // video setup
-
     bool play_video;
-
     int current_frame;
-
     int solution_frame_rate;
-
     bool isVideoPaused;
-
     double previous_time;
-
     float camera_distance;
+    // asteroids
+    Meshvfn aster1;
+    Meshvfn aster2;
 
     //Properties properties;
 
@@ -155,25 +152,25 @@ public:
         plot_rpy2[2] = common_plot_button("yaw 2",   plot_rpy2[2]);
         ImGui::Separator();
         
-        ImGui::Text("Quaternion (Body 1)");
-        plot_q1[0] = common_plot_button("q10", plot_q1[0]); ImGui::SameLine();
-        plot_q1[1] = common_plot_button("q11", plot_q1[1]); ImGui::SameLine();
-        plot_q1[2] = common_plot_button("q12", plot_q1[2]); ImGui::SameLine();
-        plot_q1[3] = common_plot_button("q13", plot_q1[3]);
-        ImGui::Separator();
+        // ImGui::Text("Quaternion (Body 1)");
+        // plot_q1[0] = common_plot_button("q10", plot_q1[0]); ImGui::SameLine();
+        // plot_q1[1] = common_plot_button("q11", plot_q1[1]); ImGui::SameLine();
+        // plot_q1[2] = common_plot_button("q12", plot_q1[2]); ImGui::SameLine();
+        // plot_q1[3] = common_plot_button("q13", plot_q1[3]);
+        // ImGui::Separator();
         
-        ImGui::Text("Quaternion (Body 2)");
-        plot_q2[0] = common_plot_button("q20", plot_q2[0]); ImGui::SameLine();
-        plot_q2[1] = common_plot_button("q21", plot_q2[1]); ImGui::SameLine();
-        plot_q2[2] = common_plot_button("q22", plot_q2[2]); ImGui::SameLine();
-        plot_q2[3] = common_plot_button("q23", plot_q2[3]);
-        ImGui::Separator();
+        // ImGui::Text("Quaternion (Body 2)");
+        // plot_q2[0] = common_plot_button("q20", plot_q2[0]); ImGui::SameLine();
+        // plot_q2[1] = common_plot_button("q21", plot_q2[1]); ImGui::SameLine();
+        // plot_q2[2] = common_plot_button("q22", plot_q2[2]); ImGui::SameLine();
+        // plot_q2[3] = common_plot_button("q23", plot_q2[3]);
+        // ImGui::Separator();
 
-        ImGui::Text("Angular velocity (Body 1, Inertial)");
-        plot_w1i[0] = common_plot_button(" ω1ix ", plot_w1i[0]); ImGui::SameLine();
-        plot_w1i[1] = common_plot_button(" ω1iy ", plot_w1i[1]); ImGui::SameLine();
-        plot_w1i[2] = common_plot_button(" ω1iz ", plot_w1i[2]);
-        ImGui::Separator();
+        // ImGui::Text("Angular velocity (Body 1, Inertial)");
+        // plot_w1i[0] = common_plot_button(" ω1ix ", plot_w1i[0]); ImGui::SameLine();
+        // plot_w1i[1] = common_plot_button(" ω1iy ", plot_w1i[1]); ImGui::SameLine();
+        // plot_w1i[2] = common_plot_button(" ω1iz ", plot_w1i[2]);
+        // ImGui::Separator();
 
         ImGui::Text("Angular velocity (Body 1, Body)");
         plot_w1b[0] = common_plot_button(" ω1bx ", plot_w1b[0]); ImGui::SameLine();
@@ -181,11 +178,11 @@ public:
         plot_w1b[2] = common_plot_button(" ω1bz ", plot_w1b[2]);
         ImGui::Separator();
 
-        ImGui::Text("Angular velocity (Body 2, Inertial)");
-        plot_w2i[0] = common_plot_button(" ω2ix ", plot_w2i[0]); ImGui::SameLine();
-        plot_w2i[1] = common_plot_button(" ω2iy ", plot_w2i[1]); ImGui::SameLine();
-        plot_w2i[2] = common_plot_button(" ω2iz ", plot_w2i[2]);
-        ImGui::Separator();
+        // ImGui::Text("Angular velocity (Body 2, Inertial)");
+        // plot_w2i[0] = common_plot_button(" ω2ix ", plot_w2i[0]); ImGui::SameLine();
+        // plot_w2i[1] = common_plot_button(" ω2iy ", plot_w2i[1]); ImGui::SameLine();
+        // plot_w2i[2] = common_plot_button(" ω2iz ", plot_w2i[2]);
+        // ImGui::Separator();
 
         ImGui::Text("Angular velocity (Body 2, Body)");
         plot_w2b[0] = common_plot_button(" ω2bx ", plot_w2b[0]); ImGui::SameLine();
@@ -233,8 +230,6 @@ public:
 
         bool temp_play_video = play_video;
      
-        static Meshvfn aster1(solution.obj_path1.c_str());
-        static Meshvfn aster2(solution.obj_path2.c_str());
         static shader aster_shad("../shaders/vertex/trans_mvpn.vert", "../shaders/fragment/dir_light_ad.frag");
 
         glm::vec3 cam_aim = glm::vec3(0.0f,0.0f,0.0f);
@@ -303,18 +298,18 @@ public:
 
 
         // Skybox
-        static Skybox sky;
-        static shader sky_shad("../shaders/vertex/skybox.vert" , "../shaders/fragment/skybox.frag");
-        glDepthFunc(GL_LEQUAL);
-            sky_shad.use();
-            projection = glm::perspective(glm::radians(45.0f), 1920.0f/1080.0f, 0.01f, 100.0f);
-            if (view_panom)
-               view = glm::mat4(glm::mat3(glm::lookAt(glm::vec3(camera_distance,camera_distance,camera_distance), cam_aim, cam_up)));
-            
-            sky_shad.set_mat4_uniform("projection", projection);
-            sky_shad.set_mat4_uniform("view", view);
-            sky.draw();
-        glDepthFunc(GL_LESS);
+        // static Skybox sky;
+        // static shader sky_shad("../shaders/vertex/skybox.vert" , "../shaders/fragment/skybox.frag");
+        // glDepthFunc(GL_LEQUAL);
+            // sky_shad.use();
+            // projection = glm::perspective(glm::radians(45.0f), 1920.0f/1080.0f, 0.01f, 100.0f);
+            // if (view_panom)
+            //    view = glm::mat4(glm::mat3(glm::lookAt(glm::vec3(camera_distance,camera_distance,camera_distance), cam_aim, cam_up)));
+            // 
+            // sky_shad.set_mat4_uniform("projection", projection);
+            // sky_shad.set_mat4_uniform("view", view);
+            // sky.draw();
+        // glDepthFunc(GL_LESS);
 
         return temp_play_video;
     }

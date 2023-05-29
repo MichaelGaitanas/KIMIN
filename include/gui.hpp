@@ -6,6 +6,8 @@
 #include"../imgui/imgui_impl_opengl3.h"
 #include"../imgui/implot.h"
 
+#include<thread>
+
 #include<GL/glew.h>
 #include<GLFW/glfw3.h>
 
@@ -17,9 +19,6 @@
 #include"solution.hpp"
 #include"graphics.hpp"
 
-#include <sstream>
-#include <boost/date_time.hpp>
-
 class GUI
 {
 
@@ -28,6 +27,7 @@ public:
     Properties properties;
     Graphics graphics;
     Console console;
+    Integrator integrator;
 
     //Constructor and correct initialization of &io.
     GUI(GLFWwindow *pointer)
@@ -78,38 +78,22 @@ public:
         strvec errors = properties.validate();
         if (!errors.size())
         {
-            console.add_text(get_local_time().c_str());
-            console.add_text("[Integrator] Running... ");
-                Integrator integrator(properties);
-                integrator.run();
-                Solution solution(integrator);
-                solution.export_txt_files(properties.simname);
-                //graphics.yield_properties(properties);
-                graphics.yield_solution(solution);
-            console.add_text("Done. ");
-            console.add_text("\n");
+            //console.add_text("[Integrator] Running... ");
+            integrator.update_properties(properties);
+            integrator.force_kill = false;
+            std::thread th(&Integrator::run, &integrator,std::ref(console));
+            th.detach();
         }
         else
         {
             for (int i = 0; i < errors.size(); ++i)
             {
-                console.add_text(get_local_time().c_str());
-                console.add_text(errors[i].c_str());
-                console.add_text("\n");
+                console.timedlog(errors[i].c_str());
             }
         }
-        properties.clicked_run = false;
-
         return;
     }
 
-    std::string get_local_time(){
-            boost::posix_time::ptime timeLocal = boost::posix_time::second_clock::local_time();
-            std::ostringstream datetime;
-            datetime << "[" << timeLocal << "] ";
-            std::string outdate = datetime.str();
-            return outdate;
-    }
 
 };
 

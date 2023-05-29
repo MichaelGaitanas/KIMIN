@@ -101,9 +101,6 @@ public:
     dvec3 w1i, w2i;
     dvec3 w1b, w2b;
 
-    //'Run' button state.
-    bool clicked_run;
-
     Properties() : simname("test_sim"),
                    ell_checkbox(false),
                    clicked_ell_ok(false),
@@ -151,8 +148,8 @@ public:
                    w1i({0.0,0.0,0.000772269580528465}),
                    w2i({0.0,0.0,0.000146399360157891}),
                    w1b({0.0,0.0,0.0}),
-                   w2b({0.0,0.0,0.0}),
-                   clicked_run(false)
+                   w2b({0.0,0.0,0.0})
+                   
     { }
 
     //This function receives as input a path to a directory and as a result it returns a vector of paths, corresponding
@@ -197,12 +194,6 @@ public:
         ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f, ImGui::GetIO().DisplaySize.y), ImGuiCond_FirstUseEver);
         ImGui::Begin("Properties ", nullptr);
 
-        //run button
-        ImGui::Indent(75.0f);
-        if (ImGui::Button("Run", ImVec2(100.0f,50.0f)))
-            clicked_run = true;
-        ImGui::Unindent(75.0f);
-
         ImGui::Text("Simulation name");
         ImGui::PushItemWidth(200.0f);
             ImGui::InputText(" ", simname, IM_ARRAYSIZE(simname));
@@ -217,7 +208,7 @@ public:
         {
             obj_checkbox = false; //untick the obj checkbox in case it is ticked
             ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver); 
-            ImGui::SetNextWindowSize(ImVec2(300,300), ImGuiCond_FirstUseEver); 
+            ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f,300), ImGuiCond_FirstUseEver); 
             ImGui::Begin("Ellipsoid parameters");
             
             //ellipsoids semiaxes submenu
@@ -245,7 +236,7 @@ public:
         {
             ell_checkbox = false; //untick the ellipsoids checkbox in case it is ticked
             ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver); //display position of the obj files menu 
-            ImGui::SetNextWindowSize(ImVec2(300,400), ImGuiCond_FirstUseEver); 
+            ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f,400), ImGuiCond_FirstUseEver); 
             ImGui::Begin(".obj parameters");
             ImGui::Text("KIMIN's available .obj\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t");
             ImGui::Dummy(ImVec2(0.0f,10.0f));
@@ -457,11 +448,11 @@ public:
 
         //Theory model checkboxes error (at least one must be checked).
         if (!ord2_checkbox && !ord3_checkbox && !ord4_checkbox && !mascons_checkbox)
-            errors.push_back("[Error] :  Neither 'Order 2', nor 'Order 3', nor 'Order 4', nor 'Mascons' theory is selected.");
+            errors.push_back("[Error] :  Please select a theory order for the simulation.");
 
         //Shape model checkboxes error (at least one must be checked).
         if (!ell_checkbox && !obj_checkbox)
-            errors.push_back("[Error] :  Neither 'Ellipsoids' nor '.obj files' is selected as shape models.");
+            errors.push_back("[Error] :  Please select shape models for the simulation.");
 
         //Ellipsoids semiaxes error (all semiaxes must be > 0.0).
         if (ell_checkbox && (semiaxes1[0] <= 0.0 || semiaxes1[1] <= 0.0 || semiaxes1[2] <= 0.0))

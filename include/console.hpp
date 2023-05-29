@@ -12,6 +12,9 @@
 
 #include"typedef.hpp"
 
+#include <sstream>
+#include <boost/date_time.hpp>
+
 class Console
 {
 
@@ -82,6 +85,21 @@ public:
         ImGui::EndChild();
         ImGui::End();
     }
+
+    void timedlog(const char *format){
+        add_text(get_local_time().c_str());
+        add_text(format);
+        add_text("\n");
+    }
+
+    std::string get_local_time(){
+        boost::posix_time::ptime timeLocal = boost::posix_time::second_clock::local_time();
+        std::ostringstream datetime;
+        datetime << "[" << timeLocal << "] ";
+        std::string outdate = datetime.str();
+        return outdate;
+    }
+
 };
 
 #endif

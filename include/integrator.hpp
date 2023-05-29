@@ -15,6 +15,7 @@
 #include"potential.hpp"
 #include"force.hpp"
 #include"torque.hpp"
+#include"console.hpp"
 
 #include"properties.hpp"
 
@@ -32,10 +33,65 @@ public:
     bool collision; //binary collision flag
     dmat msol; //minimal solution matrix of the binary
 
-    Integrator() { }
+    float progress;
+    bool is_running;
+    bool exists_solution;
+    bool force_kill;
 
-    Integrator(const Properties &properties) : Properties(properties)
+    Integrator() { 
+        is_running = false;
+        exists_solution = false;
+        force_kill = false;
+    }
+
+    void update_properties(const Properties &properties)
     {
+        strcpy(simname, properties.simname);
+        ell_checkbox = properties.ell_checkbox;;
+        clicked_ell_ok  = properties.clicked_ell_ok  ;
+        semiaxes1 = properties.semiaxes1 ;
+        semiaxes2 = properties.semiaxes2 ;
+        obj_checkbox = properties.obj_checkbox ;
+        obj_refer_to_body = properties.obj_refer_to_body ;
+        clicked_poly1_index = properties.clicked_poly1_index ;
+        clicked_poly2_index = properties.clicked_poly2_index ;
+        clicked_poly1 = properties.clicked_poly1 ;
+        clicked_poly2 = properties.clicked_poly2 ;
+        path_to_poly_obj = properties.path_to_poly_obj ;
+        obj_path1 = properties.obj_path1 ;
+        obj_path2 = properties.obj_path2 ;
+        vf1 = properties.vf1 ;
+        vf2 = properties.vf2 ;
+        grid_reso1 = properties.grid_reso1 ;
+        grid_reso2 = properties.grid_reso2 ;
+        grid_reso_inactive = properties.grid_reso_inactive ;
+        clicked_obj_ok = properties.clicked_obj_ok ;
+        ord2_checkbox = properties.ord2_checkbox ;
+        ord3_checkbox = properties.ord3_checkbox ;
+        ord4_checkbox = properties.ord4_checkbox ;
+        mascons_checkbox = properties.mascons_checkbox ;
+        M1 = properties.M1 ;
+        M2 = properties.M2 ;
+        v_impact = properties.v_impact ;
+        M_impact = properties.M_impact ;
+        beta = properties.beta ;
+        epoch = properties.epoch ;
+        dur = properties.dur ;
+        step = properties.step ;
+        cart_kep_var_choice = properties.cart_kep_var_choice ;
+        cart = properties.cart ;
+        kep = properties.kep ;
+        orient_var_choice = properties.orient_var_choice ;
+        rpy1 = properties.rpy1 ;
+        rpy2 = properties.rpy2 ;
+        q1 = properties.q1 ;
+        q2 = properties.q2 ;
+        frame_type_choice = properties.frame_type_choice ;
+        w1i = properties.w1i ;
+        w2i = properties.w2i ;
+        w1b = properties.w1b ;
+        w2b = properties.w2b ;
+    
         if (ell_checkbox)
         {
             if (ord2_checkbox)
@@ -208,8 +264,11 @@ public:
         return;
     }
 
-    void run()
+    void run(Console & cons)
     {
+        char buffer[150];
+        cons.timedlog("[Integrator] New simulation started.");
+        is_running = true;
         //apply the β correction to the initial relative velocity
         cart[0] += (M1 + M2)*beta*M_impact*v_impact[0]/M2;
         cart[1] += (M1 + M2)*beta*M_impact*v_impact[1]/M2;
@@ -229,9 +288,11 @@ public:
 
         collision = false; //no collision initially
         msol.clear();
+        int steps = 0;
+        int maxsteps = (int)((tmax-t0)/dt + 1.0) ;
 
         boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 20>> rkf78; //integration method
-
+        progress = 0;
         //integration loop
         for (double t = t0; t <= tmax; t += dt)
         {
@@ -262,13 +323,26 @@ public:
             if (sph_sph_collision(length(dvec3{state[0],state[1],state[2]}), ell_brillouin(semiaxes1), ell_brillouin(semiaxes2)))
             {
                 collision = true;
+                sprintf(buffer,"[Integrator] Colision detected at t = %5.2lf days.",t/86400.0);
+                cons.timedlog(buffer);
                 break; //stop the integration
             }
 
-            //3) update the state vector
+            //3) check for kill condition
+            if(force_kill){
+                sprintf(buffer,"[Integrator] Integration stoped at t = %5.2lf days.",t/86400.0);
+                cons.timedlog(buffer);
+                break; // stop the integration
+            }   
+            //4) update the state vector
             rkf78.do_step(std::bind(&Integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, dt);
+            step ++;
+            progress = (float)step/maxsteps;
+                        
         }
-
+        is_running = false;
+        exists_solution = true;
+        cons.timedlog("[Integrator] Simulation has been completed. Press Plot to process your results.");
         return;
     }
 };
