@@ -59,7 +59,7 @@ public:
     bool clicked_obj_ok;
 
     //'Theory' checkbox state
-    bool ord2_checkbox, ord3_checkbox, ord4_checkbox, mascons_checkbox;
+    bool ord2_checkbox, ord3_checkbox, ord4_checkbox;
 
     //'M1', 'M2' fields.
     double M1,M2;
@@ -124,7 +124,6 @@ public:
                    ord2_checkbox(false),
                    ord3_checkbox(false),
                    ord4_checkbox(false),
-                   mascons_checkbox(false),
                    M1(5.320591856403073e11),
                    M2(4.940814359692687e9),
                    v_impact({0.0,0.0,0.0}),
@@ -312,13 +311,11 @@ public:
         //physics theory
         ImGui::Text("Theory");
         if (ImGui::Checkbox("Order 2", &ord2_checkbox))
-            ord3_checkbox = ord4_checkbox = mascons_checkbox = false;
+            ord3_checkbox = ord4_checkbox = false;
         if (ImGui::Checkbox("Order 3", &ord3_checkbox))
-            ord2_checkbox = ord4_checkbox = mascons_checkbox = false;
+            ord2_checkbox = ord4_checkbox = false;
         if (ImGui::Checkbox("Order 4", &ord4_checkbox))
-            ord2_checkbox = ord3_checkbox = mascons_checkbox = false;
-        if (ImGui::Checkbox("Mascons", &mascons_checkbox))
-            ord2_checkbox = ord3_checkbox = ord4_checkbox = false;
+            ord2_checkbox = ord3_checkbox = false;
         ImGui::Dummy(ImVec2(0.0f,15.0f));
 
         ImGui::Text("Mass");
@@ -431,7 +428,6 @@ public:
         ImGui::End();
     }
 
-
     //If all user inputs are valid, this member function returns an entirely empty vector of strings.
     //Otherwise the returned vector contains string messages, each corresponding to an invalid input. In this case,
     //the vector of strings will be displayed on the console and the simulation will not run.
@@ -447,12 +443,12 @@ public:
             errors.push_back("[Error] :  'Simulation name' is invalid.");
 
         //Theory model checkboxes error (at least one must be checked).
-        if (!ord2_checkbox && !ord3_checkbox && !ord4_checkbox && !mascons_checkbox)
-            errors.push_back("[Error] :  Please select a theory order for the simulation.");
+        if (!ord2_checkbox && !ord3_checkbox && !ord4_checkbox)
+            errors.push_back("[Error] :  Neither 'Order 2', nor 'Order 3', nor 'Order 4' was selected as theory.");
 
         //Shape model checkboxes error (at least one must be checked).
         if (!ell_checkbox && !obj_checkbox)
-            errors.push_back("[Error] :  Please select shape models for the simulation.");
+            errors.push_back("[Error] :  Neither 'Ellipsoids', nor '.obj files' was selected  for determining the shapes.");
 
         //Ellipsoids semiaxes error (all semiaxes must be > 0.0).
         if (ell_checkbox && (semiaxes1[0] <= 0.0 || semiaxes1[1] <= 0.0 || semiaxes1[2] <= 0.0))
@@ -472,13 +468,13 @@ public:
         {
             vf1 = Obj::vf_status(obj_path1.c_str());
             if ( !(vf1[0] && vf1[1]) )
-                errors.push_back("[Error] :  In 'Body 1' .obj file, vertices and faces lines must be present.");
+                errors.push_back("[Error] :  In 'Body 1' .obj file, vertices and faces lines must exist.");
         }
         if (obj_checkbox && clicked_poly2)
         {
             vf2 = Obj::vf_status(obj_path2.c_str());
             if ( !(vf2[0] && vf2[1]) )
-                errors.push_back("[Error] :  In 'Body 2' .obj file, vertices and faces lines must be present.");
+                errors.push_back("[Error] :  In 'Body 2' .obj file, vertices and faces lines must exist.");
         }
 
         //Raycast grid error (in order to successfully fill the polyhedron with mascons, the raycast grid resolution must be > 1 per axis)

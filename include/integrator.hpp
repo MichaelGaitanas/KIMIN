@@ -29,6 +29,7 @@ public:
     dmatnx3 masc1, masc2; //mascon cloud coordinates
     dtens J1, J2; //inertial integrals
     dmat3 I1, I2; //moments of inertia
+    double brillouin1, brillouin2;
 
     bool collision; //binary collision flag
     dmat msol; //minimal solution matrix of the binary
@@ -47,7 +48,7 @@ public:
     void update_properties(const Properties &properties)
     {
         strcpy(simname, properties.simname);
-        ell_checkbox = properties.ell_checkbox;;
+        ell_checkbox = properties.ell_checkbox;
         clicked_ell_ok  = properties.clicked_ell_ok  ;
         semiaxes1 = properties.semiaxes1 ;
         semiaxes2 = properties.semiaxes2 ;
@@ -69,7 +70,6 @@ public:
         ord2_checkbox = properties.ord2_checkbox ;
         ord3_checkbox = properties.ord3_checkbox ;
         ord4_checkbox = properties.ord4_checkbox ;
-        mascons_checkbox = properties.mascons_checkbox ;
         M1 = properties.M1 ;
         M2 = properties.M2 ;
         v_impact = properties.v_impact ;
@@ -94,6 +94,8 @@ public:
     
         if (ell_checkbox)
         {
+            brillouin1 = ell_brillouin(semiaxes1);
+            brillouin2 = ell_brillouin(semiaxes2);
             if (ord2_checkbox)
             {
                 J1 = ell_integrals(M1, semiaxes1, 2);
@@ -115,13 +117,6 @@ public:
                 I1 = ell_inertia(M1, semiaxes1);
                 I2 = ell_inertia(M2, semiaxes2);
             }
-            else
-            {
-                masc1 = fill_ell_with_masc(semiaxes1, grid_reso1);
-                masc2 = fill_ell_with_masc(semiaxes2, grid_reso2);
-                I1 = masc_inertia(M1, masc1);
-                I2 = masc_inertia(M2, masc2);
-            }
         }
         else //obj_checkbox
         {
@@ -129,11 +124,13 @@ public:
             masc1 = poly1.fill_with_masc(grid_reso1);
             correct_masc_com(masc1);
             correct_masc_inertia(M1, masc1);
+            brillouin1 = masc_farthest(masc1);
 
             Obj poly2(obj_path2.c_str());
             masc2 = poly2.fill_with_masc(grid_reso2);
             correct_masc_com(masc2);
             correct_masc_inertia(M2, masc2);
+            brillouin2 = masc_farthest(masc2);
 
             if (ord2_checkbox)
             {
@@ -156,11 +153,10 @@ public:
                 I1 = masc_inertia(M1, masc1);
                 I2 = masc_inertia(M2, masc2);
             }
-            //If pure mascons theory is selected, no additional parameter must be computed. masc1[][] and masc2[][] suffice. 
         }
         
         if (cart_kep_var_choice == 1) //the user chose Keplerian elements as ic
-            cart = kep2cart(kep, G*(M1+M2)); //transform Keplerian to Cartesian because the f2bp odes is written in Cartesian elements
+            cart = kep2cart(dvec6{kep[0], kep[1], kep[2]*pi/180.0, kep[3]*pi/180.0, kep[4]*pi/180.0, kep[5]*pi/180.0}, G*(M1+M2)); //transform Keplerian to Cartesian because the f2bp odes is written in Cartesian elements
 
         if (orient_var_choice == 0) //orientation variables were chosen to be Euler angles
         {
@@ -212,11 +208,6 @@ public:
             force = mut_force_integrals_ord4(r, M1,J1,A1, M2,J2,A2);
             tau1i = mut_torque_integrals_ord4(r, M1,J1,A1, M2,J2,A2);
         }
-        else
-        {
-            force = mut_force_masc(r, M1,masc1,A1, M2,masc2,A2);
-            tau1i = mut_torque_masc(r, M1,masc1,A1, M2,masc2,A2);
-        }
 
         dvec3 tau2i = -tau1i - cross(r,force);
 
@@ -264,15 +255,16 @@ public:
         return;
     }
 
-    void run(Console & cons)
+    void run(Console &cons)
     {
         char buffer[150];
         cons.timedlog("[Integrator] New simulation started.");
         is_running = true;
+
         //apply the β correction to the initial relative velocity
-        cart[0] += (M1 + M2)*beta*M_impact*v_impact[0]/M2;
-        cart[1] += (M1 + M2)*beta*M_impact*v_impact[1]/M2;
-        cart[2] += (M1 + M2)*beta*M_impact*v_impact[2]/M2;
+        cart[3] += (M1 + M2)*beta*M_impact*v_impact[0]/(M1*M2);
+        cart[4] += (M1 + M2)*beta*M_impact*v_impact[1]/(M1*M2);
+        cart[5] += (M1 + M2)*beta*M_impact*v_impact[2]/(M1*M2);
 
         //initial conditions (boost::array<> must be used to call the integration method)
         boost::array<double, 20> state = { cart[0], cart[1], cart[2],
@@ -320,10 +312,10 @@ public:
                             state[19]});
 
             //2) check for sphere-sphere collision detection
-            if (sph_sph_collision(length(dvec3{state[0],state[1],state[2]}), ell_brillouin(semiaxes1), ell_brillouin(semiaxes2)))
+            if (sph_sph_collision(length(dvec3{state[0],state[1],state[2]}), brillouin1, brillouin2))
             {
                 collision = true;
-                sprintf(buffer,"[Integrator] Colision detected at t = %5.2lf days.",t/86400.0);
+                sprintf(buffer,"[Integrator] Collision detected at t = %5.2lf days.",t/86400.0);
                 cons.timedlog(buffer);
                 break; //stop the integration
             }
@@ -336,7 +328,7 @@ public:
             }   
             //4) update the state vector
             rkf78.do_step(std::bind(&Integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, dt);
-            step ++;
+            step++;
             progress = (float)step/maxsteps;
                         
         }

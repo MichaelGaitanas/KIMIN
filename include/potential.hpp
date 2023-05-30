@@ -7,24 +7,6 @@
 #include"typedef.hpp"
 #include"linalg.hpp"
 
-//Mutual potential of 2 rigid bodies, assuming mascon distributions with constant densities.
-double mut_pot_masc(const dvec3 &r, const double M1, const dmatnx3 &masc1, const dmat3 &A1,
-                                    const double M2, const dmatnx3 &masc2, const dmat3 &A2)
-{
-    double sum = 0.0;
-    for (int i = 0; i < masc1.size(); ++i)
-    {
-        dvec3 a1i = dot(A1, masc1[i]);
-        for (int j = 0; j < masc2.size(); ++j)
-        {
-            dvec3 a2j = dot(A2, masc2[j]);
-            dvec3 dij = r + a2j - a1i;
-            sum += 1.0/length(dij);
-        }
-    }
-    return -G*M1*M2*sum/(masc1.size()*masc2.size());
-}
-
 //Mutual potential of 2 rigid bodies, assuming inertial integral expansion of order 2 approximation.
 double mut_pot_integrals_ord2(const dvec3 &r, const double M1, const dtens &J1, const dmat3 &A1,
                                               const double M2, const dtens &J2, const dmat3 &A2)

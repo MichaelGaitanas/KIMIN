@@ -272,13 +272,13 @@ public:
                 current_frame++;
             }
             previous_time = now_time;
-        }           
+        }
         
         glm::mat4 model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3((float)cm1fac*solution.x[current_frame],(float)cm1fac*solution.y[current_frame],(float)cm1fac* solution.z[current_frame]));
-        model = glm::rotate(model, (float)solution.yaw1[current_frame]  , glm::vec3(0.0f,0.0f,1.0f));
-        model = glm::rotate(model, (float)solution.pitch1[current_frame], glm::vec3(0.0f,1.0f,0.0f));
-        model = glm::rotate(model, (float)solution.roll1[current_frame] , glm::vec3(1.0f,0.0f,0.0f));
+        model = glm::rotate(model, glm::radians((float)solution.yaw1[current_frame]) , glm::vec3(0.0f,0.0f,1.0f));
+        model = glm::rotate(model, glm::radians((float)solution.pitch1[current_frame]), glm::vec3(0.0f,1.0f,0.0f));
+        model = glm::rotate(model, glm::radians((float)solution.roll1[current_frame]) , glm::vec3(1.0f,0.0f,0.0f));
         if(solution.ell_checkbox){
             model = glm::scale(model,glm::vec3(solution.semiaxes1[0],solution.semiaxes1[1],solution.semiaxes1[2]));
         }
@@ -287,9 +287,9 @@ public:
 
         model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3((float)cm2fac*solution.x[current_frame],(float)cm2fac*solution.y[current_frame],(float)cm2fac* solution.z[current_frame]));
-        model = glm::rotate(model, (float)solution.yaw2[current_frame]   , glm::vec3(0.0f,0.0f,1.0f));
-        model = glm::rotate(model, (float)solution.pitch2[current_frame] , glm::vec3(0.0f,1.0f,0.0f));
-        model = glm::rotate(model, (float)solution.roll2[current_frame]  , glm::vec3(1.0f,0.0f,0.0f));
+        model = glm::rotate(model, glm::radians((float)solution.yaw2[current_frame])   , glm::vec3(0.0f,0.0f,1.0f));
+        model = glm::rotate(model, glm::radians((float)solution.pitch2[current_frame]) , glm::vec3(0.0f,1.0f,0.0f));
+        model = glm::rotate(model, glm::radians((float)solution.roll2[current_frame])  , glm::vec3(1.0f,0.0f,0.0f));
         if(solution.ell_checkbox){
             model = glm::scale(model,glm::vec3(solution.semiaxes2[0],solution.semiaxes2[1],solution.semiaxes2[2]));
         }

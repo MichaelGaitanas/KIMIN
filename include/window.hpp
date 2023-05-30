@@ -75,7 +75,7 @@ public:
         glewExperimental = GL_TRUE;
         if (glewInit() != GLEW_OK)
         {
-            //Again for debugging purposes
+            //Again for debugging purposes.
             printf("Failed to initialize glew. Calling glfwTerminate().\n");
             glfwTerminate();
         }
@@ -97,8 +97,8 @@ public:
         
         glEnable(GL_DEPTH_TEST);
         glClearColor(0.01f,0.01f,0.01f,1.0f);
-        gui.console.timedlog("[KIMIN] Welcome to KIMIN");
-        gui.console.timedlog("[KIMIN] Please select shape models and theory order for the simulation.");
+        //gui.console.timedlog("[KIMIN] Welcome to KIMIN");
+        //gui.console.timedlog("[KIMIN] Please select shape models and theory order for the simulation.");
         while (!glfwWindowShouldClose(pointer))
         {
             glClear(GL_COLOR_BUFFER_BIT);

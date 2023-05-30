@@ -81,7 +81,7 @@ public:
             //console.add_text("[Integrator] Running... ");
             integrator.update_properties(properties);
             integrator.force_kill = false;
-            std::thread th(&Integrator::run, &integrator,std::ref(console));
+            std::thread th(&Integrator::run, &integrator, std::ref(console));
             th.detach();
         }
         else
