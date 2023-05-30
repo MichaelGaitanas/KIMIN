@@ -29,7 +29,7 @@ class Graphics
     
 public:
 
-    //x(t), y(t), z(t), r(t) magnitude (distance), υx(t), υy(t),υz(t), υ(t) magnitude
+    //x(t), y(t), z(t), r(t) magnitude (distance), υx(t), υy(t), υz(t), υ(t) magnitude
     bvec plot_cart;
 
     //a(t), e(t), i(t), Ω(t), ω(t), M(t)
