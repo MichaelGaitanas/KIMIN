@@ -146,13 +146,13 @@ public:
             if (verts[i][2] > rmax[2]) rmax[2] = verts[i][2];
         }
 
-        double xmin = rmin[0] + machine_zero;
-        double ymin = rmin[1] + machine_zero;
-        double zmin = rmin[2] + machine_zero;
+        double xmin = rmin[0] - 100.0*machine_zero;
+        double ymin = rmin[1] - 200.0*machine_zero;
+        double zmin = rmin[2] - 300.0*machine_zero;
 
-        double xmax = rmax[0] - machine_zero;
-        double ymax = rmax[1] - machine_zero;
-        double zmax = rmax[2] - machine_zero;
+        double xmax = rmax[0] + 400.0*machine_zero;
+        double ymax = rmax[1] + 500.0*machine_zero;
+        double zmax = rmax[2] + 600.0*machine_zero;
 
         dmatnx3 masc;
         for (int i = 0; i < grid_reso[0]; ++i)
