@@ -123,14 +123,14 @@ public:
             Obj poly1(obj_path1.c_str());
             masc1 = poly1.fill_with_masc(grid_reso1);
             correct_masc_com(masc1);
-            correct_masc_inertia(M1, masc1);
-            brillouin1 = masc_farthest(masc1);
+            //correct_masc_inertia(M1, masc1);
+            brillouin1 = masc_farthest(poly1.verts);
 
             Obj poly2(obj_path2.c_str());
             masc2 = poly2.fill_with_masc(grid_reso2);
             correct_masc_com(masc2);
-            correct_masc_inertia(M2, masc2);
-            brillouin2 = masc_farthest(masc2);
+            //correct_masc_inertia(M2, masc2);
+            brillouin2 = masc_farthest(poly2.verts);
 
             if (ord2_checkbox)
             {

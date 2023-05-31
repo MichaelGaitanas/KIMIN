@@ -234,7 +234,7 @@ public:
 
         glm::vec3 cam_aim = glm::vec3(0.0f,0.0f,0.0f);
         glm::vec3 cam_up = glm::vec3(0.0f,0.0f,1.0f);
-        glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1920.0f/1080.0f, 0.01f,100.0f);
+        glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1920.0f/1080.0f, 0.01f,3000.0f);
         glm::mat4 view;
         if (view_panom)
            view = glm::lookAt(glm::vec3(camera_distance,camera_distance,camera_distance), cam_aim, cam_up);
@@ -302,7 +302,7 @@ public:
         // static shader sky_shad("../shaders/vertex/skybox.vert" , "../shaders/fragment/skybox.frag");
         // glDepthFunc(GL_LEQUAL);
             // sky_shad.use();
-            // projection = glm::perspective(glm::radians(45.0f), 1920.0f/1080.0f, 0.01f, 100.0f);
+            // projection = glm::perspective(glm::radians(45.0f), 1920.0f/1080.0f, 0.01f, 3000.0f);
             // if (view_panom)
             //    view = glm::mat4(glm::mat3(glm::lookAt(glm::vec3(camera_distance,camera_distance,camera_distance), cam_aim, cam_up)));
             // 
