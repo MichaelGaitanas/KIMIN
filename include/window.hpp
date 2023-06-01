@@ -117,7 +117,8 @@ public:
                 ImGui::Indent(10.0f);
                 if (gui.integrator.is_running)
                     ImGui::BeginDisabled(true);
-                if (ImGui::Button("Run", ImVec2(70.0f,50.0f))) gui.when_run_is_clicked();
+                if (ImGui::Button("Run", ImVec2(70.0f,50.0f)))
+                    gui.when_run_is_clicked();
                 if (gui.integrator.is_running)
                     ImGui::EndDisabled();
                 ImGui::SameLine();

@@ -37,8 +37,6 @@ public:
 
     //roll1(t), pitch1(t), yaw1(t), roll2(t), pitch2(t), yaw2(t)
     bvec plot_rpy1, plot_rpy2;
-    //q10(t), q11(t), q12(t), q13(t), q20(t), q21(t), q22(t), q23(t)
-    bvec plot_q1, plot_q2;
 
     //ω1ix(t), ω1iy(t), ω1iz(t),  ω1bx(t), ω1by(t), ω1bz(t)
     bvec plot_w1i, plot_w1b;
@@ -70,8 +68,6 @@ public:
                  plot_kep({false,false,false,false,false,false}),
                  plot_rpy1({false,false,false}),
                  plot_rpy2({false,false,false}),
-                 plot_q1({false,false,false,false}),
-                 plot_q2({false,false,false,false}),
                  plot_w1i({false,false,false}),
                  plot_w1b({false,false,false}),
                  plot_w2i({false,false,false}),
@@ -85,9 +81,9 @@ public:
                  view_t(false),
                  view_d(false),
                  play_video(false),
-                 isVideoPaused(false),
                  current_frame(0),
                  solution_frame_rate(60),
+                 isVideoPaused(false),
                  previous_time(0.0),
                  camera_distance(4.0f)
     { }
@@ -151,38 +147,24 @@ public:
         plot_rpy2[1] = common_plot_button("pitch 2", plot_rpy2[1]); ImGui::SameLine();
         plot_rpy2[2] = common_plot_button("yaw 2",   plot_rpy2[2]);
         ImGui::Separator();
-        
-        // ImGui::Text("Quaternion (Body 1)");
-        // plot_q1[0] = common_plot_button("q10", plot_q1[0]); ImGui::SameLine();
-        // plot_q1[1] = common_plot_button("q11", plot_q1[1]); ImGui::SameLine();
-        // plot_q1[2] = common_plot_button("q12", plot_q1[2]); ImGui::SameLine();
-        // plot_q1[3] = common_plot_button("q13", plot_q1[3]);
-        // ImGui::Separator();
-        
-        // ImGui::Text("Quaternion (Body 2)");
-        // plot_q2[0] = common_plot_button("q20", plot_q2[0]); ImGui::SameLine();
-        // plot_q2[1] = common_plot_button("q21", plot_q2[1]); ImGui::SameLine();
-        // plot_q2[2] = common_plot_button("q22", plot_q2[2]); ImGui::SameLine();
-        // plot_q2[3] = common_plot_button("q23", plot_q2[3]);
-        // ImGui::Separator();
 
-        // ImGui::Text("Angular velocity (Body 1, Inertial)");
-        // plot_w1i[0] = common_plot_button(" ω1ix ", plot_w1i[0]); ImGui::SameLine();
-        // plot_w1i[1] = common_plot_button(" ω1iy ", plot_w1i[1]); ImGui::SameLine();
-        // plot_w1i[2] = common_plot_button(" ω1iz ", plot_w1i[2]);
-        // ImGui::Separator();
-
+        ImGui::Text("Angular velocity (Body 1, Inertial)");
+        plot_w1i[0] = common_plot_button(" ω1ix ", plot_w1i[0]); ImGui::SameLine();
+        plot_w1i[1] = common_plot_button(" ω1iy ", plot_w1i[1]); ImGui::SameLine();
+        plot_w1i[2] = common_plot_button(" ω1iz ", plot_w1i[2]);
+        ImGui::Separator();
+        
         ImGui::Text("Angular velocity (Body 1, Body)");
         plot_w1b[0] = common_plot_button(" ω1bx ", plot_w1b[0]); ImGui::SameLine();
         plot_w1b[1] = common_plot_button(" ω1by ", plot_w1b[1]); ImGui::SameLine();
         plot_w1b[2] = common_plot_button(" ω1bz ", plot_w1b[2]);
         ImGui::Separator();
 
-        // ImGui::Text("Angular velocity (Body 2, Inertial)");
-        // plot_w2i[0] = common_plot_button(" ω2ix ", plot_w2i[0]); ImGui::SameLine();
-        // plot_w2i[1] = common_plot_button(" ω2iy ", plot_w2i[1]); ImGui::SameLine();
-        // plot_w2i[2] = common_plot_button(" ω2iz ", plot_w2i[2]);
-        // ImGui::Separator();
+        ImGui::Text("Angular velocity (Body 2, Inertial)");
+        plot_w2i[0] = common_plot_button(" ω2ix ", plot_w2i[0]); ImGui::SameLine();
+        plot_w2i[1] = common_plot_button(" ω2iy ", plot_w2i[1]); ImGui::SameLine();
+        plot_w2i[2] = common_plot_button(" ω2iz ", plot_w2i[2]);
+        ImGui::Separator();
 
         ImGui::Text("Angular velocity (Body 2, Body)");
         plot_w2b[0] = common_plot_button(" ω2bx ", plot_w2b[0]); ImGui::SameLine();
@@ -295,21 +277,6 @@ public:
         }
         aster_shad.set_mat4_uniform("model", model);
         aster2.draw();
-
-
-        // Skybox
-        // static Skybox sky;
-        // static shader sky_shad("../shaders/vertex/skybox.vert" , "../shaders/fragment/skybox.frag");
-        // glDepthFunc(GL_LEQUAL);
-            // sky_shad.use();
-            // projection = glm::perspective(glm::radians(45.0f), 1920.0f/1080.0f, 0.01f, 3000.0f);
-            // if (view_panom)
-            //    view = glm::mat4(glm::mat3(glm::lookAt(glm::vec3(camera_distance,camera_distance,camera_distance), cam_aim, cam_up)));
-            // 
-            // sky_shad.set_mat4_uniform("projection", projection);
-            // sky_shad.set_mat4_uniform("view", view);
-            // sky.draw();
-        // glDepthFunc(GL_LESS);
 
         return temp_play_video;
     }
@@ -436,36 +403,26 @@ public:
 
                 if (plot_rpy2[0]) plot_rpy2[0] = common_plot("##35", "##36", "roll 2 [deg]",  plot_rpy2[0], solution.roll2);
                 if (plot_rpy2[1]) plot_rpy2[1] = common_plot("##37", "##38", "pitch 2 [deg]", plot_rpy2[1], solution.pitch2);
-                if (plot_rpy2[2]) plot_rpy2[2] = common_plot("##38", "##40", "yaw 2 [deg]",   plot_rpy2[2], solution.yaw2);
+                if (plot_rpy2[2]) plot_rpy2[2] = common_plot("##39", "##40", "yaw 2 [deg]",   plot_rpy2[2], solution.yaw2);
 
-                if (plot_q1[0]) plot_q1[0] = common_plot("##41", "##42", "q10 [  ]", plot_q1[0], solution.q10);
-                if (plot_q1[1]) plot_q1[1] = common_plot("##43", "##44", "q11 [  ]", plot_q1[1], solution.q11);
-                if (plot_q1[2]) plot_q1[2] = common_plot("##45", "##46", "q12 [  ]", plot_q1[2], solution.q12);
-                if (plot_q1[3]) plot_q1[3] = common_plot("##47", "##48", "q13 [  ]", plot_q1[3], solution.q13);
+                if (plot_w1i[0]) plot_w1i[0] = common_plot("##41", "##42", "ω1ix [rad/sec]", plot_w1i[0], solution.w1ix);
+                if (plot_w1i[1]) plot_w1i[1] = common_plot("##43", "##44", "ω1iy [rad/sec]", plot_w1i[1], solution.w1iy);
+                if (plot_w1i[2]) plot_w1i[2] = common_plot("##45", "##46", "ω1iz [rad/sec]", plot_w1i[2], solution.w1iz);
 
-                if (plot_q2[0]) plot_q2[0] = common_plot("##49", "##50", "q20 [  ]", plot_q2[0], solution.q20);
-                if (plot_q2[1]) plot_q2[1] = common_plot("##51", "##52", "q21 [  ]", plot_q2[1], solution.q21);
-                if (plot_q2[2]) plot_q2[2] = common_plot("##53", "##54", "q22 [  ]", plot_q2[2], solution.q22);
-                if (plot_q2[3]) plot_q2[3] = common_plot("##55", "##56", "q23 [  ]", plot_q2[3], solution.q23);
+                if (plot_w1b[0]) plot_w1b[0] = common_plot("##47", "##48", "ω1bx [rad/sec]", plot_w1b[0], solution.w1bx);
+                if (plot_w1b[1]) plot_w1b[1] = common_plot("##49", "##50", "ω1by [rad/sec]", plot_w1b[1], solution.w1by);
+                if (plot_w1b[2]) plot_w1b[2] = common_plot("##51", "##52", "ω1bz [rad/sec]", plot_w1b[2], solution.w1bz);
 
-                if (plot_w1i[0]) plot_w1i[0] = common_plot("##57", "##58", "ω1ix [rad/sec]", plot_w1i[0], solution.w1ix);
-                if (plot_w1i[1]) plot_w1i[1] = common_plot("##59", "##60", "ω1iy [rad/sec]", plot_w1i[1], solution.w1iy);
-                if (plot_w1i[2]) plot_w1i[2] = common_plot("##61", "##62", "ω1iz [rad/sec]", plot_w1i[2], solution.w1iz);
+                if (plot_w2i[0]) plot_w2i[0] = common_plot("##53", "##54", "ω2ix [rad/sec]", plot_w2i[0], solution.w2ix);
+                if (plot_w2i[1]) plot_w2i[1] = common_plot("##55", "##56", "ω2iy [rad/sec]", plot_w2i[1], solution.w2iy);
+                if (plot_w2i[2]) plot_w2i[2] = common_plot("##57", "##58", "ω2iz [rad/sec]", plot_w2i[2], solution.w2iz);
 
-                if (plot_w1b[0]) plot_w1b[0] = common_plot("##63", "##64", "ω1bx [rad/sec]", plot_w1b[0], solution.w1bx);
-                if (plot_w1b[1]) plot_w1b[1] = common_plot("##65", "##66", "ω1by [rad/sec]", plot_w1b[1], solution.w1by);
-                if (plot_w1b[2]) plot_w1b[2] = common_plot("##67", "##68", "ω1bz [rad/sec]", plot_w1b[2], solution.w1bz);
+                if (plot_w2b[0]) plot_w2b[0] = common_plot("##59", "##60", "ω2bx [rad/sec]", plot_w2b[0], solution.w2bx);
+                if (plot_w2b[1]) plot_w2b[1] = common_plot("##61", "##62", "ω2by [rad/sec]", plot_w2b[1], solution.w2by);
+                if (plot_w2b[2]) plot_w2b[2] = common_plot("##63", "##64", "ω2bz [rad/sec]", plot_w2b[2], solution.w2bz);
 
-                if (plot_w2i[0]) plot_w2i[0] = common_plot("##69", "##70", "ω2ix [rad/sec]", plot_w2i[0], solution.w2ix);
-                if (plot_w2i[1]) plot_w2i[1] = common_plot("##71", "##72", "ω2iy [rad/sec]", plot_w2i[1], solution.w2iy);
-                if (plot_w2i[2]) plot_w2i[2] = common_plot("##73", "##74", "ω2iz [rad/sec]", plot_w2i[2], solution.w2iz);
-
-                if (plot_w2b[0]) plot_w2b[0] = common_plot("##75", "##76", "ω2bx [rad/sec]", plot_w2b[0], solution.w2bx);
-                if (plot_w2b[1]) plot_w2b[1] = common_plot("##77", "##78", "ω2by [rad/sec]", plot_w2b[1], solution.w2by);
-                if (plot_w2b[2]) plot_w2b[2] = common_plot("##79", "##80", "ω2bz [rad/sec]", plot_w2b[2], solution.w2bz);
-
-                if (plot_ener_mom_rel_err[0]) plot_ener_mom_rel_err[0] = common_plot("##81", "##82", "energy error [  ]",   plot_ener_mom_rel_err[0], solution.ener_rel_err);
-                if (plot_ener_mom_rel_err[1]) plot_ener_mom_rel_err[1] = common_plot("##83", "##84", "momentum error [  ]", plot_ener_mom_rel_err[1], solution.mom_rel_err);
+                if (plot_ener_mom_rel_err[0]) plot_ener_mom_rel_err[0] = common_plot("##65", "##66", "energy error [  ]",   plot_ener_mom_rel_err[0], solution.ener_rel_err);
+                if (plot_ener_mom_rel_err[1]) plot_ener_mom_rel_err[1] = common_plot("##67", "##68", "momentum error [  ]", plot_ener_mom_rel_err[1], solution.mom_rel_err);
             }
         }
 

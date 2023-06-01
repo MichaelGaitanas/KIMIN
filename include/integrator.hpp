@@ -124,6 +124,10 @@ public:
             masc1 = poly1.fill_with_masc(grid_reso1);
             correct_masc_com(masc1);
             I1 = masc_inertia(M1, masc1);
+            /*
+            printf("Body 1 before :\n[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n",I1[0][0],I1[0][1],I1[0][2],
+                                                                                                 I1[1][0],I1[1][1],I1[1][2],
+                                                                                                 I1[2][0],I1[2][1],I1[2][2]);*/
             if ( fabs(order_of_magnitude(I1[0][0]) - order_of_magnitude(I1[0][1])) < 12.0 &&
                  fabs(order_of_magnitude(I1[0][0]) - order_of_magnitude(I1[0][2])) < 12.0 &&
                  fabs(order_of_magnitude(I1[0][0]) - order_of_magnitude(I1[1][2])) < 12.0 &&
@@ -136,6 +140,11 @@ public:
             {
                 //only then correct the axes
                 correct_masc_inertia(M1, masc1);
+                I1 = masc_inertia(M1, masc1);
+                /*
+                printf("Body 1 after :\n[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n",I1[0][0],I1[0][1],I1[0][2],
+                                                                                                 I1[1][0],I1[1][1],I1[1][2],
+                                                                                                 I1[2][0],I1[2][1],I1[2][2]);*/
             }
             brillouin1 = masc_farthest(poly1.verts);
 
@@ -143,6 +152,9 @@ public:
             masc2 = poly2.fill_with_masc(grid_reso2);
             correct_masc_com(masc2);
             I2 = masc_inertia(M2, masc2);
+             /*printf("Body 2 before :\n[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n",I2[0][0],I2[0][1],I2[0][2],
+                                                                                                 I2[1][0],I2[1][1],I2[1][2],
+                                                                                                 I2[2][0],I2[2][1],I2[2][2]);*/
             if ( fabs(order_of_magnitude(I2[0][0]) - order_of_magnitude(I2[0][1])) < 12.0 &&
                  fabs(order_of_magnitude(I2[0][0]) - order_of_magnitude(I2[0][2])) < 12.0 &&
                  fabs(order_of_magnitude(I2[0][0]) - order_of_magnitude(I2[1][2])) < 12.0 &&
@@ -155,6 +167,10 @@ public:
             {
                 //only then correct the axes
                 correct_masc_inertia(M2, masc2);
+                I2 = masc_inertia(M2, masc2);
+                /*printf("Body 2 after :\n[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n",I2[0][0],I2[0][1],I2[0][2],
+                                                                                         I2[1][0],I2[1][1],I2[1][2],
+                                                                                         I2[2][0],I2[2][1],I2[2][2]);*/
             }
             brillouin2 = masc_farthest(poly2.verts);
             
