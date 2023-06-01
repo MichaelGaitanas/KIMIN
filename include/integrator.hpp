@@ -123,14 +123,41 @@ public:
             Obj poly1(obj_path1.c_str());
             masc1 = poly1.fill_with_masc(grid_reso1);
             correct_masc_com(masc1);
-            //correct_masc_inertia(M1, masc1);
+            I1 = masc_inertia(M1, masc1);
+            if ( fabs(order_of_magnitude(I1[0][0]) - order_of_magnitude(I1[0][1])) < 12.0 &&
+                 fabs(order_of_magnitude(I1[0][0]) - order_of_magnitude(I1[0][2])) < 12.0 &&
+                 fabs(order_of_magnitude(I1[0][0]) - order_of_magnitude(I1[1][2])) < 12.0 &&
+                 fabs(order_of_magnitude(I1[1][1]) - order_of_magnitude(I1[0][1])) < 12.0 &&
+                 fabs(order_of_magnitude(I1[1][1]) - order_of_magnitude(I1[0][2])) < 12.0 &&
+                 fabs(order_of_magnitude(I1[1][1]) - order_of_magnitude(I1[1][2])) < 12.0 &&
+                 fabs(order_of_magnitude(I1[2][2]) - order_of_magnitude(I1[0][1])) < 12.0 &&
+                 fabs(order_of_magnitude(I1[2][2]) - order_of_magnitude(I1[0][2])) < 12.0 &&
+                 fabs(order_of_magnitude(I1[2][2]) - order_of_magnitude(I1[1][2])) < 12.0 )
+            {
+                //only then correct the axes
+                correct_masc_inertia(M1, masc1);
+            }
             brillouin1 = masc_farthest(poly1.verts);
 
             Obj poly2(obj_path2.c_str());
             masc2 = poly2.fill_with_masc(grid_reso2);
             correct_masc_com(masc2);
-            //correct_masc_inertia(M2, masc2);
+            I2 = masc_inertia(M2, masc2);
+            if ( fabs(order_of_magnitude(I2[0][0]) - order_of_magnitude(I2[0][1])) < 12.0 &&
+                 fabs(order_of_magnitude(I2[0][0]) - order_of_magnitude(I2[0][2])) < 12.0 &&
+                 fabs(order_of_magnitude(I2[0][0]) - order_of_magnitude(I2[1][2])) < 12.0 &&
+                 fabs(order_of_magnitude(I2[1][1]) - order_of_magnitude(I2[0][1])) < 12.0 &&
+                 fabs(order_of_magnitude(I2[1][1]) - order_of_magnitude(I2[0][2])) < 12.0 &&
+                 fabs(order_of_magnitude(I2[1][1]) - order_of_magnitude(I2[1][2])) < 12.0 &&
+                 fabs(order_of_magnitude(I2[2][2]) - order_of_magnitude(I2[0][1])) < 12.0 &&
+                 fabs(order_of_magnitude(I2[2][2]) - order_of_magnitude(I2[0][2])) < 12.0 &&
+                 fabs(order_of_magnitude(I2[2][2]) - order_of_magnitude(I2[1][2])) < 12.0 )
+            {
+                //only then correct the axes
+                correct_masc_inertia(M2, masc2);
+            }
             brillouin2 = masc_farthest(poly2.verts);
+            
 
             if (ord2_checkbox)
             {
