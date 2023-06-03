@@ -131,7 +131,7 @@ public:
                 ImGui::SameLine();
                 if (!gui.integrator.exists_solution)
                     ImGui::BeginDisabled(true);
-                    
+
                 if (ImGui::Button("Plot", ImVec2(70.0f,50.0f))){
                     Solution solution(gui.integrator);
                     solution.export_txt_files(gui.properties.simname);
@@ -144,8 +144,9 @@ public:
                     ImGui::EndDisabled(); 
                 
                 ImGui::Unindent(10.0f);
-                ImGui::Text("Progress:");
-                ImGui::ProgressBar(gui.integrator.progress,ImVec2(260,50));
+
+                ImGui::Text("Progress");
+                ImGui::ProgressBar(gui.integrator.progress, ImVec2(260,50));
                 ImGui::End();
                 
             gui.render();               
