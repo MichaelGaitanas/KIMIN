@@ -8,6 +8,7 @@
 
 #include"gui.hpp"
 
+
 class Window
 {
     
@@ -72,6 +73,7 @@ public:
         glfwSetWindowSizeLimits(pointer, 400,400, GLFW_DONT_CARE,GLFW_DONT_CARE);
         glfwSwapInterval(1);
 
+    /*
         glewExperimental = GL_TRUE;
         if (glewInit() != GLEW_OK)
         {
@@ -79,6 +81,7 @@ public:
             printf("Failed to initialize glew. Calling glfwTerminate().\n");
             glfwTerminate();
         }
+    */
 
         //Register the callback functions.
         glfwSetFramebufferSizeCallback(pointer, framebuffer_size_callback);
@@ -92,7 +95,7 @@ public:
     }
 
     void game_loop()
-    {
+    {   
         GUI gui(pointer);
         
         glEnable(GL_DEPTH_TEST);

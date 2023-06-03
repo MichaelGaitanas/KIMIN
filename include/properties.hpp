@@ -134,7 +134,7 @@ public:
                    step(0.001388888888888889),
                    cart_kep_var{"Cartesian ", "Keplerian "},
                    cart_kep_var_choice(0),
-                   cart({1.19,0.0,0.0, 0.0,0.0001375,0.0}),
+                   cart({1.19,0.0,0.0, 0.0,0.00014,0.0}),
                    kep({0.0,0.0,0.0,0.0,0.0,0.0,}),
                    orient_var{"Euler angles", "Quaternions"},
                    orient_var_choice(0),

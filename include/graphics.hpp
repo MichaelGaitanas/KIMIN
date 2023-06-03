@@ -205,15 +205,7 @@ public:
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
-    void logo_content(void){
-        static shader logo_shad("../shaders/vertex/trans_m_texture.vert","../shaders/fragment/texture.frag");
-        static Logo logo;
-        logo_shad.use();
-        glm::mat4 model = glm::mat4(1.0f);
-        //model = glm::rotate(model, glm::radians(180.0f), glm::vec3(1.0f,0.0f,0.0f));
-        logo_shad.set_mat4_uniform("model",model);
-        logo.draw();        
-    }
+    
 
     bool video_content(const bool play_video)
     {
@@ -445,10 +437,6 @@ public:
 
             }
         }
-
-        //if( glfwGetTime() < 10.0 ){
-            logo_content();
-        //}
 
         ImGui::End();
     }

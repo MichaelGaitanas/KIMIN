@@ -117,7 +117,7 @@ public:
         
     
         ImGui::Text("Progress:");
-        ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.0/255,200.0/255,255.0/255, 1.0));
+        ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.0f,0.7f,1.0f, 1.0f));
         ImGui::ProgressBar(integrator.progress,ImVec2(260,50));
         ImGui::PopStyleColor();
         ImGui::End();
