@@ -74,7 +74,7 @@ public:
         
         //Display FPS and OS.
         ImGui::SameLine();
-        ImGui::Text("Monitor FPS [ %.1f ] ,  OS [ %s ] ,  GPU [ %s ] ", ImGui::GetIO().Framerate, os_name().c_str(), glGetString(GL_RENDERER));
+        ImGui::Text("FPS [ %.1f ] ,  OS [ %s ] ,  GPU [ %s ] ", ImGui::GetIO().Framerate, os_name().c_str(), glGetString(GL_RENDERER));
         ImGui::Separator();
         
         ImGui::BeginChild("Scroll", ImVec2(0.0f, 0.0f), true, ImGuiWindowFlags_HorizontalScrollbar);

@@ -114,18 +114,24 @@ public:
                 ImGui::Begin("Simulation controls ", nullptr);
                 ImGui::Dummy(ImVec2(10.0f,0.0f));
                 ImGui::Indent(10.0f);
+
                 if (gui.integrator.is_running)
                     ImGui::BeginDisabled(true);
+
                 if (ImGui::Button("Run", ImVec2(70.0f,50.0f)))
                     gui.when_run_is_clicked();
+
                 if (gui.integrator.is_running)
                     ImGui::EndDisabled();
+
                 ImGui::SameLine();
                 if (ImGui::Button("Kill", ImVec2(70.0f,50.0f)))
                     gui.integrator.force_kill = true;
+
                 ImGui::SameLine();
                 if (!gui.integrator.exists_solution)
                     ImGui::BeginDisabled(true);
+                    
                 if (ImGui::Button("Plot", ImVec2(70.0f,50.0f))){
                     Solution solution(gui.integrator);
                     solution.export_txt_files(gui.properties.simname);

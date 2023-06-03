@@ -282,60 +282,55 @@ public:
 
     void video_buttons()
     {
-        if (ImGui::TreeNodeEx("Camera"))
+        ImGui::Text("Camera");
+        if (ImGui::Checkbox("Panoramic", &view_panom))
         {
-            if (ImGui::Checkbox("Panoramic", &view_panom))
-            {
-                if (!view_r && !view_l && !view_f && !view_b && !view_t && !view_d)
-                    view_panom = true;
-                else
-                    view_r = view_l = view_f = view_b = view_t = view_d = false;
-            }
-            if (ImGui::Checkbox("Right ( + x )", &view_r))
-            {
-                if (!view_panom && !view_l && !view_f && !view_b && !view_t && !view_d)
-                    view_r = true;
-                else
-                    view_panom = view_l = view_f = view_b = view_t = view_d = false;
-            }
-            if (ImGui::Checkbox("Left ( - x )", &view_l))
-            {
-                if (!view_panom && !view_r && !view_f && !view_b && !view_t && !view_d)
-                    view_l = true;
-                else
-                    view_panom = view_r = view_f = view_b = view_t = view_d = false;
-            }
-            if (ImGui::Checkbox("Front ( + y )", &view_f))
-            {
-                if (!view_panom && !view_r && !view_l && !view_b && !view_t && !view_d)
-                    view_f = true;
-                else
-                    view_panom = view_r = view_l = view_b = view_t = view_d = false;
-            }
-            if (ImGui::Checkbox("Back ( - y )", &view_b))
-            {
-                if (!view_panom && !view_r && !view_l && !view_f && !view_t && !view_d)
-                    view_b = true;
-                else
-                    view_panom = view_r = view_l = view_f = view_t = view_d = false;
-            }
-            if (ImGui::Checkbox("Top ( + z )", &view_t))
-            {
-                if (!view_panom && !view_r && !view_l && !view_f && !view_b && !view_d)
-                    view_t = true;
-                else
-                    view_panom = view_r = view_l = view_f = view_b = view_d = false;
-            }
-            if (ImGui::Checkbox("Down ( - z )", &view_d))
-            {
-                if (!view_panom && !view_r && !view_l && !view_f && !view_b && !view_t)
-                    view_d = true;
-                else
-                    view_panom = view_r = view_l = view_f = view_b = view_t = false;
-            }
-            
-
-            ImGui::TreePop();
+            if (!view_r && !view_l && !view_f && !view_b && !view_t && !view_d)
+                view_panom = true;
+            else
+                view_r = view_l = view_f = view_b = view_t = view_d = false;
+        }
+        if (ImGui::Checkbox("Right ( + x )", &view_r))
+        {
+            if (!view_panom && !view_l && !view_f && !view_b && !view_t && !view_d)
+                view_r = true;
+            else
+                view_panom = view_l = view_f = view_b = view_t = view_d = false;
+        }
+        if (ImGui::Checkbox("Left ( - x )", &view_l))
+        {
+            if (!view_panom && !view_r && !view_f && !view_b && !view_t && !view_d)
+                view_l = true;
+            else
+                view_panom = view_r = view_f = view_b = view_t = view_d = false;
+        }
+        if (ImGui::Checkbox("Front ( + y )", &view_f))
+        {
+            if (!view_panom && !view_r && !view_l && !view_b && !view_t && !view_d)
+                view_f = true;
+            else
+                view_panom = view_r = view_l = view_b = view_t = view_d = false;
+        }
+        if (ImGui::Checkbox("Back ( - y )", &view_b))
+        {
+            if (!view_panom && !view_r && !view_l && !view_f && !view_t && !view_d)
+                view_b = true;
+            else
+                view_panom = view_r = view_l = view_f = view_t = view_d = false;
+        }
+        if (ImGui::Checkbox("Top ( + z )", &view_t))
+        {
+            if (!view_panom && !view_r && !view_l && !view_f && !view_b && !view_d)
+                view_t = true;
+            else
+                view_panom = view_r = view_l = view_f = view_b = view_d = false;
+        }
+        if (ImGui::Checkbox("Down ( - z )", &view_d))
+        {
+            if (!view_panom && !view_r && !view_l && !view_f && !view_b && !view_t)
+                view_d = true;
+            else
+                view_panom = view_r = view_l = view_f = view_b = view_t = false;
         }
         ImGui::Dummy(ImVec2(0.0f,15.0f));
 

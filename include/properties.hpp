@@ -358,15 +358,16 @@ public:
         }
         else
         {
-            double_field("a    ", 100.0f, id, "[km]",  kep[0]);
-            double_field("e    ", 100.0f, id, "[  ]",  kep[1]);
-            double_field("i     ", 100.0f, id, "[deg]", kep[2]);
-            double_field("Ω    ", 100.0f, id, "[deg]", kep[3]);
-            double_field("ω   ",  100.0f, id, "[deg]", kep[4]);
-            double_field("M   ",  100.0f, id, "[deg]", kep[5]);
+            double_field("a     ",  100.0f, id, "[km]",  kep[0]);
+            double_field("e     ",  100.0f, id, "[  ]",  kep[1]);
+            double_field("i      ", 100.0f, id, "[deg]", kep[2]);
+            double_field("Ω    ",   100.0f, id, "[deg]", kep[3]);
+            double_field("ω   ",    100.0f, id, "[deg]", kep[4]);
+            double_field("M   ",    100.0f, id, "[deg]", kep[5]);
         }
+        ImGui::Dummy(ImVec2(0.0f,15.0f));
 
-        ImGui::Text("Orientations");
+        ImGui::Text("Orientation");
 
         //orientation variables (combo)
         ImGui::PushItemWidth(200.0f);
@@ -378,11 +379,10 @@ public:
         {
             double_field("roll 1    " , 100.0f, id, "[deg]", rpy1[0]);
             double_field("pitch 1 "   , 100.0f, id, "[deg]", rpy1[1]);
-            double_field("yaw 1  "    , 100.0f, id, "[deg]", rpy1[2]);
+            double_field("yaw 1   "   , 100.0f, id, "[deg]", rpy1[2]);
             double_field("roll 2    " , 100.0f, id, "[deg]", rpy2[0]);
             double_field("pitch 2 "   , 100.0f, id, "[deg]", rpy2[1]);
             double_field("yaw 2  "    , 100.0f, id, "[deg]", rpy2[2]);
-
         }
         else if (orient_var_choice == 1)
         {
@@ -395,6 +395,7 @@ public:
             double_field("q22   " , 100.0f, id, "[  ]", q2[2]);
             double_field("q23   " , 100.0f, id, "[  ]", q2[3]);
         }
+        ImGui::Dummy(ImVec2(0.0f,15.0f));
 
         ImGui::Text("Angular velocity");
 
