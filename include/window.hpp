@@ -97,8 +97,6 @@ public:
         
         glEnable(GL_DEPTH_TEST);
         glClearColor(0.01f,0.01f,0.01f,1.0f);
-        //gui.console.timedlog("[KIMIN] Welcome to KIMIN");
-        //gui.console.timedlog("[KIMIN] Please select shape models and theory order for the simulation.");
         while (!glfwWindowShouldClose(pointer))
         {
             glClear(GL_COLOR_BUFFER_BIT);
@@ -109,10 +107,11 @@ public:
                 gui.properties.render();
                 gui.console.render();
                 gui.graphics.render();
+                
                 // Integrator Info                
                 ImGui::SetNextWindowPos( ImVec2(2.0f*ImGui::GetIO().DisplaySize.x/7.0f, 0.0f), ImGuiCond_FirstUseEver);
                 ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f, 200.0), ImGuiCond_FirstUseEver);
-                ImGui::Begin("Simulation Controls ", nullptr);
+                ImGui::Begin("Simulation controls ", nullptr);
                 ImGui::Dummy(ImVec2(10.0f,0.0f));
                 ImGui::Indent(10.0f);
                 if (gui.integrator.is_running)
@@ -122,7 +121,8 @@ public:
                 if (gui.integrator.is_running)
                     ImGui::EndDisabled();
                 ImGui::SameLine();
-                if (ImGui::Button("Kill", ImVec2(70.0f,50.0f))) gui.integrator.force_kill = true;
+                if (ImGui::Button("Kill", ImVec2(70.0f,50.0f)))
+                    gui.integrator.force_kill = true;
                 ImGui::SameLine();
                 if (!gui.integrator.exists_solution)
                     ImGui::BeginDisabled(true);

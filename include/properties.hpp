@@ -128,7 +128,7 @@ public:
                    M2(4.940814359692687e9),
                    v_impact({0.0,0.0,0.0}),
                    M_impact(0.0),
-                   beta(1.0),
+                   beta(0.0),
                    epoch(0.0),
                    dur(30.0),
                    step(0.001388888888888889),
@@ -199,7 +199,7 @@ public:
         ImGui::PopItemWidth();
         ImGui::Dummy(ImVec2(0.0f,15.0f));
 
-        ImGui::Text("Shape models");
+        ImGui::Text("Shape model");
         if (ImGui::Checkbox("Ellipsoids", &ell_checkbox) && ell_checkbox)
             clicked_ell_ok = false;
             
@@ -207,15 +207,16 @@ public:
         {
             obj_checkbox = false; //untick the obj checkbox in case it is ticked
             ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver); 
-            ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f,300), ImGuiCond_FirstUseEver); 
+            ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f, 300.0f), ImGuiCond_FirstUseEver); 
             ImGui::Begin("Ellipsoid parameters");
             
             //ellipsoids semiaxes submenu
-            ImGui::Text("Semiaxes");
+            ImGui::Text("Body 1 semi - axes");
             double_field("a1 ", 100.0f, id, "[km]", semiaxes1[0]);
             double_field("b1 ", 100.0f, id, "[km]", semiaxes1[1]);
             double_field("c1 ", 100.0f, id, "[km]", semiaxes1[2]);
             ImGui::Dummy(ImVec2(0.0f,15.0f));
+            ImGui::Text("Body 2 semi - axes");
             double_field("a2 ", 100.0f, id, "[km]", semiaxes2[0]);
             double_field("b2 ", 100.0f, id, "[km]", semiaxes2[1]);
             double_field("c2 ", 100.0f, id, "[km]", semiaxes2[2]);
@@ -228,16 +229,15 @@ public:
             ImGui::End();
         }
 
-        if (ImGui::Checkbox(".obj files", &obj_checkbox) && obj_checkbox)
+        if (ImGui::Checkbox(".obj file", &obj_checkbox) && obj_checkbox)
             clicked_obj_ok = false;
 
         if (obj_checkbox && !clicked_obj_ok)
         {
             ell_checkbox = false; //untick the ellipsoids checkbox in case it is ticked
             ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver); //display position of the obj files menu 
-            ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f,400), ImGuiCond_FirstUseEver); 
+            ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f, 300.0f), ImGuiCond_FirstUseEver); 
             ImGui::Begin(".obj parameters");
-            ImGui::Text("KIMIN's available .obj\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t");
             ImGui::Dummy(ImVec2(0.0f,10.0f));
 
             if (ImGui::RadioButton("Body 1", obj_refer_to_body == 1))
@@ -245,7 +245,7 @@ public:
             if (ImGui::RadioButton("Body 2", obj_refer_to_body == 2))
                 obj_refer_to_body = 2;
             
-            if (ImGui::TreeNodeEx("Polyhedral models"))
+            if (ImGui::TreeNodeEx("Available .obj models"))
             {
                 for (int i = 0; i < path_to_poly_obj.size(); ++i)
                 {
@@ -275,7 +275,7 @@ public:
             ImGui::Dummy(ImVec2(0.0f,5.0f));
 
             ImGui::Indent();
-            ImGui::Text("Grid resolution ");
+            ImGui::Text("Raycasting grid resolution ");
             if ((obj_refer_to_body == 1 && !clicked_poly1) ||
                 (obj_refer_to_body == 2 && !clicked_poly2) ||
                 (!clicked_poly1 && !clicked_poly2))
@@ -309,7 +309,7 @@ public:
         ImGui::Dummy(ImVec2(0.0f, 15.0f));
 
         //physics theory
-        ImGui::Text("Theory");
+        ImGui::Text("Theory expansion");
         if (ImGui::Checkbox("Order 2", &ord2_checkbox))
             ord3_checkbox = ord4_checkbox = false;
         if (ImGui::Checkbox("Order 3", &ord3_checkbox))
@@ -333,7 +333,7 @@ public:
 
         ImGui::Text("Integration time");
         double_field("Epoch     ",   100.0f, id, "[days]", epoch);
-        double_field("Duration  ",   100.0f, id, "[days]", dur);
+        double_field("Duration ",   100.0f, id, "[days]", dur);
         double_field("Step        ", 100.0f, id, "[days]", step);
         ImGui::Dummy(ImVec2(0.0f,15.0f));
 
@@ -358,12 +358,12 @@ public:
         }
         else
         {
-            double_field("a       " , 100.0f, id, "[km]",  kep[0]);
-            double_field("e       " , 100.0f, id, "[  ]",  kep[1]);
-            double_field("i        ", 100.0f, id, "[deg]", kep[2]);
-            double_field("Ω   "     , 100.0f, id, "[deg]", kep[3]);
-            double_field("ω       " , 100.0f, id, "[deg]", kep[4]);
-            double_field("M      "  , 100.0f, id, "[deg]", kep[5]);
+            double_field("a    ", 100.0f, id, "[km]",  kep[0]);
+            double_field("e    ", 100.0f, id, "[  ]",  kep[1]);
+            double_field("i     ", 100.0f, id, "[deg]", kep[2]);
+            double_field("Ω    ", 100.0f, id, "[deg]", kep[3]);
+            double_field("ω   ",  100.0f, id, "[deg]", kep[4]);
+            double_field("M   ",  100.0f, id, "[deg]", kep[5]);
         }
 
         ImGui::Text("Orientations");
@@ -422,8 +422,9 @@ public:
             double_field("ω2y   " , 100.0f, id, "[rad/sec]", w2b[1]);
             double_field("ω2z   " , 100.0f, id, "[rad/sec]", w2b[2]);
         }
-        ImGui::Dummy(ImVec2(0.0f, 10.0f));
+        ImGui::Dummy(ImVec2(0.0f, 700.0f)); //extra y-space in order to be able to scroll even when we change the glfw window y size
         ImGui::Unindent();
+        
 
         ImGui::End();
     }

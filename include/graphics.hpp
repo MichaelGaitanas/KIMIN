@@ -18,7 +18,6 @@
 #include"solution.hpp"
 #include"meshvfn.hpp"
 #include"shader.hpp"
-#include"skybox.hpp"
 
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
