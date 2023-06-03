@@ -65,8 +65,8 @@ public:
         if ( ysize < 200){
             offsety = 200 - ysize;
         }
-        ImGui::SetNextWindowPos( ImVec2(     ImGui::GetIO().DisplaySize.x/7.0f, 6.0f*ImGui::GetIO().DisplaySize.y/7.0f - offsety), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2(5.0f*ImGui::GetIO().DisplaySize.x/7.0f,      ImGui::GetIO().DisplaySize.y/7.0f), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowPos( ImVec2(     2.0*ImGui::GetIO().DisplaySize.x/7.0f, 6.0f*ImGui::GetIO().DisplaySize.y/7.0f - offsety), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(4.0f*ImGui::GetIO().DisplaySize.x/7.0f,      ImGui::GetIO().DisplaySize.y/7.0f), ImGuiCond_FirstUseEver);
         ImGui::Begin("Console", nullptr);
         //Mouse input : Clear the console.
         if (ImGui::Button("Clear "))

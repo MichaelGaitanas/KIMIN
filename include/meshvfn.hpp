@@ -8,6 +8,8 @@
 
 #include"typedef.hpp"
 #include"obj.hpp"
+#define STB_IMAGE_IMPLEMENTATION
+#include"stb_image.h"
 
 class Meshvfn
 {
@@ -135,6 +137,67 @@ public:
         glDrawArrays(GL_TRIANGLES, 0, (unsigned int)(buffer.size()/6));
         glBindVertexArray(0);
     }
+};
+
+class Logo{
+public:
+    unsigned int vao, vbo, texture; //vertex array and buffer object
+
+    Logo(){
+        float texsquare[] = { -0.5f, -0.5f, 0.0f,   0.0f, 0.0f,
+                           0.5f, -0.5f, 0.0f,   1.0f, 0.0f,
+                           0.5f,  0.5f, 0.0f,   1.0f, 1.0f,
+                       
+                          -0.5f, -0.5f, 0.0f,   0.0f, 0.0f,
+                           0.5f,  0.5f, 0.0f,   1.0f, 1.0f,
+                          -0.5f,  0.5f, 0.0f,   0.0f, 1.0f };
+
+        //tell OpenGL how to interpret the texsquarep[] data
+        glGenVertexArrays(1, &vao);
+        glBindVertexArray(vao);
+        glGenBuffers(1, &vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(texsquare), texsquare, GL_STATIC_DRAW);
+        //vertices
+        glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)0 );
+        glEnableVertexAttribArray(0);
+        //textures
+        glVertexAttribPointer( 1, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(3*sizeof(float)) );
+        glEnableVertexAttribArray(1);
+
+        //load the image-texture
+        int imgwidth, imgheight, imgchannels;
+        const char *imgpath = "../resources/logo.jpg";
+        unsigned char *imgdata = stbi_load(imgpath, &imgwidth, &imgheight, &imgchannels, 0);
+        if (!imgdata)
+        {
+            printf("'%s' not found. Exiting...\n", imgpath);
+            stbi_image_free(imgdata); //free image resources
+            exit(EXIT_FAILURE);
+        }
+        //stbi_set_flip_vertically_on_load(false);
+        //tell OpenGL how to apply the texture
+        
+        glGenTextures(1, &texture);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imgwidth, imgheight, 0, GL_RGB, GL_UNSIGNED_BYTE, imgdata);
+        glGenerateMipmap(GL_TEXTURE_2D);
+        stbi_image_free(imgdata); //free image resources
+    }
+
+    void draw(){
+        glBindVertexArray(vao);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glBindVertexArray(0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
 };
 
 #endif

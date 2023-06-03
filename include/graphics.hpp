@@ -204,6 +204,16 @@ public:
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    void logo_content(void){
+        static shader logo_shad("../shaders/vertex/trans_m_texture.vert","../shaders/fragment/texture.frag");
+        static Logo logo;
+        logo_shad.use();
+        glm::mat4 model = glm::mat4(1.0f);
+        //model = glm::rotate(model, glm::radians(180.0f), glm::vec3(1.0f,0.0f,0.0f));
+        logo_shad.set_mat4_uniform("model",model);
+        logo.draw();        
+    }
 
     bool video_content(const bool play_video)
     {
@@ -362,7 +372,7 @@ public:
         ImGui::SetNextWindowPos( ImVec2(6.0f*ImGui::GetIO().DisplaySize.x/7.0f, 0.0f), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(     ImGui::GetIO().DisplaySize.x/7.0f, ImGui::GetIO().DisplaySize.y), ImGuiCond_FirstUseEver);
         ImGui::Begin("Graphics", nullptr);
-
+        ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
         if (ImGui::CollapsingHeader("Plots"))
         {
             if (!solution.t.size())
@@ -419,7 +429,7 @@ public:
                 if (plot_ener_mom_rel_err[1]) plot_ener_mom_rel_err[1] = common_plot("##67", "##68", "momentum error [  ]", plot_ener_mom_rel_err[1], solution.mom_rel_err);
             }
         }
-
+        ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
         if (ImGui::CollapsingHeader("Video"))
         {
             if (!solution.t.size())
@@ -436,12 +446,9 @@ public:
             }
         }
 
-
-
-
-
-
-
+        //if( glfwGetTime() < 10.0 ){
+            logo_content();
+        //}
 
         ImGui::End();
     }

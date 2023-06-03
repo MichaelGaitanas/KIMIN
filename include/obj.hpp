@@ -132,7 +132,7 @@ public:
     }
 
     //Fill the obj polyhedron(verts, faces) with mascons assuming 'grid_reso' Cartesian grid resolution.
-    dmatnx3 fill_with_masc(const ivec3 &grid_reso)
+    dmatnx3 fill_with_masc(const ivec3 &grid_reso, float * progress)
     {
         dvec3 rmin = verts[0], rmax = verts[0];
         for (int i = 1; i < verts.size(); ++i)
@@ -169,6 +169,7 @@ public:
                         masc.push_back(r);
                 }
             }
+            *progress = (float)(i+1)/grid_reso[0];
         }
         return masc;
     }

@@ -102,7 +102,7 @@ public:
     dvec3 w1b, w2b;
 
     Properties() : simname("test_sim"),
-                   ell_checkbox(false),
+                   ell_checkbox(true),
                    clicked_ell_ok(false),
                    semiaxes1({0.416194, 0.418765, 0.39309}),
                    semiaxes2({0.104, 0.080, 0.066}),
@@ -121,7 +121,7 @@ public:
                    grid_reso2({10,10,10}),
                    grid_reso_inactive({0,0,0}),
                    clicked_obj_ok(false),
-                   ord2_checkbox(false),
+                   ord2_checkbox(true),
                    ord3_checkbox(false),
                    ord4_checkbox(false),
                    M1(5.320591856403073e11),

@@ -107,48 +107,7 @@ public:
                 gui.properties.render();
                 gui.console.render();
                 gui.graphics.render();
-                
-                // Integrator Info                
-                ImGui::SetNextWindowPos( ImVec2(2.0f*ImGui::GetIO().DisplaySize.x/7.0f, 0.0f), ImGuiCond_FirstUseEver);
-                ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f, 200.0), ImGuiCond_FirstUseEver);
-                ImGui::Begin("Simulation controls ", nullptr);
-                ImGui::Dummy(ImVec2(10.0f,0.0f));
-                ImGui::Indent(10.0f);
-
-                if (gui.integrator.is_running)
-                    ImGui::BeginDisabled(true);
-
-                if (ImGui::Button("Run", ImVec2(70.0f,50.0f)))
-                    gui.when_run_is_clicked();
-
-                if (gui.integrator.is_running)
-                    ImGui::EndDisabled();
-
-                ImGui::SameLine();
-                if (ImGui::Button("Kill", ImVec2(70.0f,50.0f)))
-                    gui.integrator.force_kill = true;
-
-                ImGui::SameLine();
-                if (!gui.integrator.exists_solution)
-                    ImGui::BeginDisabled(true);
-
-                if (ImGui::Button("Plot", ImVec2(70.0f,50.0f))){
-                    Solution solution(gui.integrator);
-                    solution.export_txt_files(gui.properties.simname);
-                    gui.graphics.yield_solution(solution);
-                    gui.graphics.aster1.update_mesh(solution.obj_path1.c_str());
-                    gui.graphics.aster2.update_mesh(solution.obj_path2.c_str());
-                }
-                
-                if (!gui.integrator.exists_solution)
-                    ImGui::EndDisabled(); 
-                
-                ImGui::Unindent(10.0f);
-
-                ImGui::Text("Progress");
-                ImGui::ProgressBar(gui.integrator.progress, ImVec2(260,50));
-                ImGui::End();
-                
+                gui.render_integrator_controls();                            
             gui.render();               
 
             glfwSwapBuffers(pointer);

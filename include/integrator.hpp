@@ -91,113 +91,7 @@ public:
         w2i = properties.w2i ;
         w1b = properties.w1b ;
         w2b = properties.w2b ;
-    
-        if (ell_checkbox)
-        {
-            brillouin1 = ell_brillouin(semiaxes1);
-            brillouin2 = ell_brillouin(semiaxes2);
-            if (ord2_checkbox)
-            {
-                J1 = ell_integrals(M1, semiaxes1, 2);
-                J2 = ell_integrals(M2, semiaxes2, 2);
-                I1 = ell_inertia(M1, semiaxes1);
-                I2 = ell_inertia(M2, semiaxes2);
-            }
-            else if (ord3_checkbox)
-            {
-                J1 = ell_integrals(M1, semiaxes1, 3);
-                J2 = ell_integrals(M2, semiaxes2, 3);
-                I1 = ell_inertia(M1, semiaxes1);
-                I2 = ell_inertia(M2, semiaxes2);
-            }
-            else if (ord4_checkbox)
-            {
-                J1 = ell_integrals(M1, semiaxes1, 4);
-                J2 = ell_integrals(M2, semiaxes2, 4);
-                I1 = ell_inertia(M1, semiaxes1);
-                I2 = ell_inertia(M2, semiaxes2);
-            }
-        }
-        else //obj_checkbox
-        {
-            Obj poly1(obj_path1.c_str());
-            masc1 = poly1.fill_with_masc(grid_reso1);
-            correct_masc_com(masc1);
-            I1 = masc_inertia(M1, masc1);
-            /*
-            printf("Body 1 before :\n[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n",I1[0][0],I1[0][1],I1[0][2],
-                                                                                                 I1[1][0],I1[1][1],I1[1][2],
-                                                                                                 I1[2][0],I1[2][1],I1[2][2]);*/
-            if ( fabs(order_of_magnitude(I1[0][0]) - order_of_magnitude(I1[0][1])) < 12.0 &&
-                 fabs(order_of_magnitude(I1[0][0]) - order_of_magnitude(I1[0][2])) < 12.0 &&
-                 fabs(order_of_magnitude(I1[0][0]) - order_of_magnitude(I1[1][2])) < 12.0 &&
-                 fabs(order_of_magnitude(I1[1][1]) - order_of_magnitude(I1[0][1])) < 12.0 &&
-                 fabs(order_of_magnitude(I1[1][1]) - order_of_magnitude(I1[0][2])) < 12.0 &&
-                 fabs(order_of_magnitude(I1[1][1]) - order_of_magnitude(I1[1][2])) < 12.0 &&
-                 fabs(order_of_magnitude(I1[2][2]) - order_of_magnitude(I1[0][1])) < 12.0 &&
-                 fabs(order_of_magnitude(I1[2][2]) - order_of_magnitude(I1[0][2])) < 12.0 &&
-                 fabs(order_of_magnitude(I1[2][2]) - order_of_magnitude(I1[1][2])) < 12.0 )
-            {
-                //only then correct the axes
-                correct_masc_inertia(M1, masc1);
-                I1 = masc_inertia(M1, masc1);
-                /*
-                printf("Body 1 after :\n[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n",I1[0][0],I1[0][1],I1[0][2],
-                                                                                                 I1[1][0],I1[1][1],I1[1][2],
-                                                                                                 I1[2][0],I1[2][1],I1[2][2]);*/
-            }
-            brillouin1 = masc_farthest(poly1.verts);
-
-            Obj poly2(obj_path2.c_str());
-            masc2 = poly2.fill_with_masc(grid_reso2);
-            correct_masc_com(masc2);
-            I2 = masc_inertia(M2, masc2);
-             /*printf("Body 2 before :\n[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n",I2[0][0],I2[0][1],I2[0][2],
-                                                                                                 I2[1][0],I2[1][1],I2[1][2],
-                                                                                                 I2[2][0],I2[2][1],I2[2][2]);*/
-            if ( fabs(order_of_magnitude(I2[0][0]) - order_of_magnitude(I2[0][1])) < 12.0 &&
-                 fabs(order_of_magnitude(I2[0][0]) - order_of_magnitude(I2[0][2])) < 12.0 &&
-                 fabs(order_of_magnitude(I2[0][0]) - order_of_magnitude(I2[1][2])) < 12.0 &&
-                 fabs(order_of_magnitude(I2[1][1]) - order_of_magnitude(I2[0][1])) < 12.0 &&
-                 fabs(order_of_magnitude(I2[1][1]) - order_of_magnitude(I2[0][2])) < 12.0 &&
-                 fabs(order_of_magnitude(I2[1][1]) - order_of_magnitude(I2[1][2])) < 12.0 &&
-                 fabs(order_of_magnitude(I2[2][2]) - order_of_magnitude(I2[0][1])) < 12.0 &&
-                 fabs(order_of_magnitude(I2[2][2]) - order_of_magnitude(I2[0][2])) < 12.0 &&
-                 fabs(order_of_magnitude(I2[2][2]) - order_of_magnitude(I2[1][2])) < 12.0 )
-            {
-                //only then correct the axes
-                correct_masc_inertia(M2, masc2);
-                I2 = masc_inertia(M2, masc2);
-                /*printf("Body 2 after :\n[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n",I2[0][0],I2[0][1],I2[0][2],
-                                                                                         I2[1][0],I2[1][1],I2[1][2],
-                                                                                         I2[2][0],I2[2][1],I2[2][2]);*/
-            }
-            brillouin2 = masc_farthest(poly2.verts);
             
-
-            if (ord2_checkbox)
-            {
-                J1 = masc_integrals(M1, masc1, 2);
-                J2 = masc_integrals(M2, masc2, 2);
-                I1 = masc_inertia(M1, masc1);
-                I2 = masc_inertia(M2, masc2);
-            }
-            else if (ord3_checkbox)
-            {
-                J1 = masc_integrals(M1, masc1, 3);
-                J2 = masc_integrals(M2, masc2, 3);
-                I1 = masc_inertia(M1, masc1);
-                I2 = masc_inertia(M2, masc2);
-            }
-            else if (ord4_checkbox)
-            {
-                J1 = masc_integrals(M1, masc1, 4);
-                J2 = masc_integrals(M2, masc2, 4);
-                I1 = masc_inertia(M1, masc1);
-                I2 = masc_inertia(M2, masc2);
-            }
-        }
-        
         if (cart_kep_var_choice == 1) //the user chose Keplerian elements as ic
             cart = kep2cart(dvec6{kep[0], kep[1], kep[2]*pi/180.0, kep[3]*pi/180.0, kep[4]*pi/180.0, kep[5]*pi/180.0}, G*(M1+M2)); //transform Keplerian to Cartesian because the f2bp odes is written in Cartesian elements
 
@@ -299,10 +193,121 @@ public:
     }
 
     void run(Console &cons)
-    {
+    {   
         char buffer[150];
+
         cons.timedlog("[Integrator] New simulation started.");
         is_running = true;
+
+        if (ell_checkbox)
+        {
+            brillouin1 = ell_brillouin(semiaxes1);
+            brillouin2 = ell_brillouin(semiaxes2);
+            if (ord2_checkbox)
+            {
+                J1 = ell_integrals(M1, semiaxes1, 2);
+                J2 = ell_integrals(M2, semiaxes2, 2);
+                I1 = ell_inertia(M1, semiaxes1);
+                I2 = ell_inertia(M2, semiaxes2);
+            }
+            else if (ord3_checkbox)
+            {
+                J1 = ell_integrals(M1, semiaxes1, 3);
+                J2 = ell_integrals(M2, semiaxes2, 3);
+                I1 = ell_inertia(M1, semiaxes1);
+                I2 = ell_inertia(M2, semiaxes2);
+            }
+            else if (ord4_checkbox)
+            {
+                J1 = ell_integrals(M1, semiaxes1, 4);
+                J2 = ell_integrals(M2, semiaxes2, 4);
+                I1 = ell_inertia(M1, semiaxes1);
+                I2 = ell_inertia(M2, semiaxes2);
+            }
+        }
+        else //obj_checkbox
+        {
+            Obj poly1(obj_path1.c_str());
+            cons.timedlog("[Integrator] Initializing shape of first asteroid.");
+            masc1 = poly1.fill_with_masc(grid_reso1,&progress);
+            correct_masc_com(masc1);
+            I1 = masc_inertia(M1, masc1);
+            /*
+            printf("Body 1 before :\n[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n",I1[0][0],I1[0][1],I1[0][2],
+                                                                                                 I1[1][0],I1[1][1],I1[1][2],
+                                                                                                 I1[2][0],I1[2][1],I1[2][2]);*/
+            if ( fabs(order_of_magnitude(I1[0][0]) - order_of_magnitude(I1[0][1])) < 12.0 &&
+                 fabs(order_of_magnitude(I1[0][0]) - order_of_magnitude(I1[0][2])) < 12.0 &&
+                 fabs(order_of_magnitude(I1[0][0]) - order_of_magnitude(I1[1][2])) < 12.0 &&
+                 fabs(order_of_magnitude(I1[1][1]) - order_of_magnitude(I1[0][1])) < 12.0 &&
+                 fabs(order_of_magnitude(I1[1][1]) - order_of_magnitude(I1[0][2])) < 12.0 &&
+                 fabs(order_of_magnitude(I1[1][1]) - order_of_magnitude(I1[1][2])) < 12.0 &&
+                 fabs(order_of_magnitude(I1[2][2]) - order_of_magnitude(I1[0][1])) < 12.0 &&
+                 fabs(order_of_magnitude(I1[2][2]) - order_of_magnitude(I1[0][2])) < 12.0 &&
+                 fabs(order_of_magnitude(I1[2][2]) - order_of_magnitude(I1[1][2])) < 12.0 )
+            {
+                //only then correct the axes
+                correct_masc_inertia(M1, masc1);
+                I1 = masc_inertia(M1, masc1);
+                /*
+                printf("Body 1 after :\n[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n",I1[0][0],I1[0][1],I1[0][2],
+                                                                                                 I1[1][0],I1[1][1],I1[1][2],
+                                                                                                 I1[2][0],I1[2][1],I1[2][2]);*/
+            }
+            brillouin1 = masc_farthest(poly1.verts);
+
+            Obj poly2(obj_path2.c_str());
+            cons.timedlog("[Integrator] Initializing shape of second asteroid.");
+            masc2 = poly2.fill_with_masc(grid_reso2, &progress);
+            correct_masc_com(masc2);
+            I2 = masc_inertia(M2, masc2);
+             /*printf("Body 2 before :\n[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n",I2[0][0],I2[0][1],I2[0][2],
+                                                                                                 I2[1][0],I2[1][1],I2[1][2],
+                                                                                                 I2[2][0],I2[2][1],I2[2][2]);*/
+            if ( fabs(order_of_magnitude(I2[0][0]) - order_of_magnitude(I2[0][1])) < 12.0 &&
+                 fabs(order_of_magnitude(I2[0][0]) - order_of_magnitude(I2[0][2])) < 12.0 &&
+                 fabs(order_of_magnitude(I2[0][0]) - order_of_magnitude(I2[1][2])) < 12.0 &&
+                 fabs(order_of_magnitude(I2[1][1]) - order_of_magnitude(I2[0][1])) < 12.0 &&
+                 fabs(order_of_magnitude(I2[1][1]) - order_of_magnitude(I2[0][2])) < 12.0 &&
+                 fabs(order_of_magnitude(I2[1][1]) - order_of_magnitude(I2[1][2])) < 12.0 &&
+                 fabs(order_of_magnitude(I2[2][2]) - order_of_magnitude(I2[0][1])) < 12.0 &&
+                 fabs(order_of_magnitude(I2[2][2]) - order_of_magnitude(I2[0][2])) < 12.0 &&
+                 fabs(order_of_magnitude(I2[2][2]) - order_of_magnitude(I2[1][2])) < 12.0 )
+            {
+                //only then correct the axes
+                correct_masc_inertia(M2, masc2);
+                I2 = masc_inertia(M2, masc2);
+                /*printf("Body 2 after :\n[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n",I2[0][0],I2[0][1],I2[0][2],
+                                                                                         I2[1][0],I2[1][1],I2[1][2],
+                                                                                         I2[2][0],I2[2][1],I2[2][2]);*/
+            }
+            brillouin2 = masc_farthest(poly2.verts);
+            
+
+            if (ord2_checkbox)
+            {
+                J1 = masc_integrals(M1, masc1, 2);
+                J2 = masc_integrals(M2, masc2, 2);
+                I1 = masc_inertia(M1, masc1);
+                I2 = masc_inertia(M2, masc2);
+            }
+            else if (ord3_checkbox)
+            {
+                J1 = masc_integrals(M1, masc1, 3);
+                J2 = masc_integrals(M2, masc2, 3);
+                I1 = masc_inertia(M1, masc1);
+                I2 = masc_inertia(M2, masc2);
+            }
+            else if (ord4_checkbox)
+            {
+                J1 = masc_integrals(M1, masc1, 4);
+                J2 = masc_integrals(M2, masc2, 4);
+                I1 = masc_inertia(M1, masc1);
+                I2 = masc_inertia(M2, masc2);
+            }
+        }
+
+       
 
         //apply the β correction to the initial relative velocity
         cart[3] += (M1 + M2)*beta*M_impact*v_impact[0]/(M1*M2);
@@ -327,7 +332,7 @@ public:
         int maxsteps = (int)((tmax-t0)/dt + 1.0) ;
 
         boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 20>> rkf78; //integration method
-        progress = 0;
+        cons.timedlog("[Integrator] Starting numerical integration.");
         //integration loop
         for (double t = t0; t <= tmax; t += dt)
         {
