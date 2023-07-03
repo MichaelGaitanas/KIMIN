@@ -18,6 +18,9 @@ dvec4 quat_rhs(const dvec4 &q, const dvec3 &w)
     double dq2 = 0.5*( q[3]*w[0] + q[0]*w[1] - q[1]*w[2]);
     double dq3 = 0.5*(-q[2]*w[0] + q[1]*w[1] + q[0]*w[2]);
     return {dq0, dq1, dq2, dq3};
+    //This comment is useless, but I wanted you to know that right now, I am listening to this
+    //https://www.youtube.com/watch?v=A_tA7G1Y8Ew&list=RDX2xpR5EoAGY&index=2&ab_channel=FrankKlepacki-Topic
+    //song while writing the code.
 }
 
 //Euler odes rhs assuming I[][] is diagonal (principal axes frame).

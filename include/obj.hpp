@@ -108,7 +108,7 @@ public:
             dvec3 p0 = verts[faces[j][0]];
             dvec3 p1 = verts[faces[j][1]];
             dvec3 p2 = verts[faces[j][2]];
-            dvec3 pj = { p0[0] + ( (p0[1] - r[1])*norms[j][1] + (p0[2] - r[2])*norms[j][2] )/norms[j][0], //This is very dangerous...
+            dvec3 pj = { p0[0] + ( (p0[1] - r[1])*norms[j][1] + (p0[2] - r[2])*norms[j][2] )/norms[j][0], //This is very dangerous, but it works fine...
                          r[1],
                          r[2] };
 

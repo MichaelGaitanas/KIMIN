@@ -164,8 +164,8 @@ public:
         for (int i = 0; i < t.size(); ++i)
         {
             fprintf(file_t,        "%.16lf\n",                                    t[i]);
-            fprintf(file_pos,      "%.16lf %.16lf %.16lf\n",                      x[i],y[i],z[i], dist[i]);
-            fprintf(file_vel,      "%.16lf %.16lf %.16lf\n",                      vx[i],vy[i],vz[i], vmag[i]);
+            fprintf(file_pos,      "%.16lf %.16lf %.16lf %.16lf\n",               x[i],y[i],z[i], dist[i]);
+            fprintf(file_vel,      "%.16lf %.16lf %.16lf %.16lf\n",               vx[i],vy[i],vz[i], vmag[i]);
             fprintf(file_q1,       "%.16lf %.16lf %.16lf %.16lf\n",               q10[i],q11[i],q12[i],q13[i]);
             fprintf(file_rpy1,     "%.16lf %.16lf %.16lf\n",                      roll1[i],pitch1[i],yaw1[i]);
             fprintf(file_w1b,      "%.16lf %.16lf %.16lf\n",                      w1bx[i],w1by[i],w1bz[i]);
