@@ -1,6 +1,6 @@
 # KIMIN
 /------------------------------------------------------/
-Windows (using MSCV):
+Windows (using MSVC):
 
 Install the x64 Windows Build Tools and add the following libraries to the path include:
 
