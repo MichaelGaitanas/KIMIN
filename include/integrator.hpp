@@ -307,12 +307,10 @@ public:
             }
         }
 
-       
-
-        //apply the β correction to the initial relative velocity
-        cart[3] += (M1 + M2)*beta*M_impact*v_impact[0]/(M1*M2);
-        cart[4] += (M1 + M2)*beta*M_impact*v_impact[1]/(M1*M2);
-        cart[5] += (M1 + M2)*beta*M_impact*v_impact[2]/(M1*M2);
+        //apply the β correction to the initial relative velocity, assuming that the secondary is perturbed by the impactor
+        cart[3] += beta*M_impact*v_impact[0]/M2;
+        cart[4] += beta*M_impact*v_impact[1]/M2;
+        cart[5] += beta*M_impact*v_impact[2]/M2;
 
         //initial conditions (boost::array<> must be used to call the integration method)
         boost::array<double, 20> state = { cart[0], cart[1], cart[2],
