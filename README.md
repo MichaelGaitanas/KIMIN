@@ -24,7 +24,7 @@ glm
 
 Then navigate to kimin/ folder and compile the main program as follows:
 
-g++ main.cpp -o main.exe (PATH_TO_KIMIN)\imgui\imgui*.cpp (PATH_TO_KIMIN)\imgui\implot*.cpp -I  (PATH_TO_KIMIN)\imgui -lopengl32 -lglfw3 -lglew32
+g++ main.cpp -o main.exe (PATH_TO_KIMIN)\imgui\imgui*.cpp (PATH_TO_KIMIN)\imgui\implot*.cpp -I  (PATH_TO_KIMIN)\imgui -lGL -lglfw -lGLEW
 /------------------------------------------------------/
 Windows (using MSYS2):
 
