@@ -12,7 +12,8 @@ uniform mat4 model;
 
 void main()
 {
-    frag_pos = vec3(model*vec4(pos,1.0f)); //fragment's position in world coordinates
-    normal = mat3(transpose(inverse(model)))*norm; //avoiding non uniform scaling issues
-    gl_Position = projection*view*model*vec4(pos, 1.0f); //final vertex position
+    frag_pos = vec3(model*vec4(pos,1.0f)); //Fragment's position in world coordinates.
+    normal = mat3(transpose(inverse(model)))*norm; //Avoiding non uniform scaling issues.
+    
+    gl_Position = projection*view*model*vec4(pos, 1.0f); //Final vertex position.
 }

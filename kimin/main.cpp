@@ -3,7 +3,7 @@
 
 int main()
 {
-    render_logo_for_a_few_seconds(3.0f);
+    //render_logo_for_a_few_seconds(3.0f);
 
     Window window;
     window.game_loop();

@@ -1,0 +1,17 @@
+Regarding the obj meshes (asteroid models), the following rules must be satisfied, so that everything works correctly.
+
+1) The .obj files must exist in the /obj folder.
+1) The mesh must be a closed surface. E.g. box, sphere, potato, etc...
+2) It does NOT matter if the mesh is convex or not. E.g. Churyumov Gerasimenko is totally fine.
+3) The mesh must be triangulated and the face indices in the .obj file must be ordered in a counter-clockwise manner
+   when viewed from the front (the side from which the normal points outwards). If you have generated the .obj file by a 3D
+   modelling software or if you are using a pre-made .obj file of an asteroid by a catalog/database, then this assumption is
+   already satisfied probably.
+4) The .obj file must contain only vertices (in the format 'v x y z') and face indices (in the format 'f i j k'). Any other content
+   like comments, names, vertex groups, etc... will be ignored. Make sure that the .obj file does not contain normals or UV (texture)
+   coordinates, as this will change the face indices lines format.
+5) Already existing .obj files are provided in this folder. Feel free to use them or add your own.
+   For the currently existing obj meshes, the vertices are assumed to be in [km].
+6) Be reasonable with what you are trying to simulate. Although the .obj files of a red supergiant star along with a tiny cubesat are
+   valid in loading, the corresponding detailed mutual dynamics and graphics rendering will probably fail as the software is designed
+   to handle asteroid sizes and numbers.

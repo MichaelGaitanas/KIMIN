@@ -1,5 +1,4 @@
-kimin/BuildFiles/
 simulations/
-kimin/*.obj
+imgui/*.o
+imgui/*.a
 *.exe
-*.dll

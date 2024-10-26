@@ -37,19 +37,22 @@ public:
         ImPlot::CreateContext();
         ImGuiIO &io = ImGui::GetIO();
         io.IniFilename = nullptr;
-        io.Fonts->AddFontFromFileTTF("../font/Roboto-Regular.ttf", 15.0f, nullptr, io.Fonts->GetGlyphRangesGreek());
-        //(void)io;
+        io.Fonts->AddFontFromFileTTF("../font/RobotoRegular.ttf", 15.0f, nullptr, io.Fonts->GetGlyphRangesGreek());
+        (void)io;
         ImGui::StyleColorsDark();
         ImGui_ImplGlfw_InitForOpenGL(pointer, true);
         ImGui_ImplOpenGL3_Init("#version 330");
         ImGuiStyle &imstyle = ImGui::GetStyle();
-        imstyle.WindowMinSize = ImVec2(100.0f,100.0f);
-        imstyle.FrameRounding = 5.0f;
-        imstyle.WindowRounding = 5.0f;
-        imstyle.WindowMinSize = ImVec2(200.0f,200.0f);
+        imstyle.WindowMinSize = ImVec2(100.0f, 100.0f);
+        imstyle.FrameRounding = 6.0f;
+        imstyle.WindowRounding = 6.0f;
+        imstyle.WindowMinSize = ImVec2(200.0f, 200.0f);
+        ImVec4* colors = imstyle.Colors;
+        colors[ImGuiCol_WindowBg] = ImVec4(0.1f, 0.1f, 0.1f, 1.0f);
+        colors[ImGuiCol_FrameBg] = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
     }
 
-    //Destructor
+    //Destructor.
     ~GUI()
     {
         ImGui_ImplOpenGL3_Shutdown();
