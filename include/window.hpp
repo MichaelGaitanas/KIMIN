@@ -6,14 +6,13 @@
 
 #include<cstdio>
 
+#include"logo.hpp"
 #include"gui.hpp"
 
 
 class Window
 {
-    
 private:
-
     GLFWwindow *pointer;
     int width, height;
     float aspectratio;
@@ -46,7 +45,6 @@ private:
     }
 
 public:
-
     Window()
     {
         glfwInit();
@@ -73,7 +71,6 @@ public:
         glfwSetWindowSizeLimits(pointer, 400,400, GLFW_DONT_CARE,GLFW_DONT_CARE);
         glfwSwapInterval(1);
 
-    /*
         glewExperimental = GL_TRUE;
         if (glewInit() != GLEW_OK)
         {
@@ -81,7 +78,6 @@ public:
             printf("Failed to initialize glew. Calling glfwTerminate().\n");
             glfwTerminate();
         }
-    */
 
         //Register the callback functions.
         glfwSetFramebufferSizeCallback(pointer, framebuffer_size_callback);
@@ -99,7 +95,8 @@ public:
         GUI gui(pointer);
         
         glEnable(GL_DEPTH_TEST);
-        glClearColor(0.01f,0.01f,0.01f,1.0f);
+        glEnable(GL_CULL_FACE);
+        glClearColor(0.05f,0.05f,0.05f,1.0f);
         while (!glfwWindowShouldClose(pointer))
         {
             glClear(GL_COLOR_BUFFER_BIT);

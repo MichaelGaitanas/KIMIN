@@ -6,26 +6,31 @@
 #include<iostream>
 #include<cstdio>
 #include<fstream>
-#include<string>
+
+#include"typedef.hpp"
 
 class shader
 {
+private:
+    unsigned int ID; //Shader program ID. With this, we recognize which shader to use.
+
 public:
-    unsigned ID; //shader program ID
-    shader(const char *vpath, const char *fpath) //constructor
+
+    //Parse and read the vertex and fragment shader source files. Then compile both. Then link.
+    shader(const char *vpath, const char *fpath)
     {
-        //read the vertex shader source code from its file
+        //Read the vertex shader source code from its file.
         std::ifstream fpvertex(vpath);
         if (!fpvertex.is_open())
         {
-            printf("'%s' not found. Exiting...\n",vpath);
+            fprintf(stderr, "Error : '%s' not found. Exiting...\n",vpath);
             exit(EXIT_FAILURE);
         }
-        std::string vtemp;
+        str vtemp;
         vtemp.assign( (std::istreambuf_iterator<char>(fpvertex)), (std::istreambuf_iterator<char>()) );
         const char *vsource = vtemp.c_str();
         
-        //compile the vertex shader and check for errors
+        //Compile the vertex shader and check for errors.
         unsigned vshader = glCreateShader(GL_VERTEX_SHADER);
         glShaderSource(vshader, 1, &vsource, NULL);
         glCompileShader(vshader);
@@ -35,24 +40,22 @@ public:
         if (!success)
         {
             glGetShaderInfoLog(vshader, 1024, NULL, infolog);
-            printf("Error while compiling '%s'.\n",vpath);
-            printf("%s\n",infolog);
+            fprintf(stderr, "Error while compiling '%s'.\n",vpath);
+            fprintf(stderr, "%s\n",infolog);
         }
         
-        ////////////////////////////////////////////////////////////////////////
-        
-        //read the fragment shader source code from its file
+        //Read the fragment shader source code from its file.
         std::ifstream fpfragment(fpath);
         if (!fpfragment.is_open())
         {
-            printf("'%s' not found. Exiting...\n",fpath);
+            fprintf(stderr, "'%s' not found. Exiting...\n",fpath);
             exit(EXIT_FAILURE);
         }
-        std::string ftemp;
+        str ftemp;
         ftemp.assign( (std::istreambuf_iterator<char>(fpfragment)), (std::istreambuf_iterator<char>()) );
         const char *fsource = ftemp.c_str();
         
-        //compile the fragment shader and check for errors
+        //Compile the fragment shader and check for errors.
         unsigned fshader = glCreateShader(GL_FRAGMENT_SHADER);
         glShaderSource(fshader, 1, &fsource, NULL);
         glCompileShader(fshader);
@@ -60,13 +63,11 @@ public:
         if (!success)
         {
             glGetShaderInfoLog(fshader, 1024, NULL, infolog);
-            printf("Error while compiling '%s'.\n",fpath);
-            printf("%s\n",infolog);
+            fprintf(stderr, "Error while compiling '%s'.\n",fpath);
+            fprintf(stderr, "%s\n",infolog);
         }
         
-        ////////////////////////////////////////////////////////////////////////
-        
-        //handle linking
+        //Handle linking.
         ID = glCreateProgram();
         glAttachShader(ID, vshader);
         glAttachShader(ID, fshader);
@@ -75,92 +76,102 @@ public:
         if (!success)
         {
             glGetProgramInfoLog(ID, 1024, NULL, infolog);
-            printf("Error while linking shader program ('%s' || '%s').\n",vpath,fpath);
-            printf("%s\n",infolog);
+            fprintf(stderr, "Error while linking shader program ('%s' || '%s').\n",vpath,fpath);
+            fprintf(stderr, "%s\n",infolog);
         }
         
+        //We no longer need the vshader and fshader, so let's delete them from now.
+        //We DO need however the ID, which will be kept for deletion in the destructor.
         glDeleteShader(vshader);
         glDeleteShader(fshader);
     }
+
+    //Delete the shader.
+    ~shader()
+    {
+        glDeleteProgram(ID);
+    }
     
-    //activate the current shader
+    //Activate the current shader.
     void use()
     {
         glUseProgram(ID);
     }
+
+    //The following member functions are used to pass uniform variables to the shaders from the main code.
     
-    //pass to the currently active shader 1 int (uniform)
-    void set_int_uniform(const std::string &name, int value)
+    //Pass to the currently active shader 1 int (uniform).
+    void set_int_uniform(const str &name, int value)
     {
         unsigned location = glGetUniformLocation(ID, name.c_str());
         glUniform1i(location, value);
     }
     
-    //pass to the currently active shader 1 float (uniform)
-    void set_float_uniform(const std::string &name, float value)
+    //Pass to the currently active shader 1 float (uniform).
+    void set_float_uniform(const str &name, float value)
     {
         unsigned location = glGetUniformLocation(ID, name.c_str());
         glUniform1f(location, value);
     }
     
-    //pass to the currently active shader 2 floats (uniform)
-    void set_vec2_uniform(const std::string &name, float x, float y)
+    //Pass to the currently active shader 2 floats (uniform).
+    void set_vec2_uniform(const str &name, float x, float y)
     {
         unsigned location = glGetUniformLocation(ID, name.c_str());
         glUniform2f(location, x,y);
     }
     
-    //pass to the currently active shader 1 vector of 2 floats (uniform)
-    void set_vec2_uniform(const std::string &name, glm::vec2 &v)
+    //Pass to the currently active shader 1 vector of 2 floats (uniform).
+    void set_vec2_uniform(const str &name, glm::vec2 &v)
     {
         unsigned location = glGetUniformLocation(ID, name.c_str());
         glUniform2fv(location, 1, &v[0]);
     }
     
-    //pass to the currently active shader 3 floats (uniform)
-    void set_vec3_uniform(const std::string &name, float x, float y, float z)
+    //Pass to the currently active shader 3 floats (uniform).
+    void set_vec3_uniform(const str &name, float x, float y, float z)
     {
         unsigned location = glGetUniformLocation(ID, name.c_str());
         glUniform3f(location, x,y,z);
     }
     
-    //pass to the currently active shader 1 vector of 3 floats (uniform)
-    void set_vec3_uniform(const std::string &name, glm::vec3 &v)
+    //Pass to the currently active shader 1 vector of 3 floats (uniform).
+    void set_vec3_uniform(const str &name, glm::vec3 &v)
     {
         unsigned location = glGetUniformLocation(ID, name.c_str());
         glUniform3fv(location, 1, &v[0]);
     }
     
-    //pass to the currently active shader 4 floats (uniform)
-    void set_vec4_uniform(const std::string &name, float x, float y, float z, float w)
+    //Pass to the currently active shader 4 floats (uniform).
+    void set_vec4_uniform(const str &name, float x, float y, float z, float w)
     {
         unsigned location = glGetUniformLocation(ID, name.c_str());
         glUniform4f(location, x,y,z,w);
     }
     
-    //pass to the currently active shader 1 vector of 4 floats (uniform)
-    void set_vec4_uniform(const std::string &name, glm::vec4 &v)
+    //Pass to the currently active shader 1 vector of 4 floats (uniform).
+    void set_vec4_uniform(const str &name, glm::vec4 &v)
     {
         unsigned location = glGetUniformLocation(ID, name.c_str());
         glUniform4fv(location, 1, &v[0]);
     }
     
-    //pass to the currently active shader 1 2x2 float matrix (uniform)
-    void set_mat2_uniform(const std::string &name, glm::mat2 &m)
+    //Pass to the currently active shader 1 2x2 float matrix (uniform).
+    void set_mat2_uniform(const str &name, glm::mat2 &m)
     {
         unsigned location = glGetUniformLocation(ID, name.c_str());
         glUniformMatrix2fv(location, 1, GL_FALSE, &m[0][0]);
     }
     
-    //pass to the currently active shader 1 3x3 float matrix (uniform)
-    void set_mat3_uniform(const std::string &name, glm::mat3 &m)
+    //Pass to the currently active shader 1 3x3 float matrix (uniform).
+    void set_mat3_uniform(const str &name, glm::mat3 &m)
     {
         unsigned location = glGetUniformLocation(ID, name.c_str());
         glUniformMatrix3fv(location, 1, GL_FALSE, &m[0][0]);
     }
     
-    //pass to the currently active shader 1 4x4 float matrix (uniform)
-    void set_mat4_uniform(const std::string &name, glm::mat4 &m)
+    //Pass to the currently active shader 1 4x4 float matrix (uniform).
+    void set_mat4_uniform(const str &name, glm::mat4 &m)
     {
         unsigned location = glGetUniformLocation(ID, name.c_str());
         glUniformMatrix4fv(location, 1, GL_FALSE, &m[0][0]);

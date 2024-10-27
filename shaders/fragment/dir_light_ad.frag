@@ -7,7 +7,7 @@ out vec4 frag_col; //Final color of the fragment after lighting calculations.
 
 
 
-vec3 mesh_col = vec3(0.5f,0.5f,0.5f); //Gray.
+vec3 mesh_col = vec3(0.5f,0.5f,0.5f); //Gray asteroid color.
 vec3 light_dir = vec3(1.0f,1.0f,1.0f); //Direction of the (directional) light in world coordinates.
 
 void main()

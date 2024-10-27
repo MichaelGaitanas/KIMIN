@@ -13,13 +13,11 @@ class Meshvfn
 {
 
 private:
-
     unsigned int vao, vbo; //vertex array and buffer objects
     std::vector<float> buffer; //final form of the data to draw
     bool is_init;
 
 public:
-
     Meshvfn() {
         is_init = false;
     }
