@@ -2,8 +2,11 @@
 #define LOGO_HPP
 
 #include<GL/glew.h>
+
 #include<cstdio>
+
 #include"shader.hpp"
+
 #define STB_IMAGE_IMPLEMENTATION
 #include"stb_image.h"
 
@@ -11,9 +14,11 @@ class Logo
 {
 private:
     unsigned int vao, vbo, tex;
+    shader shad_logo;
 
 public:
-    Logo(const char *img_path)
+    Logo(const char *img_path) :
+        shad_logo("../shaders/vertex/texture.vert", "../shaders/fragment/texture.frag")
     {
         //Procedural quad.
         float interleaved_buffer[] = {  //Positions.         //UVs.
@@ -70,11 +75,11 @@ public:
         glGenerateMipmap(GL_TEXTURE_2D);
         stbi_image_free(img_data); //Free image resources.
 
-        shader logoshad("../shaders/vertex/texture.vert","../shaders/fragment/texture.frag");
-        logoshad.use();
+        //shad_logo = shader("../shaders/vertex/texture.vert", "../shaders/fragment/texture.frag");
+        shad_logo.use();
     }
 
-    //Delete the logo mesh.
+    //Delete the logo resources.
     ~Logo()
     {
         glDeleteVertexArrays(1, &vao);
@@ -85,6 +90,7 @@ public:
     //Draw the logo mesh.
     void draw_triangles()
     {
+        shad_logo.use(); //Ensure logo shader is active.
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, tex);
         glBindVertexArray(vao);

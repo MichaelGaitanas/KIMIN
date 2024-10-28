@@ -4,6 +4,6 @@ int main()
 {
     Window window;
     window.game_loop();
-
+    
     return 0;
 }

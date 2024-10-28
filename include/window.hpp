@@ -17,6 +17,10 @@ private:
     int width, height;
     float aspectratio;
 
+    Logo *logo;
+    bool showing_logo;
+    float logo_start_time;
+
     static void framebuffer_size_callback(GLFWwindow *ptr, int w, int h)
     {
         Window *instance = static_cast<Window*>(glfwGetWindowUserPointer(ptr));
@@ -30,7 +34,7 @@ private:
         else
         {
             //We print the followng for debugging purposes because IF instance == nullptr, it will be impossible to find the malfuncion...
-            printf("'glfwGetWindowUserPointer(ptr)' is nullptr. Exiting framebuffer_size_callback()...\n");
+            fprintf(stderr, "'glfwGetWindowUserPointer(ptr)' is nullptr. Exiting framebuffer_size_callback()...\n");
         }
 
         return;
@@ -63,7 +67,7 @@ public:
         pointer = glfwCreateWindow(width, height, "KIMIN", nullptr, nullptr);
         if (pointer == nullptr)
         {
-            printf("Failed to create glfw window. Calling glfwTerminate().\n");
+            fprintf(stderr, "Failed to create glfw window. Calling glfwTerminate().\n");
             glfwTerminate();
         }
         glfwSetWindowUserPointer(pointer, this);
@@ -74,18 +78,22 @@ public:
         glewExperimental = GL_TRUE;
         if (glewInit() != GLEW_OK)
         {
-            //Again for debugging purposes.
-            printf("Failed to initialize glew. Calling glfwTerminate().\n");
+            fprintf(stderr, "Failed to initialize glew. Calling glfwTerminate().\n");
             glfwTerminate();
         }
 
         //Register the callback functions.
         glfwSetFramebufferSizeCallback(pointer, framebuffer_size_callback);
         glfwSetKeyCallback(pointer, key_callback);
+
+        logo = new Logo("../logo/logo.jpg");
+        showing_logo = true;
+        logo_start_time = (float)glfwGetTime();
     }
 
     ~Window()
     {
+        delete logo;
         glfwDestroyWindow(pointer);
         glfwTerminate();
     }
@@ -99,16 +107,33 @@ public:
         glClearColor(0.05f,0.05f,0.05f,1.0f);
         while (!glfwWindowShouldClose(pointer))
         {
-            glClear(GL_COLOR_BUFFER_BIT);
-            //The depth buffer is cleared when the 3D content is displayed.
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            //Render the gui.
-            gui.begin();
+            if (showing_logo)
+            {
+                // Calculate the time elapsed since the logo display started
+                float logo_elapsed = glfwGetTime() - logo_start_time;
+                if (logo_elapsed < 3.0f)
+                {
+                    // Render the logo
+                    logo->draw_triangles();
+                }
+                else
+                {
+                    showing_logo = false; // Stop showing the logo after 3 seconds
+                    //glClearColor(0.05f, 0.05f, 0.05f, 1.0f); // Background for the main app
+                }
+            }
+            else
+            {
+                //Main app rendering.
+                gui.begin();
                 gui.properties.render();
                 gui.console.render();
                 gui.graphics.render();
                 gui.render_integrator_controls();                            
-            gui.render();               
+                gui.render();     
+            }          
 
             glfwSwapBuffers(pointer);
             glfwPollEvents();
