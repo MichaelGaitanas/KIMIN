@@ -6,58 +6,56 @@
 #include"../imgui/imgui_impl_opengl3.h"
 #include"../imgui/implot.h"
 
-#include<thread>
-
 #include<GL/glew.h>
 #include<GLFW/glfw3.h>
 
-#include"typedef.hpp"
+#include<thread>
 
+#include"typedef.hpp"
 #include"console.hpp"
 #include"properties.hpp"
 #include"integrator.hpp"
 #include"solution.hpp"
 #include"graphics.hpp"
 
-class GUI
+
+
+class gui
 {
-
 public:
-
     Properties properties;
     Graphics graphics;
     Console console;
     Integrator integrator;
 
-    //Constructor and correct initialization of &io.
-    GUI(GLFWwindow *pointer)
+    //Initialize imgui and implot along with some settings.
+    gui(GLFWwindow *wpointer)
     {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
-        ImPlot::CreateContext();
+        ImPlot::CreateContext(); //Strictly AFTER Imgui::CreateContext();
         ImGuiIO &io = ImGui::GetIO();
         io.IniFilename = nullptr;
-        io.Fonts->AddFontFromFileTTF("../font/RobotoRegular.ttf", 15.0f, nullptr, io.Fonts->GetGlyphRangesGreek());
+        io.Fonts->AddFontFromFileTTF("../fonts/RobotoRegular.ttf", 15.0f, nullptr, io.Fonts->GetGlyphRangesGreek()); //Dangerous...
         (void)io;
         ImGui::StyleColorsDark();
-        ImGui_ImplGlfw_InitForOpenGL(pointer, true);
+        ImGui_ImplGlfw_InitForOpenGL(wpointer, true);
         ImGui_ImplOpenGL3_Init("#version 330");
         ImGuiStyle &imstyle = ImGui::GetStyle();
-        imstyle.WindowMinSize = ImVec2(100.0f, 100.0f);
         imstyle.FrameRounding = 6.0f;
         imstyle.WindowRounding = 6.0f;
         imstyle.WindowMinSize = ImVec2(200.0f, 200.0f);
-        ImVec4* colors = imstyle.Colors;
+        ImVec4 *colors = imstyle.Colors;
         colors[ImGuiCol_WindowBg] = ImVec4(0.1f, 0.1f, 0.1f, 1.0f);
         colors[ImGuiCol_FrameBg] = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
     }
 
-    //Destructor.
-    ~GUI()
+    //Free gui resources.
+    ~gui()
     {
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplGlfw_Shutdown();
-        ImPlot::DestroyContext();
+        ImPlot::DestroyContext(); //Strictly BEFORE Imgui::DestroyContext();
         ImGui::DestroyContext();
     }
 
@@ -144,7 +142,6 @@ public:
                 console.timedlog(errors[i].c_str());
             }
         }
-        return;
     }
 
 

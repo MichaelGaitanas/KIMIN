@@ -14,7 +14,12 @@
 void draw_logo_for_seconds(const char *img_path, const float seconds)
 {
     //Initialize glfw along with some settings.
-    glfwInit();
+    if(!glfwInit())
+    {
+        fprintf(stderr, "Error : Failed to initialize glfw (logo). Exiting...\n");
+        glfwTerminate();
+        exit(EXIT_FAILURE);
+    }
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -34,7 +39,7 @@ void draw_logo_for_seconds(const char *img_path, const float seconds)
     {
         fprintf(stderr, "Error : Failed to create glfw window. Exiting...\n");
         glfwTerminate();
-        return;
+        exit(EXIT_FAILURE);
     }
     glfwMakeContextCurrent(window);
 
@@ -43,7 +48,9 @@ void draw_logo_for_seconds(const char *img_path, const float seconds)
     if (glewInit() != GLEW_OK)
     {
         fprintf(stderr, "Error : Failed to initialize glew. Exiting...\n");
-        return;
+        glfwDestroyWindow(window);
+        glfwTerminate();
+        exit(EXIT_FAILURE);
     }
 
     //Gpu memory setup regarding image texture.
@@ -64,6 +71,8 @@ void draw_logo_for_seconds(const char *img_path, const float seconds)
     if (!img_data)
     {
         fprintf(stderr, "Error : File '%s' was not found. Exiting...\n", img_path);
+        glfwDestroyWindow(window);
+        glfwTerminate();
         exit(EXIT_FAILURE);
     }
     img_aspect_ratio = img_width/(float)img_height;
@@ -135,10 +144,9 @@ void draw_logo_for_seconds(const char *img_path, const float seconds)
     glDeleteBuffers(1, &vbo);
     glDeleteTextures(1, &tex);
 
+    //Kill the (transparent) window and completely terminate glfw. We will initialize it again for the main app window.
     glfwDestroyWindow(window);
     glfwTerminate();
-
-    return;
 }
 
 #endif
