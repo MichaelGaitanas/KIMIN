@@ -1,5 +1,5 @@
-#ifndef MESHVFN_HPP
-#define MESHVFN_HPP
+#ifndef MESH_HPP
+#define MESH_HPP
 
 #include<GL/glew.h>
 
@@ -9,16 +9,15 @@
 #include"typedef.hpp"
 #include"obj.hpp"
 
-class Meshvfn
+class mesh
 {
-
 private:
     unsigned int vao, vbo; //vertex array and buffer objects
     std::vector<float> buffer; //final form of the data to draw
     bool is_init;
 
 public:
-    Meshvfn() {
+    mesh() {
         is_init = false;
     }
 
@@ -120,7 +119,7 @@ public:
     }
 
     //delete the mesh
-    ~Meshvfn()
+    ~mesh()
     {
         glDeleteVertexArrays(1, &vao);
         glDeleteBuffers(1, &vbo);

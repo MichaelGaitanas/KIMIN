@@ -16,7 +16,7 @@
 #include"conversion.hpp"
 
 #include"solution.hpp"
-#include"meshvfn.hpp"
+#include"mesh.hpp"
 #include"shader.hpp"
 
 #include<glm/glm.hpp>
@@ -55,8 +55,8 @@ public:
     double previous_time;
     float camera_distance;
     // asteroids
-    Meshvfn aster1;
-    Meshvfn aster2;
+    mesh aster1;
+    mesh aster2;
 
     //Properties properties;
 
