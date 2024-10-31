@@ -12,21 +12,21 @@
 #include<thread>
 
 #include"typedef.hpp"
-#include"console.hpp"
-#include"properties.hpp"
-#include"integrator.hpp"
-#include"solution.hpp"
-#include"graphics.hpp"
+#include"properties_panel.hpp"
+#include"console_panel.hpp"
+//#include"integrator.hpp"
+//#include"solution.hpp"
+//#include"graphics.hpp"
 
 
 
 class gui
 {
 public:
-    Properties properties;
-    Graphics graphics;
-    Console console;
-    Integrator integrator;
+    properties_panel properties;
+    console_panel console;
+    //Graphics graphics;
+    //Integrator integrator;
 
     //Initialize imgui and implot along with some settings.
     gui(GLFWwindow *wpointer)
@@ -44,7 +44,7 @@ public:
         ImGuiStyle &imstyle = ImGui::GetStyle();
         imstyle.FrameRounding = 6.0f;
         imstyle.WindowRounding = 6.0f;
-        imstyle.WindowMinSize = ImVec2(200.0f, 200.0f);
+        //imstyle.WindowMinSize = ImVec2(200.0f, 200.0f);
         ImVec4 *colors = imstyle.Colors;
         colors[ImGuiCol_WindowBg] = ImVec4(0.1f, 0.1f, 0.1f, 1.0f);
         colors[ImGuiCol_FrameBg] = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
@@ -74,6 +74,7 @@ public:
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     }
 
+    /*
     void render_integrator_controls(){
         float offsety = 0;
         float ysize = ImGui::GetIO().DisplaySize.y/7.0f;
@@ -123,7 +124,9 @@ public:
         ImGui::PopStyleColor();
         ImGui::End();
     }
+    */
 
+    /*
     void when_run_is_clicked()
     {
         strvec errors = properties.validate();
@@ -143,6 +146,7 @@ public:
             }
         }
     }
+    */
 
 
 };

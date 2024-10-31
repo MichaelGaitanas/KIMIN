@@ -1,5 +1,5 @@
-#ifndef PROPERTIES_HPP
-#define PROPERTIES_HPP
+#ifndef PROPERTIES_PANEL_HPP
+#define PROPERTIES_PANEL_HPP
 
 #include"../imgui/imgui.h"
 #include"../imgui/imgui_impl_glfw.h"
@@ -16,26 +16,18 @@
 #include"obj.hpp"
 #include"conversion.hpp"
 
-class Properties
+class properties_panel
 {
+private:
+    char sim_name[101]; //'Simulation name' field. 100 characters available (plus the '\0' terminating character).
+    bool ell_checkbox; //'Ellipsoids' checkbox state.
+    bool ell_win_close; //Whether or not the 'Ellipsoid parameters' is closable.
+    bool ell_clicked_ok; //Ellipsoids 'OK' button state (from the submenu).
+    dvec3 semiaxes1, semiaxes2; //Ellipsoids {'a1', 'b1', 'c1'}, {'a2', 'b2', 'c2'} fields.
 
-public:
-
-    //'Simulation name' field. 30 characters available (plus the '\0' character).
-    char simname[31];
-
-    //'Ellipsoids' checkbox state.
-    bool ell_checkbox;
-    //Ellipsoids 'OK' button state (from the submenu).
-    bool clicked_ell_ok;
-
-    //Ellipsoids {'a1', 'b1', 'c1'}, {'a2', 'b2', 'c2'} fields.
-    dvec3 semiaxes1, semiaxes2;
-
-    //'.obj files' checkbox state.
-    bool obj_checkbox;
-    //.obj files 'Body 1' or 'Body 2' radiobuttons reference (1 or 2 only).
-    int obj_refer_to_body;
+    bool obj_checkbox; //'.obj files' checkbox state.
+    bool obj_win_close; //Whether or not the '.obj parameters' is closable.
+    int obj_refer_to_body; //.obj files 'Body 1' or 'Body 2' radiobuttons reference (1 or 2 only).
 
     //Index of the clicked .obj path. -1 means no path is clicked. Only one path per body can be clicked.
     int clicked_poly1_index, clicked_poly2_index;
@@ -51,9 +43,6 @@ public:
 
     //fundamental contents of the 2 .obj files (vertices, faces).
     bvec vf1, vf2;
-
-    //Cartesian grid resolutions (per axis) for filling the polyhedra with mascons.
-    ivec3 grid_reso1, grid_reso2, grid_reso_inactive;
 
     //.obj 'OK' button state.
     bool clicked_obj_ok;
@@ -101,53 +90,56 @@ public:
     dvec3 w1i, w2i;
     dvec3 w1b, w2b;
 
-    Properties() : simname(""),
-                   ell_checkbox(false),
-                   clicked_ell_ok(false),
-                   semiaxes1({0.0, 0.0, 0.0}),
-                   semiaxes2({0.0, 0.0, 0.0}),
-                   obj_checkbox(false),
-                   obj_refer_to_body(1),
-                   clicked_poly1_index(-1),
-                   clicked_poly2_index(-1),
-                   clicked_poly1(false),
-                   clicked_poly2(false),
-                   path_to_poly_obj(list_files("../obj/")),
-                   obj_path1(""),
-                   obj_path2(""),
-                   vf1({false, false}),
-                   vf2({false, false}),
-                   grid_reso1({10,10,10}),
-                   grid_reso2({10,10,10}),
-                   grid_reso_inactive({0,0,0}),
-                   clicked_obj_ok(false),
-                   ord2_checkbox(false),
-                   ord3_checkbox(false),
-                   ord4_checkbox(false),
-                   M1(0),
-                   M2(0),
-                   v_impact({0.0,0.0,0.0}),
-                   M_impact(0.0),
-                   beta(0.0),
-                   epoch(0.0),
-                   dur(0.0),
-                   step(0.0),
-                   cart_kep_var{"Cartesian ", "Keplerian "},
-                   cart_kep_var_choice(1),
-                   cart({0.0,0.0,0.0, 0.0,0.0,0.0}),
-                   kep({0.0,0.0,0.0,0.0,0.0,0.0,}),
-                   orient_var{"Euler angles", "Quaternions"},
-                   orient_var_choice(0),
-                   rpy1({0.0,0.0,0.0}),
-                   rpy2({0.0,0.0,0.0}),
-                   q1({1.0,0.0,0.0,0.0}),
-                   q2({1.0,0.0,0.0,0.0}),
-                   frame_type{"Inertial frame", "Body frames"},
-                   frame_type_choice(0),
-                   w1i({0.0,0.0,0.0}),
-                   w2i({0.0,0.0,0.0}),
-                   w1b({0.0,0.0,0.0}),
-                   w2b({0.0,0.0,0.0})
+public:
+    properties_panel() : sim_name(""),
+                         ell_checkbox(false),
+                         ell_win_close(true),
+                         ell_clicked_ok(false),
+                         semiaxes1({0.0, 0.0, 0.0}),
+                         semiaxes2({0.0, 0.0, 0.0}),
+                         obj_checkbox(false),
+                         obj_win_close(true),
+                         obj_refer_to_body(1),
+                         clicked_poly1_index(-1),
+                         clicked_poly2_index(-1),
+                         clicked_poly1(false),
+                         clicked_poly2(false),
+                         path_to_poly_obj(list_files("../obj/")),
+                         obj_path1(""),
+                         obj_path2(""),
+                         vf1({false, false}),
+                         vf2({false, false}),
+                         grid_reso1({10,10,10}),
+                         grid_reso2({10,10,10}),
+                         grid_reso_inactive({0,0,0}),
+                         clicked_obj_ok(false),
+                         ord2_checkbox(false),
+                         ord3_checkbox(false),
+                         ord4_checkbox(false),
+                         M1(0),
+                         M2(0),
+                         v_impact({0.0,0.0,0.0}),
+                         M_impact(0.0),
+                         beta(0.0),
+                         epoch(0.0),
+                         dur(0.0),
+                         step(0.0),
+                         cart_kep_var{"Cartesian ", "Keplerian "},
+                         cart_kep_var_choice(1),
+                         cart({0.0,0.0,0.0, 0.0,0.0,0.0}),
+                         kep({0.0,0.0,0.0,0.0,0.0,0.0,}),
+                         orient_var{"Euler angles", "Quaternions"},
+                         orient_var_choice(0),
+                         rpy1({0.0,0.0,0.0}),
+                         rpy2({0.0,0.0,0.0}),
+                         q1({1.0,0.0,0.0,0.0}),
+                         q2({1.0,0.0,0.0,0.0}),
+                         frame_type{"Inertial frame", "Body frames"},
+                         frame_type_choice(0),
+                         w1i({0.0,0.0,0.0}),
+                         w2i({0.0,0.0,0.0}),
+                         w1b({0.0,0.0,0.0}),
+                         w2b({0.0,0.0,0.0})
                    
     { }
 
@@ -170,7 +162,6 @@ public:
                 ImGui::InputDouble(unit, &variable, 0.0, 0.0,"%g");
             ImGui::PopID();
         ImGui::PopItemWidth();
-        return;
     }
 
     void int_field(const char *label, const float iwidth, int &id, const char *unit, int &variable)
@@ -182,35 +173,36 @@ public:
                 ImGui::InputInt(unit, &variable);
             ImGui::PopID();
         ImGui::PopItemWidth();
-        return;
     }
 
     void render()
     {
         int id = 0;
 
-        ImGui::SetNextWindowPos( ImVec2(0.0f, 0.0f), ImGuiCond_FirstUseEver);
+        //Properties panel "main" window.
+        ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f, ImGui::GetIO().DisplaySize.y), ImGuiCond_FirstUseEver);
         ImGui::Begin("Properties ", nullptr);
 
+        //Simunlation name text field. Basically this is the name of the folder that will be created later, holding the orbit data.
         ImGui::Text("Simulation name");
         ImGui::PushItemWidth(200.0f);
-            ImGui::InputText(" ", simname, IM_ARRAYSIZE(simname));
+            ImGui::InputText(" ", sim_name, IM_ARRAYSIZE(sim_name));
         ImGui::PopItemWidth();
         ImGui::Dummy(ImVec2(0.0f,15.0f));
 
+
         ImGui::Text("Shape model");
         if (ImGui::Checkbox("Ellipsoids", &ell_checkbox) && ell_checkbox)
-            clicked_ell_ok = false;
-            
-        if (ell_checkbox && !clicked_ell_ok)
         {
-            obj_checkbox = false; //untick the obj checkbox in case it is ticked
+            obj_checkbox = false; //Untick the obj checkbox in case it is ticked.
+            ell_clicked_ok = false;
+
             ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver); 
             ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f, 300.0f), ImGuiCond_FirstUseEver); 
-            ImGui::Begin("Ellipsoid parameters");
-            
-            //ellipsoids semiaxes submenu
+            ImGui::Begin("Ellipsoid parameters", &ell_win_close);
+
+            //Ellipsoids semiaxes menu.
             ImGui::Text("Body 1 semi - axes");
             double_field("a1 ", 100.0f, id, "[km]", semiaxes1[0]);
             double_field("b1 ", 100.0f, id, "[km]", semiaxes1[1]);
@@ -221,13 +213,39 @@ public:
             double_field("b2 ", 100.0f, id, "[km]", semiaxes2[1]);
             double_field("c2 ", 100.0f, id, "[km]", semiaxes2[2]);
             ImGui::Dummy(ImVec2(0.0f,15.0f));
-            
-            //ellipsoids submenu "OK" button
+
+            //Final "OK" button. This must be pressed, otherwise the semi-axes values are not taken into account.
             if (ImGui::Button("OK", ImVec2(50.0f,30.0f)))
-                clicked_ell_ok = true;
+                ell_clicked_ok = true;
 
             ImGui::End();
         }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            
+      
+    
 
         if (ImGui::Checkbox(".obj file", &obj_checkbox) && obj_checkbox)
             clicked_obj_ok = false;
@@ -247,12 +265,12 @@ public:
             
             if (ImGui::TreeNodeEx("Available .obj models"))
             {
-                for (int i = 0; i < path_to_poly_obj.size(); ++i)
+                for (size_t i = 0; i < path_to_poly_obj.size(); ++i)
                 {
                     //which polyhedral .obj model path for body1
                     if (obj_refer_to_body == 1)
                     {
-                        if (ImGui::Selectable(path_to_poly_obj[i].string().c_str(), (clicked_poly1_index == i)))
+                        if (ImGui::Selectable(path_to_poly_obj[i].string().c_str(), (clicked_poly1_index == (int)i)))
                         {
                             clicked_poly1 = true;
                             clicked_poly1_index = i;
@@ -262,7 +280,7 @@ public:
                     else
                     {
                         //which polyhedral .obj model path for body2
-                        if (ImGui::Selectable(path_to_poly_obj[i].string().c_str(), (clicked_poly2_index == i)))
+                        if (ImGui::Selectable(path_to_poly_obj[i].string().c_str(), (clicked_poly2_index == (int)i)))
                         {
                             clicked_poly2 = true;
                             clicked_poly2_index = i;
@@ -307,6 +325,18 @@ public:
             ImGui::End();
         }
         ImGui::Dummy(ImVec2(0.0f, 15.0f));
+
+
+
+
+
+
+
+
+
+
+
+
 
         //physics theory
         ImGui::Text("Theory expansion");
@@ -437,11 +467,11 @@ public:
     {
         strvec errors;
         
-        //simname[] errors (empty, pure tabs, begin with tab).
-        str simnname_copy = simname;
-        char first_char = simnname_copy[0];
+        //sim_name[] errors (empty, pure tabs, begin with tab).
+        str sim_name_copy = sim_name;
+        char first_char = sim_name_copy[0];
         char one_space = ' ';
-        if ( (simnname_copy.empty()) || (simnname_copy.find_first_not_of(' ') == str::npos) || (first_char == one_space) )
+        if ( (sim_name_copy.empty()) || (sim_name_copy.find_first_not_of(' ') == str::npos) || (first_char == one_space) )
             errors.push_back("[Error] :  'Simulation name' is invalid.");
 
         //Theory model checkboxes error (at least one must be checked).

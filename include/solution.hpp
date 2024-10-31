@@ -12,9 +12,7 @@
 #include"mascon.hpp"
 #include"ellipsoid.hpp"
 #include"rigidbody.hpp"
-#include"potential.hpp"
-#include"force.hpp"
-#include"torque.hpp"
+#include"gravity.hpp"
 
 #include"integrator.hpp"
 

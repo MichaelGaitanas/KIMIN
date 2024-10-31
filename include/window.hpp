@@ -118,8 +118,8 @@ public:
             ui.begin();
             ui.properties.render();
             ui.console.render();
-            ui.graphics.render();
-            ui.render_integrator_controls();                            
+            //ui.graphics.render();
+            //ui.render_integrator_controls();                            
             ui.render();     
 
             glfwSwapBuffers(wpointer);

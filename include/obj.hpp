@@ -86,7 +86,7 @@ public:
         //Finally, compute the normals.
         norms.resize(faces.size());
         dvec3 perp;
-        for (int i = 0; i < norms.size(); ++i)
+        for (size_t i = 0; i < norms.size(); ++i)
         {
             dvec3 p0 = verts[faces[i][0]];
             dvec3 p1 = verts[faces[i][1]];
@@ -102,7 +102,7 @@ public:
         int intersections = 0;
 
         //loop through all the triangulated faces in search for intersection
-        for (int j = 0; j < faces.size(); ++j)
+        for (size_t j = 0; j < faces.size(); ++j)
         {
             //define the triangle j from 3 points p0,p1,p2
             dvec3 p0 = verts[faces[j][0]];
@@ -135,7 +135,7 @@ public:
     dmatnx3 fill_with_masc(const ivec3 &grid_reso, float *progress)
     {
         dvec3 rmin = verts[0], rmax = verts[0];
-        for (int i = 1; i < verts.size(); ++i)
+        for (size_t i = 1; i < verts.size(); ++i)
         {
             if (verts[i][0] < rmin[0]) rmin[0] = verts[i][0];
             if (verts[i][1] < rmin[1]) rmin[1] = verts[i][1];
