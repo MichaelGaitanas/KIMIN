@@ -20,23 +20,18 @@ class properties_panel
 {
 private:
     char sim_name[101]; //'Simulation name' field. 100 characters available (plus the '\0' terminating character).
+    
     bool ell_checkbox; //'Ellipsoids' checkbox state.
-    bool ell_win_close; //Whether or not the 'Ellipsoid parameters' is closable.
+    bool ell_win_closable; //Whether or not the 'Ellipsoid parameters' window is closable.
     bool ell_clicked_ok; //Ellipsoids 'OK' button state (from the submenu).
-    dvec3 semiaxes1, semiaxes2; //Ellipsoids {'a1', 'b1', 'c1'}, {'a2', 'b2', 'c2'} fields.
+    dvec3 semiaxes1, semiaxes2; //Ellipsoids 'a1', 'b1', 'c1', 'a2', 'b2', 'c2' fields.
 
     bool obj_checkbox; //'.obj files' checkbox state.
-    bool obj_win_close; //Whether or not the '.obj parameters' is closable.
+    bool obj_win_closable; //Whether or not the '.obj parameters' is closable.
     int obj_refer_to_body; //.obj files 'Body 1' or 'Body 2' radiobuttons reference (1 or 2 only).
-
-    //Index of the clicked .obj path. -1 means no path is clicked. Only one path per body can be clicked.
-    int clicked_poly1_index, clicked_poly2_index;
-    
-    //Decide whether body 1 and body 2 will be loaded.
-    bool clicked_poly1, clicked_poly2;
-    
-    //Relative path to obj/ directory.
-    std::vector<std::filesystem::path> path_to_poly_obj;
+    int clicked_poly1_index, clicked_poly2_index; //Index of the clicked .obj path. -1 means no path is clicked. Only one path per body can be clicked.
+    bool clicked_poly1, clicked_poly2; //Decide if body 1 or body 2 will be loaded.
+    std::vector<std::filesystem::path> path_to_poly_obj; //Relative path to the obj models directory.
 
     //Relative path to the 2 .obj models.
     str obj_path1, obj_path2;
@@ -51,7 +46,7 @@ private:
     bool ord2_checkbox, ord3_checkbox, ord4_checkbox;
 
     //'M1', 'M2' fields.
-    double M1,M2;
+    double M1, M2;
 
     //Impactor parameters : 'υx', 'υy', 'υz', 'Mass', 'β value'
     dvec3 v_impact;
@@ -93,12 +88,12 @@ private:
 public:
     properties_panel() : sim_name(""),
                          ell_checkbox(false),
-                         ell_win_close(true),
+                         ell_win_closable(true),
                          ell_clicked_ok(false),
-                         semiaxes1({0.0, 0.0, 0.0}),
-                         semiaxes2({0.0, 0.0, 0.0}),
+                         semiaxes1(dvec3{0.0,0.0,0.0}),
+                         semiaxes2(dvec3{0.0,0.0,0.0}),
                          obj_checkbox(false),
-                         obj_win_close(true),
+                         obj_win_closable(true),
                          obj_refer_to_body(1),
                          clicked_poly1_index(-1),
                          clicked_poly2_index(-1),
@@ -109,9 +104,6 @@ public:
                          obj_path2(""),
                          vf1({false, false}),
                          vf2({false, false}),
-                         grid_reso1({10,10,10}),
-                         grid_reso2({10,10,10}),
-                         grid_reso_inactive({0,0,0}),
                          clicked_obj_ok(false),
                          ord2_checkbox(false),
                          ord3_checkbox(false),
@@ -140,11 +132,10 @@ public:
                          w2i({0.0,0.0,0.0}),
                          w1b({0.0,0.0,0.0}),
                          w2b({0.0,0.0,0.0})
-                   
     { }
 
-    //This function receives as input a path to a directory and as a result it returns a vector of paths, corresponding
-    //to all the files (even child directories) found inside 'path/'
+    //This function receives as input a 'path' to a directory and as a result it returns a vector of paths, corresponding
+    //to all the files (even child directories) found inside 'path'.
     std::vector<std::filesystem::path> list_files(const char *path)
     {
         std::vector<std::filesystem::path> paths; 
@@ -153,24 +144,13 @@ public:
         return paths;
     }
 
-    void double_field(const char *label, const float iwidth, int &id, const char *unit, double &variable)
+    void double_field(const char *label, const float item_width, int &id, const char *unit, double &variable)
     {      
         ImGui::Text(label);
         ImGui::SameLine();
-        ImGui::PushItemWidth(iwidth);
+        ImGui::PushItemWidth(item_width);
             ImGui::PushID(id++);
-                ImGui::InputDouble(unit, &variable, 0.0, 0.0,"%g");
-            ImGui::PopID();
-        ImGui::PopItemWidth();
-    }
-
-    void int_field(const char *label, const float iwidth, int &id, const char *unit, int &variable)
-    {
-        ImGui::Text(label);
-        ImGui::SameLine();
-        ImGui::PushItemWidth(iwidth);
-            ImGui::PushID(id++);
-                ImGui::InputInt(unit, &variable);
+                ImGui::InputDouble(unit, &variable, 0.0, 0.0, "%g");
             ImGui::PopID();
         ImGui::PopItemWidth();
     }
@@ -191,17 +171,18 @@ public:
         ImGui::PopItemWidth();
         ImGui::Dummy(ImVec2(0.0f,15.0f));
 
-
         ImGui::Text("Shape model");
         if (ImGui::Checkbox("Ellipsoids", &ell_checkbox) && ell_checkbox)
+            ell_clicked_ok = false;
+
+        if (ell_checkbox && !ell_clicked_ok)
         {
             obj_checkbox = false; //Untick the obj checkbox in case it is ticked.
-            ell_clicked_ok = false;
 
             ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver); 
             ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f, 300.0f), ImGuiCond_FirstUseEver); 
-            ImGui::Begin("Ellipsoid parameters", &ell_win_close);
-
+            ImGui::Begin("Ellipsoid parameters", &ell_checkbox);
+            
             //Ellipsoids semiaxes menu.
             ImGui::Text("Body 1 semi - axes");
             double_field("a1 ", 100.0f, id, "[km]", semiaxes1[0]);
@@ -290,34 +271,6 @@ public:
                 }
                 ImGui::TreePop();
             }
-            ImGui::Dummy(ImVec2(0.0f,5.0f));
-
-            ImGui::Indent();
-            ImGui::Text("Raycasting grid resolution ");
-            if ((obj_refer_to_body == 1 && !clicked_poly1) ||
-                (obj_refer_to_body == 2 && !clicked_poly2) ||
-                (!clicked_poly1 && !clicked_poly2))
-            {
-                ImGui::BeginDisabled();
-                int_field("x axis", 100.0f, id, " [ > 1 ]", grid_reso_inactive[0]);
-                int_field("y axis", 100.0f, id, " [ > 1 ]", grid_reso_inactive[1]);
-                int_field("z axis", 100.0f, id, " [ > 1 ]", grid_reso_inactive[2]);
-                ImGui::EndDisabled();
-            }
-            else if (obj_refer_to_body == 1 && clicked_poly1)
-            {
-                int_field("x axis", 100.0f, id, " [ > 1 ]", grid_reso1[0]);
-                int_field("y axis", 100.0f, id, " [ > 1 ]", grid_reso1[1]);
-                int_field("z axis", 100.0f, id, " [ > 1 ]", grid_reso1[2]);
-            }
-            else if (obj_refer_to_body == 2 && clicked_poly2)
-            {
-                int_field("x axis", 100.0f, id, " [ > 1 ]", grid_reso2[0]);
-                int_field("y axis", 100.0f, id, " [ > 1 ]", grid_reso2[1]);
-                int_field("z axis", 100.0f, id, " [ > 1 ]", grid_reso2[2]);
-            }
-            ImGui::Unindent();
-            ImGui::Dummy(ImVec2(0.0f, 15.0f));
 
             if (ImGui::Button("OK", ImVec2(50.0f,30.0f)))   
                 clicked_obj_ok = true;
@@ -508,12 +461,6 @@ public:
             if ( !(vf2[0] && vf2[1]) )
                 errors.push_back("[Error] :  In 'Body 2' .obj file, vertices and faces lines must exist.");
         }
-
-        //Raycast grid error (in order to successfully fill the polyhedron with mascons, the raycast grid resolution must be > 1 per axis)
-        if (obj_checkbox && clicked_poly1 && (grid_reso1[0] <= 1 || grid_reso1[1] <= 1 || grid_reso1[2] <= 1))
-            errors.push_back("[Error] :  Invalid 'x axis', 'y axis', 'z axis' resolution for 'Body 1'.");
-        if (obj_checkbox && clicked_poly2 && (grid_reso2[0] <= 1 || grid_reso2[1] <= 1 || grid_reso2[2] <= 1))
-            errors.push_back("[Error] :  Invalid 'x axis', 'y axis', 'z axis' resolution for 'Body 2'.");
 
         //Masses error (both M1 and M2 must be > 0.0).
         if (M1 <= 0.0)
