@@ -19,52 +19,31 @@
 class properties_panel
 {
 private:
-    char sim_name[101]; //'Simulation name' field. 100 characters available (plus the '\0' terminating character).
+    char sim_name[101]; //'Simulation name' text field. 100 characters available (plus the '\0' terminating character).
     
     bool ell_checkbox; //'Ellipsoids' checkbox state.
     bool ell_win_closable; //Whether or not the 'Ellipsoid parameters' window is closable.
-    bool ell_clicked_ok; //Ellipsoids 'OK' button state (from the submenu).
-    dvec3 semiaxes1, semiaxes2; //Ellipsoids 'a1', 'b1', 'c1', 'a2', 'b2', 'c2' fields.
+    dvec3 semiaxes1, semiaxes2; //Ellipsoids 'a1', 'b1', 'c1', 'a2', 'b2', 'c2' double fields.
+    bool ell_clicked_ok; //Ellipsoids 'OK' button (pressed or not).
 
-    bool obj_checkbox; //'.obj files' checkbox state.
-    bool obj_win_closable; //Whether or not the '.obj parameters' is closable.
-    int obj_refer_to_body; //.obj files 'Body 1' or 'Body 2' radiobuttons reference (1 or 2 only).
-    int clicked_poly1_index, clicked_poly2_index; //Index of the clicked .obj path. -1 means no path is clicked. Only one path per body can be clicked.
-    bool clicked_poly1, clicked_poly2; //Decide if body 1 or body 2 will be loaded.
-    std::vector<std::filesystem::path> path_to_poly_obj; //Relative path to the obj models directory.
+    bool obj_checkbox; //'.obj file' checkbox state.
+    bool obj_win_closable; //Whether or not the '.obj files' is closable.
+    int obj_refers_to_body; //To which body ('Body 1' or 'Body 2') does the obj file listing refer to (via radiobutton).
+    std::vector<std::filesystem::path> path_to_obj_dir; //Relative path to the obj models directory.
+    int obj1_clicked_index, obj2_clicked_index; //Index of the clicked .obj path. -1 means no path is clicked. Only one path per body can be clicked.
+    bool obj1_clicked, obj2_clicked; //Decide if an obj file (from 'Body 1' or 'Body 2') is clicked.
+    str obj1_path, obj2_path; //Relative paths to the 2 .obj models.
+    bool obj_clicked_ok; //.obj 'OK' button (pressed or not).
 
-    //Relative path to the 2 .obj models.
-    str obj_path1, obj_path2;
+    bool ord2_checkbox, ord3_checkbox, ord4_checkbox; //'Mutual potential' available options. Only one of them may be chosen (or none, but it will produce an error in the console :P).
 
-    //fundamental contents of the 2 .obj files (vertices, faces).
-    bvec vf1, vf2;
+    double M1, M2; //'M1', 'M2' double fields (referring to 'Body 1' and 'Body 2' respectively).
 
-    //.obj 'OK' button state.
-    bool clicked_obj_ok;
+    double epoch, dur, step; //'Epoch', 'Duration', 'Step' double fields.
 
-    //'Theory' checkbox state
-    bool ord2_checkbox, ord3_checkbox, ord4_checkbox;
-
-    //'M1', 'M2' fields.
-    double M1, M2;
-
-    //Impactor parameters : 'υx', 'υy', 'υz', 'Mass', 'β value'
-    dvec3 v_impact;
-    double M_impact;
-    double beta;
-
-    //'Epoch', 'Duration', 'Step' fields.
-    double epoch, dur, step;
-
-    //Nature of the relative position and velocity variables.
-    const char *cart_kep_var[2];
-    //Initial choice. 0 -> Cartesian, 1 -> Keplerian.
-    int cart_kep_var_choice;
-
-    //'x', 'y', 'z', 'υx', 'υy', 'υz' fields.
-    dvec6 cart;
-    //'a', 'e', 'i', 'Ω', 'ω', 'M' fields.
-    dvec6 kep;
+    int cart_kep_var_choice; //Initial choice. 0 -> Cartesian, 1 -> Keplerian.
+    dvec6 cart; //'x', 'y', 'z', 'υx', 'υy', 'υz' double fields.
+    dvec6 kep; //'a', 'e', 'i', 'Ω', 'ω', 'M' double fields.
 
     //Nature of the orientation variables.
     const char *orient_var[2];
@@ -85,41 +64,44 @@ private:
     dvec3 w1i, w2i;
     dvec3 w1b, w2b;
 
+    bool impactor_checkbox; //'Kinetic impactor' checkbox state.
+    bool impactor_clicked_ok; //'OK' button in the kinetic impactor parameters window (pressed or not).
+    dvec3 v_impact; //Impactor's velocity vector.
+    double M_impact; //Impactor's mass.
+    double beta; //Momentum enhancement factor.
+
+    //fundamental contents of the 2 .obj files (vertices, faces).
+    //bvec vf1, vf2;
+
 public:
     properties_panel() : sim_name(""),
                          ell_checkbox(false),
                          ell_win_closable(true),
-                         ell_clicked_ok(false),
                          semiaxes1(dvec3{0.0,0.0,0.0}),
                          semiaxes2(dvec3{0.0,0.0,0.0}),
+                         ell_clicked_ok(false),
                          obj_checkbox(false),
                          obj_win_closable(true),
-                         obj_refer_to_body(1),
-                         clicked_poly1_index(-1),
-                         clicked_poly2_index(-1),
-                         clicked_poly1(false),
-                         clicked_poly2(false),
-                         path_to_poly_obj(list_files("../obj/")),
-                         obj_path1(""),
-                         obj_path2(""),
-                         vf1({false, false}),
-                         vf2({false, false}),
-                         clicked_obj_ok(false),
+                         obj_refers_to_body(1),
+                         path_to_obj_dir(list_obj_files("../obj/")),
+                         obj1_clicked_index(-1),
+                         obj2_clicked_index(-1),
+                         obj1_clicked(false),
+                         obj2_clicked(false),
+                         obj1_path(""),
+                         obj2_path(""),
+                         obj_clicked_ok(false),
                          ord2_checkbox(false),
                          ord3_checkbox(false),
                          ord4_checkbox(false),
-                         M1(0),
-                         M2(0),
-                         v_impact({0.0,0.0,0.0}),
-                         M_impact(0.0),
-                         beta(0.0),
+                         M1(0.0),
+                         M2(0.0),
                          epoch(0.0),
                          dur(0.0),
                          step(0.0),
-                         cart_kep_var{"Cartesian ", "Keplerian "},
                          cart_kep_var_choice(1),
-                         cart({0.0,0.0,0.0, 0.0,0.0,0.0}),
-                         kep({0.0,0.0,0.0,0.0,0.0,0.0,}),
+                         cart(dvec6{0.0,0.0,0.0,0.0,0.0,0.0}),
+                         kep(dvec6{0.0,0.0,0.0,0.0,0.0,0.0,}),
                          orient_var{"Euler angles", "Quaternions"},
                          orient_var_choice(0),
                          rpy1({0.0,0.0,0.0}),
@@ -131,19 +113,33 @@ public:
                          w1i({0.0,0.0,0.0}),
                          w2i({0.0,0.0,0.0}),
                          w1b({0.0,0.0,0.0}),
-                         w2b({0.0,0.0,0.0})
+                         w2b({0.0,0.0,0.0}),
+                         impactor_checkbox(false),
+                         impactor_clicked_ok(false),
+                         v_impact(dvec3{0.0,0.0,0.0}),
+                         M_impact(0.0),
+                         beta(0.0)
+                         //vf1({false, false}),
+                         //vf2({false, false})
     { }
 
     //This function receives as input a 'path' to a directory and as a result it returns a vector of paths, corresponding
-    //to all the files (even child directories) found inside 'path'.
-    std::vector<std::filesystem::path> list_files(const char *path)
+    //to all the .obj files (even inside child directories) found inside 'path'.
+    std::vector<std::filesystem::path> list_obj_files(const char *path)
     {
         std::vector<std::filesystem::path> paths; 
         for (const auto &entry : std::filesystem::recursive_directory_iterator(path))
-            paths.push_back(entry.path());
+            //Check if the entry is a regular file and has a ".obj" extension.
+            if (entry.is_regular_file() && entry.path().extension() == ".obj")
+                paths.push_back(entry.path().filename());
         return paths;
     }
 
+    //This function automates common double input via the keyboard. It creates a rectangle, inside of which the user may enter a double.
+    //'label' is a string written on the left of the rectangle. 'item_width' is the horizontal legth (space) of the rectangle. 'id' is a unique
+    //int with which the computer identifies which variable to affect (coz you may have multiple input fields). 'unit' is a string written on the right
+    //of the rectangle (for us it is always the unit of measurement of the current variable). 'variable' is the variable itself, passed by reference to
+    //InputDouble(), so it may change
     void double_field(const char *label, const float item_width, int &id, const char *unit, double &variable)
     {      
         ImGui::Text(label);
@@ -155,8 +151,12 @@ public:
         ImGui::PopItemWidth();
     }
 
+    //Draw the properties panel and process the corresponding logic.
     void render()
     {
+        //Reinitialized every frame at 0. Making it static, will also work, but if the app's total frames (glfw while loop) exceed the
+        //maximum int value (or unsigned, or long, or whatever the variable type of id is), then we will have an overflow, which means
+        //unexpected behavior or crash or wrap around to the negative side...
         int id = 0;
 
         //Properties panel "main" window.
@@ -169,12 +169,17 @@ public:
         ImGui::PushItemWidth(200.0f);
             ImGui::InputText(" ", sim_name, IM_ARRAYSIZE(sim_name));
         ImGui::PopItemWidth();
-        ImGui::Dummy(ImVec2(0.0f,15.0f));
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
 
+        //Ellipsoid and .obj shape logic.
         ImGui::Text("Shape model");
+
+
+        //Ellipsoid shape logic.
         if (ImGui::Checkbox("Ellipsoids", &ell_checkbox) && ell_checkbox)
             ell_clicked_ok = false;
-
         if (ell_checkbox && !ell_clicked_ok)
         {
             obj_checkbox = false; //Untick the obj checkbox in case it is ticked.
@@ -195,138 +200,111 @@ public:
             double_field("c2 ", 100.0f, id, "[km]", semiaxes2[2]);
             ImGui::Dummy(ImVec2(0.0f,15.0f));
 
-            //Final "OK" button. This must be pressed, otherwise the semi-axes values are not taken into account.
+            //Final "OK" button. This must be pressed, otherwise the semi-axes values will not be taken into account.
             if (ImGui::Button("OK", ImVec2(50.0f,30.0f)))
                 ell_clicked_ok = true;
 
             ImGui::End();
         }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            
-      
     
 
+        //.obj shape logic.
         if (ImGui::Checkbox(".obj file", &obj_checkbox) && obj_checkbox)
-            clicked_obj_ok = false;
-
-        if (obj_checkbox && !clicked_obj_ok)
+            obj_clicked_ok = false;
+        if (obj_checkbox && !obj_clicked_ok)
         {
-            ell_checkbox = false; //untick the ellipsoids checkbox in case it is ticked
-            ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver); //display position of the obj files menu 
-            ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f, 300.0f), ImGuiCond_FirstUseEver); 
-            ImGui::Begin(".obj parameters");
-            ImGui::Dummy(ImVec2(0.0f,10.0f));
+            ell_checkbox = false; //Untick the ellipsoids checkbox in case it is ticked.
 
-            if (ImGui::RadioButton("Body 1", obj_refer_to_body == 1))
-                obj_refer_to_body = 1;
-            if (ImGui::RadioButton("Body 2", obj_refer_to_body == 2))
-                obj_refer_to_body = 2;
+            ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f, 300.0f), ImGuiCond_FirstUseEver); 
+            ImGui::Begin(".obj files", &obj_checkbox);
+
+            //Radiobuttons logic : At least one will always be active and to this (the active one) the loaded obj file will correspond.
+            if (ImGui::RadioButton("Body 1", obj_refers_to_body == 1))
+                obj_refers_to_body = 1;
+            ImGui::SameLine();
+            if (ImGui::RadioButton("Body 2", obj_refers_to_body == 2))
+                obj_refers_to_body = 2;
+            ImGui::Dummy(ImVec2(0.0f,15.0f));
             
-            if (ImGui::TreeNodeEx("Available .obj models"))
+            
+            //File list logic.
+            if (ImGui::TreeNodeEx("Available .obj files in obj/ directory :"))
             {
-                for (size_t i = 0; i < path_to_poly_obj.size(); ++i)
+                for (size_t i = 0; i < path_to_obj_dir.size(); ++i)
                 {
-                    //which polyhedral .obj model path for body1
-                    if (obj_refer_to_body == 1)
+                    //Which .obj path for Body 1.
+                    if (obj_refers_to_body == 1)
                     {
-                        if (ImGui::Selectable(path_to_poly_obj[i].string().c_str(), (clicked_poly1_index == (int)i)))
+                        if (ImGui::Selectable(path_to_obj_dir[i].string().c_str(), (obj1_clicked_index == (int)i)))
                         {
-                            clicked_poly1 = true;
-                            clicked_poly1_index = i;
-                            obj_path1 = path_to_poly_obj[i].string();
+                            obj1_clicked = true;
+                            obj1_clicked_index = i;
+                            obj1_path = path_to_obj_dir[i].string();
                         }
                     }
                     else
                     {
-                        //which polyhedral .obj model path for body2
-                        if (ImGui::Selectable(path_to_poly_obj[i].string().c_str(), (clicked_poly2_index == (int)i)))
+                        //Which .obj path for Body 2.
+                        if (ImGui::Selectable(path_to_obj_dir[i].string().c_str(), (obj2_clicked_index == (int)i)))
                         {
-                            clicked_poly2 = true;
-                            clicked_poly2_index = i;
-                            obj_path2 = path_to_poly_obj[i].string();
+                            obj2_clicked = true;
+                            obj2_clicked_index = i;
+                            obj2_path = path_to_obj_dir[i].string();
                         }
                     }
                 }
                 ImGui::TreePop();
             }
+            ImGui::Dummy(ImVec2(0.0f,20.0f));
 
+            //Final "OK" button. This must be pressed, otherwise the chosen obj files will not be taken into account.
             if (ImGui::Button("OK", ImVec2(50.0f,30.0f)))   
-                clicked_obj_ok = true;
+                obj_clicked_ok = true;
 
             ImGui::End();
         }
-        ImGui::Dummy(ImVec2(0.0f, 15.0f));
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
 
-
-
-
-
-
-
-
-
-
-
-
-
-        //physics theory
-        ImGui::Text("Theory expansion");
+        //Mutual potential expansion desired order.
+        ImGui::Text("Mutual potential");
         if (ImGui::Checkbox("Order 2", &ord2_checkbox))
             ord3_checkbox = ord4_checkbox = false;
         if (ImGui::Checkbox("Order 3", &ord3_checkbox))
             ord2_checkbox = ord4_checkbox = false;
         if (ImGui::Checkbox("Order 4", &ord4_checkbox))
             ord2_checkbox = ord3_checkbox = false;
-        ImGui::Dummy(ImVec2(0.0f,15.0f));
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
 
+        //Masses.
         ImGui::Text("Mass");
         double_field("M1 ", 150.0f, id, "[kg]", M1);
         double_field("M2 ", 150.0f, id, "[kg]", M2);
-        ImGui::Dummy(ImVec2(0.0f,15.0f));
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
 
-        ImGui::Text("Impactor parameters");
-        double_field("υx          ", 100.0f, id, "[km/sec]", v_impact[0]);
-        double_field("υy          ", 100.0f, id, "[km/sec]", v_impact[1]);
-        double_field("υz          ", 100.0f, id, "[km/sec]", v_impact[2]);
-        double_field("Mass    ", 100.0f, id, "[kg]", M_impact);
-        double_field("β value ", 100.0f, id, "[  ]", beta);
-        ImGui::Dummy(ImVec2(0.0f,15.0f));
-
+        //Time parameters.
         ImGui::Text("Integration time");
         double_field("Epoch     ",   100.0f, id, "[days]", epoch);
-        double_field("Duration ",   100.0f, id, "[days]", dur);
+        double_field("Duration ",    100.0f, id, "[days]", dur);
         double_field("Step        ", 100.0f, id, "[days]", step);
-        ImGui::Dummy(ImVec2(0.0f,15.0f));
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
 
         ImGui::Text("Initial state");
         ImGui::Indent();
         ImGui::Text("Relative position and velocity");
 
-        //position/velocity variables (combo)
+        //Initial position/velocity variables, either in the form of Cartesian coords, or Keplerian elements.
         ImGui::PushItemWidth(200.0f);
             ImGui::PushID(id++);
+                static const char *cart_kep_var[2] = {"Cartesian ", "Keplerian "}; //Nature of the relative position and velocity variables.
                 ImGui::Combo("  ", &cart_kep_var_choice, cart_kep_var, IM_ARRAYSIZE(cart_kep_var));
             ImGui::PopID();
         ImGui::PopItemWidth();
@@ -339,7 +317,7 @@ public:
             double_field("υy  " , 100.0f, id, "[km/sec]", cart[4]);
             double_field("υz  " , 100.0f, id, "[km/sec]", cart[5]);
         }
-        else
+        else //cart_kep_var_choice is 1...
         {
             double_field("a     ",  100.0f, id, "[km]",  kep[0]);
             double_field("e     ",  100.0f, id, "[  ]",  kep[1]);
@@ -349,6 +327,11 @@ public:
             double_field("M   ",    100.0f, id, "[deg]", kep[5]);
         }
         ImGui::Dummy(ImVec2(0.0f,15.0f));
+
+
+
+
+
 
         ImGui::Text("Orientation");
 
@@ -406,9 +389,44 @@ public:
             double_field("ω2y   " , 100.0f, id, "[rad/sec]", w2b[1]);
             double_field("ω2z   " , 100.0f, id, "[rad/sec]", w2b[2]);
         }
-        ImGui::Dummy(ImVec2(0.0f, 700.0f)); //extra y-space in order to be able to scroll even when we change the glfw window y size
         ImGui::Unindent();
-        
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
+
+
+        //Kinetic impactor logic.
+        ImGui::Text("Kinetic impactor");
+        if (ImGui::Checkbox("Assume impactor", &impactor_checkbox) && impactor_checkbox)
+            impactor_clicked_ok = false;
+        if (impactor_checkbox && !impactor_clicked_ok)
+        {
+            ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y + 300.0f), ImGuiCond_FirstUseEver); 
+            ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f, 300.0f), ImGuiCond_FirstUseEver); 
+            ImGui::Begin("Impactor parameters", &impactor_checkbox);
+
+            //Impactor menu.
+            ImGui::Text("Velocity");
+            double_field("υx ", 100.0f, id, "[km/sec]", v_impact[0]);
+            double_field("υy ", 100.0f, id, "[km/sec]", v_impact[1]);
+            double_field("υz ", 100.0f, id, "[km/sec]", v_impact[2]);
+            ImGui::Dummy(ImVec2(0.0f,15.0f));
+            ImGui::Text("Mass");
+            double_field("M ", 100.0f, id, "[kg]", M_impact);
+            ImGui::Dummy(ImVec2(0.0f,15.0f));
+            ImGui::Text("Momentum enhancement factor");
+            double_field("β ", 100.0f, id, "[  ]", beta);
+            ImGui::Dummy(ImVec2(0.0f,15.0f));
+
+            //Final "OK" button. This must be pressed, otherwise the impactor values will not be taken into account.
+            if (ImGui::Button("OK", ImVec2(50.0f,30.0f)))
+                impactor_clicked_ok = true;
+
+            ImGui::End();
+        }
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0.0f,700.0f)); //Extra y-space in order to be able to scroll freely.
 
         ImGui::End();
     }
@@ -442,24 +460,28 @@ public:
             errors.push_back("[Error] :  'a2', 'b2', 'c2' must be positive numbers.");
 
         //.obj files error (at least one .obj file per body must be selected by the user).
-        if (obj_checkbox && clicked_poly1_index == -1)
+        if (obj_checkbox && obj1_clicked_index == -1)
              errors.push_back("[Error] :  No .obj file is selected for 'Body 1'.");
-        if (obj_checkbox && clicked_poly2_index == -1)
+        if (obj_checkbox && obj2_clicked_index == -1)
              errors.push_back("[Error] :  No .obj file is selected for 'Body 2'.");
 
         //.obj files error of polyhedron category (the .obj file must at least contain lines with the
         //format 'v x y z' AND 'f i j k' to be assumed as a valid polyhedron.
-        if (obj_checkbox && clicked_poly1)
+        if (obj_checkbox && obj1_clicked)
         {
-            vf1 = Obj::vf_status(obj_path1.c_str());
+            /*
+            vf1 = Obj::vf_status(obj1_path.c_str());
             if ( !(vf1[0] && vf1[1]) )
                 errors.push_back("[Error] :  In 'Body 1' .obj file, vertices and faces lines must exist.");
+            */
         }
-        if (obj_checkbox && clicked_poly2)
+        if (obj_checkbox && obj2_clicked)
         {
-            vf2 = Obj::vf_status(obj_path2.c_str());
+            /*
+            vf2 = Obj::vf_status(obj2_path.c_str());
             if ( !(vf2[0] && vf2[1]) )
                 errors.push_back("[Error] :  In 'Body 2' .obj file, vertices and faces lines must exist.");
+            */
         }
 
         //Masses error (both M1 and M2 must be > 0.0).

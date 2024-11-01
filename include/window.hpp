@@ -108,7 +108,7 @@ public:
         
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
-        glClearColor(0.05f,0.05f,0.05f,1.0f);
+        glClearColor(0.08f,0.08f,0.08f,1.0f);
         while (!glfwWindowShouldClose(wpointer))
         {
             //At every frame (iteration), clear the color buffer (background) with the corresponding clear color set by glClearColor().
