@@ -76,7 +76,7 @@ public:
         ImGui::Begin("Console", nullptr);
 
         //Mouse input : Clear the console.
-        if (ImGui::Button("Clear "))
+        if (ImGui::Button("Clear", ImVec2(60.0f,25.0f)))
             cls();
         
         //Display FPS, OS and GPU.
@@ -84,7 +84,7 @@ public:
         ImGui::Text("FPS [ %.0f ] ,  OS [ %s ] ,  GPU [ %s ] ", ImGui::GetIO().Framerate, get_os().c_str(), glGetString(GL_RENDERER));
         ImGui::Separator();
         
-        ImGui::BeginChild("Scroll", ImVec2(0.0f, 0.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
+        ImGui::BeginChild("Scroll", ImVec2(0.0f,0.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
         ImGui::TextUnformatted(buffer.begin());
         if (scroll_to_bottom)
             ImGui::SetScrollHereY(1.0f);
