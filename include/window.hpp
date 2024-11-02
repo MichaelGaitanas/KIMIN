@@ -119,8 +119,10 @@ public:
             ui.properties.render();
             ui.console.render();
             //ui.graphics.render();
-            //ui.render_integrator_controls();                            
-            ui.render();     
+            //ui.render_integrator_controls();
+            ui.render();
+
+            if (ui.properties.run_pressed) {ui.when_run_is_clicked(); ui.properties.run_pressed = false;}
 
             glfwSwapBuffers(wpointer);
             glfwPollEvents();

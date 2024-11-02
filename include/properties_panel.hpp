@@ -13,20 +13,19 @@
 #include"typedef.hpp"
 #include"constant.hpp"
 #include"linalg.hpp"
-#include"obj.hpp"
+//#include"obj.hpp"
 #include"conversion.hpp"
 
 class properties_panel
 {
 private:
-    char sim_name[101]; //'Simulation name' text field. 100 characters available (plus the '\0' terminating character).
+    char sim_name[51]; //'Simulation name' text field. 50 characters available (plus the '\0' terminating character).
     
     bool ell_checkbox; //'Ellipsoids' checkbox state.
     dvec3 semiaxes1, semiaxes2; //Ellipsoids 'a1', 'b1', 'c1', 'a2', 'b2', 'c2' double fields.
     bool ell_clicked_ok; //Ellipsoids 'OK' button (pressed or not).
 
     bool obj_checkbox; //'.obj file' checkbox state.
-    int obj_refers_to_body; //To which body ('Body 1' or 'Body 2') does the obj file listing refer to (via radiobutton).
     int obj1_clicked_index, obj2_clicked_index; //Index of the clicked .obj path. -1 means no path is clicked. Only one path per body can be clicked.
     bool obj1_clicked, obj2_clicked; //Decide if an obj file (from 'Body 1' or 'Body 2') is clicked.
     str obj1_path, obj2_path; //Relative paths to the 2 .obj models.
@@ -46,26 +45,25 @@ private:
     dvec3 rpy1, rpy2; //'roll 1', 'pitch 1', 'yaw 1', 'roll 2', 'pitch 2', 'yaw 2' double fields.
     dvec4 q1, q2; //'q10', 'q11', 'q12', 'q13', 'q20', 'q21', 'q22', 'q23' double fields.
 
-    int frame_type_choice; //Initial choice. 0 -> Global inertial frame, 1 -> Corresponding body frames.
     dvec3 w1i, w2i, w1b, w2b; //'ω1x', 'ω1y', 'ω1z', 'ω2x', 'ω2y, 'ω2z' double fields (nature of the frame depends on 'frame_type_choice').
 
     bool impactor_checkbox; //'Kinetic impactor' checkbox state.
     bool impactor_clicked_ok; //'OK' button in the kinetic impactor parameters window (pressed or not).
-    dvec3 v_impact; //Impactor's velocity vector.
     double M_impact; //Impactor's mass.
+    dvec3 v_impact; //Impactor's velocity vector.
     double beta; //Momentum enhancement factor.
 
     //fundamental contents of the 2 .obj files (vertices, faces).
     //bvec vf1, vf2;
 
 public:
+    bool run_pressed; //Whether or not the 'Run' button has been pressed.
     properties_panel() : sim_name(""),
                          ell_checkbox(false),
                          semiaxes1(dvec3{0.0,0.0,0.0}),
                          semiaxes2(dvec3{0.0,0.0,0.0}),
                          ell_clicked_ok(false),
                          obj_checkbox(false),
-                         obj_refers_to_body(1),
                          obj1_clicked_index(-1),
                          obj2_clicked_index(-1),
                          obj1_clicked(false),
@@ -89,16 +87,16 @@ public:
                          rpy2(dvec3{0.0,0.0,0.0}),
                          q1(dvec4{1.0,0.0,0.0,0.0}),
                          q2(dvec4{1.0,0.0,0.0,0.0}),
-                         frame_type_choice(0),
                          w1i(dvec3{0.0,0.0,0.0}),
                          w2i(dvec3{0.0,0.0,0.0}),
                          w1b(dvec3{0.0,0.0,0.0}),
                          w2b(dvec3{0.0,0.0,0.0}),
                          impactor_checkbox(false),
                          impactor_clicked_ok(false),
-                         v_impact(dvec3{0.0,0.0,0.0}),
                          M_impact(0.0),
-                         beta(0.0)
+                         v_impact(dvec3{0.0,0.0,0.0}),
+                         beta(0.0),
+                         run_pressed(false)
                          //vf1({false, false}),
                          //vf2({false, false})
     { }
@@ -115,11 +113,11 @@ public:
         return paths;
     }
 
-    //This function automates common double input via the keyboard. It creates a rectangle, inside of which the user may enter a double.
+    //This function automates common double inputs via the keyboard. It creates a rectangle, inside of which the user may enter a double.
     //'label' is a string written on the left of the rectangle. 'item_width' is the horizontal legth (space) of the rectangle. 'id' is a unique
     //int with which the computer identifies which variable to affect (coz you may have multiple input fields). 'unit' is a string written on the right
     //of the rectangle (for us it is always the unit of measurement of the current variable). 'variable' is the variable itself, passed by reference to
-    //InputDouble(), so it may change
+    //InputDouble(), so it may change.
     void double_field(const char *label, const float item_width, const float align_width, int &id, const char *unit, double &variable)
     {
         ImGui::Text(label);
@@ -132,7 +130,7 @@ public:
         ImGui::PopItemWidth();
     }
 
-    //Draw the properties panel and process the corresponding logic.
+    //This is the function that draws the properties panel and processes the corresponding logic.
     void render()
     {
         //Reinitialized every frame at 0. Making it static, will also work, but if the app's total frames (glfw while loop) exceed the
@@ -166,7 +164,7 @@ public:
             obj_checkbox = false; //Untick the obj checkbox in case it is ticked.
 
             ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver); 
-            ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f, 300.0f), ImGuiCond_FirstUseEver); 
+            ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f, 320.0f), ImGuiCond_FirstUseEver); 
             ImGui::Begin("Ellipsoid parameters", &ell_checkbox);
             
             //Ellipsoids semiaxes menu.
@@ -197,18 +195,18 @@ public:
             ell_checkbox = false; //Untick the ellipsoids checkbox in case it is ticked.
 
             ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
-            ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f, 300.0f), ImGuiCond_FirstUseEver); 
+            ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f, 320.0f), ImGuiCond_FirstUseEver); 
             ImGui::Begin(".obj files", &obj_checkbox);
 
             //Radiobuttons logic : At least one will always be active and to this (the active one) the loaded obj file will correspond.
+            static int obj_refers_to_body = 1; //To which body ('Body 1' or 'Body 2') does the obj file listing refer to (via radiobutton). 'Body 1' is the default choice.
             if (ImGui::RadioButton("Body 1", obj_refers_to_body == 1))
                 obj_refers_to_body = 1;
             ImGui::SameLine();
             if (ImGui::RadioButton("Body 2", obj_refers_to_body == 2))
                 obj_refers_to_body = 2;
             ImGui::Dummy(ImVec2(0.0f,5.0f));
-            
-            
+
             //File list logic.
             static std::vector<std::filesystem::path> all_obj_files = list_obj_files("../obj/"); //Store all the .obj files located in the obj/ directory.
             if (ImGui::TreeNodeEx("Available .obj files in obj/ directory :"))
@@ -350,6 +348,7 @@ public:
         ImGui::PushItemWidth(200.0f);
             ImGui::PushID(id++);
                 static const char *frame_type[2] = {"At inertial frame", "At body frames"}; //Which frame for the angular velocities.
+                static int frame_type_choice = 0; //Initial choice. 0 -> Global inertial frame, 1 -> Corresponding body frames.
                 ImGui::Combo("  ", &frame_type_choice, frame_type, IM_ARRAYSIZE(frame_type));
             ImGui::PopID();
         ImGui::PopItemWidth();
@@ -385,21 +384,21 @@ public:
             impactor_clicked_ok = false;
         if (impactor_checkbox && !impactor_clicked_ok)
         {
-            ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y + 300.0f), ImGuiCond_FirstUseEver); 
-            ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f, 300.0f), ImGuiCond_FirstUseEver); 
+            ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver); 
+            ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f, 320.0f), ImGuiCond_FirstUseEver); 
             ImGui::Begin("Impactor parameters", &impactor_checkbox);
 
             //Impactor menu.
-            ImGui::Text("Velocity");
+            ImGui::Text("Mass (dry + fuel)");
+            double_field("m ", 100.0f, 30.0f, id, "[kg]", M_impact);
+            ImGui::Dummy(ImVec2(0.0f,15.0f));
+            ImGui::Text("Velocity (inertial)");
             double_field("υx ", 100.0f, 30.0f, id, "[km/sec]", v_impact[0]);
             double_field("υy ", 100.0f, 30.0f, id, "[km/sec]", v_impact[1]);
             double_field("υz ", 100.0f, 30.0f, id, "[km/sec]", v_impact[2]);
             ImGui::Dummy(ImVec2(0.0f,15.0f));
-            ImGui::Text("Mass");
-            double_field("m ", 100.0f, 30.0f, id, "[kg]", M_impact);
-            ImGui::Dummy(ImVec2(0.0f,15.0f));
-            ImGui::Text("Momentum enhancement factor");
-            double_field("β ", 100.0f, 25.0f, id, "[  ]", beta);
+            ImGui::Text("Momentum enhancement factor (ejecta)");
+            double_field("β ", 100.0f, 30.0f, id, "[  ]", beta);
             ImGui::Dummy(ImVec2(0.0f,15.0f));
 
             //Final "OK" button. This must be pressed, otherwise the impactor values will not be taken into account.
@@ -412,17 +411,17 @@ public:
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f,7.5f));
 
-        //Ellipsoid and .obj shape logic.
+        //Simulation controls (Run, Abort and progressbar) logic.
         ImGui::Text("Simulation controls");
-        if (ImGui::Button("Run", ImVec2(70.0f,25.0f))) { }
+        if (ImGui::Button("Run", ImVec2(70.0f,25.0f))) { run_pressed = true; }
         ImGui::SameLine();
         ImGui::BeginDisabled();
             ImGui::Button("Abort", ImVec2(70.0f,25.0f));
         ImGui::EndDisabled();
 
         ImGui::Text("Simulation progress");
-        ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.0f,0.8f,0.0f, 1.0f));
-        ImGui::ProgressBar(0.6f, ImVec2(150.0f,20.0f));
+        ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.0f,0.7f,0.0f, 1.0f));
+        ImGui::ProgressBar(0.0f, ImVec2(150.0f,20.0f));
         ImGui::PopStyleColor();
 
         ImGui::Dummy(ImVec2(0.0f,700.0f)); //Extra y-space in order to be able to scroll freely.
@@ -430,98 +429,125 @@ public:
         ImGui::End();
     }
 
-    //If all user inputs are valid, this member function returns an entirely empty vector of strings.
+    //This member functions processes all the user inputs and checkes if they are valid (assuming some rules).
+    //If all inputs are valid, the function returns an entirely empty vector of strings (empty because it contains no erros).
     //Otherwise the returned vector contains string messages, each corresponding to an invalid input. In this case,
     //the vector of strings will be displayed on the console and the simulation will not run.
     strvec validate()
     {
-        strvec errors;
+        strvec errors; //This is empty now coz errors.size() is 0.
         
-        //sim_name[] errors (empty, pure tabs, begin with tab).
+        //Possible error 1 : Simulation name (empty, pure spaces, begin with space, illegal characters).
         str sim_name_copy = sim_name;
-        char first_char = sim_name_copy[0];
-        char one_space = ' ';
-        if ( (sim_name_copy.empty()) || (sim_name_copy.find_first_not_of(' ') == str::npos) || (first_char == one_space) )
+        if ( (sim_name_copy.empty()) || (sim_name_copy.find_first_not_of(' ') == str::npos) || (sim_name_copy[0] == ' ') || (sim_name_copy.find_first_of("<>:\"/\\|?*") != str::npos) )
             errors.push_back("[Error] :  'Simulation name' is invalid.");
 
-        //Theory model checkboxes error (at least one must be checked).
-        if (!ord2_checkbox && !ord3_checkbox && !ord4_checkbox)
-            errors.push_back("[Error] :  Neither 'Order 2', nor 'Order 3', nor 'Order 4' was selected as theory.");
-
-        //Shape model checkboxes error (at least one must be checked).
+        //Possible error 2 : Shape model checkboxes (at least one must be checked when the 'Run' button has been pressed).
         if (!ell_checkbox && !obj_checkbox)
-            errors.push_back("[Error] :  Neither 'Ellipsoids', nor '.obj files' was selected  for determining the shapes.");
+            errors.push_back("[Error] :  Neither 'Ellipsoids', nor '.obj files' is selected for determining the shapes.");
 
-        //Ellipsoids semiaxes error (all semiaxes must be > 0.0).
-        if (ell_checkbox && (semiaxes1[0] <= 0.0 || semiaxes1[1] <= 0.0 || semiaxes1[2] <= 0.0))
-            errors.push_back("[Error] :  'a1', 'b1', 'c1' must be positive numbers.");
-        if (ell_checkbox && (semiaxes2[0] <= 0.0 || semiaxes2[1] <= 0.0 || semiaxes2[2] <= 0.0))
-            errors.push_back("[Error] :  'a2', 'b2', 'c2' must be positive numbers.");
+        //Possible error 3 : 'OK' button in the Elliposid parameters window (it must be clicked so that the parameters are taken into account).
+        if (ell_checkbox && !ell_clicked_ok)
+            errors.push_back("[Error] :  'OK' button must be pressed in the 'Ellipsoid parameters' window.");
 
-        //.obj files error (at least one .obj file per body must be selected by the user).
-        if (obj_checkbox && obj1_clicked_index == -1)
-             errors.push_back("[Error] :  No .obj file is selected for 'Body 1'.");
-        if (obj_checkbox && obj2_clicked_index == -1)
-             errors.push_back("[Error] :  No .obj file is selected for 'Body 2'.");
+        //Possible error 4 : 'OK' button in the '.obj files' window (it must be clicked so that the .obj files are taken into account).
+        if (obj_checkbox && !obj_clicked_ok)
+            errors.push_back("[Error] :  'OK' button must be pressed in the '.obj files' window.");
+
+        //Possible error 5 : Ellipsoids semiaxes (all semiaxes must be > 0).
+        if (ell_checkbox)
+        {
+            if (semiaxes1[0] <= 0.0 || semiaxes1[1] <= 0.0 || semiaxes1[2] <= 0.0)
+                errors.push_back("[Error] :  'a1', 'b1', 'c1' must be positive numbers.");
+            if (semiaxes2[0] <= 0.0 || semiaxes2[1] <= 0.0 || semiaxes2[2] <= 0.0)
+                errors.push_back("[Error] :  'a2', 'b2', 'c2' must be positive numbers.");
+        }
+
+        //Possible error 6 : .obj files (at least one .obj file per body must be selected).
+        if (obj_checkbox)
+        {
+            if (obj1_clicked_index == -1)
+                errors.push_back("[Error] :  No .obj file is selected for 'Body 1'.");
+            if (obj2_clicked_index == -1)
+                errors.push_back("[Error] :  No .obj file is selected for 'Body 2'.");
+        }
 
         //.obj files error of polyhedron category (the .obj file must at least contain lines with the
         //format 'v x y z' AND 'f i j k' to be assumed as a valid polyhedron.
+        /*
         if (obj_checkbox && obj1_clicked)
         {
-            /*
             vf1 = Obj::vf_status(obj1_path.c_str());
             if ( !(vf1[0] && vf1[1]) )
                 errors.push_back("[Error] :  In 'Body 1' .obj file, vertices and faces lines must exist.");
-            */
         }
         if (obj_checkbox && obj2_clicked)
         {
-            /*
             vf2 = Obj::vf_status(obj2_path.c_str());
             if ( !(vf2[0] && vf2[1]) )
                 errors.push_back("[Error] :  In 'Body 2' .obj file, vertices and faces lines must exist.");
-            */
         }
+        */
 
-        //Masses error (both M1 and M2 must be > 0.0).
-        if (M1 <= 0.0)
-            errors.push_back("[Error] :  'M1' must be positive.");
-        if (M2 <= 0.0)
-            errors.push_back("[Error] :  'M2' must be positive.");
+        //Possible error 8 : Mutual potential checkboxes (at least one must be checked).
+        if (!ord2_checkbox && !ord3_checkbox && !ord4_checkbox)
+            errors.push_back("[Error] :  Neither 'Order 2', nor 'Order 3', nor 'Order 4' was selected.");
 
-        //Impactor's parameters errors (both Mass and β be non negative).
-        if (M_impact < 0.0)
-            errors.push_back("[Error] : Impactor's 'Mass' must be non negative.");
-        if (beta < 0.0)
-            errors.push_back("[Error] : 'β value' must be non negative.");
+        //Possible error 9 : Masses (both M1 and M2 must be > 0).
+        if (M1 <= 0.0 || M2 <= 0.0)
+            errors.push_back("[Error] :  'M1', 'M2' must be positive numbers.");
 
-        //Time parameters errors (must : epoch >= 0.0, dur >= 0.0, print_step <= dur)
+        //Possible error 10 : Time parameters ('Epoch' and 'Duration' must be >= 0 and 'Step' must be <= 'Duration').
         if (!(epoch >= 0.0 && dur >= 0.0 && step <= dur))
             errors.push_back("[Error] :  Invalid set of 'Epoch', 'Duration', 'Step'.");
 
-        //Relative position/velocity errors. Here, we assume that only the Keplerian elements 'a','e' might be invalid.
-        if (cart_kep_var_choice == 1 && kep[0] <= 0.0)
-            errors.push_back("[Error] :  Invalid semi-major axis 'a'.");
-        if (cart_kep_var_choice == 1 && kep[1] >= 1.0)
-            errors.push_back("[Error] :  Invalid eccentricity 'e'.");
+        //Possible error 11 : Relative position/velocity (mutual distance must be > 0).
+        if (cart_kep_var_choice == 0 && length(dvec3{cart[0], cart[1], cart[2]}) <= 0.0)
+            errors.push_back("[Error] :  Invalid set of 'x', 'y', 'z' (mutual distance must be positive).");
 
-        //Quaternion errors (zero quaternion). In case of non normalized quaternions, the program normalizes it automatically.
-        if (orient_var_choice == 1) //that is, if the user chose quaternions as orientation variables
+        //Possible error 12 : Relative Keplerian elements ('a' must be > 0, 'e' must be in [0,1))
+        //Note : 'e' can actually become >= 1 and handled, but first we need to extend the functions cart2kep() and kep2cart() a little bit (maybe later...).
+        if (cart_kep_var_choice == 1)
         {
-            double normq1 = length(q1);
-            if (normq1 <= machine_zero) //error
+            if (kep[0] <= 0.0)
+                errors.push_back("[Error] :  Semi-major axis 'a' must be positive.");
+            if (kep[1] < 0.0 || kep[1] >= 1.0)
+                errors.push_back("[Error] :  Eccentricity 'e' must be in [0,1).");
+            if (kep[2] < 0.0 || kep[2] >= 360.0)
+                errors.push_back("[Error] :  Inclination 'i' must be in [0,360).");
+            if (kep[3] < 0.0 || kep[3] >= 360.0)
+                errors.push_back("[Error] :  Longitude of ascending node 'Ω' must be in [0,360).");
+            if (kep[4] < 0.0 || kep[4] >= 360.0)
+                errors.push_back("[Error] :  Argument of periapsis 'ω' must be in [0,360).");
+            if (kep[5] < 0.0 || kep[5] >= 360.0)
+                errors.push_back("[Error] :  Mean anomaly 'M' must be in [0,360).");
+        }
+
+        //Possible error 13 : Quaternion (both must be nonzero).
+        //Note : In case of non normalized quaternion input, the program normalizes it both automatically.
+        if (orient_var_choice == 1)
+        {
+            if (length(q1) <= machine_zero)
                 errors.push_back("[Error] :  Quaternion 1 ('q10', 'q11', 'q12', 'q13') must be nonzero.");
-            else //normalize it no matter what
+            else //Normalize it no matter what.
                 q1 = quat2unit(q1);
 
-            //the same for q2 ...
-            double normq2 = length(q2);
-            if (normq2 <= machine_zero)
+            //The same for q2 :
+            if (length(q2) <= machine_zero)
                 errors.push_back("[Error] :  Quaternion 2 ('q20', 'q21', 'q22', 'q23') must be nonzero.");
-            else
+            else //Normalize it no matter what.
                 q2 = quat2unit(q2);
         }
 
+        //Possible error 14 : 'OK' button in the Elliposid parameters window (it must be clicked so that the parameters are taken into account).
+        if (impactor_checkbox && !impactor_clicked_ok)
+            errors.push_back("[Error] :  'OK' button must be pressed in the 'Impactor parameters' window.");
+
+        //Possible error 15 : Impactor's parameters (mass must be >= 0).
+        if (impactor_checkbox && M_impact < 0.0)
+            errors.push_back("[Error] : Impactor's 'Mass' must be non negative.");
+
+        
         return errors;
     }
 };

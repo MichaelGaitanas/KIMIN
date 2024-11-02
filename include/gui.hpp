@@ -75,7 +75,8 @@ public:
     }
 
     /*
-    void render_integrator_controls(){
+    void render_integrator_controls()
+    {
         float offsety = 0;
         float ysize = ImGui::GetIO().DisplaySize.y/7.0f;
         if ( ysize < 200){
@@ -126,27 +127,22 @@ public:
     }
     */
 
-    /*
+   //'Run' button logic.
     void when_run_is_clicked()
     {
         strvec errors = properties.validate();
         if (!errors.size())
         {
-            //console.add_text("[Integrator] Running... ");
-            integrator.update_properties(properties);
-            integrator.force_kill = false;
-            std::thread th(&Integrator::run, &integrator, std::ref(console));
-            th.detach();
+            console.add_time_and_then_text("[Integrator] Running... ");
+            //integrator.update_properties(properties);
+            //integrator.force_kill = false;
+            //std::thread th(&Integrator::run, &integrator, std::ref(console));
+            //th.detach();
         }
         else
-        {
             for (int i = 0; i < errors.size(); ++i)
-            {
-                console.timedlog(errors[i].c_str());
-            }
-        }
+                console.add_time_and_then_text(errors[i].c_str());
     }
-    */
 
 
 };

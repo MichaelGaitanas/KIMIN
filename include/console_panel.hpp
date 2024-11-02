@@ -61,10 +61,10 @@ public:
         return datetime.str();
     }
 
-    void timedlog(const char *format)
+    void add_time_and_then_text(const char *text)
     {
         add_text(get_local_time().c_str());
-        add_text(format);
+        add_text(text);
         add_text("\n");
     }
 
