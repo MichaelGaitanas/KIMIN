@@ -1,4 +1,4 @@
-Regarding the obj meshes (asteroid models), the following rules must be satisfied, so that everything works correctly :
+Regarding the .obj files (asteroid models), the following rules must be satisfied, so that everything works correctly :
 
 1) The .obj files must exist in the /obj folder.
 

@@ -18,7 +18,7 @@
 
 class properties_panel
 {
-private:
+public:
     char sim_name[51]; //'Simulation name' text field. 50 characters available (plus the '\0' terminating character).
     
     bool ell_checkbox; //'Ellipsoids' checkbox state.
@@ -45,6 +45,7 @@ private:
     dvec3 rpy1, rpy2; //'roll 1', 'pitch 1', 'yaw 1', 'roll 2', 'pitch 2', 'yaw 2' double fields.
     dvec4 q1, q2; //'q10', 'q11', 'q12', 'q13', 'q20', 'q21', 'q22', 'q23' double fields.
 
+    int frame_type_choice; //Initial choice. 0 -> Global inertial frame, 1 -> Corresponding body frames.
     dvec3 w1i, w2i, w1b, w2b; //'ω1x', 'ω1y', 'ω1z', 'ω2x', 'ω2y, 'ω2z' double fields (nature of the frame depends on 'frame_type_choice').
 
     bool impactor_checkbox; //'Kinetic impactor' checkbox state.
@@ -56,7 +57,6 @@ private:
     //fundamental contents of the 2 .obj files (vertices, faces).
     //bvec vf1, vf2;
 
-public:
     bool run_pressed; //Whether or not the 'Run' button has been pressed.
     bool abort_pressed; //Whether or not the 'Abort' button has been pressed.
     std::atomic<float> progress;
@@ -90,6 +90,7 @@ public:
                          rpy2(dvec3{0.0,0.0,0.0}),
                          q1(dvec4{1.0,0.0,0.0,0.0}),
                          q2(dvec4{1.0,0.0,0.0,0.0}),
+                         frame_type_choice(0),
                          w1i(dvec3{0.0,0.0,0.0}),
                          w2i(dvec3{0.0,0.0,0.0}),
                          w1b(dvec3{0.0,0.0,0.0}),
@@ -353,7 +354,6 @@ public:
         ImGui::PushItemWidth(200.0f);
             ImGui::PushID(id++);
                 static const char *frame_type[2] = {"At inertial frame", "At body frames"}; //Which frame for the angular velocities.
-                static int frame_type_choice = 0; //Initial choice. 0 -> Global inertial frame, 1 -> Corresponding body frames.
                 ImGui::Combo("  ", &frame_type_choice, frame_type, IM_ARRAYSIZE(frame_type));
             ImGui::PopID();
         ImGui::PopItemWidth();
@@ -548,19 +548,19 @@ public:
         }
 
         //Possible error 13 : Quaternion (both must be nonzero).
-        //Note : In case of non normalized quaternion input, the program normalizes it both automatically.
+        //Note : In case of non normalized quaternion input, the program normalizes them both automatically.
         if (orient_var_choice == 1)
         {
             if (length(q1) <= machine_zero)
                 errors.push_back("[Error] :  Quaternion 1 ('q10', 'q11', 'q12', 'q13') must be nonzero.");
             else //Normalize it no matter what.
-                q1 = quat2unit(q1);
+                q1 = quat2unit(q1); //This will be visible in the gui.
 
             //The same for q2 :
             if (length(q2) <= machine_zero)
                 errors.push_back("[Error] :  Quaternion 2 ('q20', 'q21', 'q22', 'q23') must be nonzero.");
             else //Normalize it no matter what.
-                q2 = quat2unit(q2);
+                q2 = quat2unit(q2); //This will be visible in the gui.
         }
 
         //Possible error 14 : 'OK' button in the Elliposid parameters window (it must be clicked so that the parameters are taken into account).

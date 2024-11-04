@@ -19,27 +19,25 @@
 #include"console_panel.hpp"
 #include"integration.hpp"
 
-void func_many_iters(std::atomic<bool> &abort_flag, std::atomic<float> &progress)
-{
-    for (float z = 0.0f; z < 20000.0f; z += 0.001f)
-    {
-        if (abort_flag.load())
-            return;
-        (void)exp(sin(sqrt(z*fabs(z)+ cos(z))));
-        progress.store(z/20000.0f);
-    }
-}
+/*
+for (float z = 0.0f; z < 200000.0f; z += 0.01f)
+        {
+            if (abort_flag.load())
+                return;
+            (void)sin(sin(sqrt(z*z*fabs(z)+ cos(z))));
+            progress.store(z/200000.0f);
+        }
+*/
 
 class gui
 {
-private:
-
 public:
     std::atomic<bool> simulation_is_running{false};
     std::atomic<bool> simulation_was_aborted{false};
 
     properties_panel properties;
     console_panel console;
+    integration integrator;
 
     //Initialize imgui and implot along with some settings.
     gui(GLFWwindow *wpointer)
@@ -100,15 +98,17 @@ public:
             strvec errors = properties.validate();
             if (!errors.size())
             {
-                console.add_time_and_then_text("Simulation is running... ");
+                console.add_time_and_then_text("[Info] : Simulation started.");
                 simulation_is_running = true;
-                //Launch a fake simulation in a separate thread.
+                //Launch a new simulation in a separate thread.
                 std::thread simulation_thread([&]()
                 {
-                    func_many_iters(simulation_was_aborted, properties.progress);
+                    integrator.prepare(properties, simulation_was_aborted, properties.progress);
+                    //integrator.run(simulation_was_aborted, properties.progress);
                     simulation_is_running = false;
                 });
                 simulation_thread.detach();
+                console.add_time_and_then_text("[Info] : Simulation ended.");
             }
             else
                 for (int i = 0; i < errors.size(); ++i)
@@ -119,7 +119,7 @@ public:
         if (properties.abort_pressed && simulation_is_running)
         {
             properties.abort_pressed = false; //Reset abort_pressed to prevent repeated triggering.
-            console.add_time_and_then_text("Simulation was aborted.");
+            console.add_time_and_then_text("[Info] : Simulation aborted.");
             simulation_was_aborted = true;
             simulation_is_running = false;
         }

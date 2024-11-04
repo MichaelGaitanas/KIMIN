@@ -19,7 +19,7 @@ class console_panel
 private:
     ImGuiTextBuffer buffer;
     bool scroll_to_bottom;
-    const size_t max_buffer_size = 16384; //Threshold for buffer size (16 KB -> 2^14).
+    const size_t max_buffer_size = 60000; //Threshold for buffer size, measured in bytes (1 byte for each ASCII char and 1-4 bytes for each unicode char due to UTF-8 encoding).
 
     //Clear the console.
     void cls()
@@ -38,7 +38,7 @@ private:
         }
     }
 
-    //Identify the operating system.
+    //Identify the machine's operating system.
     str get_os()
     {
         #if defined(__APPLE__) || defined(__MACH__)
@@ -74,6 +74,7 @@ public:
         auto_cls();
     }
 
+    //Add formatted local time and then formatted text to the console.
     void add_time_and_then_text(const char *text)
     {
         add_text(get_local_time().c_str());
