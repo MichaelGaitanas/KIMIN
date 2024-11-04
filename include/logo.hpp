@@ -11,7 +11,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include"stb_image.h"
 
-void draw_logo_for_seconds(const char *img_path, const float seconds)
+void draw_logo_for_seconds(const char *img_path, const float seconds = 3.0f)
 {
     //Initialize glfw along with some settings.
     if(!glfwInit())

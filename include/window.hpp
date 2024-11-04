@@ -78,7 +78,6 @@ public:
         glfwSetWindowSizeLimits(wpointer, 400,400, GLFW_DONT_CARE,GLFW_DONT_CARE);
         glfwSwapInterval(1);
 
-        //Glew however is still set up due to logo.hpp... */
         /*
         glewExperimental = GL_TRUE;
         if (glewInit() != GLEW_OK)
@@ -104,25 +103,23 @@ public:
     //This is the app's function that runs all the time.
     void game_loop()
     {   
-        gui ui(wpointer); //Instantiate the user interface along with some settings defined in the corresponding contructor.
+        gui ui(wpointer); //Instantiate the user interface along with some settings defined in the corresponding contructor (gui.hpp).
         
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
         glClearColor(0.08f,0.08f,0.08f,1.0f);
         while (!glfwWindowShouldClose(wpointer))
         {
-            //At every frame (iteration), clear the color buffer (background) with the corresponding clear color set by glClearColor().
+            //At every frame (iteration), clear the color buffer (background) with the corresponding color set by glClearColor().
             //The depth buffer is cleared, only if 3D content is displayed.
             glClear(GL_COLOR_BUFFER_BIT);
 
             ui.begin();
-            ui.properties.render();
+            ui.properties.render(ui.simulation_is_running, ui.simulation_was_aborted);
             ui.console.render();
-            //ui.graphics.render();
-            //ui.render_integrator_controls();
             ui.render();
 
-            if (ui.properties.run_pressed) {ui.when_run_is_clicked(); ui.properties.run_pressed = false;}
+            ui.process_run_and_abort_buttons();
 
             glfwSwapBuffers(wpointer);
             glfwPollEvents();

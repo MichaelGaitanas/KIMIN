@@ -9,11 +9,11 @@
 #include<GLFW/glfw3.h>
 
 #include<filesystem>
+#include<atomic>
 
 #include"typedef.hpp"
 #include"constant.hpp"
 #include"linalg.hpp"
-//#include"obj.hpp"
 #include"conversion.hpp"
 
 class properties_panel
@@ -58,6 +58,9 @@ private:
 
 public:
     bool run_pressed; //Whether or not the 'Run' button has been pressed.
+    bool abort_pressed; //Whether or not the 'Abort' button has been pressed.
+    std::atomic<float> progress;
+
     properties_panel() : sim_name(""),
                          ell_checkbox(false),
                          semiaxes1(dvec3{0.0,0.0,0.0}),
@@ -79,7 +82,7 @@ public:
                          epoch(0.0),
                          dur(0.0),
                          step(0.0),
-                         cart_kep_var_choice(1),
+                         cart_kep_var_choice(0),
                          cart(dvec6{0.0,0.0,0.0,0.0,0.0,0.0}),
                          kep(dvec6{0.0,0.0,0.0,0.0,0.0,0.0,}),
                          orient_var_choice(0),
@@ -96,7 +99,9 @@ public:
                          M_impact(0.0),
                          v_impact(dvec3{0.0,0.0,0.0}),
                          beta(0.0),
-                         run_pressed(false)
+                         run_pressed(false),
+                         abort_pressed(false),
+                         progress(0.0f)
                          //vf1({false, false}),
                          //vf2({false, false})
     { }
@@ -131,7 +136,7 @@ public:
     }
 
     //This is the function that draws the properties panel and processes the corresponding logic.
-    void render()
+    void render(bool simulation_is_running, bool simulation_was_aborted)
     {
         //Reinitialized every frame at 0. Making it static, will also work, but if the app's total frames (glfw while loop) exceed the
         //maximum int value (or unsigned, or long, or whatever the variable type of id is), then we will have an overflow, which means
@@ -314,7 +319,7 @@ public:
         //Orientation variables (Euler angles (roll, pitch, yaw) or quaternions).
         ImGui::PushItemWidth(200.0f);
             ImGui::PushID(id++);
-                static const char *orient_var[2] = {"Euler angles", "Quaternions"}; //Nature of the orientation variables.
+                static const char *orient_var[2] = {"Euler angles (XYZ)", "Quaternions (WXYZ)"}; //Nature of the orientation variables.
                 ImGui::Combo("  ", &orient_var_choice, orient_var, IM_ARRAYSIZE(orient_var));
             ImGui::PopID();
         ImGui::PopItemWidth();
@@ -411,20 +416,39 @@ public:
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f,7.5f));
 
-        //Simulation controls (Run, Abort and progressbar) logic.
+        //Run/Abort buttons rendering logic.
         ImGui::Text("Simulation controls");
-        if (ImGui::Button("Run", ImVec2(70.0f,25.0f))) { run_pressed = true; }
-        ImGui::SameLine();
-        ImGui::BeginDisabled();
-            ImGui::Button("Abort", ImVec2(70.0f,25.0f));
-        ImGui::EndDisabled();
 
+        if (!simulation_is_running) //In this case the simulation is NOT currently running, hence "Run" can be pressed (to start), but "Abort", cannot be pressed (nothing to abort).
+        {
+            if (ImGui::Button("Run", ImVec2(70.0f, 25.0f)))
+                run_pressed = true;
+            ImGui::SameLine();
+            ImGui::BeginDisabled();
+            ImGui::Button("Abort", ImVec2(70.0f, 25.0f));
+            ImGui::EndDisabled();
+        }
+        else //Now the opposite happens. "Run" is disabled coz the simulation is running and "Abort" is enabled, so that one may stop the running.
+        {
+            ImGui::BeginDisabled();
+            ImGui::Button("Run", ImVec2(70.0f, 25.0f));
+            ImGui::EndDisabled();
+            ImGui::SameLine();
+            if (ImGui::Button("Abort", ImVec2(70.0f, 25.0f)))
+                abort_pressed = true;
+        }
+
+        //Progress bar.
         ImGui::Text("Simulation progress");
-        ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.0f,0.7f,0.0f, 1.0f));
-        ImGui::ProgressBar(0.0f, ImVec2(150.0f,20.0f));
+        float progress_val = progress.load();
+        if (simulation_was_aborted)
+            ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.7f,0.0f,0.0f, 1.0f)); //Red.
+        else
+            ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.0f,0.7f,0.0f, 1.0f)); //Green.
+        ImGui::ProgressBar(progress_val, ImVec2(150.0f,20.0f));
         ImGui::PopStyleColor();
 
-        ImGui::Dummy(ImVec2(0.0f,700.0f)); //Extra y-space in order to be able to scroll freely.
+        ImGui::Dummy(ImVec2(0.0f,700.0f)); //Some extra y-space in order to be able to scroll down along properties panel.
 
         ImGui::End();
     }
@@ -491,7 +515,7 @@ public:
 
         //Possible error 8 : Mutual potential checkboxes (at least one must be checked).
         if (!ord2_checkbox && !ord3_checkbox && !ord4_checkbox)
-            errors.push_back("[Error] :  Neither 'Order 2', nor 'Order 3', nor 'Order 4' was selected.");
+            errors.push_back("[Error] :  Neither 'Order 2', nor 'Order 3', nor 'Order 4' mutual potential is selected.");
 
         //Possible error 9 : Masses (both M1 and M2 must be > 0).
         if (M1 <= 0.0 || M2 <= 0.0)

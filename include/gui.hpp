@@ -10,23 +10,36 @@
 #include<GLFW/glfw3.h>
 
 #include<thread>
+#include<atomic>
+#include<chrono>
+#include<cmath>
 
 #include"typedef.hpp"
 #include"properties_panel.hpp"
 #include"console_panel.hpp"
-//#include"integrator.hpp"
-//#include"solution.hpp"
-//#include"graphics.hpp"
+#include"integration.hpp"
 
-
+void func_many_iters(std::atomic<bool> &abort_flag, std::atomic<float> &progress)
+{
+    for (float z = 0.0f; z < 20000.0f; z += 0.001f)
+    {
+        if (abort_flag.load())
+            return;
+        (void)exp(sin(sqrt(z*fabs(z)+ cos(z))));
+        progress.store(z/20000.0f);
+    }
+}
 
 class gui
 {
+private:
+
 public:
+    std::atomic<bool> simulation_is_running{false};
+    std::atomic<bool> simulation_was_aborted{false};
+
     properties_panel properties;
     console_panel console;
-    //Graphics graphics;
-    //Integrator integrator;
 
     //Initialize imgui and implot along with some settings.
     gui(GLFWwindow *wpointer)
@@ -46,8 +59,8 @@ public:
         imstyle.WindowRounding = 6.0f;
         //imstyle.WindowMinSize = ImVec2(200.0f, 200.0f);
         ImVec4 *colors = imstyle.Colors;
-        colors[ImGuiCol_WindowBg] = ImVec4(0.1f, 0.1f, 0.1f, 1.0f);
-        colors[ImGuiCol_FrameBg] = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
+        colors[ImGuiCol_WindowBg] = ImVec4(0.1f,0.1f,0.1f, 1.0f);
+        colors[ImGuiCol_FrameBg] = ImVec4(0.2f,0.2f,0.2f, 1.0f);
     }
 
     //Free gui resources.
@@ -74,77 +87,43 @@ public:
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     }
 
-    /*
-    void render_integrator_controls()
+   //'Run' and 'Abort' buttons functionality logic.
+    void process_run_and_abort_buttons()
     {
-        float offsety = 0;
-        float ysize = ImGui::GetIO().DisplaySize.y/7.0f;
-        if ( ysize < 200){
-            offsety = 200 - ysize;
-        }
-        ImGui::SetNextWindowPos( ImVec2( ImGui::GetIO().DisplaySize.x/7.0f, 6.0f*ImGui::GetIO().DisplaySize.y/7.0f - offsety), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2( ImGui::GetIO().DisplaySize.x/7.0f,      ImGui::GetIO().DisplaySize.y/7.0f), ImGuiCond_FirstUseEver);                
-        //ImGui::SetNextWindowPos( ImVec2(2.0f*ImGui::GetIO().DisplaySize.x/7.0f, 0.0f), ImGuiCond_FirstUseEver);
-        //ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f, 200.0), ImGuiCond_FirstUseEver);
-        ImGui::Begin("Simulation controls ", nullptr);
-        ImGui::Dummy(ImVec2(10.0f,0.0f));
-        
-
-        if (integrator.is_running)
-            ImGui::BeginDisabled(true);
-
-        if (ImGui::Button("Run", ImVec2(70.0f,50.0f)))
-            when_run_is_clicked();
-
-        if (integrator.is_running)
-            ImGui::EndDisabled();
-
-        ImGui::SameLine();
-        if (ImGui::Button("Abort", ImVec2(70.0f,50.0f)))
-            integrator.force_kill = true;
-
-        ImGui::SameLine();
-        if (!integrator.exists_solution)
-            ImGui::BeginDisabled(true);
-            
-        if (ImGui::Button("Update Plot", ImVec2(100.0f,50.0f))){
-            Solution solution(integrator);
-            solution.export_txt_files(properties.simname);
-            graphics.yield_solution(solution);
-            graphics.aster1.update_mesh(solution.obj_path1.c_str());
-            graphics.aster2.update_mesh(solution.obj_path2.c_str());
-        }
-        
-        if (!integrator.exists_solution)
-            ImGui::EndDisabled(); 
-        
-    
-        ImGui::Text("Progress:");
-        ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.0f,0.7f,1.0f, 1.0f));
-        ImGui::ProgressBar(integrator.progress,ImVec2(260,50));
-        ImGui::PopStyleColor();
-        ImGui::End();
-    }
-    */
-
-   //'Run' button logic.
-    void when_run_is_clicked()
-    {
-        strvec errors = properties.validate();
-        if (!errors.size())
+        //'Run' protocol.
+        if (properties.run_pressed && !simulation_is_running)
         {
-            console.add_time_and_then_text("[Integrator] Running... ");
-            //integrator.update_properties(properties);
-            //integrator.force_kill = false;
-            //std::thread th(&Integrator::run, &integrator, std::ref(console));
-            //th.detach();
+            //Reset the 2 flags.
+            properties.run_pressed = false;
+            simulation_was_aborted = false;
+            properties.progress.store(0.0f);
+            strvec errors = properties.validate();
+            if (!errors.size())
+            {
+                console.add_time_and_then_text("Simulation is running... ");
+                simulation_is_running = true;
+                //Launch a fake simulation in a separate thread.
+                std::thread simulation_thread([&]()
+                {
+                    func_many_iters(simulation_was_aborted, properties.progress);
+                    simulation_is_running = false;
+                });
+                simulation_thread.detach();
+            }
+            else
+                for (int i = 0; i < errors.size(); ++i)
+                    console.add_time_and_then_text(errors[i].c_str());
         }
-        else
-            for (int i = 0; i < errors.size(); ++i)
-                console.add_time_and_then_text(errors[i].c_str());
+
+        //'Abort' protocol.
+        if (properties.abort_pressed && simulation_is_running)
+        {
+            properties.abort_pressed = false; //Reset abort_pressed to prevent repeated triggering.
+            console.add_time_and_then_text("Simulation was aborted.");
+            simulation_was_aborted = true;
+            simulation_is_running = false;
+        }
     }
-
-
 };
 
 #endif

@@ -19,22 +19,23 @@ class console_panel
 private:
     ImGuiTextBuffer buffer;
     bool scroll_to_bottom;
+    const size_t max_buffer_size = 16384; //Threshold for buffer size (16 KB -> 2^14).
 
-public:
     //Clear the console.
     void cls()
     {
         buffer.clear();
     }
 
-    //Add formatted text to the console.
-    void add_text(const char *format, ...) IM_FMTARGS(2)
+    //Automatic clearance of the console.
+    void auto_cls()
     {
-        va_list args;
-        va_start(args, format);
-            buffer.appendfv(format, args);
-        va_end(args);
-        scroll_to_bottom = true;
+        if (buffer.size() > max_buffer_size)
+        {
+            buffer.clear();
+            buffer.append("[Info] : Console buffer was auto - cleared due to size limit.");
+            scroll_to_bottom = true;
+        }
     }
 
     //Identify the operating system.
@@ -59,6 +60,18 @@ public:
         std::ostringstream datetime;
         datetime << "[" << timeloc << "] ";
         return datetime.str();
+    }
+
+public:
+    //Add formatted text to the console.
+    void add_text(const char *format, ...) IM_FMTARGS(2)
+    {
+        va_list args;
+        va_start(args, format);
+            buffer.appendfv(format, args);
+        va_end(args);
+        scroll_to_bottom = true;
+        auto_cls();
     }
 
     void add_time_and_then_text(const char *text)
