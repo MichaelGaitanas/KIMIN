@@ -17,8 +17,15 @@ private:
 public:
     void prepare(const properties_panel &properties, std::atomic<bool> &abort_flag, std::atomic<float> &progress)
     {
-        if (abort_flag.load())
-            return;
+        progress.store(0.0f);
+
+        for (float z = 0.0f; z < 200000.0f; z += 0.01f)
+        {
+            if (abort_flag.load())
+                return;
+            (void)sin(sin(sqrt(z*z*fabs(z)+ cos(z))));
+            progress.store(z/200000.0f);
+        }
 
         //Preparation 1 : If the user chose Keplerian elements as initial position/velocity, then, transform
         //them to Cartesian coords because the F2BP odes are written in Cartesian form.
@@ -58,6 +65,21 @@ public:
             //Just assign them to the private w1b, w2b.
             w1b = properties.w1b;
             w2b = properties.w2b;
+        }
+
+        progress.store(1.0f);
+    }
+
+    void run(const properties_panel &properties, std::atomic<bool> &abort_flag, std::atomic<float> &progress)
+    {
+        progress.store(0.0f);
+
+        for (float z = 0.0f; z < 200000.0f; z += 0.01f)
+        {
+            if (abort_flag.load())
+                return;
+            (void)sin(sin(sqrt(z*z*fabs(z)+ cos(z))));
+            progress.store(z/200000.0f);
         }
 
         progress.store(1.0f);

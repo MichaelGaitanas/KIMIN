@@ -94,9 +94,9 @@ public:
             //Reset the 2 flags.
             properties.run_pressed = false;
             simulation_was_aborted = false;
-            properties.progress.store(0.0f);
+            
             strvec errors = properties.validate();
-            if (!errors.size())
+            if (1) //!errors.size()
             {
                 console.add_time_and_then_text("[Info] : Simulation started.");
                 simulation_is_running = true;
@@ -104,7 +104,7 @@ public:
                 std::thread simulation_thread([&]()
                 {
                     integrator.prepare(properties, simulation_was_aborted, properties.progress);
-                    //integrator.run(simulation_was_aborted, properties.progress);
+                    integrator.run(properties, simulation_was_aborted, properties.progress);
                     simulation_is_running = false;
                 });
                 simulation_thread.detach();

@@ -9,7 +9,8 @@ In order to compile and run, the following must be installed :
 4) GLEW.
 5) GLM.
 6) ImGui.
-7) Boost.
+7) ImPlot.
+8) Boost.
 
 MSYS2 provides a quick way to setup the aforementioned.
 
