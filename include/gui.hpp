@@ -96,7 +96,7 @@ public:
             simulation_was_aborted = false;
             
             strvec errors = properties.validate();
-            if (1) //!errors.size()
+            if (!errors.size())
             {
                 console.add_time_and_then_text("[Info] : Simulation started.");
                 simulation_is_running = true;

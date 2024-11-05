@@ -1,5 +1,5 @@
-#ifndef OBJ_HPP
-#define OBJ_HPP
+#ifndef MESH_HPP
+#define MESH_HPP
 
 #include<cstdio>
 #include<cstdlib>
@@ -13,12 +13,11 @@
 class mesh
 {
 private:
-
-public:
-
     dmatnx3 verts;
     imatnx3 faces;
     dmatnx3 norms;
+
+public:
 
     //This function will be used only after the 'Run' button to check if the .obj file is ok to be loaded.
     static bvec vf_status(const char *path)

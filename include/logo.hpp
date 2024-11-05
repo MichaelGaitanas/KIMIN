@@ -97,8 +97,8 @@ void draw_logo_for_seconds(const char *img_path, const float seconds = 3.0f)
     else //Image is taller than the window, so scale width.
         quad_width = img_aspect_ratio/win_aspect_ratio;
 
-    quad_width *= 0.5f;
-    quad_height *= 0.5f;
+    quad_width *= 0.6f;
+    quad_height *= 0.6f;
 
     //Procedural quad mesh.
     float interleaved_buffer[] = {  //Positions.  //UVs.
