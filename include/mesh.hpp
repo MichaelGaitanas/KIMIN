@@ -1,35 +1,54 @@
-#ifndef MESH_HPP
-#define MESH_HPP
-
-#include<GL/glew.h>
+#ifndef OBJ_HPP
+#define OBJ_HPP
 
 #include<cstdio>
-#include<vector>
+#include<cstdlib>
+#include<cstring>
+#include<fstream>
 
 #include"typedef.hpp"
-#include"obj.hpp"
+#include"constant.hpp"
+#include"linalg.hpp"
 
 class mesh
 {
 private:
-    unsigned int vao, vbo; //vertex array and buffer objects
-    std::vector<float> buffer; //final form of the data to draw
-    bool is_init;
 
 public:
-    mesh() {
-        is_init = false;
+
+    dmatnx3 verts;
+    imatnx3 faces;
+    dmatnx3 norms;
+
+    //This function will be used only after the 'Run' button to check if the .obj file is ok to be loaded.
+    static bvec vf_status(const char *path)
+    {
+        std::ifstream file(path);
+        if (!file.is_open())
+        {
+            printf("'%s' not found. Exiting...\n", path);
+            exit(EXIT_FAILURE);
+        }
+        
+        //Traverse the obj file and write down in the vf[] vector if it contains 'v x y z' and 'f i j k' lines.
+        str line;
+        bvec vf = {false, false};
+        while (getline(file, line))
+        {
+            if (line[0] == 'v' && line[1] == ' ' && !vf[0]) //then we have a vertex line for the first time
+                vf[0] = true;
+            else if (line[0] == 'f' && line[1] == ' ' && !vf[1]) //then we have a face line for the first time
+                vf[1] = true;
+        }
+        file.close();
+
+        return vf; //and call it like : bvec vf = Obj::vf_status(path); WITHOUT having an Obj instance of the class
     }
 
-    void update_mesh(const char *path)
-    { 
-
-        if(is_init){
-            glDeleteVertexArrays(1, &vao);
-            glDeleteBuffers(1, &vbo);
-            buffer.clear();
-        }
-            
+    //Constructor : Load the .obj file assuming it has the classical form 'v x y z' and 'f i j k'.
+    //Any other .obj content (comments, normals, textures, etc...) is ignored.
+    Obj(const char *path)
+    {
         std::ifstream file(path);
         if (!file.is_open())
         {
@@ -37,8 +56,8 @@ public:
             exit(EXIT_FAILURE);
         }
 
-        dmatnx3 verts;
-        imatnx3 faces;
+        verts.clear();
+        faces.clear();
 
         //vertices
         double x,y,z;
@@ -66,9 +85,9 @@ public:
         //verts[][] and faces[][] are now filled
 
         //Finally, compute the normals.
-        dmatnx3 norms(faces.size());
+        norms.resize(faces.size());
         dvec3 perp;
-        for (int i = 0; i < norms.size(); ++i)
+        for (size_t i = 0; i < norms.size(); ++i)
         {
             dvec3 p0 = verts[faces[i][0]];
             dvec3 p1 = verts[faces[i][1]];
@@ -76,61 +95,84 @@ public:
             perp = cross(p1-p0, p2-p1);
             norms[i] = perp/length(perp);
         }
+    }
 
-        //Combine verts[][], norms[][] and faces[][] to construct the buffer[]
-        //which will have all the buffer needed for drawing.
-        for (int i = 0; i < faces.size(); ++i)
+    //Decide whether a point r(x,y,z) is inside the obj polyhedron or not by raycasting.
+    bool is_inside(const dvec3 &r)
+    {
+        int intersections = 0;
+
+        //loop through all the triangulated faces in search for intersection
+        for (size_t j = 0; j < faces.size(); ++j)
         {
-            buffer.push_back( (float)verts[ faces[i][0] ][0] );
-            buffer.push_back( (float)verts[ faces[i][0] ][1] );
-            buffer.push_back( (float)verts[ faces[i][0] ][2] );
-            buffer.push_back( (float)norms[i][0] );
-            buffer.push_back( (float)norms[i][1] );
-            buffer.push_back( (float)norms[i][2] );
+            //define the triangle j from 3 points p0,p1,p2
+            dvec3 p0 = verts[faces[j][0]];
+            dvec3 p1 = verts[faces[j][1]];
+            dvec3 p2 = verts[faces[j][2]];
+            dvec3 pj = { p0[0] + ( (p0[1] - r[1])*norms[j][1] + (p0[2] - r[2])*norms[j][2] )/norms[j][0], //This is very dangerous, but it works fine...
+                         r[1],
+                         r[2] };
 
-            buffer.push_back( (float)verts[ faces[i][1] ][0] );
-            buffer.push_back( (float)verts[ faces[i][1] ][1] );
-            buffer.push_back( (float)verts[ faces[i][1] ][2] );
-            buffer.push_back( (float)norms[i][0] );
-            buffer.push_back( (float)norms[i][1] );
-            buffer.push_back( (float)norms[i][2] );
+            //form the following 3 triangles and calculate their area
+            double Aj01 = 0.5*length(cross(p0-pj, p1-p0)); //pj -> p0 -> p1
+            double Aj12 = 0.5*length(cross(p1-pj, p2-p1)); //pj -> p1 -> p2
+            double Aj20 = 0.5*length(cross(p2-pj, p0-p2)); //pj -> p2 -> p0
+            double A012 = 0.5*length(cross(p1-p0, p2-p1)); //p0 -> p1 -> p2
 
-            buffer.push_back( (float)verts[ faces[i][2] ][0] );
-            buffer.push_back( (float)verts[ faces[i][2] ][1] );
-            buffer.push_back( (float)verts[ faces[i][2] ][2] );
-            buffer.push_back( (float)norms[i][0] );
-            buffer.push_back( (float)norms[i][1] );
-            buffer.push_back( (float)norms[i][2] );
+            //if the sum of the 3 areas is equal to the area of the surface triangle, then pj sits upon the surface of the triangle.
+            if ( fabs(Aj01 + Aj12 + Aj20 - A012) <= machine_zero && pj[0] > r[0] )
+                ++intersections;
+        }
+        
+        //odd  : (x,y,z) is inside the obj
+        //even : (x,y,z) is outside the obj
+        if (intersections%2 == 1)
+            return true;
+
+        return false;
+    }
+
+    //Fill the obj polyhedron(verts, faces) with mascons assuming 'grid_reso' Cartesian grid resolution.
+    dmatnx3 fill_with_masc(const ivec3 &grid_reso, float *progress)
+    {
+        dvec3 rmin = verts[0], rmax = verts[0];
+        for (size_t i = 1; i < verts.size(); ++i)
+        {
+            if (verts[i][0] < rmin[0]) rmin[0] = verts[i][0];
+            if (verts[i][1] < rmin[1]) rmin[1] = verts[i][1];
+            if (verts[i][2] < rmin[2]) rmin[2] = verts[i][2];
+
+            if (verts[i][0] > rmax[0]) rmax[0] = verts[i][0];
+            if (verts[i][1] > rmax[1]) rmax[1] = verts[i][1];
+            if (verts[i][2] > rmax[2]) rmax[2] = verts[i][2];
         }
 
-        //buffer[] has now the form : {x1,y1,z1, nx1,ny1,nz1, x2,y2,z2, nx2,ny2,nz2 ... }
+        double xmin = rmin[0] + 100.0*machine_zero;
+        double ymin = rmin[1] + 200.0*machine_zero;
+        double zmin = rmin[2] + 300.0*machine_zero;
 
-        glGenVertexArrays(1, &vao);
-        glBindVertexArray(vao);
-        glGenBuffers(1, &vbo);
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, buffer.size()*sizeof(float), &buffer[0], GL_STATIC_DRAW);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)0);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)(3*sizeof(float)));
-        glEnableVertexAttribArray(1);
+        double xmax = rmax[0] - 400.0*machine_zero;
+        double ymax = rmax[1] - 500.0*machine_zero;
+        double zmax = rmax[2] - 600.0*machine_zero;
 
-        is_init = true;
-    }
-
-    //delete the mesh
-    ~mesh()
-    {
-        glDeleteVertexArrays(1, &vao);
-        glDeleteBuffers(1, &vbo);
-    }
-
-    //draw the mesh (triangles)
-    void draw()
-    {
-        glBindVertexArray(vao);
-        glDrawArrays(GL_TRIANGLES, 0, (unsigned int)(buffer.size()/6));
-        glBindVertexArray(0);
+        dmatnx3 masc;
+        for (int i = 0; i < grid_reso[0]; ++i)
+        {
+            double x = xmin + i*(xmax - xmin)/((double)grid_reso[0] - 1.0);
+            for (int j = 0; j < grid_reso[1]; ++j)
+            {
+                double y = ymin + j*(ymax - ymin)/((double)grid_reso[1] - 1.0);
+                for (int k = 0; k < grid_reso[2]; ++k)
+                {
+                    double z = zmin + k*(zmax - zmin)/((double)grid_reso[2] - 1.0);
+                    dvec3 r = {x,y,z}; //current point of the grid
+                    if (is_inside(r))
+                        masc.push_back(r);
+                }
+            }
+            *progress = (float)(i+1)/grid_reso[0];
+        }
+        return masc;
     }
 };
 
