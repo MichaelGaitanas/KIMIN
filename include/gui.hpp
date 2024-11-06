@@ -11,33 +11,23 @@
 
 #include<thread>
 #include<atomic>
-#include<chrono>
 #include<cmath>
 
 #include"typedef.hpp"
 #include"properties_panel.hpp"
 #include"console_panel.hpp"
-#include"integration.hpp"
-
-/*
-for (float z = 0.0f; z < 200000.0f; z += 0.01f)
-        {
-            if (abort_flag.load())
-                return;
-            (void)sin(sin(sqrt(z*z*fabs(z)+ cos(z))));
-            progress.store(z/200000.0f);
-        }
-*/
+#include"integrator.hpp"
 
 class gui
 {
 public:
     std::atomic<bool> simulation_is_running{false};
     std::atomic<bool> simulation_was_aborted{false};
+    std::atomic<float> simulation_progress{0.0f};
 
     properties_panel properties;
     console_panel console;
-    integration integrator;
+    integrator integr;
 
     //Initialize imgui and implot along with some settings.
     gui(GLFWwindow *wpointer)
@@ -89,23 +79,24 @@ public:
     void process_run_and_abort_buttons()
     {
         //'Run' protocol.
-        if (properties.run_pressed && !simulation_is_running)
+        if (properties.run_pressed && !simulation_is_running.load())
         {
             //Reset the 2 flags.
             properties.run_pressed = false;
-            simulation_was_aborted = false;
+            simulation_was_aborted.store(false);
             
             strvec errors = properties.validate();
             if (!errors.size())
             {
                 console.add_time_and_then_text("[Info] : Simulation started.");
-                simulation_is_running = true;
+                simulation_is_running.store(true);
                 //Launch a new simulation in a separate thread.
                 std::thread simulation_thread([&]()
                 {
-                    integrator.prepare(properties, simulation_was_aborted, properties.progress);
-                    integrator.run(properties, simulation_was_aborted, properties.progress);
-                    simulation_is_running = false;
+                    integr.copy_properties(properties);
+                    integr.prepare(simulation_was_aborted, simulation_progress);
+                    integr.run(simulation_was_aborted, simulation_progress);
+                    simulation_is_running.store(false);
                 });
                 simulation_thread.detach();
                 console.add_time_and_then_text("[Info] : Simulation ended.");
@@ -116,12 +107,12 @@ public:
         }
 
         //'Abort' protocol.
-        if (properties.abort_pressed && simulation_is_running)
+        if (properties.abort_pressed && simulation_is_running.load())
         {
             properties.abort_pressed = false; //Reset abort_pressed to prevent repeated triggering.
             console.add_time_and_then_text("[Info] : Simulation aborted.");
-            simulation_was_aborted = true;
-            simulation_is_running = false;
+            simulation_was_aborted.store(true);
+            simulation_is_running.store(false);
         }
     }
 };

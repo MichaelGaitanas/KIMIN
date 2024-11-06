@@ -59,7 +59,6 @@ public:
 
     bool run_pressed; //Whether or not the 'Run' button has been pressed.
     bool abort_pressed; //Whether or not the 'Abort' button has been pressed.
-    std::atomic<float> progress;
 
     properties_panel() : sim_name(""),
                          ell_checkbox(false),
@@ -101,8 +100,7 @@ public:
                          v_impact(dvec3{0.0,0.0,0.0}),
                          beta(0.0),
                          run_pressed(false),
-                         abort_pressed(false),
-                         progress(0.0f)
+                         abort_pressed(false)
                          //vf1({false, false}),
                          //vf2({false, false})
     { }
@@ -258,7 +256,7 @@ public:
     }
 
     //This is the function that draws the properties panel and processes the corresponding logic.
-    void render(bool simulation_is_running, bool simulation_was_aborted)
+    void render(std::atomic<bool> simulation_is_running, std::atomic<bool> simulation_was_aborted, std::atomic<float> simulation_progress)
     {
         //Reinitialized every frame at 0. Making it static, will also work, but if the app's total frames (glfw while loop) exceed the
         //maximum int value (or unsigned, or long, or whatever the variable type of id is), then we will have an overflow, which means
@@ -540,7 +538,7 @@ public:
         //Run/Abort buttons rendering logic.
         ImGui::Text("Simulation controls");
 
-        if (!simulation_is_running) //In this case the simulation is NOT currently running, hence "Run" can be pressed (to start), but "Abort", cannot be pressed (nothing to abort).
+        if (!simulation_is_running.load()) //In this case the simulation is NOT currently running, hence "Run" can be pressed (to start), but "Abort", cannot be pressed (nothing to abort).
         {
             if (ImGui::Button("Run", ImVec2(70.0f, 25.0f)))
                 run_pressed = true;
@@ -561,12 +559,11 @@ public:
 
         //Progress bar.
         ImGui::Text("Simulation progress");
-        float progress_val = progress.load();
-        if (simulation_was_aborted)
+        if (simulation_was_aborted.load())
             ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.7f,0.0f,0.0f, 1.0f)); //Red.
         else
             ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.0f,0.7f,0.0f, 1.0f)); //Green.
-        ImGui::ProgressBar(progress_val, ImVec2(150.0f,20.0f));
+        ImGui::ProgressBar(simulation_progress.load(), ImVec2(150.0f,20.0f));
         ImGui::PopStyleColor();
 
         ImGui::Dummy(ImVec2(0.0f,700.0f)); //Some extra y-space in order to be able to scroll down along properties panel.

@@ -115,7 +115,7 @@ public:
             glClear(GL_COLOR_BUFFER_BIT);
 
             ui.begin();
-            ui.properties.render(ui.simulation_is_running, ui.simulation_was_aborted);
+            ui.properties.render(ui.simulation_is_running.load(), ui.simulation_was_aborted.load(), ui.simulation_progress.load());
             ui.console.render();
             ui.render();
 
