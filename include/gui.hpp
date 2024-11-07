@@ -16,8 +16,9 @@
 #include"typedef.hpp"
 #include"properties_panel.hpp"
 #include"console_panel.hpp"
-#include"integrator.hpp"
 #include"scene_panel.hpp"
+#include"integrator.hpp"
+//#include"solution.hpp"
 
 class gui
 {
@@ -28,8 +29,9 @@ public:
 
     properties_panel properties;
     console_panel console;
-    integrator integr;
     scene_panel scene;
+    integrator integr;
+    //solution sol;
 
     //Initialize imgui and implot along with some settings.
     gui(GLFWwindow *wpointer)
@@ -98,6 +100,7 @@ public:
                     integr.copy_properties(properties);
                     integr.prepare(simulation_was_aborted, simulation_progress);
                     integr.run(simulation_was_aborted, simulation_progress, console);
+                    //Update somewhere here the solution class and yield it to the scene class.
                     simulation_is_running.store(false);
                 });
                 simulation_thread.detach();

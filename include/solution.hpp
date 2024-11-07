@@ -5,19 +5,13 @@
 #include<cmath>
 
 #include"typedef.hpp"
-#include"constant.hpp"
-#include"linalg.hpp"
-#include"obj.hpp"
-#include"conversion.hpp"
-#include"mascon.hpp"
-#include"ellipsoid.hpp"
-#include"rigidbody.hpp"
-#include"gravity.hpp"
 
-#include"integrator.hpp"
-
-class Solution : public Integrator
+class solution
 {
+private:
+    dmat orbit; //Will contain : [t, x,y,z, vx,vy,vz, q10,q11,q12,q13, w1bx,w1by,w1bz, q20,q21,q22,q23, w2bx,w2by,w2bz] after copying from the integrator's orbit member.
+    
+    //To be continued...
 
 public:
 
