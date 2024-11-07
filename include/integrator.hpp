@@ -11,6 +11,7 @@
 #include"rigidbody.hpp"
 #include"gravity.hpp"
 #include"properties_panel.hpp"
+#include"console_panel.hpp"
 
 class integrator
 {
@@ -26,7 +27,7 @@ private:
 
     double t0, tmax, dt;
 
-    dmat orbit; //Final matrix that contains all the orbital data.
+    dmat orbit; //This is the solution matrix of the differential equations that will be solved (time + state vector).
 
     //This function builds the righ hand sides of the differential equations of motion. It is executed at each step of the integration.
     void build_rhs(const boost::array<double, 20> &state, boost::array<double, 20> &dstate, double t)
@@ -209,11 +210,10 @@ public:
         progress.store(1.0f);
     }
 
-    void run(std::atomic<bool> &abort_flag, std::atomic<float> &progress)
+    void run(std::atomic<bool> &abort_flag, std::atomic<float> &progress, console_panel &console)
     {
+        console.add_time_and_then_text("[Info] : New integration started.");
         progress.store(0.0f);
-        if (abort_flag.load())
-            return;
 
         //Initial conditions.
         boost::array<double, 20> state = { properties.cart[0], properties.cart[1], properties.cart[2],
@@ -224,9 +224,43 @@ public:
                                             properties.w2b[0],  properties.w2b[1],  properties.w2b[2] };
 
         boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 20>> rkf78;
-        
+        char formatted_text[128];
+        for (double t = t0; t <= tmax; t += dt)
+        {
+            //Append the current state into the final 'orbit' matrix.
+            orbit.push_back({t, state[0],  state[1],  state[2],
+                                state[3],  state[4],  state[5],
+                                state[6],  state[7],  state[8],  state[9],
+                                state[10], state[11], state[12],
+                                state[13], state[14], state[15], state[16],
+                                state[17], state[18], state[19]});
 
-        progress.store(1.0f);
+            //Check for sphere-sphere collision detection between the 2 asteroids.
+            if (sphere_sphere_collision(length(dvec3{state[0],state[1],state[2]}), brillouin1, brillouin2))
+            {
+                sprintf(formatted_text,"[Integrator] Collision detected at t = %5.2lf days.",t/86400.0);
+                console.add_time_and_then_text(formatted_text);
+                collision = true;
+                break;
+            }
+
+            //Check the abort flag (the user might want to kill the integration by pressing the 'Abort' button in the gui).
+            if (abort_flag.load())
+            {
+                sprintf(formatted_text, "[Info] : Integration was aborted at t = %5.2lf [days].", t/86400.0);
+                console.add_time_and_then_text(formatted_text);
+                break;
+            }
+                
+            //Update the state vector by doing 1 step of the numerical method.
+            rkf78.do_step(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, dt);
+
+            //Update the progressbar value.
+            progress.store((t-t0)/(tmax-t0));
+        }
+
+        if (!abort_flag.load())
+            console.add_time_and_then_text("[Info] : Integration ended.");
     }
 };
 

@@ -17,6 +17,7 @@
 #include"properties_panel.hpp"
 #include"console_panel.hpp"
 #include"integrator.hpp"
+#include"scene_panel.hpp"
 
 class gui
 {
@@ -28,6 +29,7 @@ public:
     properties_panel properties;
     console_panel console;
     integrator integr;
+    scene_panel scene;
 
     //Initialize imgui and implot along with some settings.
     gui(GLFWwindow *wpointer)
@@ -49,6 +51,7 @@ public:
         ImVec4 *colors = imstyle.Colors;
         colors[ImGuiCol_WindowBg] = ImVec4(0.1f,0.1f,0.1f, 1.0f);
         colors[ImGuiCol_FrameBg] = ImVec4(0.2f,0.2f,0.2f, 1.0f);
+        colors[ImGuiCol_Header] = ImVec4(0.2f,0.2f,0.2f, 1.0f);
     }
 
     //Free gui resources.
@@ -88,18 +91,16 @@ public:
             strvec errors = properties.validate();
             if (!errors.size())
             {
-                console.add_time_and_then_text("[Info] : Simulation started.");
                 simulation_is_running.store(true);
                 //Launch a new simulation in a separate thread.
                 std::thread simulation_thread([&]()
                 {
                     integr.copy_properties(properties);
                     integr.prepare(simulation_was_aborted, simulation_progress);
-                    integr.run(simulation_was_aborted, simulation_progress);
+                    integr.run(simulation_was_aborted, simulation_progress, console);
                     simulation_is_running.store(false);
                 });
                 simulation_thread.detach();
-                console.add_time_and_then_text("[Info] : Simulation ended.");
             }
             else
                 for (int i = 0; i < errors.size(); ++i)
@@ -110,7 +111,6 @@ public:
         if (properties.abort_pressed && simulation_is_running.load())
         {
             properties.abort_pressed = false; //Reset abort_pressed to prevent repeated triggering.
-            console.add_time_and_then_text("[Info] : Simulation aborted.");
             simulation_was_aborted.store(true);
             simulation_is_running.store(false);
         }

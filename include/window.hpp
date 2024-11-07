@@ -117,6 +117,7 @@ public:
             ui.begin();
             ui.properties.render(ui.simulation_is_running.load(), ui.simulation_was_aborted.load(), ui.simulation_progress.load());
             ui.console.render();
+            ui.scene.render();
             ui.render();
 
             ui.process_run_and_abort_buttons();

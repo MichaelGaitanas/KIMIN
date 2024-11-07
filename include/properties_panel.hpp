@@ -54,9 +54,6 @@ public:
     dvec3 v_impact; //Impactor's velocity vector.
     double beta; //Momentum enhancement factor.
 
-    //fundamental contents of the 2 .obj files (vertices, faces).
-    //bvec vf1, vf2;
-
     bool run_pressed; //Whether or not the 'Run' button has been pressed.
     bool abort_pressed; //Whether or not the 'Abort' button has been pressed.
 
@@ -101,8 +98,6 @@ public:
                          beta(0.0),
                          run_pressed(false),
                          abort_pressed(false)
-                         //vf1({false, false}),
-                         //vf2({false, false})
     { }
 
     //This function receives as input a 'path' to a directory and as a result it returns a vector of paths, corresponding
@@ -177,23 +172,6 @@ public:
                 errors.push_back("[Error] :  No .obj file is selected for 'Body 2'.");
         }
 
-        //.obj files error of polyhedron category (the .obj file must at least contain lines with the
-        //format 'v x y z' AND 'f i j k' to be assumed as a valid polyhedron.
-        /*
-        if (obj_checkbox && obj1_clicked)
-        {
-            vf1 = Obj::vf_status(obj1_path.c_str());
-            if ( !(vf1[0] && vf1[1]) )
-                errors.push_back("[Error] :  In 'Body 1' .obj file, vertices and faces lines must exist.");
-        }
-        if (obj_checkbox && obj2_clicked)
-        {
-            vf2 = Obj::vf_status(obj2_path.c_str());
-            if ( !(vf2[0] && vf2[1]) )
-                errors.push_back("[Error] :  In 'Body 2' .obj file, vertices and faces lines must exist.");
-        }
-        */
-
         //Possible error 8 : Mutual potential checkboxes (at least one must be checked).
         if (!ord2_checkbox && !ord3_checkbox && !ord4_checkbox)
             errors.push_back("[Error] :  Neither 'Order 2', nor 'Order 3', nor 'Order 4' mutual potential is selected.");
@@ -203,7 +181,7 @@ public:
             errors.push_back("[Error] :  'M1', 'M2' must be positive numbers.");
 
         //Possible error 10 : Time parameters ('Epoch' and 'Duration' must be >= 0 and 'Step' must be <= 'Duration').
-        if (!(epoch >= 0.0 && dur >= 0.0 && step <= dur))
+        if (!(epoch >= 0.0 && dur > 0.0 && step <= dur))
             errors.push_back("[Error] :  Invalid set of 'Epoch', 'Duration', 'Step'.");
 
         //Possible error 11 : Relative position/velocity (mutual distance must be > 0).
@@ -266,7 +244,7 @@ public:
         //Properties panel "main" window.
         ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f, ImGui::GetIO().DisplaySize.y), ImGuiCond_FirstUseEver);
-        ImGui::Begin("Properties ", nullptr);
+        ImGui::Begin("Properties", nullptr);
 
         //Simunlation name text field. Basically this is the name of the folder that will be created later, holding the orbit data.
         ImGui::Text("Simulation name");
