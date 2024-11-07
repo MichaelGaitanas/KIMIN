@@ -18,7 +18,7 @@
 #include"console_panel.hpp"
 #include"scene_panel.hpp"
 #include"integrator.hpp"
-//#include"solution.hpp"
+#include"solution.hpp"
 
 class gui
 {
@@ -31,7 +31,7 @@ public:
     console_panel console;
     scene_panel scene;
     integrator integr;
-    //solution sol;
+    solution sol;
 
     //Initialize imgui and implot along with some settings.
     gui(GLFWwindow *wpointer)

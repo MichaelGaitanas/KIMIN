@@ -45,7 +45,8 @@ private:
         q1 = quat2unit(q1);
         q2 = quat2unit(q2);
 
-        //Construct the rotation matrices from the (normalized) quaternions.
+        //Construct the rotation matrices from the (normalized) quaternions. Even though the quaternions do encode the rotational state
+        //of each body, we need the matrices as well because the expressions of the potential, force and torque are written in matrix form.
         dmat3 A1 = quat2mat(q1);
         dmat3 A2 = quat2mat(q2);
 
@@ -115,10 +116,13 @@ private:
     }
 
 public:
-    void copy_properties(const properties_panel &props)
+    //This function stores to the class's private member 'properties' the user's choice of properties.
+    void copy_properties(const properties_panel &properties)
     {
-        properties = props;
+        this->properties = properties;
     }
+    //Note : In the following member functions, whatever change is made upon the 'properties' variable has nothing to do with the gui's displayed properties.
+    //We operate on the private member 'properties', which is only a copy.
     
     //Before the actual integration of the ODEs starts, we do some preparations.
     void prepare(std::atomic<bool> &abort_flag, std::atomic<float> &progress)

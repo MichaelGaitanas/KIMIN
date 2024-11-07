@@ -4,85 +4,75 @@
 #include<cstdio>
 #include<cmath>
 
+#include"constant.hpp"
 #include"typedef.hpp"
+#include"linalg.hpp"
+#include"conversion.hpp"
+#include"integrator.hpp"
 
 class solution
 {
 private:
-    dmat orbit; //Will contain : [t, x,y,z, vx,vy,vz, q10,q11,q12,q13, w1bx,w1by,w1bz, q20,q21,q22,q23, w2bx,w2by,w2bz] after copying from the integrator's orbit member.
-    
-    //To be continued...
+    integrator integr;
 
 public:
-
-    //time
-    dvec t;
-
-    //positions
-    dvec x,y,z, dist;
-    dvec roll1,pitch1,yaw1; 
-    dvec roll2,pitch2,yaw2;
-    dvec q10,q11,q12,q13;
-    dvec q20,q21,q22,q23;
-
-    //velocities
-    dvec vx,vy,vz, vmag;
-    dvec w1ix,w1iy,w1iz;
-    dvec w1bx,w1by,w1bz;
-    dvec w2ix,w2iy,w2iz;
-    dvec w2bx,w2by,w2bz;
-
-    //Keplerian elements
-    dvec a,e,inc,Om,w,M;
-
-    //constants of motion relative errors
+    dvec dist, vel;
+    dvec roll1, pitch1, yaw1; 
+    dvec roll2, pitch2, yaw2;
+    dvec w1ix, w1iy, w1iz;
+    dvec w2ix, w2iy, w2iz;
+    dvec sma, ecc, inc, raan, argper, manom;
     dvec ener_rel_err, mom_rel_err;
 
-    //plotting parameters
-    double max_dist;
-    
-    Solution() { }
-
-    Solution(const Integrator &integrator) : Integrator(integrator)
+    void copy_integrator(const integrator &integr)
     {
-        if(ell_checkbox){
-            obj_path1 = obj_path2 = "../obj/sphere.obj";
-        }
-        
-        double ener0, mom0;
-        for (int i = 0; i < msol.size(); ++i)
+        this->integr = integr;
+    }
+
+    void construct()
+    {
+        double energy_at_t0, momentum_at_t0;
+
+        for (size_t i = 0; i < integr.orbit.size(); ++i)
         {
-            //organize msol[][] into temporary variables
-            double temp_t    = msol[i][0];
-            dvec3  temp_r    = {msol[i][1], msol[i][2], msol[i][3]};
-            dvec3  temp_v    = {msol[i][4], msol[i][5], msol[i][6]};
-            dvec4  temp_q1   = {msol[i][7], msol[i][8], msol[i][9], msol[i][10]};
-            dvec3  temp_w1b  = {msol[i][11], msol[i][12], msol[i][13]};
-            dvec4  temp_q2   = {msol[i][14], msol[i][15], msol[i][16], msol[i][17]};
-            dvec3  temp_w2b  = {msol[i][18], msol[i][19], msol[i][20]};
-            dmat3  temp_A1   = quat2mat(temp_q1);
-            dmat3  temp_A2   = quat2mat(temp_q2);
-            dvec3  temp_w1i  = body2iner(temp_w1b,temp_A1);
-            dvec3  temp_w2i  = body2iner(temp_w2b,temp_A2);
-            dvec3  temp_rpy1 = quat2ang(temp_q1);
-            dvec3  temp_rpy2 = quat2ang(temp_q2);
-            dvec6  temp_kep  = cart2kep({temp_r[0],temp_r[1],temp_r[2], temp_v[0],temp_v[1],temp_v[2]}, G*(M1+M2));
+            //Extract the integr.orbit[][] matrix into temporary variables for readability (though one could operate directly on integr.orbit[][]).
+            //Remember integr.orbit contains : (t, x,y,z, vx,vy,vz, q10,q11,q12,q13, w1bx,w1by,w1bz, q20,q21,q22,q23, w2bx,w2by,w2bz) at each line i.
+            double t   = integr.orbit[i][0];
+            dvec3  r   = dvec3{integr.orbit[i][1],  integr.orbit[i][2],  integr.orbit[i][3]};
+            dvec3  v   = dvec3{integr.orbit[i][4],  integr.orbit[i][5],  integr.orbit[i][6]};
+            dvec4  q1  = dvec4{integr.orbit[i][7],  integr.orbit[i][8],  integr.orbit[i][9],  integr.orbit[i][10]};
+            dvec3  w1b = dvec3{integr.orbit[i][11], integr.orbit[i][12], integr.orbit[i][13]};
+            dvec4  q2  = dvec4{integr.orbit[i][14], integr.orbit[i][15], integr.orbit[i][16], integr.orbit[i][17]};
+            dvec3  w2b = dvec3{integr.orbit[i][18], integr.orbit[i][19], integr.orbit[i][20]};
+
+            dmat3 A1   = quat2mat(q1);
+            dmat3 A2   = quat2mat(q2);
+            dvec3 w1i  = body2iner(w1b,A1);
+            dvec3 w2i  = body2iner(w2b,A2);
+            dvec3 rpy1 = quat2ang(q1);
+            dvec3 rpy2 = quat2ang(q2);
+            dvec6 kep  = cart2kep(dvec6{r[0],r[1],r[2], v[0],v[1],v[2]}, G*(integr.properties.M1 + integr.properties.M2));
             
-            double ener = 0.5*((M1*M2)/(M1+M2))*dot(temp_v,temp_v) + 0.5*dot( dot(temp_w1b,I1), temp_w1b) + 0.5*dot( dot(temp_w2b,I2), temp_w2b);
-            if (ord2_checkbox)
-                ener += mut_pot_integrals_ord2(temp_r, M1,J1,temp_A1, M2,J2,temp_A2);
-            else if (ord3_checkbox)
-                ener += mut_pot_integrals_ord3(temp_r, M1,J1,temp_A1, M2,J2,temp_A2);
-            else if (ord4_checkbox)
-                ener += mut_pot_integrals_ord4(temp_r, M1,J1,temp_A1, M2,J2,temp_A2);
+            double energy = 0.5*integr.m*dot(v,v) + 0.5*dot( dot(w1b, integr.I1), w1b) + 0.5*dot( dot(w2b, integr.I2), w2b); //Kinetic energy part.
+            //Potential energy part.
+            if (integr.properties.ord2_checkbox)
+                energy += mut_pot_integrals_ord2(r, integr.properties.M1, integr.J1, A1, integr.properties.M2, integr.J2, A2);
+            else if (integr.properties.ord3_checkbox)
+                energy += mut_pot_integrals_ord3(r, integr.properties.M1, integr.J1, A1, integr.properties.M2, integr.J2, A2);
+            else
+                energy += mut_pot_integrals_ord4(r, integr.properties.M1, integr.J1, A1, integr.properties.M2, integr.J2, A2);
             
-            double mom = length( (M1*M2/(M1+M2))*cross(temp_r,temp_v) + dot(temp_A1, dot(I1,temp_w1b)) + dot(temp_A2, dot(I2,temp_w2b)) );
+            //Momentum magnitude. Note : All 3 components of the momentum vector are conserved in time. We just choose to store and plot the magnitude only.
+            double momentum = length( integr.m*cross(r,v) + dot(A1, dot(integr.I1, w1b)) + dot(A2, dot(integr.I2, w2b)) );
             
+            //This is to compute the corresponding relative errors. See below.
             if (i == 0)
             {
-                ener0 = ener;
-                mom0 = mom;
+                energy_at_t0 = energy;
+                momentum_at_t0 = momentum;
             }
+
+            //To be continued.
             
             t.push_back(temp_t/86400.0);
             x.push_back(temp_r[0]);
@@ -125,34 +115,34 @@ public:
             Om.push_back(temp_kep[3]*180.0/pi);
             w.push_back(temp_kep[4]*180.0/pi);
             M.push_back(temp_kep[5]*180.0/pi);
-            ener_rel_err.push_back(fabs((ener - ener0)/ener0));
-            mom_rel_err.push_back(fabs((mom - mom0)/mom0));
+            ener_rel_err.push_back(fabs((ener - energy_at_t0)/energy_at_t0));
+            mom_rel_err.push_back(fabs((mom - momentum_at_t0)/momentum_at_t0));
         }
         max_dist = *max_element(dist.begin(), dist.end());
     }
 
-    void export_txt_files(const char *simname)
+    void export_txt_files(const char *sim_name)
     {
         //1) create the 'simulations' directory that will store all other simulation directories
         bool root_sim_dir = std::filesystem::create_directory("../simulations");
 
-        //2) create the current simulation directory 'simname' that will store the .txt files
-        bool current_sim_dir = std::filesystem::create_directory("../simulations/" + str(simname));
+        //2) create the current simulation directory 'sim_name' that will store the .txt files
+        bool current_sim_dir = std::filesystem::create_directory("../simulations/" + str(sim_name));
 
         //3) create the txt content
-        FILE *file_t        = fopen(("../simulations/" + str(simname) + "/time.txt"    ).c_str(),"w");
-        FILE *file_pos      = fopen(("../simulations/" + str(simname) + "/pos.txt"     ).c_str(),"w");
-        FILE *file_vel      = fopen(("../simulations/" + str(simname) + "/vel.txt"     ).c_str(),"w");
-        FILE *file_q1       = fopen(("../simulations/" + str(simname) + "/quat1.txt"   ).c_str(),"w");
-        FILE *file_w1i      = fopen(("../simulations/" + str(simname) + "/w1i.txt"     ).c_str(),"w");
-        FILE *file_w1b      = fopen(("../simulations/" + str(simname) + "/w1b.txt"     ).c_str(),"w");
-        FILE *file_rpy1     = fopen(("../simulations/" + str(simname) + "/rpy1.txt"    ).c_str(),"w");
-        FILE *file_q2       = fopen(("../simulations/" + str(simname) + "/quat2.txt"   ).c_str(),"w");
-        FILE *file_w2i      = fopen(("../simulations/" + str(simname) + "/w2i.txt"     ).c_str(),"w");
-        FILE *file_w2b      = fopen(("../simulations/" + str(simname) + "/w2b.txt"     ).c_str(),"w");
-        FILE *file_rpy2     = fopen(("../simulations/" + str(simname) + "/rpy2.txt"    ).c_str(),"w");
-        FILE *file_kep      = fopen(("../simulations/" + str(simname) + "/kep.txt"     ).c_str(),"w");
-        FILE *file_ener_mom = fopen(("../simulations/" + str(simname) + "/ener_mom.txt").c_str(),"w");
+        FILE *file_t        = fopen(("../simulations/" + str(sim_name) + "/time.txt"    ).c_str(), "w");
+        FILE *file_pos      = fopen(("../simulations/" + str(sim_name) + "/pos.txt"     ).c_str(), "w");
+        FILE *file_vel      = fopen(("../simulations/" + str(sim_name) + "/vel.txt"     ).c_str(), "w");
+        FILE *file_q1       = fopen(("../simulations/" + str(sim_name) + "/quat1.txt"   ).c_str(), "w");
+        FILE *file_w1i      = fopen(("../simulations/" + str(sim_name) + "/w1i.txt"     ).c_str(), "w");
+        FILE *file_w1b      = fopen(("../simulations/" + str(sim_name) + "/w1b.txt"     ).c_str(), "w");
+        FILE *file_rpy1     = fopen(("../simulations/" + str(sim_name) + "/rpy1.txt"    ).c_str(), "w");
+        FILE *file_q2       = fopen(("../simulations/" + str(sim_name) + "/quat2.txt"   ).c_str(), "w");
+        FILE *file_w2i      = fopen(("../simulations/" + str(sim_name) + "/w2i.txt"     ).c_str(), "w");
+        FILE *file_w2b      = fopen(("../simulations/" + str(sim_name) + "/w2b.txt"     ).c_str(), "w");
+        FILE *file_rpy2     = fopen(("../simulations/" + str(sim_name) + "/rpy2.txt"    ).c_str(), "w");
+        FILE *file_kep      = fopen(("../simulations/" + str(sim_name) + "/kep.txt"     ).c_str(), "w");
+        FILE *file_ener_mom = fopen(("../simulations/" + str(sim_name) + "/ener_mom.txt").c_str(), "w");
         for (int i = 0; i < t.size(); ++i)
         {
             fprintf(file_t,        "%.16lf\n",                                    t[i]);
@@ -183,15 +173,9 @@ public:
         fclose(file_kep);
         fclose(file_ener_mom);
 
-        FILE *file_steps = fopen(("../simulations/" + str(simname) + "/steps.txt").c_str(),"w");
-        fprintf(file_steps,"%d\n",(int)(t.size() - 1));
-        fclose(file_steps);
-
-        FILE *file_collision = fopen(("../simulations/" + str(simname) + "/collision.txt").c_str(),"w");
-        fprintf(file_collision,"%d\n",collision);
+        FILE *file_collision = fopen(("../simulations/" + str(sim_name) + "/collision.txt").c_str(),"w");
+        fprintf(file_collision,"Collision detected : %s", collision ? "Yes" : "No");
         fclose(file_collision);
-
-        return;
     }
 };
 
