@@ -121,7 +121,7 @@ public:
     {
         this->properties = properties;
     }
-    //Note : In the following member functions, whatever change is made upon the 'properties' variable has nothing to do with the gui's displayed properties.
+    //Note : In the following member functions, whatever change is made upon the 'properties' variable, has nothing to do with the gui's displayed properties.
     //We operate on the private member 'properties', which is only a copy.
     
     //Before the actual integration of the ODEs starts, we do some preparations.
@@ -242,7 +242,7 @@ public:
             //Check for sphere-sphere collision detection between the 2 asteroids.
             if (sphere_sphere_collision(length(dvec3{state[0],state[1],state[2]}), brillouin1, brillouin2))
             {
-                sprintf(formatted_text,"[Integrator] Collision detected at t = %5.2lf days.",t/86400.0);
+                sprintf(formatted_text,"[Integrator] Collision detected at t = %5.2lf days.", t/86400.0);
                 console.add_time_and_then_text(formatted_text);
                 collision = true;
                 break;
@@ -259,7 +259,7 @@ public:
             //Update the state vector by doing 1 step of the numerical method.
             rkf78.do_step(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, dt);
 
-            //Update the progressbar value.
+            //Update the progressbar value in [0,1].
             progress.store((t-t0)/(tmax-t0));
         }
 
