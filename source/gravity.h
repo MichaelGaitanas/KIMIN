@@ -1,13 +1,13 @@
-#ifndef GRAVITY_HPP
-#define GRAVITY_HPP
+#ifndef GRAVITY_H
+#define GRAVITY_H
 
 #include<cmath>
 
-#include"constant.hpp"
-#include"typedef.hpp"
-#include"linalg.hpp"
+#include"constant.h"
+#include"typedef.h"
+#include"linalg.h"
 
-/* Gravity potential expressions */
+/* Gravity potential expressions. */
 
 //Mutual potential of 2 rigid bodies, assuming inertial integral expansion of order 2 approximation.
 double mut_pot_integrals_ord2(const dvec3 &r, const double M1, const dtens &J1, const dmat3 &A1,
@@ -282,7 +282,7 @@ double mut_pot_integrals_ord4(const dvec3 &r, const double M1, const dtens &J1, 
     return V0 + V2 + V3 + V4;
 }
 
-/* End of gravity potential expressions */
+/* End of gravity potential expressions. */
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -297,7 +297,7 @@ double mut_pot_integrals_ord4(const dvec3 &r, const double M1, const dtens &J1, 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/* Gravity force expressions */
+/* Gravity force expressions. */
 
 //Mutual force of 2 rigid bodies, assuming inertial integral expansion of order 2 approximation.
 dvec3 mut_force_integrals_ord2(const dvec3 &r, const double M1, const dtens &J1, const dmat3 &A1,
@@ -649,7 +649,7 @@ dvec3 mut_force_integrals_ord4(const dvec3 &r, const double M1, const dtens &J1,
                            dV_dl2*dl2_dr + dV_dm2*dm2_dr + dV_dn2*dn2_dr);
 }
 
-/* End of gravity force expressions */
+/* End of gravity force expressions. */
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -664,7 +664,7 @@ dvec3 mut_force_integrals_ord4(const dvec3 &r, const double M1, const dtens &J1,
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/* Gravity torque expressions */
+/* Gravity torque expressions. */
 
 //Mutual gravity gradient torque of 2 rigid bodies, assuming inertial integral expansion of order 2 approximation.
 dvec3 mut_torque_integrals_ord2(const dvec3 &r, const dtens &J1, const dmat3 &A1, const double M2)
@@ -857,6 +857,6 @@ dvec3 mut_torque_integrals_ord4(const dvec3 &r, const double M1, const dtens &J1
     return -cross(a1, dV_da1) - cross(a2, dV_da2) - cross(a3, dV_da3);
 }
 
-/* End of gravity torque expressions */
+/* End of gravity torque expressions. */
 
 #endif

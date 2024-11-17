@@ -1,5 +1,5 @@
-#ifndef PROPERTIES_PANEL_HPP
-#define PROPERTIES_PANEL_HPP
+#ifndef PROPERTIES_PANEL_H
+#define PROPERTIES_PANEL_H
 
 #include"../imgui/imgui.h"
 #include"../imgui/imgui_impl_glfw.h"
@@ -11,10 +11,10 @@
 #include<filesystem>
 #include<atomic>
 
-#include"typedef.hpp"
-#include"constant.hpp"
-#include"linalg.hpp"
-#include"conversion.hpp"
+#include"typedef.h"
+#include"constant.h"
+#include"linalg.h"
+#include"conversion.h"
 
 class properties_panel
 {
@@ -46,7 +46,7 @@ public:
     dvec4 q1, q2; //'q10', 'q11', 'q12', 'q13', 'q20', 'q21', 'q22', 'q23' double fields.
 
     int frame_type_choice; //Initial choice. 0 -> Global inertial frame, 1 -> Corresponding body frames.
-    dvec3 w1i, w2i, w1b, w2b; //'ω1x', 'ω1y', 'ω1z', 'ω2x', 'ω2y, 'ω2z' double fields (nature of the frame depends on 'frame_type_choice').
+    dvec3 w1i, w2i, w1b, w2b; //'ω1ix', 'ω1iy', 'ω1iz', 'ω2bx', 'ω2by, 'ω2bz' double fields (nature of the frame depends on 'frame_type_choice').
 
     bool impactor_checkbox; //'Kinetic impactor' checkbox state.
     bool impactor_clicked_ok; //'OK' button in the kinetic impactor parameters window (pressed or not).
@@ -57,6 +57,7 @@ public:
     bool run_pressed; //Whether or not the 'Run' button has been pressed.
     bool abort_pressed; //Whether or not the 'Abort' button has been pressed.
 
+    /*
     properties_panel() : sim_name(""),
                          ell_checkbox(false),
                          semiaxes1(dvec3{0.0,0.0,0.0}),
@@ -80,7 +81,51 @@ public:
                          step(0.0),
                          cart_kep_var_choice(0),
                          cart(dvec6{0.0,0.0,0.0,0.0,0.0,0.0}),
-                         kep(dvec6{0.0,0.0,0.0,0.0,0.0,0.0,}),
+                         kep(dvec6{0.0,0.0,0.0,0.0,0.0,0.0}),
+                         orient_var_choice(0),
+                         rpy1(dvec3{0.0,0.0,0.0}),
+                         rpy2(dvec3{0.0,0.0,0.0}),
+                         q1(dvec4{1.0,0.0,0.0,0.0}),
+                         q2(dvec4{1.0,0.0,0.0,0.0}),
+                         frame_type_choice(0),
+                         w1i(dvec3{0.0,0.0,0.0}),
+                         w2i(dvec3{0.0,0.0,0.0}),
+                         w1b(dvec3{0.0,0.0,0.0}),
+                         w2b(dvec3{0.0,0.0,0.0}),
+                         impactor_checkbox(false),
+                         impactor_clicked_ok(false),
+                         M_impact(0.0),
+                         v_impact(dvec3{0.0,0.0,0.0}),
+                         beta(0.0),
+                         run_pressed(false),
+                         abort_pressed(false)
+    { }
+    */
+
+    properties_panel() : sim_name("a"),
+                         ell_checkbox(true),
+                         semiaxes1(dvec3{0.5,0.4,0.3}),
+                         semiaxes2(dvec3{0.2,0.1,0.05}),
+                         ell_clicked_ok(true),
+                         obj_checkbox(false),
+                         obj1_clicked_index(-1),
+                         obj2_clicked_index(-1),
+                         obj1_clicked(false),
+                         obj2_clicked(false),
+                         obj1_path(""),
+                         obj2_path(""),
+                         obj_clicked_ok(false),
+                         ord2_checkbox(true),
+                         ord3_checkbox(false),
+                         ord4_checkbox(false),
+                         M1(1.0e11),
+                         M2(1.0e10),
+                         epoch(0.0),
+                         dur(100.0),
+                         step(0.005),
+                         cart_kep_var_choice(1),
+                         cart(dvec6{0.0,0.0,0.0,0.0,0.0,0.0}),
+                         kep(dvec6{1.5,0.0,0.0,0.0,0.0,0.0}),
                          orient_var_choice(0),
                          rpy1(dvec3{0.0,0.0,0.0}),
                          rpy2(dvec3{0.0,0.0,0.0}),
@@ -456,23 +501,23 @@ public:
         ImGui::PopItemWidth();
         if (frame_type_choice == 0)
         {
-            double_field("ω1x ", 100.0f, 70.0f, id, "[rad/sec]", w1i[0]);
-            double_field("ω1y ", 100.0f, 70.0f, id, "[rad/sec]", w1i[1]);
-            double_field("ω1z ", 100.0f, 70.0f, id, "[rad/sec]", w1i[2]);
+            double_field("ω1ix ", 100.0f, 70.0f, id, "[rad/sec]", w1i[0]);
+            double_field("ω1iy ", 100.0f, 70.0f, id, "[rad/sec]", w1i[1]);
+            double_field("ω1iz ", 100.0f, 70.0f, id, "[rad/sec]", w1i[2]);
             ImGui::Dummy(ImVec2(0.0f,5.0f));
-            double_field("ω2x ", 100.0f, 70.0f, id, "[rad/sec]", w2i[0]);
-            double_field("ω2y ", 100.0f, 70.0f, id, "[rad/sec]", w2i[1]);
-            double_field("ω2z ", 100.0f, 70.0f, id, "[rad/sec]", w2i[2]);
+            double_field("ω2ix ", 100.0f, 70.0f, id, "[rad/sec]", w2i[0]);
+            double_field("ω2iy ", 100.0f, 70.0f, id, "[rad/sec]", w2i[1]);
+            double_field("ω2iz ", 100.0f, 70.0f, id, "[rad/sec]", w2i[2]);
         }
         else //frame_type_choice is 1, thus assume individual body frames.
         {
-            double_field("ω1x ", 100.0f, 70.0f, id, "[rad/sec]", w1b[0]);
-            double_field("ω1y ", 100.0f, 70.0f, id, "[rad/sec]", w1b[1]);
-            double_field("ω1z ", 100.0f, 70.0f, id, "[rad/sec]", w1b[2]);
+            double_field("ω1bx ", 100.0f, 70.0f, id, "[rad/sec]", w1b[0]);
+            double_field("ω1by ", 100.0f, 70.0f, id, "[rad/sec]", w1b[1]);
+            double_field("ω1bz ", 100.0f, 70.0f, id, "[rad/sec]", w1b[2]);
             ImGui::Dummy(ImVec2(0.0f,5.0f));
-            double_field("ω2x ", 100.0f, 70.0f, id, "[rad/sec]", w2b[0]);
-            double_field("ω2y ", 100.0f, 70.0f, id, "[rad/sec]", w2b[1]);
-            double_field("ω2z ", 100.0f, 70.0f, id, "[rad/sec]", w2b[2]);
+            double_field("ω2bx ", 100.0f, 70.0f, id, "[rad/sec]", w2b[0]);
+            double_field("ω2by ", 100.0f, 70.0f, id, "[rad/sec]", w2b[1]);
+            double_field("ω2bz ", 100.0f, 70.0f, id, "[rad/sec]", w2b[2]);
         }
         ImGui::Unindent();
         ImGui::Dummy(ImVec2(0.0f,7.5f));
@@ -525,7 +570,7 @@ public:
             ImGui::Button("Abort", ImVec2(70.0f, 25.0f));
             ImGui::EndDisabled();
         }
-        else //Now the opposite happens. "Run" is disabled coz the simulation is running and "Abort" is enabled, so that one may stop the running.
+        else //Now the opposite happens. "Run" is disabled, coz the simulation is running and "Abort" is enabled, so that one may stop the running.
         {
             ImGui::BeginDisabled();
             ImGui::Button("Run", ImVec2(70.0f, 25.0f));

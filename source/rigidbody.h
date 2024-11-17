@@ -1,13 +1,13 @@
-#ifndef RIGIDBODY_HPP
-#define RIGIDBODY_HPP
+#ifndef RIGIDBODY_H
+#define RIGIDBODY_H
 
 #include<cmath>
 #include<cstdio>
 
-#include"constant.hpp"
-#include"typedef.hpp"
-#include"linalg.hpp"
-#include"conversion.hpp"
+#include"constant.h"
+#include"typedef.h"
+#include"linalg.h"
+#include"conversion.h"
 
 //Quaternion odes rhs (angular velocity w is in the body frame).
 dvec4 quat_rhs(const dvec4 &q, const dvec3 &w)

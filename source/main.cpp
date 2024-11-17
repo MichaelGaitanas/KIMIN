@@ -1,0 +1,15 @@
+
+/* This is the entry point of the whole code. */
+
+#include"logo.h"
+#include"window.h"
+
+int main(int argc, char *argv[])
+{
+    //draw_logo_for_seconds("../logo/logo.jpg", 3.0f);
+
+    window win;
+    win.game_loop();
+    
+    return 0;
+}

@@ -1,21 +1,22 @@
-#ifndef INTEGRATOR_HPP
-#define INTEGRATOR_HPP
+#ifndef INTEGRATOR_H
+#define INTEGRATOR_H
 
+#include<atomic>
 #include<boost/numeric/odeint.hpp>
 
-#include"constant.hpp"
-#include"typedef.hpp"
-#include"linalg.hpp"
-#include"conversion.hpp"
-#include"ellipsoid.hpp"
-#include"rigidbody.hpp"
-#include"gravity.hpp"
-#include"properties_panel.hpp"
-#include"console_panel.hpp"
+#include"constant.h"
+#include"typedef.h"
+#include"linalg.h"
+#include"conversion.h"
+#include"ellipsoid.h"
+#include"rigidbody.h"
+#include"gravity.h"
+#include"properties_panel.h"
+#include"console_panel.h"
 
 class integrator
 {
-private:
+public:
     properties_panel properties;
 
     double m; //Reduced binary mass ( m = M1*M2/(M1 + M2) ).
@@ -115,7 +116,6 @@ private:
         dstate[19] = dw2b[2];
     }
 
-public:
     //This function stores to the class's private member 'properties' the user's choice of properties.
     void copy_properties(const properties_panel &properties)
     {
@@ -125,11 +125,10 @@ public:
     //We operate on the private member 'properties', which is only a copy.
     
     //Before the actual integration of the ODEs starts, we do some preparations.
-    void prepare(std::atomic<bool> &abort_flag, std::atomic<float> &progress)
+    void prepare(std::atomic<bool> &abort_flag, std::atomic<float> &progress, console_panel &console)
     {
+        console.add_time_and_then_text("[Info] : Integrator preparation started.");
         progress.store(0.0f);
-        if (abort_flag.load())
-                return;
 
         m = properties.M1*properties.M2/(properties.M1 + properties.M2);
 
@@ -211,13 +210,19 @@ public:
 
         orbit.clear();
 
-        progress.store(1.0f);
+        if (!abort_flag.load())
+        {
+            progress.store(1.0f);
+            console.add_time_and_then_text("[Info] : Integration ended.");
+        }
     }
 
     void run(std::atomic<bool> &abort_flag, std::atomic<float> &progress, console_panel &console)
     {
         console.add_time_and_then_text("[Info] : New integration started.");
         progress.store(0.0f);
+
+        //printf("%d\n",orbit[0].size());
 
         //Initial conditions.
         boost::array<double, 20> state = { properties.cart[0], properties.cart[1], properties.cart[2],
@@ -264,7 +269,10 @@ public:
         }
 
         if (!abort_flag.load())
+        {
+            progress.store(1.0f);
             console.add_time_and_then_text("[Info] : Integration ended.");
+        }
     }
 };
 

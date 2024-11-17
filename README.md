@@ -1,10 +1,10 @@
 # KIMIN
 
-(K)inetic (I)mpact (MI)ssion to (N)EO is a physics simulator developed in C++ with OpenGL graphics rendering. Designed to model the Full 2 Body Problem (F2BP) applied to binary asteroid systems. It accurately evaluates the gravitational interactions of arbitrarily shaped rigid bodies, such as asteroids and solves their differential equations governing both translational and rotational dynamics, providing detailed insight of their behavior, over a time range.
+(K)inetic (I)mpact (MI)ssion to (N)EO is a physics simulation code, developed in the Theoretical Mechanics & Astrodynamics lab of the Aristotle University of Thessaloniki (A.U.Th.). The code is written in C++ and uses OpenGL as a graphics API renderer. It is designed to model the Full 2 Body Rigid Problem (F2RBP), applied to binary asteroid systems. It accurately evaluates the gravitational interactions of arbitrarily shaped rigid bodies, such as asteroids and solves their differential equations governing both translational and rotational kinematics-dynamics, providing detailed insight of their behavior, over a time range.
 
 In order to compile and run, the following must be installed :
 1) C++ compiler. We use GNU's gcc/g++.
-2) OpenGL kernel (usually preinstalled).
+2) OpenGL kernel (usually preinstalled in all common systems).
 3) GLFW.
 4) GLEW.
 5) GLM.

@@ -1,12 +1,12 @@
-#ifndef LINALG_HPP
-#define LINALG_HPP
+#ifndef LINALG_H
+#define LINALG_H
 
 #include<cmath>
 #include<cstdio>
 #include<limits>
 
-#include"typedef.hpp"
-#include"constant.hpp"
+#include"typedef.h"
+#include"constant.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 

@@ -1,19 +1,29 @@
-#ifndef SOLUTION_HPP
-#define SOLUTION_HPP
+#ifndef SOLUTION_H
+#define SOLUTION_H
 
 #include<cstdio>
 #include<cmath>
+#include<atomic>
 
-#include"constant.hpp"
-#include"typedef.hpp"
-#include"linalg.hpp"
-#include"conversion.hpp"
-#include"integrator.hpp"
+#include"constant.h"
+#include"typedef.h"
+#include"linalg.h"
+#include"conversion.h"
+#include"integrator.h"
 
 class solution
 {
 public:
-    integrator integr;
+    integrator integr; //Contains properties as well.
+
+    dvec t;
+
+    dvec x, y, z;
+    dvec vx, vy, vz;
+    dvec q10, q11, q12, q13;
+    dvec q20, q21, q22, q23;
+    dvec w1bx, w1by, w1bz;
+    dvec w2bx, w2by, w2bz;
 
     dvec dist, vel;
     dvec roll1, pitch1, yaw1; 
@@ -28,15 +38,38 @@ public:
         this->integr = integr;
     }
 
-    void construct()
+    void construct(std::atomic<bool> &abort_flag, std::atomic<float> &progress, console_panel &console)
     {
+        console.add_time_and_then_text("[Info] : Solution construction started.");
+        progress.store(0.0f);
+
+        //Clear all the solution vectors, because the user might run more that 1 simulation (we don't want to append to the previous solution the new one...).
+
+        t.clear();
+
+        x.clear();   y.clear();  z.clear();
+        vx.clear(); vy.clear(); vz.clear();
+
+        q10.clear(); q11.clear(); q12.clear(); q13.clear();
+        q20.clear(); q21.clear(); q22.clear(); q23.clear();
+
+        w1bx.clear(); w1by.clear(); w1bz.clear();
+        w2bx.clear(); w2by.clear(); w2bz.clear();
+
+        dist.clear(); vel.clear();
+        roll1.clear(); pitch1.clear(); yaw1.clear();
+        roll2.clear(); pitch2.clear(); yaw2.clear();
+        w1ix.clear(); w1iy.clear(); w1iz.clear();
+        w2ix.clear(); w2iy.clear(); w2iz.clear();
+        sma.clear(); ecc.clear(); inc.clear(); raan.clear(); argper.clear(); manom.clear();
+        ener_rel_err.clear(); mom_rel_err.clear();
+
         double energy_at_t0, momentum_at_t0;
 
         for (size_t i = 0; i < integr.orbit.size(); ++i)
         {
             //Extract the integr.orbit[][] matrix into temporary variables for readability (though one could operate directly on integr.orbit[][]).
             //Remember integr.orbit contains : (t, x,y,z, vx,vy,vz, q10,q11,q12,q13, w1bx,w1by,w1bz, q20,q21,q22,q23, w2bx,w2by,w2bz) at each line i.
-            double t   = integr.orbit[i][0];
             dvec3  r   = dvec3{integr.orbit[i][1],  integr.orbit[i][2],  integr.orbit[i][3]};
             dvec3  v   = dvec3{integr.orbit[i][4],  integr.orbit[i][5],  integr.orbit[i][6]};
             dvec4  q1  = dvec4{integr.orbit[i][7],  integr.orbit[i][8],  integr.orbit[i][9],  integr.orbit[i][10]};
@@ -74,6 +107,34 @@ public:
                 momentum_at_t0 = momentum;
             }
 
+            t.push_back(integr.orbit[i][0]/86400.0);
+
+            x.push_back(r[0]);
+            y.push_back(r[1]);
+            z.push_back(r[2]);
+
+            vx.push_back(v[0]);
+            vy.push_back(v[1]);
+            vz.push_back(v[2]);
+
+            q10.push_back(q1[0]);
+            q11.push_back(q1[1]);
+            q12.push_back(q1[2]);
+            q13.push_back(q1[3]);
+
+            q20.push_back(q2[0]);
+            q21.push_back(q2[1]);
+            q22.push_back(q2[2]);
+            q23.push_back(q2[3]);
+
+            w1bx.push_back(w1b[0]);
+            w1by.push_back(w1b[1]);
+            w1bz.push_back(w1b[2]);
+
+            w2bx.push_back(w2b[0]);
+            w2by.push_back(w2b[1]);
+            w2bz.push_back(w2b[2]);
+
             dist.push_back(length(r));
             vel.push_back(length(v));
 
@@ -93,15 +154,21 @@ public:
             w2iy.push_back(w2i[1]);
             w2iz.push_back(w2i[2]);
 
-            sma.push_back(temp_kep[0]);
-            ecc.push_back(temp_kep[1]);
-            inc.push_back(temp_kep[2]*180.0/pi);
-            raan.push_back(temp_kep[3]*180.0/pi);
-            argper.push_back(temp_kep[4]*180.0/pi);
-            manom.push_back(temp_kep[5]*180.0/pi);
+            sma.push_back(kep[0]);
+            ecc.push_back(kep[1]);
+            inc.push_back(kep[2]*180.0/pi);
+            raan.push_back(kep[3]*180.0/pi);
+            argper.push_back(kep[4]*180.0/pi);
+            manom.push_back(kep[5]*180.0/pi);
 
             ener_rel_err.push_back(fabs((energy - energy_at_t0)/energy_at_t0)); //0 at t = 0.
             mom_rel_err.push_back(fabs((momentum - momentum_at_t0)/momentum_at_t0)); //0 at t = 0.
+        }
+
+        if (!abort_flag.load())
+        {
+            progress.store(1.0f);
+            console.add_time_and_then_text("[Info] : Solution construction ended.");
         }
     }
 
@@ -120,17 +187,19 @@ public:
         FILE *file_w1b      = fopen(("../simulations/" + str(sim_name) + "/w1b.txt"     ).c_str(), "w");
         FILE *file_q2       = fopen(("../simulations/" + str(sim_name) + "/quat2.txt"   ).c_str(), "w");
         FILE *file_w2b      = fopen(("../simulations/" + str(sim_name) + "/w2b.txt"     ).c_str(), "w");
+
         FILE *file_rpy1     = fopen(("../simulations/" + str(sim_name) + "/rpy1.txt"    ).c_str(), "w");
         FILE *file_w1i      = fopen(("../simulations/" + str(sim_name) + "/w1i.txt"     ).c_str(), "w");
         FILE *file_rpy2     = fopen(("../simulations/" + str(sim_name) + "/rpy2.txt"    ).c_str(), "w");
         FILE *file_w2i      = fopen(("../simulations/" + str(sim_name) + "/w2i.txt"     ).c_str(), "w");
         FILE *file_kep      = fopen(("../simulations/" + str(sim_name) + "/kep.txt"     ).c_str(), "w");
         FILE *file_ener_mom = fopen(("../simulations/" + str(sim_name) + "/ener_mom.txt").c_str(), "w");
+
         for (size_t i = 0; i < integr.orbit.size(); ++i)
         {
             fprintf(file_t,        "%.16lf\n",                                    integr.orbit[i][0]);
             fprintf(file_pos,      "%.16lf %.16lf %.16lf %.16lf\n",               integr.orbit[i][1],  integr.orbit[i][2],  integr.orbit[i][3], dist[i]);
-            fprintf(file_vel,      "%.16lf %.16lf %.16lf %.16lf\n",               integr.orbit[i][4],  integr.orbit[i][5],  integr.orbit[i][6], vmag[i]);
+            fprintf(file_vel,      "%.16lf %.16lf %.16lf %.16lf\n",               integr.orbit[i][4],  integr.orbit[i][5],  integr.orbit[i][6], vel[i]);
             fprintf(file_q1,       "%.16lf %.16lf %.16lf %.16lf\n",               integr.orbit[i][7],  integr.orbit[i][8],  integr.orbit[i][9],  integr.orbit[i][10]);
             fprintf(file_w1b,      "%.16lf %.16lf %.16lf\n",                      integr.orbit[i][11], integr.orbit[i][12], integr.orbit[i][13]);
             fprintf(file_q2,       "%.16lf %.16lf %.16lf %.16lf\n",               integr.orbit[i][14], integr.orbit[i][15], integr.orbit[i][16], integr.orbit[i][17]);
@@ -143,6 +212,7 @@ public:
             fprintf(file_kep,      "%.16lf %.16lf %.16lf %.16lf %.16lf %.16lf\n", sma[i], ecc[i], inc[i], raan[i], argper[i], manom[i]); 
             fprintf(file_ener_mom, "%.16lf %.16lf\n",                             ener_rel_err[i], mom_rel_err[i]);
         }
+
         fclose(file_t);
         fclose(file_pos);
         fclose(file_vel);
@@ -159,7 +229,7 @@ public:
         fclose(file_ener_mom);
 
         FILE *file_collision = fopen(("../simulations/" + str(sim_name) + "/collision.txt").c_str(),"w");
-        fprintf(file_collision,"Collision detected : %s", collision ? "Yes" : "No");
+        fprintf(file_collision,"Collision detected : %s", integr.collision ? "Yes" : "No");
         fclose(file_collision);
     }
 };

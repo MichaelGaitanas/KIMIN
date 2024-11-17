@@ -1,16 +1,16 @@
-#ifndef MESH_HPP
-#define MESH_HPP
+#ifndef POLYHEDRON_H
+#define POLYHEDRON_H
 
 #include<cstdio>
 #include<cstdlib>
 #include<cstring>
 #include<fstream>
 
-#include"typedef.hpp"
-#include"constant.hpp"
-#include"linalg.hpp"
+#include"typedef.h"
+#include"constant.h"
+#include"linalg.h"
 
-class mesh
+class polyhedron
 {
 private:
     dmatnx3 verts;
@@ -18,7 +18,6 @@ private:
     dmatnx3 norms;
 
 public:
-
     //This function will be used only after the 'Run' button to check if the .obj file is ok to be loaded.
     static bvec vf_status(const char *path)
     {
@@ -46,7 +45,7 @@ public:
 
     //Constructor : Load the .obj file assuming it has the classical form 'v x y z' and 'f i j k'.
     //Any other .obj content (comments, normals, textures, etc...) is ignored.
-    Obj(const char *path)
+    polyhedron(const char *path)
     {
         std::ifstream file(path);
         if (!file.is_open())

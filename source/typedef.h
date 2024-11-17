@@ -1,5 +1,5 @@
-#ifndef TYPEDEF_HPP
-#define TYPEDEF_HPP
+#ifndef TYPEDEF_H
+#define TYPEDEF_H
 
 #include<array>
 #include<vector>

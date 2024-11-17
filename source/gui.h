@@ -1,5 +1,5 @@
-#ifndef GUI_HPP
-#define GUI_HPP
+#ifndef GUI_H
+#define GUI_H
 
 #include"../imgui/imgui.h"
 #include"../imgui/imgui_impl_glfw.h"
@@ -13,12 +13,12 @@
 #include<atomic>
 #include<cmath>
 
-#include"typedef.hpp"
-#include"properties_panel.hpp"
-#include"console_panel.hpp"
-#include"scene_panel.hpp"
-#include"integrator.hpp"
-#include"solution.hpp"
+#include"typedef.h"
+#include"properties_panel.h"
+#include"console_panel.h"
+#include"scene_panel.h"
+#include"integrator.h"
+#include"solution.h"
 
 class gui
 {
@@ -98,9 +98,11 @@ public:
                 std::thread simulation_thread([&]()
                 {
                     integr.copy_properties(properties);
-                    integr.prepare(simulation_was_aborted, simulation_progress);
+                    integr.prepare(simulation_was_aborted, simulation_progress, console);
                     integr.run(simulation_was_aborted, simulation_progress, console);
-                    //Update somewhere here the solution class and yield it to the scene class.
+                    sol.copy_integrator(integr);
+                    sol.construct(simulation_was_aborted, simulation_progress, console);
+                    scene.copy_solution(sol);
                     simulation_is_running.store(false);
                 });
                 simulation_thread.detach();

@@ -1,12 +1,12 @@
-#ifndef LOGO_HPP
-#define LOGO_HPP
+#ifndef LOGO_H
+#define LOGO_H
 
 #include<GL/glew.h>
 
 #include<cstdio>
 #include<GLFW/glfw3.h>
 
-#include"shader.hpp"
+#include"shader.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include"stb_image.h"

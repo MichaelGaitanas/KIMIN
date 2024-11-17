@@ -1,13 +1,13 @@
-#ifndef MASCON_HPP
-#define MASCON_HPP
+#ifndef MASCON_H
+#define MASCON_H
 
 #include<cmath>
 
-#include"constant.hpp"
-#include"typedef.hpp"
-#include"linalg.hpp"
-#include"conversion.hpp"
-#include"rigidbody.hpp"
+#include"constant.h"
+#include"typedef.h"
+#include"linalg.h"
+#include"conversion.h"
+#include"rigidbody.h"
 
 //Center of mass of a mascon distribution with constant density.
 dvec3 masc_com(const dmatnx3 &masc)

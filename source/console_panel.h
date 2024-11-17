@@ -1,5 +1,5 @@
-#ifndef CONSOLE_PANEL_HPP
-#define CONSOLE_PANEL_HPP
+#ifndef CONSOLE_PANEL_H
+#define CONSOLE_PANEL_H
 
 #include"../imgui/imgui.h"
 #include"../imgui/imgui_impl_glfw.h"
@@ -12,7 +12,7 @@
 #include<sstream>
 #include<boost/date_time.hpp>
 
-#include"typedef.hpp"
+#include"typedef.h"
 
 class console_panel
 {

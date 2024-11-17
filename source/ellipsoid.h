@@ -1,12 +1,12 @@
-#ifndef ELLIPSOID_HPP
-#define ELLIPSOID_HPP
+#ifndef ELLIPSOID_H
+#define ELLIPSOID_H
 
 #include<cmath>
 #include<cstdio>
 
-#include"constant.hpp"
-#include"typedef.hpp"
-#include"linalg.hpp"
+#include"constant.h"
+#include"typedef.h"
+#include"linalg.h"
 
 //Moment of inertia matrix of a triaxial ellipsoid in its principal axes.
 dmat3 ell_inertia(const double M, const dvec3 &semiaxes)
