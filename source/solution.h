@@ -14,7 +14,7 @@
 class solution
 {
 public:
-    integrator integr; //Contains properties as well.
+    integrator integr;
 
     dvec t;
 
