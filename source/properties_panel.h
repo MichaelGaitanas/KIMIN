@@ -37,22 +37,22 @@ public:
 
     double epoch, dur, step; //'Epoch', 'Duration', 'Step' double fields.
 
-    int cart_kep_var_choice; //Initial choice. 0 -> Cartesian, 1 -> Keplerian.
+    int cart_kep_var_choice; //Initial choice is 0, meaning that Cartesian elements are chosen as inputs. 1 means Keplerian elements.
     dvec6 cart; //'x', 'y', 'z', 'υx', 'υy', 'υz' double fields.
     dvec6 kep; //'a', 'e', 'i', 'Ω', 'ω', 'M' double fields.
 
-    int orient_var_choice; //Initial choice. 0 -> Euler angles (roll, pitch, yaw), 1 -> Quaternions.
+    int orient_var_choice; //Initial choice is 0, meaning Euler angles (roll, pitch, yaw) are chosen as inputs. 1 means quaternions.
     dvec3 rpy1, rpy2; //'roll 1', 'pitch 1', 'yaw 1', 'roll 2', 'pitch 2', 'yaw 2' double fields.
     dvec4 q1, q2; //'q10', 'q11', 'q12', 'q13', 'q20', 'q21', 'q22', 'q23' double fields.
 
-    int frame_type_choice; //Initial choice. 0 -> Global inertial frame, 1 -> Corresponding body frames.
+    int frame_type_choice; //Initial choice is 0, meaning that the angular velocities are set (as inputs) in the global inertial frame. 1 means corresponds to body frames.
     dvec3 w1i, w2i, w1b, w2b; //'ω1ix', 'ω1iy', 'ω1iz', 'ω2bx', 'ω2by, 'ω2bz' double fields (nature of the frame depends on 'frame_type_choice').
 
     bool impactor_checkbox; //'Kinetic impactor' checkbox state.
     bool impactor_clicked_ok; //'OK' button in the kinetic impactor parameters window (pressed or not).
     double M_impact; //Impactor's mass.
     dvec3 v_impact; //Impactor's velocity vector.
-    double beta; //Momentum enhancement factor.
+    double beta; //Momentum enhancement factor (β).
 
     bool run_pressed; //Whether or not the 'Run' button has been pressed.
     bool abort_pressed; //Whether or not the 'Abort' button has been pressed.
@@ -230,7 +230,7 @@ public:
             errors.push_back("[Error] :  Invalid set of 'Epoch', 'Duration', 'Step'.");
 
         //Possible error 11 : Relative position/velocity (mutual distance must be > 0).
-        if (cart_kep_var_choice == 0 && length(dvec3{cart[0], cart[1], cart[2]}) <= 0.0)
+        if (cart_kep_var_choice == 0 && length(dvec3{cart[0], cart[1], cart[2]}) <= machine_zero)
             errors.push_back("[Error] :  Invalid set of 'x', 'y', 'z' (mutual distance must be positive).");
 
         //Possible error 12 : Relative Keplerian elements ('a' must be > 0, 'e' must be in [0,1))
@@ -258,13 +258,13 @@ public:
             if (length(q1) <= machine_zero)
                 errors.push_back("[Error] :  Quaternion 1 ('q10', 'q11', 'q12', 'q13') must be nonzero.");
             else //Normalize it no matter what.
-                q1 = quat2unit(q1); //This will be visible in the gui.
+                q1 = quat2unit(q1); //This correction will be visible in the gui.
 
             //The same for q2 :
             if (length(q2) <= machine_zero)
                 errors.push_back("[Error] :  Quaternion 2 ('q20', 'q21', 'q22', 'q23') must be nonzero.");
             else //Normalize it no matter what.
-                q2 = quat2unit(q2); //This will be visible in the gui.
+                q2 = quat2unit(q2); //This correction will be visible in the gui.
         }
 
         //Possible error 14 : 'OK' button in the Elliposid parameters window (it must be clicked so that the parameters are taken into account).
@@ -279,7 +279,7 @@ public:
     }
 
     //This is the function that draws the properties panel and processes the corresponding logic.
-    void render(std::atomic<bool> simulation_is_running, std::atomic<bool> simulation_was_aborted, std::atomic<float> simulation_progress)
+    void render(std::atomic<bool> task_is_running, std::atomic<bool> task_was_aborted, std::atomic<float> task_progress)
     {
         //Reinitialized every frame at 0. Making it static, will also work, but if the app's total frames (glfw while loop) exceed the
         //maximum int value (or unsigned, or long, or whatever the variable type of id is), then we will have an overflow, which means
@@ -355,7 +355,7 @@ public:
                 obj_refers_to_body = 2;
             ImGui::Dummy(ImVec2(0.0f,5.0f));
 
-            //File list logic.
+            //File listing logic.
             static std::vector<std::filesystem::path> all_obj_files = list_obj_files("../obj/"); //Store all the .obj files located in the obj/ directory.
             if (ImGui::TreeNodeEx("Available .obj files in obj/ directory :"))
             {
@@ -561,7 +561,7 @@ public:
         //Run/Abort buttons rendering logic.
         ImGui::Text("Simulation controls");
 
-        if (!simulation_is_running.load()) //In this case the simulation is NOT currently running, hence "Run" can be pressed (to start), but "Abort", cannot be pressed (nothing to abort).
+        if (!task_is_running.load()) //In this case a task is NOT currently running, hence "Run" can be pressed, but "Abort", cannot be pressed (nothing to abort).
         {
             if (ImGui::Button("Run", ImVec2(70.0f, 25.0f)))
                 run_pressed = true;
@@ -570,7 +570,7 @@ public:
             ImGui::Button("Abort", ImVec2(70.0f, 25.0f));
             ImGui::EndDisabled();
         }
-        else //Now the opposite happens. "Run" is disabled, coz the simulation is running and "Abort" is enabled, so that one may stop the running.
+        else //Now the opposite happens. "Run" is disabled, coz a task is running and "Abort" is enabled, so that one may stop the running.
         {
             ImGui::BeginDisabled();
             ImGui::Button("Run", ImVec2(70.0f, 25.0f));
@@ -582,11 +582,11 @@ public:
 
         //Progress bar.
         ImGui::Text("Simulation progress");
-        if (simulation_was_aborted.load())
+        if (task_was_aborted.load())
             ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.7f,0.0f,0.0f, 1.0f)); //Red.
         else
             ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.0f,0.7f,0.0f, 1.0f)); //Green.
-        ImGui::ProgressBar(simulation_progress.load(), ImVec2(150.0f,20.0f));
+        ImGui::ProgressBar(task_progress.load(), ImVec2(150.0f,20.0f));
         ImGui::PopStyleColor();
 
         ImGui::Dummy(ImVec2(0.0f,700.0f)); //Some extra y-space in order to be able to scroll down along properties panel.

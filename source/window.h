@@ -14,7 +14,6 @@ class window
 private:
     GLFWwindow *wpointer;
     int width, height;
-    float aspect_ratio;
     
     static void framebuffer_size_callback(GLFWwindow *ptr, int w, int h)
     {
@@ -26,12 +25,11 @@ private:
         {
             instance->width = w;
             instance->height = h;
-            instance->aspect_ratio = w/(float)h;
             glViewport(0,0, w,h);
         }
         else
         {
-            //We print the followng for debugging purposes because IF instance == nullptr, it will be impossible to find the malfunction...
+            //We print the followng for debugging purposes.
             fprintf(stderr, "'glfwGetWindowUserPointer(ptr)' is nullptr. Exiting framebuffer_size_callback()...\n");
         }
     }
@@ -115,7 +113,7 @@ public:
             glClear(GL_COLOR_BUFFER_BIT);
 
             ui.begin();
-            ui.properties.render(ui.simulation_is_running.load(), ui.simulation_was_aborted.load(), ui.simulation_progress.load());
+            ui.properties.render(ui.task_is_running.load(), ui.task_was_aborted.load(), ui.task_progress.load());
             ui.console.render();
             ui.scene.render();
             ui.render();

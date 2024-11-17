@@ -17,7 +17,7 @@
 class integrator
 {
 public:
-    properties_panel properties;
+    properties_panel properties; //The user's choice of inputs in the gui.
 
     double m; //Reduced binary mass ( m = M1*M2/(M1 + M2) ).
     dmat3 I1, I2; //Moments of inetia.
@@ -26,11 +26,19 @@ public:
 
     bool collision; //Collision detection flag (Brillouin spheres intersection).
 
-    double t0, tmax, dt;
+    double t0, tmax, dt; //Integration time.
 
-    dmat orbit; //This is the solution matrix of the differential equations that will be solved (time + state vector).
+    dmat orbit; //This is the solution matrix of the differential equations that will be propagated (time + state vector).
 
-    //This function builds the righ hand sides of the differential equations of motion. It is executed at each step of the integration.
+    integrator(const properties_panel &properties)
+    {
+        this->properties = properties;
+        //Note : In the following member functions, whatever change is made upon the 'properties' variable, has nothing to do with the gui's displayed properties.
+        //We operate on the member 'properties', which is only a copy.
+    }
+
+private:
+    //This function builds the right hand sides of the differential equations of motion. It is executed at each step of the integration.
     void build_rhs(const boost::array<double, 20> &state, boost::array<double, 20> &dstate, double t)
     {
         //Extract the current state vector into individual variables (for readability mostly).
@@ -81,7 +89,7 @@ public:
         dvec4 dq2 = quat_rhs(q2,w2b);
         dvec3 dw2b = euler_rhs(w2b,I2,tau2b);
 
-        //Now here are the actual RHS.
+        //Now here are the actual RHS :
 
         //Relative position RHS (x,y,z).
         dstate[0] = v[0];
@@ -116,14 +124,7 @@ public:
         dstate[19] = dw2b[2];
     }
 
-    //This function stores to the class's private member 'properties' the user's choice of properties.
-    void copy_properties(const properties_panel &properties)
-    {
-        this->properties = properties;
-    }
-    //Note : In the following member functions, whatever change is made upon the 'properties' variable, has nothing to do with the gui's displayed properties.
-    //We operate on the private member 'properties', which is only a copy.
-    
+public:
     //Before the actual integration of the ODEs starts, we do some preparations.
     void prepare(std::atomic<bool> &abort_flag, std::atomic<float> &progress, console_panel &console)
     {
@@ -142,16 +143,17 @@ public:
                                              properties.kep[4]*pi/180.0,
                                              properties.kep[5]*pi/180.0}, G*(properties.M1 + properties.M2));
         
-        //Preparation 2 : Transform the orientations to quaternions because the F2BP odes are written in quaternion form.
+        //Preparation 2 : If the user chose Euler angles as initial orientations, then, transform them to
+        //quaternions because the F2BP odes are written in quaternion form.
         if (properties.orient_var_choice == 0)
         {
-            //In this case, the user chose Euler angles and assigned them in [deg] as the gui requires.
-            //Note : ang2quat() ensures that the quaternion is normalized, so we don't need to apply quat2unit().
+            //Note : ang2quat() ensures that the returned quaternion is normalized, so we don't need to apply quat2unit().
             properties.q1 = ang2quat(properties.rpy1*pi/180.0);
             properties.q2 = ang2quat(properties.rpy2*pi/180.0);
         }
 
-        //Preparation 3 : Transform the angular velocities to the corresponding body frames because the Euler equations of rotation are written in body frame form.
+        //Preparation 3 : If the user chose to input the angular velocities in the inertial frame, then, transform them
+        //to the corresponding body frames because the Euler equations of rotation are written in body frame form.
         if (properties.frame_type_choice == 0)
         {
             //In this case, the user chose angular velocities to be in the inertial/world frame, so we convert them to the body frames.
@@ -189,7 +191,7 @@ public:
         }
         else
         {
-            //Mesh logic. To be added...
+            //Polyhedron logic. To be added...
         }
 
         //Preparation 5 : If the user assumed a kinetic impactor, then (based on theory) we apply a momentum (velocity)
@@ -204,6 +206,7 @@ public:
 
         collision = false; //Assuming no collision at t = t0.
         
+        //Convert the time in [sec]
         t0 = properties.epoch*86400.0; //[sec]
         tmax = t0 + properties.dur*86400.0; //[sec]
         dt = properties.step*86400.0; //[sec]
@@ -221,8 +224,6 @@ public:
     {
         console.add_time_and_then_text("[Info] : New integration started.");
         progress.store(0.0f);
-
-        //printf("%d\n",orbit[0].size());
 
         //Initial conditions.
         boost::array<double, 20> state = { properties.cart[0], properties.cart[1], properties.cart[2],

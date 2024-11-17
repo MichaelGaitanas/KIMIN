@@ -9,9 +9,9 @@
 #include<GL/glew.h>
 #include<GLFW/glfw3.h>
 
+#include<cmath>
 #include<thread>
 #include<atomic>
-#include<cmath>
 
 #include"typedef.h"
 #include"properties_panel.h"
@@ -23,15 +23,16 @@
 class gui
 {
 public:
-    std::atomic<bool> simulation_is_running{false};
-    std::atomic<bool> simulation_was_aborted{false};
-    std::atomic<float> simulation_progress{0.0f};
+    std::atomic<bool> task_is_running{false};
+    std::atomic<bool> task_was_aborted{false};
+    std::atomic<float> task_progress{0.0f};
+    //We enumerate 3 possible tasks throughout the whole code : 1) Shape (.obj) loading, 2) Numerical integration, 3) Solution construction.
+    //These tasks require (in general) most of the time and hence we set them to run at a separate thread to prevent gui freezing.
 
+    //The following are class instances of what you see in the gui, once KIMIN launches.
     properties_panel properties;
     console_panel console;
     scene_panel scene;
-    integrator integr;
-    solution sol;
 
     //Initialize imgui and implot along with some settings.
     gui(GLFWwindow *wpointer)
@@ -84,28 +85,29 @@ public:
     void process_run_and_abort_buttons()
     {
         //'Run' protocol.
-        if (properties.run_pressed && !simulation_is_running.load())
+        if (properties.run_pressed && !task_is_running.load())
         {
             //Reset the 2 flags.
             properties.run_pressed = false;
-            simulation_was_aborted.store(false);
+            task_was_aborted.store(false);
             
             strvec errors = properties.validate();
             if (!errors.size())
             {
-                simulation_is_running.store(true);
+                task_is_running.store(true);
                 //Launch a new simulation in a separate thread.
-                std::thread simulation_thread([&]()
+                std::thread task_thread([&]()
                 {
-                    integr.copy_properties(properties);
-                    integr.prepare(simulation_was_aborted, simulation_progress, console);
-                    integr.run(simulation_was_aborted, simulation_progress, console);
+                    integrator integr(properties);
+                    integr.prepare(task_was_aborted, task_progress, console);
+                    integr.run(task_was_aborted, task_progress, console);
+                    solution sol;
                     sol.copy_integrator(integr);
-                    sol.construct(simulation_was_aborted, simulation_progress, console);
+                    sol.construct(task_was_aborted, task_progress, console);
                     scene.copy_solution(sol);
-                    simulation_is_running.store(false);
+                    task_is_running.store(false);
                 });
-                simulation_thread.detach();
+                task_thread.detach();
             }
             else
                 for (int i = 0; i < errors.size(); ++i)
@@ -113,11 +115,11 @@ public:
         }
 
         //'Abort' protocol.
-        if (properties.abort_pressed && simulation_is_running.load())
+        if (properties.abort_pressed && task_is_running.load())
         {
             properties.abort_pressed = false; //Reset abort_pressed to prevent repeated triggering.
-            simulation_was_aborted.store(true);
-            simulation_is_running.store(false);
+            task_was_aborted.store(true);
+            task_is_running.store(false);
         }
     }
 };
