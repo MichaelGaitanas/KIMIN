@@ -16,14 +16,18 @@ class solution
 public:
     integrator integr;
 
+    //The following members are exactly the same (copies) with what the integrator evaluated, but stored in 1-D vectors (from t to w2bz).
+
     dvec t;
 
     dvec x, y, z;
     dvec vx, vy, vz;
     dvec q10, q11, q12, q13;
-    dvec q20, q21, q22, q23;
     dvec w1bx, w1by, w1bz;
+    dvec q20, q21, q22, q23;
     dvec w2bx, w2by, w2bz;
+
+    //The following members were not directly evaluates by the integrator. Instead, we use what the integrator evaluated to evaluate the following.
 
     dvec dist, vel;
     dvec roll1, pitch1, yaw1; 
@@ -33,7 +37,10 @@ public:
     dvec sma, ecc, inc, raan, argper, manom;
     dvec ener_rel_err, mom_rel_err;
 
-    void copy_integrator(const integrator &integr)
+    solution() { }
+
+    //Copy integrator.
+    solution(const integrator &integr)
     {
         this->integr = integr;
     }
@@ -42,27 +49,6 @@ public:
     {
         console.add_time_and_then_text("[Info] : Solution construction started.");
         progress.store(0.0f);
-
-        //Clear all the solution vectors, because the user might run more that 1 simulation (we don't want to append to the previous solution the new one...).
-
-        t.clear();
-
-        x.clear();   y.clear();  z.clear();
-        vx.clear(); vy.clear(); vz.clear();
-
-        q10.clear(); q11.clear(); q12.clear(); q13.clear();
-        q20.clear(); q21.clear(); q22.clear(); q23.clear();
-
-        w1bx.clear(); w1by.clear(); w1bz.clear();
-        w2bx.clear(); w2by.clear(); w2bz.clear();
-
-        dist.clear(); vel.clear();
-        roll1.clear(); pitch1.clear(); yaw1.clear();
-        roll2.clear(); pitch2.clear(); yaw2.clear();
-        w1ix.clear(); w1iy.clear(); w1iz.clear();
-        w2ix.clear(); w2iy.clear(); w2iz.clear();
-        sma.clear(); ecc.clear(); inc.clear(); raan.clear(); argper.clear(); manom.clear();
-        ener_rel_err.clear(); mom_rel_err.clear();
 
         double energy_at_t0, momentum_at_t0;
 
@@ -85,7 +71,9 @@ public:
             dvec3 rpy2 = quat2ang(q2);
             dvec6 kep  = cart2kep(dvec6{r[0],r[1],r[2], v[0],v[1],v[2]}, G*(integr.properties.M1 + integr.properties.M2));
             
-            double energy = 0.5*integr.m*dot(v,v) + 0.5*dot( dot(w1b, integr.I1), w1b) + 0.5*dot( dot(w2b, integr.I2), w2b); //Kinetic energy part.
+            //Kinetic energy part.
+            double energy = 0.5*integr.m*dot(v,v) + 0.5*dot( dot(w1b, integr.I1), w1b) + 0.5*dot( dot(w2b, integr.I2), w2b);
+
             //Potential energy part.
             if (integr.properties.ord2_checkbox)
                 energy += mut_pot_integrals_ord2(r, integr.properties.M1, integr.J1, A1, integr.properties.M2, integr.J2, A2);
@@ -95,10 +83,7 @@ public:
                 energy += mut_pot_integrals_ord4(r, integr.properties.M1, integr.J1, A1, integr.properties.M2, integr.J2, A2);
             
             //Momentum magnitude. Note : All 3 components of the momentum vector are conserved in time. We just choose to store and plot the magnitude only.
-            //However, keep in mind that if one wants to store all 3 components, then, the momentum vector must be evaluated in the inertial frame
-            //because it is the inertial frame in which it is conserved.
-            double momentum = length( integr.m*cross(r,v) + dot(integr.I1, w1b) + dot(integr.I2, w2b) );
-            //dvec3 momentum = integr.m*cross(r,v) + body2iner(dot(integr.I1, w1b), A1) + body2iner(dot(integr.I2, w2b), A2);
+            double momentum = length( integr.m*cross(r,v) + dot(A1, dot(integr.I1, w1b)) + dot(A2, dot(integr.I2, w2b)) );
             
             //This is meant to compute the corresponding relative errors. See below.
             if (i == 0)
@@ -122,14 +107,14 @@ public:
             q12.push_back(q1[2]);
             q13.push_back(q1[3]);
 
+            w1bx.push_back(w1b[0]);
+            w1by.push_back(w1b[1]);
+            w1bz.push_back(w1b[2]);
+
             q20.push_back(q2[0]);
             q21.push_back(q2[1]);
             q22.push_back(q2[2]);
             q23.push_back(q2[3]);
-
-            w1bx.push_back(w1b[0]);
-            w1by.push_back(w1b[1]);
-            w1bz.push_back(w1b[2]);
 
             w2bx.push_back(w2b[0]);
             w2by.push_back(w2b[1]);
@@ -165,6 +150,8 @@ public:
             mom_rel_err.push_back(fabs((momentum - momentum_at_t0)/momentum_at_t0)); //0 at t = 0.
         }
 
+        std::cout << "Just finished for loop of solution.construt()\n";
+
         if (!abort_flag.load())
         {
             progress.store(1.0f);
@@ -172,6 +159,7 @@ public:
         }
     }
 
+    /*
     void export_txt_files(const char *sim_name)
     {
         //Create the 'simulations' directory that will store all other simulation sub-directories.
@@ -232,6 +220,7 @@ public:
         fprintf(file_collision,"Collision detected : %s", integr.collision ? "Yes" : "No");
         fclose(file_collision);
     }
+    */
 };
 
 #endif

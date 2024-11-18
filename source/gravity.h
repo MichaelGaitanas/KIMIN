@@ -744,7 +744,7 @@ dvec3 mut_torque_integrals_ord3(const dvec3 &r, const dtens &J1, const dmat3 &A1
 }
 
 //Mutual gravity gradient torque of 2 rigid bodies, assuming inertial integral expansion of order 4 approximation.
-dvec3 mut_torque_integrals_ord4(const dvec3 &r, const double M1, const dtens &J1, const dmat3 &A1,
+dvec3 mut_torque_integrals_ord4(const dvec3 &r,                  const dtens &J1, const dmat3 &A1,
                                                 const double M2, const dtens &J2, const dmat3 &A2)
 {
     double J1xx = J1[2][0][0];

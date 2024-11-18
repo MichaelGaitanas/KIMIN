@@ -30,16 +30,19 @@ public:
 
     dmat orbit; //This is the solution matrix of the differential equations that will be propagated (time + state vector).
 
+    integrator() { }
+
+    //Copy properties.
     integrator(const properties_panel &properties)
     {
         this->properties = properties;
         //Note : In the following member functions, whatever change is made upon the 'properties' variable, has nothing to do with the gui's displayed properties.
-        //We operate on the member 'properties', which is only a copy.
+        //We operate only on this class' member 'properties', which is only a copy.
     }
 
 private:
     //This function builds the right hand sides of the differential equations of motion. It is executed at each step of the integration.
-    void build_rhs(const boost::array<double, 20> &state, boost::array<double, 20> &dstate, double t)
+    void build_rhs(const boost::array<double, 20> &state, boost::array<double, 20> &dstate, double /*t*/)
     {
         //Extract the current state vector into individual variables (for readability mostly).
         dvec3 r  =  { state[0],  state[1],  state[2] };
@@ -74,7 +77,7 @@ private:
         else //Only 'ord4_checkbox' remains...
         {
             force = mut_force_integrals_ord4(r, properties.M1,J1,A1, properties.M2,J2,A2);
-            tau1i = mut_torque_integrals_ord4(r, properties.M1,J1,A1, properties.M2,J2,A2);
+            tau1i = mut_torque_integrals_ord4(r,              J1,A1, properties.M2,J2,A2);
         }
 
         dvec3 tau2i = -tau1i - cross(r,force);

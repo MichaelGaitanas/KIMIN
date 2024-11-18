@@ -29,7 +29,7 @@ public:
     //We enumerate 3 possible tasks throughout the whole code : 1) Shape (.obj) loading, 2) Numerical integration, 3) Solution construction.
     //These tasks require (in general) most of the time and hence we set them to run at a separate thread to prevent gui freezing.
 
-    //The following are class instances of what you see in the gui, once KIMIN launches.
+    //The following class instances are basically what you see in the gui, once KIMIN launches.
     properties_panel properties;
     console_panel console;
     scene_panel scene;
@@ -81,7 +81,7 @@ public:
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     }
 
-   //'Run' and 'Abort' buttons functionality logic.
+    //'Run' and 'Abort' buttons functionality logic.
     void process_run_and_abort_buttons()
     {
         //'Run' protocol.
@@ -101,8 +101,7 @@ public:
                     integrator integr(properties);
                     integr.prepare(task_was_aborted, task_progress, console);
                     integr.run(task_was_aborted, task_progress, console);
-                    solution sol;
-                    sol.copy_integrator(integr);
+                    solution sol(integr);
                     sol.construct(task_was_aborted, task_progress, console);
                     scene.copy_solution(sol);
                     task_is_running.store(false);
@@ -110,7 +109,7 @@ public:
                 task_thread.detach();
             }
             else
-                for (int i = 0; i < errors.size(); ++i)
+                for (size_t i = 0; i < errors.size(); ++i)
                     console.add_time_and_then_text(errors[i].c_str());
         }
 

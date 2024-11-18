@@ -4,7 +4,7 @@
 #include"logo.h"
 #include"window.h"
 
-int main(int argc, char *argv[])
+int main()
 {
     //draw_logo_for_seconds("../logo/logo.jpg", 3.0f);
 

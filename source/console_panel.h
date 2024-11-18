@@ -19,7 +19,7 @@ class console_panel
 private:
     ImGuiTextBuffer buffer;
     bool scroll_to_bottom;
-    const size_t max_buffer_size = 60000; //Threshold for buffer size, measured in bytes (1 byte for each ASCII char and 1-4 bytes for each unicode char due to UTF-8 encoding).
+    const int max_buffer_size = 60000; //Threshold for buffer size, measured in bytes (1 byte for each ASCII char and 1-4 bytes for each unicode char due to UTF-8 encoding).
 
     //Clear the console.
     void cls()
