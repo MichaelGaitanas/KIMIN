@@ -82,7 +82,6 @@ public:
     }
 
     //'Run' and 'Abort' buttons functionality logic.
-    /*
     void process_run_and_abort_buttons()
     {
         //'Run' protocol.
@@ -99,12 +98,14 @@ public:
                 //Launch a new simulation in a separate thread.
                 std::thread task_thread([&]()
                 {
-                    integrator integr(properties);
-                    integr.prepare(task_was_aborted, task_progress, console);
-                    integr.run(task_was_aborted, task_progress, console);
-                    solution sol(integr);
-                    sol.construct(task_was_aborted, task_progress, console);
-                    scene.copy_solution(sol);
+                    integrator *integr = new integrator(properties);
+                    integr->prepare(task_was_aborted, task_progress, console);
+                    integr->run(task_was_aborted, task_progress, console);
+                    solution *sol = new solution(*integr);
+                    sol->construct(task_was_aborted, task_progress, console);
+                    scene.copy_solution(*sol);
+                    delete sol;
+                    delete integr;
                     task_is_running.store(false);
                 });
                 task_thread.detach();
@@ -122,52 +123,6 @@ public:
             task_is_running.store(false);
         }
     }
-    */
-
-   void process_run_and_abort_buttons()
-{
-    //'Run' protocol.
-    if (properties.run_pressed && !task_is_running.load())
-    {
-        // Reset the 2 flags.
-        properties.run_pressed = false;
-        task_was_aborted.store(false);
-
-        strvec errors = properties.validate();
-        if (!errors.size())
-        {
-            task_is_running.store(true);
-
-            // Launch a new simulation in a separate thread.
-            std::thread task_thread([&]()
-            {
-                integrator *integr = new integrator(properties);
-                integr->prepare(task_was_aborted, task_progress, console);
-                integr->run(task_was_aborted, task_progress, console);
-                solution *sol = new solution(*integr);
-                sol->construct(task_was_aborted, task_progress, console);
-                scene.copy_solution(*sol);
-                delete sol;
-                delete integr;
-                task_is_running.store(false);
-            });
-            task_thread.detach();
-        }
-        else
-        {
-            for (size_t i = 0; i < errors.size(); ++i)
-                console.add_time_and_then_text(errors[i].c_str());
-        }
-    }
-
-    //'Abort' protocol.
-    if (properties.abort_pressed && task_is_running.load())
-    {
-        properties.abort_pressed = false; // Reset abort_pressed to prevent repeated triggering.
-        task_was_aborted.store(true);
-        task_is_running.store(false);
-    }
-}
 };
 
 #endif

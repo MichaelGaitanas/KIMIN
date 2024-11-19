@@ -35,7 +35,9 @@ public:
 
     double M1, M2; //'M1', 'M2' double fields (referring to 'Body 1' and 'Body 2' respectively).
 
+    int integration_method_var_choice; //Initial choice is 0, meaning RKF78 constant. 1 means RKF78 adaptive.
     double epoch, dur, step; //'Epoch', 'Duration', 'Step' double fields.
+    double max_error; //'Max error' double field.
 
     int cart_kep_var_choice; //Initial choice is 0, meaning that Cartesian elements are chosen as inputs. 1 means Keplerian elements.
     dvec6 cart; //'x', 'y', 'z', 'υx', 'υy', 'υz' double fields.
@@ -76,9 +78,11 @@ public:
                          ord4_checkbox(false),
                          M1(0.0),
                          M2(0.0),
+                         integration_method_var_choice(0),
                          epoch(0.0),
                          dur(0.0),
                          step(0.0),
+                         max_error(1.0e-10),
                          cart_kep_var_choice(0),
                          cart(dvec6{0.0,0.0,0.0,0.0,0.0,0.0}),
                          kep(dvec6{0.0,0.0,0.0,0.0,0.0,0.0}),
@@ -120,9 +124,11 @@ public:
                          ord4_checkbox(false),
                          M1(1.0e11),
                          M2(1.0e10),
+                         integration_method_var_choice(0),
                          epoch(0.0),
                          dur(100.0),
                          step(0.005),
+                         max_error(1.0e-10),
                          cart_kep_var_choice(1),
                          cart(dvec6{0.0,0.0,0.0,0.0,0.0,0.0}),
                          kep(dvec6{1.5,0.0,0.0,0.0,0.0,0.0}),
@@ -225,9 +231,13 @@ public:
         if (M1 <= 0.0 || M2 <= 0.0)
             errors.push_back("[Error] :  'M1', 'M2' must be positive numbers.");
 
-        //Possible error 10 : Time parameters ('Epoch' and 'Duration' must be >= 0 and 'Step' must be <= 'Duration').
-        if (!(epoch >= 0.0 && dur > 0.0 && step <= dur))
-            errors.push_back("[Error] :  Invalid set of 'Epoch', 'Duration', 'Step'.");
+        //Possible error 10 : Time parameters ('Epoch' and 'Duration' must be >= 0, 'Step' must be <= 'Duration' and 'Max error' must be > 0).
+        if (integration_method_var_choice == 0)
+            if (!(epoch >= 0.0 && dur > 0.0 && step <= dur))
+                errors.push_back("[Error] :  Invalid set of 'Epoch', 'Duration', 'Step'.");
+        else
+            if (!(epoch >= 0.0 && dur > 0.0 && max_error > 0.0))
+                errors.push_back("[Error] :  Invalid set of 'Epoch', 'Duration', 'Max error'.");
 
         //Possible error 11 : Relative position/velocity (mutual distance must be > 0).
         if (cart_kep_var_choice == 0 && length(dvec3{cart[0], cart[1], cart[2]}) <= machine_zero)
@@ -416,14 +426,30 @@ public:
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f,7.5f));
 
-        //Time parameters.
-        ImGui::Text("Integration time");
-        double_field("Epoch ",    100.0f, 70.0f, id, "[days]", epoch);
-        double_field("Duration ", 100.0f, 70.0f, id, "[days]", dur);
-        double_field("Step ",     100.0f, 70.0f, id, "[days]", step);
+        //Integration method and time parameters.
+        ImGui::Text("Integration");
+        ImGui::Indent();
+
+        ImGui::Text("Numerical method");
+
+        //Integration method (RKF78 constant, or RKF78 adaptive).
+        ImGui::PushItemWidth(200.0f);
+            ImGui::PushID(id++);
+                static const char *integration_method_var[2] = {"RKF78 constant", "RKF78 adaptive"}; //Which numerical method for integration of the ODEs.
+                ImGui::Combo("  ", &integration_method_var_choice, integration_method_var, IM_ARRAYSIZE(integration_method_var));
+            ImGui::PopID();
+        ImGui::PopItemWidth();
+
+        double_field("Epoch ",     100.0f, 90.0f, id, "[days]", epoch);
+        double_field("Duration ",  100.0f, 90.0f, id, "[days]", dur);
+        if (integration_method_var_choice == 0)
+            double_field("Step ",      100.0f, 90.0f, id, "[days]", step);
+        else //integration_method_var_choice is 1, thus render the 'Max error' input field.
+            double_field("Max error ", 100.0f, 90.0f, id, "[    ]", max_error);
         ImGui::Dummy(ImVec2(0.0f,7.5f));
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f,7.5f));
+        ImGui::Unindent();
 
         ImGui::Text("Initial state");
         ImGui::Indent();

@@ -157,6 +157,73 @@ public:
         }
     }
 
+    void reduce_vector(dvec &vec, const size_t final_size)
+    {
+        size_t current_size = vec.size();
+        double step = static_cast<double>(current_size - 1)/static_cast<double>(final_size - 1);
+
+        dvec reduced;
+        reduced.reserve(final_size);
+        for (size_t i = 0; i < final_size; ++i)
+        {
+            size_t index = static_cast<size_t>(i*step);
+            reduced.push_back(vec[index]);
+        }
+        vec = std::move(reduced);
+    }
+
+    void reduce_to(const size_t final_size)
+    {
+        // If final_size is zero or larger than the current size, there's nothing to reduce.
+        if (final_size == 0 || t.size() <= final_size)
+            return;
+
+        // Reduce each vector from t to mom_rel_err.
+        reduce_vector(t, final_size);
+        reduce_vector(x, final_size);
+        reduce_vector(y, final_size);
+        reduce_vector(z, final_size);
+        reduce_vector(vx, final_size);
+        reduce_vector(vy, final_size);
+        reduce_vector(vz, final_size);
+        reduce_vector(q10, final_size);
+        reduce_vector(q11, final_size);
+        reduce_vector(q12, final_size);
+        reduce_vector(q13, final_size);
+        reduce_vector(w1bx, final_size);
+        reduce_vector(w1by, final_size);
+        reduce_vector(w1bz, final_size);
+        reduce_vector(q20, final_size);
+        reduce_vector(q21, final_size);
+        reduce_vector(q22, final_size);
+        reduce_vector(q23, final_size);
+        reduce_vector(w2bx, final_size);
+        reduce_vector(w2by, final_size);
+        reduce_vector(w2bz, final_size);
+        reduce_vector(dist, final_size);
+        reduce_vector(vel, final_size);
+        reduce_vector(roll1, final_size);
+        reduce_vector(pitch1, final_size);
+        reduce_vector(yaw1, final_size);
+        reduce_vector(roll2, final_size);
+        reduce_vector(pitch2, final_size);
+        reduce_vector(yaw2, final_size);
+        reduce_vector(w1ix, final_size);
+        reduce_vector(w1iy, final_size);
+        reduce_vector(w1iz, final_size);
+        reduce_vector(w2ix, final_size);
+        reduce_vector(w2iy, final_size);
+        reduce_vector(w2iz, final_size);
+        reduce_vector(sma, final_size);
+        reduce_vector(ecc, final_size);
+        reduce_vector(inc, final_size);
+        reduce_vector(raan, final_size);
+        reduce_vector(argper, final_size);
+        reduce_vector(manom, final_size);
+        reduce_vector(ener_rel_err, final_size);
+        reduce_vector(mom_rel_err, final_size);
+    }
+
     /*
     void export_txt_files(const char *sim_name)
     {

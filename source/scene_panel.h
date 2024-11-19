@@ -47,14 +47,14 @@ private:
         if (ImPlot::BeginPlot(begin_plot_id, plot_win_size))
         {
             ImPlot::SetupAxes("time [days]", yaxis_str);
-            ImPlot::PlotLine("", &(sol.t[0]), &plot_func[0], sol.t.size());
+            ImPlot::PlotLine("", sol.t.data(), plot_func.data(), sol.t.size());
             ImPlot::EndPlot();
         }
         ImGui::End();
         return bool_plot_func;
     }
     
-    void plot_buttons()
+    void render_plot_buttons()
     {
         ImGui::Dummy(ImVec2(0.0f,7.5f));
 
@@ -140,8 +140,9 @@ public:
                     plot_ener_mom_rel_err({false,false})
     { }
 
-    void copy_solution(const solution &sol)
+    void copy_solution(solution &sol)
     {
+        sol.reduce_to(1000); //This is a stack overflow (crash) savior!
         this->sol = sol;
     }
     
@@ -157,12 +158,12 @@ public:
             if (!sol.dist.size()) //Criterion that applies when the simulation hasn't been performed.
             {
                 ImGui::BeginDisabled();
-                plot_buttons();
+                render_plot_buttons();
                 ImGui::EndDisabled();   
             }
             else
             {
-                plot_buttons();
+                render_plot_buttons();
 
                 if (plot_cart[0]) plot_cart[0] = common_plot("##1",  "##2",  "x [km]",               plot_cart[0], sol.x);
                 if (plot_cart[1]) plot_cart[1] = common_plot("##3",  "##4",  "y [km]",               plot_cart[1], sol.y);
@@ -207,6 +208,7 @@ public:
 
                 if (plot_ener_mom_rel_err[0]) plot_ener_mom_rel_err[0] = common_plot("##65", "##66", "energy error [  ]",   plot_ener_mom_rel_err[0], sol.ener_rel_err);
                 if (plot_ener_mom_rel_err[1]) plot_ener_mom_rel_err[1] = common_plot("##67", "##68", "momentum error [  ]", plot_ener_mom_rel_err[1], sol.mom_rel_err);
+
             }
             ImGui::PopStyleColor();
         }

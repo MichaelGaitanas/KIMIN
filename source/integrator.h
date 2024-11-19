@@ -238,6 +238,8 @@ public:
 
         boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 20>> rkf78;
         char formatted_text[128];
+        
+        //Shoot it!!!
         for (double t = t0; t <= tmax; t += dt)
         {
             //Append the current state into the final 'orbit' matrix.
