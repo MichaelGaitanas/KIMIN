@@ -27,6 +27,7 @@ public:
     bool collision; //Collision detection flag (Brillouin spheres intersection).
 
     double t0, tmax, dt; //Integration time.
+    double init_guess_time_step;
 
     dmat orbit; //This is the solution matrix of the differential equations that will be propagated (time + state vector).
 
@@ -212,7 +213,10 @@ public:
         //Convert the time in [sec]
         t0 = properties.epoch*86400.0; //[sec]
         tmax = t0 + properties.dur*86400.0; //[sec]
-        dt = properties.step*86400.0; //[sec]
+        if (properties.integration_method_var_choice == 0)
+            dt = properties.step*86400.0; //[sec]
+        else
+            init_guess_time_step = 1.0; //[sec]
 
         orbit.clear();
 
@@ -237,10 +241,13 @@ public:
                                             properties.w2b[0],  properties.w2b[1],  properties.w2b[2] };
 
         boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 20>> rkf78;
+        auto method = boost::numeric::odeint::make_controlled(properties.max_error, properties.max_error, boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 20>>());
+
         char formatted_text[128];
         
         //Shoot it!!!
-        for (double t = t0; t <= tmax; t += dt)
+        double t = t0;
+        while (t <= tmax)
         {
             //Append the current state into the final 'orbit' matrix.
             orbit.push_back({t, state[0],  state[1],  state[2],
@@ -266,9 +273,15 @@ public:
                 console.add_time_and_then_text(formatted_text);
                 break;
             }
-                
+            
             //Update the state vector by doing 1 step of the numerical method.
-            rkf78.do_step(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, dt);
+            if (properties.integration_method_var_choice == 0)
+            {
+                rkf78.do_step(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, dt);
+                t += dt;
+            }
+            else
+                method.try_step(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, init_guess_time_step);
 
             //Update the progressbar value in [0,1].
             progress.store((t-t0)/(tmax-t0));

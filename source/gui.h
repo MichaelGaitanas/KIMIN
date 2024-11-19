@@ -101,10 +101,13 @@ public:
                     integrator *integr = new integrator(properties);
                     integr->prepare(task_was_aborted, task_progress, console);
                     integr->run(task_was_aborted, task_progress, console);
-                    solution *sol = new solution(*integr);
-                    sol->construct(task_was_aborted, task_progress, console);
-                    scene.copy_solution(*sol);
-                    delete sol;
+                    if (!task_was_aborted.load())
+                    {
+                        solution *sol = new solution(*integr);
+                        sol->construct(task_was_aborted, task_progress, console);
+                        scene.copy_solution(*sol);
+                        delete sol;
+                    }
                     delete integr;
                     task_is_running.store(false);
                 });

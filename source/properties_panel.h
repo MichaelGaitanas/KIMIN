@@ -475,7 +475,7 @@ public:
         else //cart_kep_var_choice is 1, thus render the Keplerian elements.
         {
             double_field("a ", 100.0f, 55.0f, id, "[km]",  kep[0]);
-            double_field("e ", 100.0f, 55.0f, id, "[  ]",  kep[1]);
+            double_field("e ", 100.0f, 55.0f, id, "[    ]",  kep[1]);
             double_field("i ", 100.0f, 55.0f, id, "[deg]", kep[2]);
             double_field("Ω ", 100.0f, 55.0f, id, "[deg]", kep[3]);
             double_field("ω ", 100.0f, 55.0f, id, "[deg]", kep[4]);
