@@ -150,8 +150,6 @@ public:
             mom_rel_err.push_back(fabs((momentum - momentum_at_t0)/momentum_at_t0)); //0 at t = 0.
         }
 
-        std::cout << "Just finished for loop of solution.construt()\n";
-
         if (!abort_flag.load())
         {
             progress.store(1.0f);
