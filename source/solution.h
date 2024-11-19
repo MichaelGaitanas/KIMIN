@@ -160,13 +160,13 @@ public:
     void reduce_vector(dvec &vec, const size_t final_size)
     {
         size_t current_size = vec.size();
-        double step = static_cast<double>(current_size - 1)/static_cast<double>(final_size - 1);
+        double step = ((double)current_size - 1.0)/((double)final_size - 1.0);
 
         dvec reduced;
         reduced.reserve(final_size);
         for (size_t i = 0; i < final_size; ++i)
         {
-            size_t index = static_cast<size_t>(i*step);
+            size_t index = (size_t)(i*step);
             reduced.push_back(vec[index]);
         }
         vec = std::move(reduced);
@@ -174,11 +174,11 @@ public:
 
     void reduce_to(const size_t final_size)
     {
-        // If final_size is zero or larger than the current size, there's nothing to reduce.
+        //If final_size is zero or larger than the current size, there's nothing to reduce.
         if (final_size == 0 || t.size() <= final_size)
             return;
 
-        // Reduce each vector from t to mom_rel_err.
+        //Reduce each vector from t to mom_rel_err.
         reduce_vector(t, final_size);
         reduce_vector(x, final_size);
         reduce_vector(y, final_size);

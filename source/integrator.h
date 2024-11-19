@@ -207,10 +207,8 @@ public:
             properties.cart[4] += properties.beta*properties.M_impact*properties.v_impact[1]/properties.M2;
             properties.cart[5] += properties.beta*properties.M_impact*properties.v_impact[2]/properties.M2;
         }
-
-        collision = false; //Assuming no collision at t = t0.
         
-        //Convert the time in [sec]
+        //Preparation 6 : Convert the time in [sec]
         t0 = properties.epoch*86400.0; //[sec]
         tmax = t0 + properties.dur*86400.0; //[sec]
         if (properties.integration_method_var_choice == 0)
@@ -218,6 +216,7 @@ public:
         else
             init_guess_time_step = 1.0; //[sec]
 
+        collision = false; //Assuming no collision when the simulation starts.
         orbit.clear();
 
         if (!abort_flag.load())
@@ -240,13 +239,13 @@ public:
                                              properties.q2[0],   properties.q2[1],   properties.q2[2], properties.q2[3],
                                             properties.w2b[0],  properties.w2b[1],  properties.w2b[2] };
 
-        boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 20>> rkf78;
-        auto method = boost::numeric::odeint::make_controlled(properties.max_error, properties.max_error, boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 20>>());
+        boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 20>> rkf78_const;
+        auto rkf78_adaptive = boost::numeric::odeint::make_controlled(properties.target_error, properties.target_error, boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 20>>());
 
         char formatted_text[128];
         
+        double t = t0; //Initialize time.
         //Shoot it!!!
-        double t = t0;
         while (t <= tmax)
         {
             //Append the current state into the final 'orbit' matrix.
@@ -277,11 +276,13 @@ public:
             //Update the state vector by doing 1 step of the numerical method.
             if (properties.integration_method_var_choice == 0)
             {
-                rkf78.do_step(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, dt);
+                rkf78_const.do_step(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, dt);
                 t += dt;
+                //Note : Boost's do_step() does NOT update internally t, hence we have to do it ourselves.
             }
             else
-                method.try_step(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, init_guess_time_step);
+                rkf78_adaptive.try_step(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, init_guess_time_step);
+                //Note : But try_step() DOES update internally t, hence we do not touch it in this case.
 
             //Update the progressbar value in [0,1].
             progress.store((t-t0)/(tmax-t0));

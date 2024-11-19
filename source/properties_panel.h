@@ -37,7 +37,7 @@ public:
 
     int integration_method_var_choice; //Initial choice is 0, meaning RKF78 constant. 1 means RKF78 adaptive.
     double epoch, dur, step; //'Epoch', 'Duration', 'Step' double fields.
-    double max_error; //'Max error' double field.
+    double target_error; //'Target error' double field.
 
     int cart_kep_var_choice; //Initial choice is 0, meaning that Cartesian elements are chosen as inputs. 1 means Keplerian elements.
     dvec6 cart; //'x', 'y', 'z', 'υx', 'υy', 'υz' double fields.
@@ -82,7 +82,7 @@ public:
                          epoch(0.0),
                          dur(0.0),
                          step(0.0),
-                         max_error(1.0e-10),
+                         target_error(1.0e-9),
                          cart_kep_var_choice(0),
                          cart(dvec6{0.0,0.0,0.0,0.0,0.0,0.0}),
                          kep(dvec6{0.0,0.0,0.0,0.0,0.0,0.0}),
@@ -128,7 +128,7 @@ public:
                          epoch(0.0),
                          dur(100.0),
                          step(0.005),
-                         max_error(1.0e-10),
+                         target_error(1.0e-9),
                          cart_kep_var_choice(1),
                          cart(dvec6{0.0,0.0,0.0,0.0,0.0,0.0}),
                          kep(dvec6{1.5,0.0,0.0,0.0,0.0,0.0}),
@@ -231,13 +231,13 @@ public:
         if (M1 <= 0.0 || M2 <= 0.0)
             errors.push_back("[Error] :  'M1', 'M2' must be positive numbers.");
 
-        //Possible error 10 : Time parameters ('Epoch' and 'Duration' must be >= 0, 'Step' must be <= 'Duration' and 'Max error' must be > 0).
+        //Possible error 10 : Time parameters ('Epoch' and 'Duration' must be >= 0, 'Step' must be <= 'Duration' and 'Target error' must be > 0).
         if (integration_method_var_choice == 0)
             if (!(epoch >= 0.0 && dur > 0.0 && step <= dur))
                 errors.push_back("[Error] :  Invalid set of 'Epoch', 'Duration', 'Step'.");
         else
-            if (!(epoch >= 0.0 && dur > 0.0 && max_error > 0.0))
-                errors.push_back("[Error] :  Invalid set of 'Epoch', 'Duration', 'Max error'.");
+            if (!(epoch >= 0.0 && dur > 0.0 && target_error > 0.0))
+                errors.push_back("[Error] :  Invalid set of 'Epoch', 'Duration', 'Target error'.");
 
         //Possible error 11 : Relative position/velocity (mutual distance must be > 0).
         if (cart_kep_var_choice == 0 && length(dvec3{cart[0], cart[1], cart[2]}) <= machine_zero)
@@ -440,12 +440,12 @@ public:
             ImGui::PopID();
         ImGui::PopItemWidth();
 
-        double_field("Epoch ",     100.0f, 90.0f, id, "[days]", epoch);
-        double_field("Duration ",  100.0f, 90.0f, id, "[days]", dur);
+        double_field("Epoch ",     100.0f, 105.0f, id, "[days]", epoch);
+        double_field("Duration ",  100.0f, 105.0f, id, "[days]", dur);
         if (integration_method_var_choice == 0)
-            double_field("Step ",      100.0f, 90.0f, id, "[days]", step);
-        else //integration_method_var_choice is 1, thus render the 'Max error' input field.
-            double_field("Max error ", 100.0f, 90.0f, id, "[    ]", max_error);
+            double_field("Step ",      100.0f, 105.0f, id, "[days]", step);
+        else //integration_method_var_choice is 1, thus render the 'Target error' input field.
+            double_field("Target error ", 100.0f, 105.0f, id, "[    ]", target_error);
         ImGui::Dummy(ImVec2(0.0f,7.5f));
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f,7.5f));
