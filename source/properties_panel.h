@@ -5,9 +5,6 @@
 #include"../imgui/imgui_impl_glfw.h"
 #include"../imgui/imgui_impl_opengl3.h"
 
-#include<GL/glew.h>
-#include<GLFW/glfw3.h>
-
 #include<filesystem>
 #include<atomic>
 
@@ -297,12 +294,12 @@ public:
         int id = 0;
 
         //Properties panel "main" window.
-        ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f, ImGui::GetIO().DisplaySize.y), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowPos(ImVec2(0.0f, 21.0f), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f, ImGui::GetIO().DisplaySize.y - 21.0f), ImGuiCond_FirstUseEver);
         ImGui::Begin("Properties", nullptr);
 
         //Simunlation name text field. Basically this is the name of the folder that will be created later, holding the orbit data.
-        ImGui::Text("Simulation folder name");
+        ImGui::Text("Simulation name");
         ImGui::PushItemWidth(200.0f);
             ImGui::InputText(" ", sim_name, IM_ARRAYSIZE(sim_name));
         ImGui::PopItemWidth();

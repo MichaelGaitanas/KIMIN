@@ -14,6 +14,7 @@
 #include<atomic>
 
 #include"typedef.h"
+#include"top_bar_panel.h"
 #include"properties_panel.h"
 #include"console_panel.h"
 #include"scene_panel.h"
@@ -30,12 +31,15 @@ public:
     //These tasks require (in general) most of the time and hence we set them to run at a separate thread to prevent gui freezing.
 
     //The following class instances are basically what you see in the gui, once KIMIN launches.
+    top_bar_panel topbar;
     properties_panel properties;
     console_panel console;
     scene_panel scene;
 
+    solution *sol;
+
     //Initialize imgui and implot along with some settings.
-    gui(GLFWwindow *wpointer)
+    gui(GLFWwindow *wpointer) : sol(nullptr)
     {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
@@ -60,6 +64,7 @@ public:
     //Free gui resources.
     ~gui()
     {
+        delete sol; //Clean up the solution if allocated.
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplGlfw_Shutdown();
         ImPlot::DestroyContext(); //Strictly BEFORE Imgui::DestroyContext();
@@ -103,12 +108,10 @@ public:
                     integr->run(task_was_aborted, task_progress, console);
                     if (!task_was_aborted.load())
                     {
-                        solution *sol = new solution(*integr);
-                        sol->construct(task_was_aborted, task_progress, console);
-                        //sol->export_txt_files(task_was_aborted, task_progress, console);
-                        //sol->export_json_files(task_was_aborted, task_progress, console);
-                        scene.copy_solution(*sol);
                         delete sol;
+                        sol = new solution(*integr);
+                        sol->construct(task_was_aborted, task_progress, console);
+                        scene.copy_solution(*sol);
                     }
                     delete integr;
                     task_is_running.store(false);
@@ -126,6 +129,31 @@ public:
             properties.abort_pressed = false; //Reset abort_pressed to prevent repeated triggering.
             task_was_aborted.store(true);
             task_is_running.store(false);
+        }
+    }
+
+     // Export the solution when requested from the top bar panel
+    void process_export_buttons()
+    {
+        if (sol != nullptr && sol->t.size() > 0) // Ensure that a solution is available
+        {
+            topbar.export_is_enabled = true;
+
+            if (topbar.export_txt_clicked)
+            {
+                sol->export_txt_files(task_was_aborted, task_progress, console);
+                topbar.export_txt_clicked = false; // Reset the flag after exporting
+            }
+
+            if (topbar.export_json_clicked)
+            {
+                sol->export_json_files(task_was_aborted, task_progress, console);
+                topbar.export_json_clicked = false; // Reset the flag after exporting
+            }
+        }
+        else
+        {
+            topbar.export_is_enabled = false;
         }
     }
 };

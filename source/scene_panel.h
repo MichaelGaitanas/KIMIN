@@ -6,9 +6,6 @@
 #include"../imgui/imgui_impl_opengl3.h"
 #include"../imgui/implot.h"
 
-#include<GL/glew.h>
-#include<GLFW/glfw3.h>
-
 #include"typedef.h"
 #include"solution.h"
 
@@ -156,26 +153,9 @@ public:
     
     void render()
     {
-        ImGui::SetNextWindowPos( ImVec2(6.0f*ImGui::GetIO().DisplaySize.x/7.0f, 0.0f), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2(     ImGui::GetIO().DisplaySize.x/7.0f, ImGui::GetIO().DisplaySize.y), ImGuiCond_FirstUseEver);
-        ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_MenuBar);
-        //Menu bar on top of the scene panel.
-        if (ImGui::BeginMenuBar())
-        {
-            if (ImGui::BeginMenu("Solution"))
-            {
-                if (ImGui::MenuItem("Export at .txt files"))
-                {
-                    // Handle "Option 1"
-                }
-                if (ImGui::MenuItem("Export at .json files"))
-                {
-                    // Handle "Option 2"
-                }
-                ImGui::EndMenu();
-            }
-            ImGui::EndMenuBar();
-        }
+        ImGui::SetNextWindowPos( ImVec2(6.0f*ImGui::GetIO().DisplaySize.x/7.0f, 21.0f), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(     ImGui::GetIO().DisplaySize.x/7.0f, ImGui::GetIO().DisplaySize.y - 21.0f), ImGuiCond_FirstUseEver);
+        ImGui::Begin("Scene", nullptr);
         ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
         if (ImGui::CollapsingHeader("Plots 2D"))
         {

@@ -113,12 +113,14 @@ public:
             glClear(GL_COLOR_BUFFER_BIT);
 
             ui.begin();
+            ui.topbar.render();
             ui.properties.render(ui.task_is_running.load(), ui.task_was_aborted.load(), ui.task_progress.load());
             ui.console.render();
             ui.scene.render();
             ui.render();
 
             ui.process_run_and_abort_buttons();
+            ui.process_export_buttons();
 
             glfwSwapBuffers(wpointer);
             glfwPollEvents();
