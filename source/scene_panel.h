@@ -47,7 +47,15 @@ private:
         if (ImPlot::BeginPlot(begin_plot_id, plot_win_size))
         {
             ImPlot::SetupAxes("time [days]", yaxis_str);
-            ImPlot::PlotLine("", sol.t.data(), plot_func.data(), sol.t.size());
+            ImPlot::PlotLine("", &sol.t[0], &plot_func[0], sol.t.size());
+            if (sol.integr.collision)
+            {
+                ImPlot::PushStyleVar(ImPlotStyleVar_MarkerSize, 6.0f); // Set marker size for better visibility
+                ImPlot::PushStyleColor(ImPlotCol_MarkerFill, IM_COL32(255, 100, 0, 255)); // Set the bullet color to red
+                ImPlot::PlotScatter("", &sol.t.back(), &plot_func.back(), 1); // Plot the final point as a scatter plot
+                ImPlot::PopStyleColor();
+                ImPlot::PopStyleVar();
+            }
             ImPlot::EndPlot();
         }
         ImGui::End();
@@ -150,7 +158,24 @@ public:
     {
         ImGui::SetNextWindowPos( ImVec2(6.0f*ImGui::GetIO().DisplaySize.x/7.0f, 0.0f), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(     ImGui::GetIO().DisplaySize.x/7.0f, ImGui::GetIO().DisplaySize.y), ImGuiCond_FirstUseEver);
-        ImGui::Begin("Scene", nullptr);
+        ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_MenuBar);
+        //Menu bar on top of the scene panel.
+        if (ImGui::BeginMenuBar())
+        {
+            if (ImGui::BeginMenu("Solution"))
+            {
+                if (ImGui::MenuItem("Export at .txt files"))
+                {
+                    // Handle "Option 1"
+                }
+                if (ImGui::MenuItem("Export at .json files"))
+                {
+                    // Handle "Option 2"
+                }
+                ImGui::EndMenu();
+            }
+            ImGui::EndMenuBar();
+        }
         ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
         if (ImGui::CollapsingHeader("Plots 2D"))
         {

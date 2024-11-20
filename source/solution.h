@@ -4,12 +4,15 @@
 #include<cstdio>
 #include<cmath>
 #include<atomic>
+#include <nlohmann/json.hpp>
 
 #include"constant.h"
 #include"typedef.h"
 #include"linalg.h"
 #include"conversion.h"
 #include"integrator.h"
+
+using json = nlohmann::json;
 
 class solution
 {
@@ -47,7 +50,7 @@ public:
 
     void construct(std::atomic<bool> &abort_flag, std::atomic<float> &progress, console_panel &console)
     {
-        console.add_time_and_then_text("[Info] : Solution construction started.");
+        console.add_time_and_then_text("[Solution] : Solution construction started.");
         progress.store(0.0f);
 
         double energy_at_t0, momentum_at_t0;
@@ -148,12 +151,15 @@ public:
 
             ener_rel_err.push_back(fabs((energy - energy_at_t0)/energy_at_t0)); //0 at t = 0.
             mom_rel_err.push_back(fabs((momentum - momentum_at_t0)/momentum_at_t0)); //0 at t = 0.
+
+            //Update the progressbar value in [0,1].
+            progress.store(i/(float)integr.orbit.size());
         }
 
         if (!abort_flag.load())
         {
             progress.store(1.0f);
-            console.add_time_and_then_text("[Info] : Solution construction ended.");
+            console.add_time_and_then_text("[Solution] : Solution construction ended.");
         }
     }
 
@@ -224,46 +230,52 @@ public:
         reduce_vector(mom_rel_err, final_size);
     }
 
-    /*
-    void export_txt_files(const char *sim_name)
+    void export_txt_files(std::atomic<bool> &abort_flag, std::atomic<float> &progress, console_panel &console)
     {
+        console.add_time_and_then_text("[Solution] : Solution export started.");
+        progress.store(0.0f);
+
+        const char *sim_name = integr.properties.sim_name;
         //Create the 'simulations' directory that will store all other simulation sub-directories.
         bool root_sim_dir = std::filesystem::create_directory("../simulations");
         //Create the current simulation directory 'sim_name' that will store the .txt files.
         bool current_sim_dir = std::filesystem::create_directory("../simulations/" + str(sim_name));
 
         //Create the txt contents
-        FILE *file_t        = fopen(("../simulations/" + str(sim_name) + "/time.txt"    ).c_str(), "w");
-        FILE *file_pos      = fopen(("../simulations/" + str(sim_name) + "/pos.txt"     ).c_str(), "w");
-        FILE *file_vel      = fopen(("../simulations/" + str(sim_name) + "/vel.txt"     ).c_str(), "w");
-        FILE *file_q1       = fopen(("../simulations/" + str(sim_name) + "/quat1.txt"   ).c_str(), "w");
-        FILE *file_w1b      = fopen(("../simulations/" + str(sim_name) + "/w1b.txt"     ).c_str(), "w");
-        FILE *file_q2       = fopen(("../simulations/" + str(sim_name) + "/quat2.txt"   ).c_str(), "w");
-        FILE *file_w2b      = fopen(("../simulations/" + str(sim_name) + "/w2b.txt"     ).c_str(), "w");
+        FILE *file_t        = fopen(("../simulations/" + str(sim_name) + "/time.txt"              ).c_str(), "w");
+        FILE *file_pos      = fopen(("../simulations/" + str(sim_name) + "/rel_pos.txt"           ).c_str(), "w");
+        FILE *file_vel      = fopen(("../simulations/" + str(sim_name) + "/rel_vel.txt"           ).c_str(), "w");
+        FILE *file_q1       = fopen(("../simulations/" + str(sim_name) + "/quaternion1.txt"       ).c_str(), "w");
+        FILE *file_w1b      = fopen(("../simulations/" + str(sim_name) + "/ang_vel_w1b.txt"       ).c_str(), "w");
+        FILE *file_q2       = fopen(("../simulations/" + str(sim_name) + "/quaternion2.txt"       ).c_str(), "w");
+        FILE *file_w2b      = fopen(("../simulations/" + str(sim_name) + "/ang_vel_w2b.txt"       ).c_str(), "w");
 
-        FILE *file_rpy1     = fopen(("../simulations/" + str(sim_name) + "/rpy1.txt"    ).c_str(), "w");
-        FILE *file_w1i      = fopen(("../simulations/" + str(sim_name) + "/w1i.txt"     ).c_str(), "w");
-        FILE *file_rpy2     = fopen(("../simulations/" + str(sim_name) + "/rpy2.txt"    ).c_str(), "w");
-        FILE *file_w2i      = fopen(("../simulations/" + str(sim_name) + "/w2i.txt"     ).c_str(), "w");
-        FILE *file_kep      = fopen(("../simulations/" + str(sim_name) + "/kep.txt"     ).c_str(), "w");
-        FILE *file_ener_mom = fopen(("../simulations/" + str(sim_name) + "/ener_mom.txt").c_str(), "w");
+        FILE *file_rpy1     = fopen(("../simulations/" + str(sim_name) + "/euler_rpy1.txt"        ).c_str(), "w");
+        FILE *file_w1i      = fopen(("../simulations/" + str(sim_name) + "/ang_vel_w1i.txt"       ).c_str(), "w");
+        FILE *file_rpy2     = fopen(("../simulations/" + str(sim_name) + "/euler_rpy2.txt"        ).c_str(), "w");
+        FILE *file_w2i      = fopen(("../simulations/" + str(sim_name) + "/ang_vel_w2i.txt"       ).c_str(), "w");
+        FILE *file_kep      = fopen(("../simulations/" + str(sim_name) + "/keplerian.txt"         ).c_str(), "w");
+        FILE *file_ener_mom = fopen(("../simulations/" + str(sim_name) + "/ener_mom_rel_error.txt").c_str(), "w");
 
-        for (size_t i = 0; i < integr.orbit.size(); ++i)
+        for (size_t i = 0; i < t.size(); ++i)
         {
-            fprintf(file_t,        "%.16lf\n",                                    integr.orbit[i][0]);
-            fprintf(file_pos,      "%.16lf %.16lf %.16lf %.16lf\n",               integr.orbit[i][1],  integr.orbit[i][2],  integr.orbit[i][3], dist[i]);
-            fprintf(file_vel,      "%.16lf %.16lf %.16lf %.16lf\n",               integr.orbit[i][4],  integr.orbit[i][5],  integr.orbit[i][6], vel[i]);
-            fprintf(file_q1,       "%.16lf %.16lf %.16lf %.16lf\n",               integr.orbit[i][7],  integr.orbit[i][8],  integr.orbit[i][9],  integr.orbit[i][10]);
-            fprintf(file_w1b,      "%.16lf %.16lf %.16lf\n",                      integr.orbit[i][11], integr.orbit[i][12], integr.orbit[i][13]);
-            fprintf(file_q2,       "%.16lf %.16lf %.16lf %.16lf\n",               integr.orbit[i][14], integr.orbit[i][15], integr.orbit[i][16], integr.orbit[i][17]);
-            fprintf(file_w2b,      "%.16lf %.16lf %.16lf\n",                      integr.orbit[i][18], integr.orbit[i][19], integr.orbit[i][20]);
+            fprintf(file_t,        "%.16lf\n", t[i]);
+            fprintf(file_pos,      "%.16lf %.16lf %.16lf %.16lf\n",                 x[i],    y[i],    z[i], dist[i]);
+            fprintf(file_vel,      "%.16lf %.16lf %.16lf %.16lf\n",                vx[i],   vy[i],   vz[i],  vel[i]);
+            fprintf(file_q1,       "%.16lf %.16lf %.16lf %.16lf\n",               q10[i],  q11[i],  q12[i],  q13[i]);
+            fprintf(file_w1b,      "%.16lf %.16lf %.16lf\n",                     w1bx[i], w1by[i], w1bz[i]);
+            fprintf(file_q2,       "%.16lf %.16lf %.16lf %.16lf\n",               q20[i],  q21[i],  q22[i],  q23[i]);
+            fprintf(file_w2b,      "%.16lf %.16lf %.16lf\n",                     w2bx[i], w2by[i], w2bz[i]);
 
             fprintf(file_rpy1,     "%.16lf %.16lf %.16lf\n",                      roll1[i], pitch1[i], yaw1[i]);
-            fprintf(file_w1i,      "%.16lf %.16lf %.16lf\n",                      w1ix[i], w1iy[i], w1iz[i]);
+            fprintf(file_w1i,      "%.16lf %.16lf %.16lf\n",                       w1ix[i],   w1iy[i], w1iz[i]);
             fprintf(file_rpy2,     "%.16lf %.16lf %.16lf\n",                      roll2[i], pitch2[i], yaw2[i]);
-            fprintf(file_w2i,      "%.16lf %.16lf %.16lf\n",                      w2ix[i], w2iy[i], w2iz[i]);
-            fprintf(file_kep,      "%.16lf %.16lf %.16lf %.16lf %.16lf %.16lf\n", sma[i], ecc[i], inc[i], raan[i], argper[i], manom[i]); 
-            fprintf(file_ener_mom, "%.16lf %.16lf\n",                             ener_rel_err[i], mom_rel_err[i]);
+            fprintf(file_w2i,      "%.16lf %.16lf %.16lf\n",                       w2ix[i],   w2iy[i], w2iz[i]);
+            fprintf(file_kep,      "%.16lf %.16lf %.16lf %.16lf %.16lf %.16lf\n",   sma[i],    ecc[i],  inc[i], raan[i], argper[i], manom[i]); 
+            fprintf(file_ener_mom, "%.16lf %.16lf\n",                      ener_rel_err[i], mom_rel_err[i]);
+
+            //Update the progressbar value in [0,1].
+            progress.store(i/(float)t.size());
         }
 
         fclose(file_t);
@@ -284,8 +296,63 @@ public:
         FILE *file_collision = fopen(("../simulations/" + str(sim_name) + "/collision.txt").c_str(),"w");
         fprintf(file_collision,"Collision detected : %s", integr.collision ? "Yes" : "No");
         fclose(file_collision);
+
+        if (!abort_flag.load())
+        {
+            progress.store(1.0f);
+            console.add_time_and_then_text("[Solution] : Solution export ended.");
+        }
     }
-    */
+
+    void export_json_files(std::atomic<bool> &abort_flag, std::atomic<float> &progress, console_panel &console)
+    {
+        console.add_time_and_then_text("[Solution] : Solution JSON export started.");
+        progress.store(0.0f);
+
+        const char *sim_name = integr.properties.sim_name;
+        //Create the 'simulations' directory that will store all other simulation sub-directories.
+        std::filesystem::create_directory("../simulations");
+        //Create the current simulation directory 'sim_name' that will store the .json files.
+        std::filesystem::create_directory("../simulations/" + std::string(sim_name));
+
+        // Export vectors grouped as required
+        auto export_group_to_json = [&](const std::string &file_name, const std::vector<std::pair<std::string, dvec>> &group) {
+            json json_data = json::array();
+            for (const auto &pair : group) {
+                json_data.push_back({ {"name", pair.first}, {"values", pair.second} });
+            }
+            std::ofstream json_file("../simulations/" + std::string(sim_name) + "/" + file_name + ".json");
+            json_file << std::setw(4) << json_data << std::endl;
+            json_file.close();
+        };
+
+        // Export each group to a JSON file
+        export_group_to_json("time", { {"time", t} });
+        export_group_to_json("rel_pos", { {"x", x}, {"y", y}, {"z", z}, {"dist", dist} });
+        export_group_to_json("rel_vel", { {"vx", vx}, {"vy", vy}, {"vz", vz}, {"vel", vel} });
+        export_group_to_json("quaternion1", { {"q10", q10}, {"q11", q11}, {"q12", q12}, {"q13", q13} });
+        export_group_to_json("ang_vel_w1b", { {"w1bx", w1bx}, {"w1by", w1by}, {"w1bz", w1bz} });
+        export_group_to_json("quaternion2", { {"q20", q20}, {"q21", q21}, {"q22", q22}, {"q23", q23} });
+        export_group_to_json("ang_vel_w2b", { {"w2bx", w2bx}, {"w2by", w2by}, {"w2bz", w2bz} });
+        export_group_to_json("euler_rpy1", { {"roll1", roll1}, {"pitch1", pitch1}, {"yaw1", yaw1} });
+        export_group_to_json("euler_rpy2", { {"roll2", roll2}, {"pitch2", pitch2}, {"yaw2", yaw2} });
+        export_group_to_json("ang_vel_w1i", { {"w1ix", w1ix}, {"w1iy", w1iy}, {"w1iz", w1iz} });
+        export_group_to_json("ang_vel_w2i", { {"w2ix", w2ix}, {"w2iy", w2iy}, {"w2iz", w2iz} });
+        export_group_to_json("keplerian", { {"sma", sma}, {"ecc", ecc}, {"inc", inc}, {"raan", raan}, {"argper", argper}, {"manom", manom} });
+        export_group_to_json("ener_mom_rel_error", { {"energy_rel_err", ener_rel_err}, {"momentum_rel_err", mom_rel_err} });
+
+        // Write collision status to a separate JSON file
+        json collision_data = { {"collision", integr.collision ? "Yes" : "No"} };
+        std::ofstream collision_file("../simulations/" + std::string(sim_name) + "/collision.json");
+        collision_file << std::setw(4) << collision_data << std::endl;
+        collision_file.close();
+
+        if (!abort_flag.load())
+        {
+            progress.store(1.0f);
+            console.add_time_and_then_text("[Solution] : Solution JSON export ended.");
+        }
+    }
 };
 
 #endif

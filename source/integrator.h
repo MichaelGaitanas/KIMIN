@@ -132,7 +132,7 @@ public:
     //Before the actual integration of the ODEs starts, we do some preparations.
     void prepare(std::atomic<bool> &abort_flag, std::atomic<float> &progress, console_panel &console)
     {
-        console.add_time_and_then_text("[Info] : Integrator preparation started.");
+        console.add_time_and_then_text("[Integrator] : Integrator preparation started.");
         progress.store(0.0f);
 
         m = properties.M1*properties.M2/(properties.M1 + properties.M2);
@@ -222,13 +222,13 @@ public:
         if (!abort_flag.load())
         {
             progress.store(1.0f);
-            console.add_time_and_then_text("[Info] : Integration ended.");
+            console.add_time_and_then_text("[Integrator] : Integrator preparation ended.");
         }
     }
 
     void run(std::atomic<bool> &abort_flag, std::atomic<float> &progress, console_panel &console)
     {
-        console.add_time_and_then_text("[Info] : New integration started.");
+        console.add_time_and_then_text("[Integrator] : New integration started.");
         progress.store(0.0f);
 
         //Initial conditions.
@@ -259,7 +259,7 @@ public:
             //Check for sphere-sphere collision detection between the 2 asteroids.
             if (sphere_sphere_collision(length(dvec3{state[0],state[1],state[2]}), brillouin1, brillouin2))
             {
-                sprintf(formatted_text,"[Integrator] Collision detected at t = %5.2lf days.", t/86400.0);
+                sprintf(formatted_text,"[Integrator] Collision detected at t = %5.2lf [days].", t/86400.0);
                 console.add_time_and_then_text(formatted_text);
                 collision = true;
                 break;
@@ -268,7 +268,7 @@ public:
             //Check the abort flag (the user might want to kill the integration by pressing the 'Abort' button in the gui).
             if (abort_flag.load())
             {
-                sprintf(formatted_text, "[Info] : Integration was aborted at t = %5.2lf [days].", t/86400.0);
+                sprintf(formatted_text, "[Integrator] : Integration was aborted at t = %5.2lf [days].", t/86400.0);
                 console.add_time_and_then_text(formatted_text);
                 break;
             }
@@ -291,7 +291,7 @@ public:
         if (!abort_flag.load())
         {
             progress.store(1.0f);
-            console.add_time_and_then_text("[Info] : Integration ended.");
+            console.add_time_and_then_text("[Integrator] : Integration ended.");
         }
     }
 };

@@ -106,7 +106,7 @@ public:
     { }
     */
 
-    properties_panel() : sim_name("a"),
+    properties_panel() : sim_name("test sim"),
                          ell_checkbox(true),
                          semiaxes1(dvec3{0.5,0.4,0.3}),
                          semiaxes2(dvec3{0.2,0.1,0.05}),
@@ -504,15 +504,15 @@ public:
         }
         else //orient_var_choice is 1, thus render the quaternion format.
         {
-            double_field("q10 ", 100.0f, 70.0f, id, "[  ]", q1[0]);
-            double_field("q11 ", 100.0f, 70.0f, id, "[  ]", q1[1]);
-            double_field("q12 ", 100.0f, 70.0f, id, "[  ]", q1[2]);
-            double_field("q13 ", 100.0f, 70.0f, id, "[  ]", q1[3]);
+            double_field("q10 ", 100.0f, 70.0f, id, "[    ]", q1[0]);
+            double_field("q11 ", 100.0f, 70.0f, id, "[    ]", q1[1]);
+            double_field("q12 ", 100.0f, 70.0f, id, "[    ]", q1[2]);
+            double_field("q13 ", 100.0f, 70.0f, id, "[    ]", q1[3]);
             ImGui::Dummy(ImVec2(0.0f,5.0f));
-            double_field("q20 ", 100.0f, 70.0f, id, "[  ]", q2[0]);
-            double_field("q21 ", 100.0f, 70.0f, id, "[  ]", q2[1]);
-            double_field("q22 ", 100.0f, 70.0f, id, "[  ]", q2[2]);
-            double_field("q23 ", 100.0f, 70.0f, id, "[  ]", q2[3]);
+            double_field("q20 ", 100.0f, 70.0f, id, "[    ]", q2[0]);
+            double_field("q21 ", 100.0f, 70.0f, id, "[    ]", q2[1]);
+            double_field("q22 ", 100.0f, 70.0f, id, "[    ]", q2[2]);
+            double_field("q23 ", 100.0f, 70.0f, id, "[    ]", q2[3]);
         }
         ImGui::Dummy(ImVec2(0.0f,15.0f));
 
