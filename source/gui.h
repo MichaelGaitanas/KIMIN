@@ -106,7 +106,7 @@ public:
                         solution *sol = new solution(*integr);
                         sol->construct(task_was_aborted, task_progress, console);
                         //sol->export_txt_files(task_was_aborted, task_progress, console);
-                        sol->export_json_files(task_was_aborted, task_progress, console);
+                        //sol->export_json_files(task_was_aborted, task_progress, console);
                         scene.copy_solution(*sol);
                         delete sol;
                     }
