@@ -12,23 +12,24 @@
 
 class polyhedron
 {
-public:
+private:
+    bool norms_exist;
     dmatnx3 verts;
     umatnx3 faces;
     dmatnx3 norms;
-    
+
+public:
     //Load the .obj file assuming it has the classical form 'v x y z' and 'f i j k'.
     polyhedron(const char *path)
     {
-        verts.clear();
-        faces.clear();
+        norms_exist = false;
 
         std::ifstream objfile(path);
         if (!objfile.is_open())
         {
             //This must never happen coz the gui will pre-detect all available .obj files in the obj/ directory.
             fprintf(stderr, "Error : '%s' could not be opened. Exiting...\n", path);
-            exit(EXIT_FAILURE);
+            exit(EXIT_FAILURE); //I will fix that...
         }
 
         double x,y,z; //Vertices.
@@ -49,16 +50,18 @@ public:
             }
         }
         objfile.close();
-        //verts[][] and faces[][] are now filled
     }
 
     //Generate the polyhderon's normals.
     void gen_norms()
     {
+        if (norms_exist)
+            return;
+
         norms.clear();
         norms.resize(faces.size());
         dvec3 perp;
-        for (size_t i = 0; i < norms.size(); ++i)
+        for (size_t i = 0; i < faces.size(); ++i)
         {
             dvec3 p0 = verts[faces[i][0]];
             dvec3 p1 = verts[faces[i][1]];
@@ -66,7 +69,134 @@ public:
             perp = cross(p1-p0, p2-p1);
             norms[i] = perp/length(perp);
         }
-        //norms[][] is now updated.
+        norms_exist = true;
+    }
+
+    //Polyhderon's volume. This function is essential for the inertial integrals evaluation.
+    double get_vol()
+    {
+        gen_norms(); //This will only evaluate the norms if norms_exist is false.
+
+        double vol = 0.0;
+        for (size_t i = 0; i < faces.size(); ++i)
+        {
+            dvec3 p0 = verts[faces[i][0]];
+            dvec3 p1 = verts[faces[i][1]];
+            dvec3 p2 = verts[faces[i][2]];
+            double d = p0[0]*norms[i][0] + p0[1]*norms[i][1] + p0[2]*norms[i][2]; //x*nx + y*ny + z*nz - d = 0 (plane equation)
+            double A = 0.5*length(cross(p1-p0, p2-p1));
+            vol += d*A/3.0;
+        }
+        return vol;
+    }
+
+    //Calculate the center of mass of an arbitrary homogeneous polyhedron.
+    dvec3 get_com()
+    {
+        gen_norms(); //This will only evaluate the norms if norms_exist is false.
+
+        dvec3 com = {0.0,0.0,0.0};
+        for (size_t i = 0; i < faces.size(); ++i)
+        {
+            double x1 = verts[faces[i][0]][0];
+            double y1 = verts[faces[i][0]][1];
+            double z1 = verts[faces[i][0]][2];
+            
+            double x2 = verts[faces[i][1]][0];
+            double y2 = verts[faces[i][1]][1];
+            double z2 = verts[faces[i][1]][2];
+
+            double x3 = verts[faces[i][2]][0];
+            double y3 = verts[faces[i][2]][1];
+            double z3 = verts[faces[i][2]][2];
+
+            double x21 = x2 - x1;
+            double x31 = x3 - x1;
+            double y21 = y2 - y1;
+            double y31 = y3 - y1;
+            double z21 = z2 - z1;
+            double z31 = z3 - z1;
+
+            double nx = norms[i][0];
+            double ny = norms[i][1];
+            double nz = norms[i][2];
+            double d = x1*nx + y1*ny + z1*nz; //x*nx + y*ny + z*nz - d = 0 (plane equation)
+
+            //Double integral values after the affine transformation.
+            double integx = (3.0*x1 + x21 + x31)/6.0;
+            double integy = (3.0*y1 + y21 + y31)/6.0;
+            double integz = (3.0*z1 + z21 + z31)/6.0;
+
+            //Jacobian determinant that arises due to the affine transformation.
+            double Jacxy = fabs(x21*y31 - x31*y21);
+            double Jacxz = fabs(x21*z31 - x31*z21);
+            double Jacyz = fabs(y21*z31 - y31*z21);
+
+            double area = 0.5*length(cross(dvec3{x2,y2,z2} - dvec3{x1,y1,z1}, dvec3{x3,y3,z3} - dvec3{x2,y2,z2}));
+            
+            //comx
+            if (fabs(nz) > machine_zero)
+                com[0] += d*Jacxy*integx/fabs(nz);
+            else
+                if (fabs(ny) > machine_zero)
+                    com[0] += d*Jacxz*integx/fabs(ny);
+                else
+                    com[0] += d*d*area/nx;
+
+            //comy
+            if (fabs(nz) > machine_zero)
+                com[1] += d*Jacxy*integy/fabs(nz);
+            else
+                if (fabs(nx) > machine_zero)
+                    com[1] += d*Jacyz*integy/fabs(nx);
+                else
+                    com[1] += d*d*area/ny;
+
+            //comz
+            if (fabs(ny) > machine_zero)
+                com[2] += d*Jacxz*integz/fabs(ny);
+            else
+                if (fabs(nx) > machine_zero)
+                    com[2] += d*Jacyz*integz/fabs(nx);
+                else
+                    com[2] += d*d*area/nz;
+        }
+
+        return com/(4.0*get_vol());
+    }
+
+    //Shift the center of mass of the polyhedron, so that it coincides with O(0,0,0).
+    void correct_com()
+    {
+        dvec3 com = get_com();
+        for (size_t i = 0; i < verts.size(); ++i)
+            verts[i] = verts[i] - com;
+    }
+
+    //Farthest vertex distance with respect to the local coordinate system.
+    double get_farthest_vertex_distance()
+    {
+        double farthest = length(verts[0]); //Assume that the farthest vertex distance is the first one.
+        for (size_t i = 1; i < verts.size(); ++i)
+        {
+            double dist = length(verts[i]);
+            if (dist > farthest)
+                farthest = dist;
+        }
+        return farthest;
+    }
+
+    //Nearest vertex distance with respect to the local coordinate system.
+    double get_nearest_vertex_distance()
+    {
+        double nearest = length(verts[0]); //Assume that the nearest vertex distance is the first one.
+        for (size_t i = 1; i < verts.size(); ++i)
+        {
+            double dist = length(verts[i]);
+            if (dist < nearest)
+                nearest = dist;
+        }
+        return nearest;
     }
 };
 

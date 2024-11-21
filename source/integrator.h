@@ -2,6 +2,7 @@
 #define INTEGRATOR_H
 
 #include<atomic>
+#include<memory>
 #include<boost/numeric/odeint.hpp>
 
 #include"constant.h"
@@ -9,6 +10,7 @@
 #include"linalg.h"
 #include"conversion.h"
 #include"ellipsoid.h"
+#include"polyhedron.h"
 #include"rigidbody.h"
 #include"gravity.h"
 #include"properties_panel.h"
@@ -18,6 +20,8 @@ class integrator
 {
 public:
     properties_panel properties; //The user's choice of inputs in the gui.
+
+    //std::unique_ptr<polyhedron> aster1, aster2;
 
     double m; //Reduced binary mass ( m = M1*M2/(M1 + M2) ).
     dmat3 I1, I2; //Moments of inetia.
@@ -169,6 +173,8 @@ public:
         //1) The Brillouin radii, 2) The inertial inertial integrals of the corresponding chosen order.
         if (properties.ell_checkbox)
         {
+            //aster1 = std::make_unique<polyhedron>("../sphere_rad1.obj");
+
             brillouin1 = ell_brillouin(properties.semiaxes1);
             brillouin2 = ell_brillouin(properties.semiaxes2);
             if (properties.ord2_checkbox)
