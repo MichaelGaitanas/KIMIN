@@ -20,9 +20,11 @@ private:
 
 public:
     //Load the .obj file assuming it has the classical form 'v x y z' and 'f i j k'.
-    polyhedron(const char *path)
+    void load_obj_file(const char *path)
     {
         norms_exist = false;
+        verts.clear();
+        faces.clear();
 
         std::ifstream objfile(path);
         if (!objfile.is_open())
@@ -166,9 +168,8 @@ public:
     }
 
     //Shift the center of mass of the polyhedron, so that it coincides with O(0,0,0).
-    void correct_com()
+    void correct_com(const dvec3 &com)
     {
-        dvec3 com = get_com();
         for (size_t i = 0; i < verts.size(); ++i)
             verts[i] = verts[i] - com;
     }

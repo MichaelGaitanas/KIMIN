@@ -21,7 +21,7 @@ class integrator
 public:
     properties_panel properties; //The user's choice of inputs in the gui.
 
-    //std::unique_ptr<polyhedron> aster1, aster2;
+    polyhedron aster1, aster2;
 
     double m; //Reduced binary mass ( m = M1*M2/(M1 + M2) ).
     dmat3 I1, I2; //Moments of inetia.
@@ -173,7 +173,11 @@ public:
         //1) The Brillouin radii, 2) The inertial inertial integrals of the corresponding chosen order.
         if (properties.ell_checkbox)
         {
-            //aster1 = std::make_unique<polyhedron>("../sphere_rad1.obj");
+            //We load the .obj models of the ellipsoids.
+            //Note : Sphere is loaded, but as you can see, the ell_functions are called that are meant for an ellipsoid.
+            //However if the user renderers the 3D scene, the unit spheres will be scaled in accordance with the chosen a1,b1,c1 and a2,b2,c2 of the ellipsoids.
+            aster1.load_obj_file("../obj/sphere_rad1.obj");
+            aster2.load_obj_file("../obj/sphere_rad1.obj");
 
             brillouin1 = ell_brillouin(properties.semiaxes1);
             brillouin2 = ell_brillouin(properties.semiaxes2);
@@ -199,9 +203,20 @@ public:
                 I2 = ell_inertia(properties.M2, properties.semiaxes2);
             }
         }
-        else
+        else //.obj file
         {
-            //Polyhedron logic. To be added...
+            aster1.load_obj_file(properties.obj1_path.c_str());
+            dvec3 com = aster1.get_com();
+            if (length(com) > 1.0e-13)
+                aster1.correct_com(com);
+            brillouin1 = aster1.get_farthest_vertex_distance();
+
+            aster2.load_obj_file(properties.obj2_path.c_str());
+            com = aster2.get_com();
+            if (length(com) > 1.0e-13)
+                aster2.correct_com(com);
+            brillouin2 = aster2.get_farthest_vertex_distance();
+
         }
 
         //Preparation 5 : If the user assumed a kinetic impactor, then (based on theory) we apply a momentum (velocity)
