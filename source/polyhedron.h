@@ -85,7 +85,7 @@ public:
 
         gen_norms(); //This will only evaluate the norms if norms_exist is false.
 
-        double vol = 0.0;
+        vol = 0.0;
         for (size_t i = 0; i < faces.size(); ++i)
         {
             dvec3 p0 = verts[faces[i][0]];
@@ -103,7 +103,6 @@ public:
     dvec3 get_com()
     {
         gen_norms(); //This will only evaluate the norms if norms_exist is false.
-        double vol = get_vol();
 
         dvec3 com = {0.0,0.0,0.0};
         for (size_t i = 0; i < faces.size(); ++i)
@@ -161,14 +160,13 @@ public:
             }
         }
 
-        return com/(4.0*vol);
+        return com/(4.0*get_vol());
     }
 
     //Calculate the inertia matrix of an arbitrary homogeneous closed surface polyhedron.
     dmat3 poly_inertia(const double M)
     {
         gen_norms();
-        double vol = get_vol();
 
         double Jxx = 0.0, Jyy = 0.0, Jzz = 0.0, Jxy = 0.0, Jxz = 0.0, Jyz = 0.0;
         for (int i = 0; i < faces.size(); ++i)
@@ -235,7 +233,7 @@ public:
             }
         }
 
-        double ord2_coeff = M/(5.0*vol);
+        double ord2_coeff = M/(5.0*get_vol());
         Jxx *= ord2_coeff;
         Jyy *= ord2_coeff;
         Jzz *= ord2_coeff;
