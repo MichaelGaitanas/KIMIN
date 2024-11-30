@@ -255,6 +255,7 @@ public:
             verts[i] = verts[i] - com;
     }
 
+    //Rotate the polyhedron, so that the inertia matrix becomes diagonal.
     void align_principal_axes_to_basis()
     {
         //To be added.
