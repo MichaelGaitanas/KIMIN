@@ -2,3 +2,5 @@ simulations/
 imgui/*.o
 imgui/*.a
 *.exe
+tests/*/data/*
+tests/*/plots/*

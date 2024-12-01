@@ -2,7 +2,7 @@ Regarding the .obj files (asteroid models), the following rules must be satisfie
 
 1) The .obj files must exist in the /obj folder.
 
-2) The mesh must be a closed surface. E.g. box, sphere, potato, etc...
+2) The mesh must be a closed surface (manifold geometry). E.g. box, sphere, potato, etc...
 
 3) It does NOT matter if the mesh is convex or not. E.g. Churyumov Gerasimenko (non-convex) is totally fine.
 

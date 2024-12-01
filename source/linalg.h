@@ -347,6 +347,7 @@ dcomplexvec solve_quartic(const double a, const double b, const double c, const 
 }
 
 //Calculate the order of magnitude of a number (basically the exponent if n was written in scientific format).
+/*
 double order_of_magnitude(double n)
 {
     //Transform to non negative.
@@ -358,5 +359,6 @@ double order_of_magnitude(double n)
 
     return floor(log10(n));
 }
+*/
 
 #endif

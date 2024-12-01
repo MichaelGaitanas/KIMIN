@@ -176,8 +176,8 @@ public:
             //We load the .obj models of the ellipsoids.
             //Note : Sphere is loaded, but as you can see, the ell_functions are called that are meant for an ellipsoid.
             //However if the user renderers the 3D scene, the unit spheres will be scaled in accordance with the chosen a1,b1,c1 and a2,b2,c2 of the ellipsoids.
-            aster1.load_obj_file("../obj/sphere_rad1.obj");
-            aster2.load_obj_file("../obj/sphere_rad1.obj");
+            aster1.load_obj_file("../obj/icosphere_rad1.obj");
+            aster2.load_obj_file("../obj/icosphere_rad1.obj");
 
             brillouin1 = ell_brillouin(properties.semiaxes1);
             brillouin2 = ell_brillouin(properties.semiaxes2);
@@ -205,6 +205,7 @@ public:
         }
         else //.obj file
         {
+            /*
             aster1.load_obj_file(properties.obj1_path.c_str());
             dvec3 com = aster1.get_com();
             if (length(com) > 1.0e-13)
@@ -216,7 +217,7 @@ public:
             if (length(com) > 1.0e-13)
                 aster2.correct_com(com);
             brillouin2 = aster2.get_farthest_vertex_distance();
-
+            */
         }
 
         //Preparation 5 : If the user assumed a kinetic impactor, then (based on theory) we apply a momentum (velocity)
