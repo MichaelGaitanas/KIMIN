@@ -6,12 +6,12 @@ if not os.path.isdir('plots/'):
     os.mkdir('plots/')
 
 t = np.loadtxt('io/time.txt')/86400.0 #[days]
-rpy = np.loadtxt('io/rpy.txt')*180/np.pi #[deg]
-rotmat = np.loadtxt('io/rot_mat.txt') #[ ]
-quat = np.loadtxt('io/quat.txt') #[ ]
-wb = np.loadtxt('io/wb.txt') #[rad/sec]
-wi = np.loadtxt('io/wi.txt') #[rad/sec]
-ener_mom = np.loadtxt('io/ener_mom.txt') #E [kg*km^2/sec^2] and L [kg*km^2/sec]
+rpy = np.loadtxt('io/roll_pitch_yaw.txt')*180/np.pi #[deg]
+rotmat = np.loadtxt('io/rotation_matrix.txt') #[ ]
+quat = np.loadtxt('io/quaternion.txt') #[ ]
+wb = np.loadtxt('io/w_body.txt') #[rad/sec]
+wi = np.loadtxt('io/w_inertial.txt') #[rad/sec]
+ener_mom = np.loadtxt('io/energy_momentum.txt') #E [kg*km^2/sec^2] and L [kg*km^2/sec]
 
 E = ener_mom[:,0]
 dE = np.abs((E - E[0]))/E[0]

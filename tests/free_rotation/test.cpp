@@ -9,6 +9,9 @@
 #include"../../source/constant.h"
 #include"../../source/typedef.h"
 #include"../../source/linalg.h"
+#include"../../source/conversion.h"
+#include"../../source/rigidbody.h"
+#include"../../source/ellipsoid.h"
 
 typedef boost::array<double, 7> bvec7;
 typedef boost::numeric::odeint::runge_kutta_fehlberg78<bvec7> rkf78;
@@ -53,10 +56,10 @@ int main()
     double M = 4.940814359692687e9; //[kg]
     dvec3 semiaxes = {0.104, 0.080, 0.066}; //[km]
     t0 = 0.0; //[sec]
-    tmax = 1*86400.0; //[sec]
+    tmax = 86400.0; //[sec]
     print_step = 60.0; //[sec]
     dvec4 q  = ang2quat(dvec3{0.0,0.0,0.0}); //[ ]
-    dvec3 wi = {0.0, 0.004, 0.0}; //[rad/sec]
+    dvec3 wi = {0.0, 0.004, 0.001}; //[rad/sec]
 
     inertia = ell_inertia(M, semiaxes);
 
@@ -72,13 +75,13 @@ int main()
     //write solution 'sol' into files
     bool madedir = std::filesystem::create_directory("io");
     FILE *fpt = fopen("io/time.txt","w");
-    FILE *fpq = fopen("io/quat.txt","w");
-    FILE *fpwi = fopen("io/wi.txt","w");
-    FILE *fpwb = fopen("io/wb.txt","w");
-    FILE *fprpy = fopen("io/rpy.txt","w");
-    FILE *fpmat = fopen("io/rot_mat.txt","w");
-    FILE *fpEL = fopen("io/ener_mom.txt","w");
-    for (int i = 0; i < sol.size(); ++i)
+    FILE *fpq = fopen("io/quaternion.txt","w");
+    FILE *fpwi = fopen("io/w_inertial.txt","w");
+    FILE *fpwb = fopen("io/w_body.txt","w");
+    FILE *fprpy = fopen("io/roll_pitch_yaw.txt","w");
+    FILE *fpmat = fopen("io/rotation_matrix.txt","w");
+    FILE *fpEL = fopen("io/energy_momentum.txt","w");
+    for (size_t i = 0; i < sol.size(); ++i)
     {
         double t = sol[i][0];
         dvec4 q = {sol[i][1], sol[i][2], sol[i][3], sol[i][4]};
@@ -106,7 +109,7 @@ int main()
     fclose(fpEL);
 
     FILE *fpsteps = fopen("io/steps.txt","w");
-    fprintf(fpsteps,"%d\n",steps);
+    fprintf(fpsteps,"%u\n",steps);
     fclose(fpsteps);
     
     return 0;
