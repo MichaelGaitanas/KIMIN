@@ -44,7 +44,7 @@ private:
 public:
     window()
     {
-        //(Re)initialize glfw along with some different settings. Since we explicitely terminated glfw in the logo.hpp, all (previous) corresponding resources are freed.
+        //(Re)initialize glfw along with some different settings. Since we explicitely terminated glfw in the logo.h, all (previous) corresponding resources are freed.
         //Now they are allocated again.
         if(!glfwInit())
         {
@@ -98,17 +98,17 @@ public:
         glfwTerminate();
     }
 
-    //This is the app's function that runs all the time.
+    //This is the app's function that runs all the time - the game loop.
     void game_loop()
     {   
-        gui ui(wpointer); //Instantiate the user interface along with some settings defined in the corresponding contructor (gui.hpp).
+        gui ui(wpointer); //Instantiate the user interface along with some settings defined in the corresponding contructor (gui.h).
         
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
         glClearColor(0.08f,0.08f,0.08f,1.0f);
         while (!glfwWindowShouldClose(wpointer))
         {
-            //At every frame (iteration), clear the color buffer (background) with the corresponding color set by glClearColor().
+            //At every frame (iteration), the color buffer (background) is cleared with the corresponding color value set by glClearColor().
             //The depth buffer is cleared, only if 3D content is displayed.
             glClear(GL_COLOR_BUFFER_BIT);
 

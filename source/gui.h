@@ -27,8 +27,8 @@ public:
     std::atomic<bool> task_is_running{false};
     std::atomic<bool> task_was_aborted{false};
     std::atomic<float> task_progress{0.0f};
-    //We enumerate 3 possible tasks throughout the whole code : 1) Shape (.obj) loading, 2) Numerical integration, 3) Solution construction.
-    //These tasks require (in general) most of the time and hence we set them to run at a separate thread to prevent gui freezing.
+    //We enumerate 3 possible time consuming tasks throughout the whole code : 1) Shape (.obj) loading and preparation, 2) Numerical integration, 3) Solution construction.
+    //We set these 3 tasks to run at a separate thread to prevent gui freezing.
 
     //The following class instances are basically what you see in the gui, once KIMIN launches.
     top_bar_panel topbar;
@@ -132,23 +132,23 @@ public:
         }
     }
 
-     // Export the solution when requested from the top bar panel
+     //Export the solution when requested from the top bar panel.
     void process_export_buttons()
     {
-        if (sol != nullptr && sol->t.size() > 0) // Ensure that a solution is available
+        if (sol != nullptr && sol->t.size() > 0) //Ensure that a solution is available.
         {
             topbar.export_is_enabled = true;
 
             if (topbar.export_txt_clicked)
             {
                 sol->export_txt_files(task_was_aborted, task_progress, console);
-                topbar.export_txt_clicked = false; // Reset the flag after exporting
+                topbar.export_txt_clicked = false; //Reset the flag after exporting.
             }
 
             if (topbar.export_json_clicked)
             {
                 sol->export_json_files(task_was_aborted, task_progress, console);
-                topbar.export_json_clicked = false; // Reset the flag after exporting
+                topbar.export_json_clicked = false; //Reset the flag after exporting.
             }
         }
         else

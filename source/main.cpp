@@ -1,5 +1,5 @@
 
-/* This is the entry point of the whole code. */
+/* This is the entry point of the KIMIN-GUI code. */
 
 #include"logo.h"
 #include"window.h"

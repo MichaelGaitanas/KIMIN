@@ -47,9 +47,9 @@ private:
             ImPlot::PlotLine("", &sol.t[0], &plot_func[0], sol.t.size());
             if (sol.integr.collision)
             {
-                ImPlot::PushStyleVar(ImPlotStyleVar_MarkerSize, 6.0f); // Set marker size for better visibility
-                ImPlot::PushStyleColor(ImPlotCol_MarkerFill, IM_COL32(255, 100, 0, 255)); // Set the bullet color to red
-                ImPlot::PlotScatter("", &sol.t.back(), &plot_func.back(), 1); // Plot the final point as a scatter plot
+                ImPlot::PushStyleVar(ImPlotStyleVar_MarkerSize, 6.0f); //Set marker size for better visibility.
+                ImPlot::PushStyleColor(ImPlotCol_MarkerFill, IM_COL32(255, 100, 0, 255)); //Set the bullet color to red.
+                ImPlot::PlotScatter("", &sol.t.back(), &plot_func.back(), 1); //Plot the final point as a scatter plot.
                 ImPlot::PopStyleColor();
                 ImPlot::PopStyleVar();
             }

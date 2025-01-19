@@ -3,6 +3,7 @@
 
 #include<cmath>
 #include<cstdio>
+#include<iostream>
 
 #include"constant.h"
 #include"typedef.h"
@@ -62,13 +63,15 @@ dvec3 inertia_eigvals(const dmat3 &I)
     double c = Ixy*Ixy + Ixz*Ixz - Ixx*Iyy + Iyz*Iyz - Ixx*Izz - Iyy*Izz;
     double d = -Ixz*Ixz*Iyy + 2.0*Ixy*Ixz*Iyz - Ixx*Iyz*Iyz - Ixy*Ixy*Izz + Ixx*Iyy*Izz;
 
-    //Find the roots of the polynomial. They ought to be real due to the 'real and symmetric' property of the matrix.
+    //Find the roots of the polynomial.
     dcomplexvec sol = solve_cubic(-1.0, b, c, d);
+
+    //The roots ought to be real due to the 'real and symmetric' property of the matrix.
+    //Hence we manually get rid of the imaginary part by returning the real part only.
 
     return {sol[0].real(), sol[1].real(), sol[2].real()};
 }
 
-/*
 //Calculate the eigenvectors of the inertia matrix, assuming it is 3x3, real and symmetric.
 dmat3 inertia_eigvecs(const dmat3 &I)
 {
@@ -108,7 +111,6 @@ dmat3 inertia_eigvecs(const dmat3 &I)
              {v1[0],v1[1],v1[2]},
              {v2[0],v2[1],v2[2]}}};
 }
-*/
 
 //Sphere-sphere collision detection criterion.
 bool sphere_sphere_collision(const double distance, const double R1, const double R2)

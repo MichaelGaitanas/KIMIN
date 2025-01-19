@@ -230,11 +230,15 @@ public:
 
         //Possible error 10 : Time parameters ('Epoch' and 'Duration' must be >= 0, 'Step' must be <= 'Duration' and 'Target error' must be > 0).
         if (integration_method_var_choice == 0)
+        {
             if (!(epoch >= 0.0 && dur > 0.0 && step <= dur))
                 errors.push_back("[Error] :  Invalid set of 'Epoch', 'Duration', 'Step'.");
+        }
         else
+        {
             if (!(epoch >= 0.0 && dur > 0.0 && target_error > 0.0))
                 errors.push_back("[Error] :  Invalid set of 'Epoch', 'Duration', 'Target error'.");
+        }
 
         //Possible error 11 : Relative position/velocity (mutual distance must be > 0).
         if (cart_kep_var_choice == 0 && length(dvec3{cart[0], cart[1], cart[2]}) <= machine_zero)

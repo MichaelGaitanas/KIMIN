@@ -209,13 +209,17 @@ public:
             aster1.load_obj_file(properties.obj1_path.c_str());
             dvec3 com = aster1.get_com();
             if (length(com) > 1.0e-13)
-                aster1.correct_com(com);
+                aster1.eliminate_com_offset(com);
+            I1 = aster1.get_inertia(properties.M1);
+            if (!inertia_is_diagonal(I1))
+                aster1.align_principal_axes_to_basis(properties.M1);
             brillouin1 = aster1.get_farthest_vertex_distance();
 
             aster2.load_obj_file(properties.obj2_path.c_str());
             com = aster2.get_com();
             if (length(com) > 1.0e-13)
-                aster2.correct_com(com);
+                aster2.eliminate_com_offset(com);
+
             brillouin2 = aster2.get_farthest_vertex_distance();
             */
         }
