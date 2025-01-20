@@ -107,9 +107,20 @@ dmat3 inertia_eigvecs(const dmat3 &I)
         v2 = v2/length(v2);
     }
 
-    return {{{v0[0],v0[1],v0[2]},
-             {v1[0],v1[1],v1[2]},
-             {v2[0],v2[1],v2[2]}}};
+    //Construct a 3x3 matrix whose ROWS are v0,v1,v2.
+    dmat3 eigmat = {{{v0[0], v0[1], v0[2]},
+                     {v1[0], v1[1], v1[2]},
+                     {v2[0], v2[1], v2[2]} }};
+
+    if (det3x3(eigmat) < 0.0)
+    {
+        //Flip the sign of one row to result in a right-handed coordsys.
+        eigmat[2][0] = -eigmat[2][0];
+        eigmat[2][1] = -eigmat[2][1];
+        eigmat[2][2] = -eigmat[2][2];
+    }
+
+    return eigmat;
 }
 
 //Sphere-sphere collision detection criterion.

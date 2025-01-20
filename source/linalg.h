@@ -176,6 +176,12 @@ dmat3 outer(const dvec3 &v1, const dvec3 &v2)
              { v1[2]*v2[0], v1[2]*v2[1], v1[2]*v2[2]}}};
 }
 
+//Determinant of a 3x3 matrix (hard coded).
+double det3x3(const dmat3 &m)
+{
+    return m[0][0]*(m[1][1]*m[2][2] - m[1][2]*m[2][1]) - m[0][1]*(m[1][0]*m[2][2] - m[1][2]*m[2][0]) + m[0][2]*(m[1][0]*m[2][1] - m[1][1]*m[2][0]);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 //Kronecker's delta function.

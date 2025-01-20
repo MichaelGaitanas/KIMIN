@@ -18,6 +18,7 @@ int main()
                                                                                             iner[1][0],iner[1][1],iner[1][2],
                                                                                             iner[2][0],iner[2][1],iner[2][2]);
     
+    /*
     dvec3 eigvals = inertia_eigvals(iner);
     printf("Inertia eigenvalues :\n");
     printf("l1 = %.15e\n",   eigvals[0]);
@@ -28,8 +29,16 @@ int main()
     printf("Inertia eigenvectors :\n");
     printf("v1 = [ %.15e  %.15e  %.15e ]\n\nv2 = [ %.15e  %.15e  %.15e ]\n\nv3 = [ %.15e  %.15e  %.15e ]\n\n", eigvecs[0][0],eigvecs[0][1],eigvecs[0][2],
                                                                                                                eigvecs[1][0],eigvecs[1][1],eigvecs[1][2],
-                                                                                                               eigvecs[2][0],eigvecs[2][1],eigvecs[2][2]);
-                                                                                                               
+                                                                                                               eigvecs[2][0],eigvecs[2][1],eigvecs[2][2]);*/
+
+    aster.align_principal_axes_to_basis(M);
+    aster.align_principal_axes_to_basis(M);
+
+    iner = aster.get_inertia(M);
+    printf("Inertia finally :\n");
+    printf("[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n\n", iner[0][0],iner[0][1],iner[0][2],
+                                                                                            iner[1][0],iner[1][1],iner[1][2],
+                                                                                            iner[2][0],iner[2][1],iner[2][2]);
 
     return 0;
 }

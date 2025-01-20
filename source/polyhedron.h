@@ -256,12 +256,9 @@ public:
     }
 
     //Rotate the vertices, so that the inertia matrix becomes diagonal.
-    /*
     void align_principal_axes_to_basis(const double M)
     {
         dmat3 I = get_inertia(M);
-        //if (inertia_is_diagonal(I, 1.0e-12));
-        //    return;
 
         dmat3 eigvecs = inertia_eigvecs(I); //Three real and normalized vectors that form a right handed Cartesian basis.
 
@@ -286,7 +283,6 @@ public:
         for (size_t i = 0; i < verts.size(); ++i)
             verts[i] = dot(rot, verts[i]);
     }
-    */
 
     //Farthest vertex distance with respect to the local coordinate system.
     double get_farthest_vertex_distance()
