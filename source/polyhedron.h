@@ -260,28 +260,17 @@ public:
     {
         dmat3 I = get_inertia(M);
 
-        dmat3 eigvecs = inertia_eigvecs(I); //Three real and normalized vectors that form a right handed Cartesian basis.
-
-        //Define the default Cartesian coordinate system.
-        dvec3 xaxis = {1.0,0.0,0.0};
-        dvec3 yaxis = {0.0,1.0,0.0};
-        dvec3 zaxis = {0.0,0.0,1.0};
-
-        dmat3 rot; //Direction cosine matrix.
-        rot[0][0] = dot(xaxis, eigvecs[0]);
-        rot[0][1] = dot(xaxis, eigvecs[1]);
-        rot[0][2] = dot(xaxis, eigvecs[2]);
-        rot[1][0] = dot(yaxis, eigvecs[0]);
-        rot[1][1] = dot(yaxis, eigvecs[1]);
-        rot[1][2] = dot(yaxis, eigvecs[2]);
-        rot[2][0] = dot(zaxis, eigvecs[0]);
-        rot[2][1] = dot(zaxis, eigvecs[1]);
-        rot[2][2] = dot(zaxis, eigvecs[2]);
-        rot = transpose(rot);
+        dmat3 eigmat = inertia_eigvecs(I); //Three real and normalized vectors that form a right handed Cartesian basis.
 
         //Multiply each vertex vector with the rotation matrix.
         for (size_t i = 0; i < verts.size(); ++i)
-            verts[i] = dot(rot, verts[i]);
+            verts[i] = dot(eigmat, verts[i]);
+
+        //Now the vertices are correct. Vertex connectivity (face indices) should remain the same.
+        
+        //But the norms are wrong! They must be recomputed.
+        norms_exist = false;
+        gen_norms();
     }
 
     //Farthest vertex distance with respect to the local coordinate system.
