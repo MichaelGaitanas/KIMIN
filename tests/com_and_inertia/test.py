@@ -1,28 +1,26 @@
 import numpy as np
 
-# Read the matrix from the file
 with open('inertia.txt', 'r') as file:
     lines = file.readlines()
 
-# Parse the matrix
 matrix = []
 for line in lines:
     row = list(map(float, line.split()))
     matrix.append(row)
 
 matrix = np.array(matrix)
+print('Inertia :')
+print(matrix)
 
-# Verify the matrix is symmetric
-if not np.allclose(matrix, matrix.T):
-    raise ValueError("The input matrix is not symmetric.")
+print('\nDeterminant :')
+print(np.linalg.det(matrix))
 
-# Compute eigenvalues and eigenvectors
 eigenvalues, eigenvectors = np.linalg.eigh(matrix)
 
-# Print results
-print("Matrix:")
-print(matrix)
-print("\nEigenvalues:")
-print(eigenvalues)
-print("\nEigenvectors:")
-print(eigenvectors)
+print('\nInertia eigenvalues :')
+print('%.15f  %.15f  %.15f'%(eigenvalues[0],eigenvalues[1],eigenvalues[2]))
+
+print('\nInertia eigenvectors :')
+print(eigenvectors[0])
+print(eigenvectors[1])
+print(eigenvectors[2])

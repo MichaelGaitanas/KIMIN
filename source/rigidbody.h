@@ -75,7 +75,7 @@ dvec3 inertia_eigvals(const dmat3 &I)
 //Calculate the eigenvectors of the inertia matrix, assuming it is 3x3, real and symmetric.
 dmat3 inertia_eigvecs(const dmat3 &I)
 {
-    double Ixx = I[0][0], Ixy = I[0][1], Ixz = I[0][2], Iyy = I[1][1], Iyz = I[1][2];
+    double Ixx = I[0][0], Ixy = I[0][1], Ixz = I[0][2], Iyy = I[1][1], Iyz = I[1][2], Izz = I[2][2];
 
     dvec3 eigvals = inertia_eigvals(I);
 
@@ -100,6 +100,7 @@ dmat3 inertia_eigvecs(const dmat3 &I)
         v2 = {(-Ixy*Iyz + Ixz*(Iyy - eigvals[2]))/(Ixy*Ixy + (Ixx - eigvals[2])*(-Iyy + eigvals[2])),
               (-Ixy*Ixz + Iyz*(Ixx - eigvals[2]))/(Ixy*Ixy + (Ixx - eigvals[2])*(-Iyy + eigvals[2])),
               1.0};
+        
 
         //Normalize the eigenvectors.
         v0 = v0/length(v0);
