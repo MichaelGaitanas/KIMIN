@@ -260,14 +260,14 @@ public:
     {
         dmat3 I = get_inertia(M);
 
-        dmat3 eigmat = inertia_eigvecs(I); //Three real and normalized vectors that form a right handed Cartesian basis.
+        dmat3 eigvecs = inertia_eigvecs(I); //Three real and normalized vectors that form a right handed Cartesian basis.
 
         //Multiply each vertex vector with the rotation matrix.
         for (size_t i = 0; i < verts.size(); ++i)
-            verts[i] = dot(transpose(eigmat), verts[i]);
+            verts[i] = dot(eigvecs, verts[i]);
 
         //Now the vertices are correct. Vertex connectivity (face indices) should remain the same.
-        
+    
         //But the norms are wrong! They must be recomputed.
         norms_exist = false;
         gen_norms();

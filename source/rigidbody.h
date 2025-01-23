@@ -127,6 +127,7 @@ dmat3 inertia_eigvecs(const dmat3 &I)
                      {v2[0], v2[1], v2[2]} }};
 
     
+    /*
     if (det3x3(eigmat) < 0.0)
     {
         //Flip the sign of one row to result in a right-handed coordsys.
@@ -134,9 +135,10 @@ dmat3 inertia_eigvecs(const dmat3 &I)
         eigmat[2][1] = -eigmat[2][1];
         eigmat[2][2] = -eigmat[2][2];
     }
+    */
     
 
-    return eigmat;
+    return transpose(eigmat);
 }
 
 //Sphere-sphere collision detection criterion.
