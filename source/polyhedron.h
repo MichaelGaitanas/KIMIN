@@ -264,7 +264,7 @@ public:
 
         //Multiply each vertex vector with the rotation matrix.
         for (size_t i = 0; i < verts.size(); ++i)
-            verts[i] = dot(eigmat, verts[i]);
+            verts[i] = dot(transpose(eigmat), verts[i]);
 
         //Now the vertices are correct. Vertex connectivity (face indices) should remain the same.
         

@@ -4,6 +4,7 @@
 #include<cmath>
 #include<cstdio>
 #include<iostream>
+#include<algorithm>
 
 #include"constant.h"
 #include"typedef.h"
@@ -78,6 +79,7 @@ dmat3 inertia_eigvecs(const dmat3 &I)
     double Ixx = I[0][0], Ixy = I[0][1], Ixz = I[0][2], Iyy = I[1][1], Iyz = I[1][2], Izz = I[2][2];
 
     dvec3 eigvals = inertia_eigvals(I);
+    std::sort(eigvals.begin(), eigvals.end());
 
     dvec3 v0,v1,v2;
     //Check if the matrix is diagonal. If yes, we already know the eigenvectors...
@@ -89,18 +91,29 @@ dmat3 inertia_eigvecs(const dmat3 &I)
     }
     else
     {
-        v0 = {(-Ixy*Iyz + Ixz*(Iyy - eigvals[0]))/(Ixy*Ixy + (Ixx - eigvals[0])*(-Iyy + eigvals[0])),
-              (-Ixy*Ixz + Iyz*(Ixx - eigvals[0]))/(Ixy*Ixy + (Ixx - eigvals[0])*(-Iyy + eigvals[0])),
+        double a = -Ixy*Ixy + (Ixx - eigvals[0])*(Iyy - eigvals[0]);
+        double b = -Ixy*Ixz + (Ixx - eigvals[0])*Iyz;
+        double c = -Ixz*Ixz + (Ixx - eigvals[0])*(Izz - eigvals[0]);
+
+       v0 = {(Ixy*(b+c)/(a+b) - Ixz)/(Ixx - eigvals[0]),
+              -(b+c)/(a+b),
               1.0};
 
-        v1 = {(-Ixy*Iyz + Ixz*(Iyy - eigvals[1]))/(Ixy*Ixy + (Ixx - eigvals[1])*(-Iyy + eigvals[1])),
-              (-Ixy*Ixz + Iyz*(Ixx - eigvals[1]))/(Ixy*Ixy + (Ixx - eigvals[1])*(-Iyy + eigvals[1])),
+        a = -Ixy*Ixy + (Ixx - eigvals[1])*(Iyy - eigvals[1]);
+        b = -Ixy*Ixz + (Ixx - eigvals[1])*Iyz;
+        c = -Ixz*Ixz + (Ixx - eigvals[1])*(Izz - eigvals[1]);
+
+        v1 = {(Ixy*(b+c)/(a+b) - Ixz)/(Ixx - eigvals[1]),
+              -(b+c)/(a+b),
               1.0};
 
-        v2 = {(-Ixy*Iyz + Ixz*(Iyy - eigvals[2]))/(Ixy*Ixy + (Ixx - eigvals[2])*(-Iyy + eigvals[2])),
-              (-Ixy*Ixz + Iyz*(Ixx - eigvals[2]))/(Ixy*Ixy + (Ixx - eigvals[2])*(-Iyy + eigvals[2])),
+        a = -Ixy*Ixy + (Ixx - eigvals[2])*(Iyy - eigvals[2]);
+        b = -Ixy*Ixz + (Ixx - eigvals[2])*Iyz;
+        c = -Ixz*Ixz + (Ixx - eigvals[2])*(Izz - eigvals[2]);
+
+        v2 = {(Ixy*(b+c)/(a+b) - Ixz)/(Ixx - eigvals[2]),
+              -(b+c)/(a+b),
               1.0};
-        
 
         //Normalize the eigenvectors.
         v0 = v0/length(v0);

@@ -8,17 +8,15 @@
 int main()
 {
     polyhedron aster;
-    aster.load_obj_file("../../obj/didymain2019.obj");
+    aster.load_obj_file("../../obj/gerasimenko256k.obj");
     aster.eliminate_com_offset(aster.get_com()); //Pull the vertices so that ultimately the center of mass coincides with the cartesian origin (0,0,0).
 
-    double M = 1.0e5; //Mass.
+    double M = 1.0e12; //Mass.
     dmat3 iner = aster.get_inertia(M);
     printf("Inertia :\n");
     printf("[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n\n", iner[0][0],iner[0][1],iner[0][2],
                                                                                             iner[1][0],iner[1][1],iner[1][2],
                                                                                             iner[2][0],iner[2][1],iner[2][2]);
-
-    printf("%lf\n",det3x3(iner));
 
     FILE *fp = fopen("inertia.txt","w");
     fprintf(fp, "%.15e  %.15e  %.15e\n%.15e  %.15e  %.15e\n%.15e  %.15e  %.15e\n", iner[0][0],iner[0][1],iner[0][2],
@@ -26,15 +24,26 @@ int main()
                                                                                    iner[2][0],iner[2][1],iner[2][2]);
     fclose(fp);
 
+    printf("Inertia determinant :\n");
+    printf("%lf\n",det3x3(iner));
+
     dvec3 eigvals = inertia_eigvals(iner);
-    printf("Inertia eigenvalues :\n");
-    printf("%.15lf  %.15lf  %.15lf\n\n", eigvals[0],eigvals[1],eigvals[2]);
+    std::sort(eigvals.begin(), eigvals.end());
+    printf("\nInertia eigenvalues :\n");
+    printf("%.15e  %.15e  %.15e\n\n", eigvals[0],eigvals[1],eigvals[2]);
 
     dmat3 eigmat = inertia_eigvecs(iner);
     printf("Inertia eigenvectors :\n");
     printf("[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n\n", eigmat[0][0],eigmat[0][1],eigmat[0][2],
                                                                                             eigmat[1][0],eigmat[1][1],eigmat[1][2],
                                                                                             eigmat[2][0],eigmat[2][1],eigmat[2][2]);
+    aster.align_principal_axes_to_basis(M);
+    iner = aster.get_inertia(M);
+
+    printf("Inertia :\n");
+    printf("[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n\n", iner[0][0],iner[0][1],iner[0][2],
+                                                                                            iner[1][0],iner[1][1],iner[1][2],
+                                                                                            iner[2][0],iner[2][1],iner[2][2]);
 
     return 0;
 }
