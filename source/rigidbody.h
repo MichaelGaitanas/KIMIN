@@ -45,7 +45,7 @@ bool inertia_is_diagonal(const dmat3 &I, const double tolerance = 1.0e-12)
 
     //Find the maximum value of the diagonal elements.
     double max_diag = std::max(std::max(Ixx, Iyy), Izz);
-        
+
     //Compare all the off-diagonal elements against the precomputed max diagonal element.
     if (Ixy >= tolerance*max_diag || Ixz >= tolerance*max_diag || Iyz >= tolerance*max_diag)
         return false;
@@ -69,7 +69,6 @@ dvec3 inertia_eigvals(const dmat3 &I)
 
     //The roots ought to be real due to the 'real and symmetric' property of the matrix.
     //Hence we manually get rid of the imaginary part by returning the real part only.
-
     return {sol[0].real(), sol[1].real(), sol[2].real()};
 }
 
@@ -79,7 +78,7 @@ dmat3 inertia_eigvecs(const dmat3 &I)
     double Ixx = I[0][0], Ixy = I[0][1], Ixz = I[0][2], Iyy = I[1][1], Iyz = I[1][2], Izz = I[2][2];
 
     dvec3 eigvals = inertia_eigvals(I);
-    std::sort(eigvals.begin(), eigvals.end());
+    //std::sort(eigvals.begin(), eigvals.end());
 
     dvec3 v0,v1,v2;
     //Check if the matrix is diagonal. If yes, we already know the eigenvectors...
