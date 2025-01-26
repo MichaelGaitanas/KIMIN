@@ -1,4 +1,47 @@
 import numpy as np
+import cmath
+
+#Root of the linear equation a*x + b = 0, where a,b are reals.
+def solve_linear(a, b, machine_zero=1e-14):
+    if abs(a) <= machine_zero:
+        return complex(float('nan'), 0.0)
+    return complex(-b / a, 0.0)
+
+#Roots of the quadratic equation a*x^2 + b*x + c = 0, where a,b,c are reals.
+def solve_quadratic(a, b, c, machine_zero=1e-14):
+    if abs(a) <= machine_zero:
+        return [solve_linear(b, c, machine_zero)]
+
+    D = b**2 - 4.0 * a * c
+    sqrt_D = cmath.sqrt(D)
+    x1 = (-b + sqrt_D) / (2.0 * a)
+    x2 = (-b - sqrt_D) / (2.0 * a)
+    return [x1, x2]
+
+#Roots of the cubic equation a*x^3 + b*x^2 + c*x + d = 0, where a,b,c,d are reals.
+def solve_cubic(a, b, c, d, machine_zero=1e-14):
+    if abs(a) <= machine_zero:
+        return solve_quadratic(b, c, d, machine_zero)
+
+    D0 = b**2 - 3.0 * a * c
+    D1 = 2.0 * b**3 - 9.0 * a * b * c + 27.0 * a**2 * d
+
+    discriminant = D1**2 - 4.0 * D0**3
+    C = cmath.exp(cmath.log((D1 + cmath.sqrt(complex(discriminant))) / 2.0) / 3.0)
+    
+    if abs(C) <= machine_zero:
+        C = cmath.exp(cmath.log((D1 - cmath.sqrt(complex(discriminant))) / 2.0) / 3.0)
+        if abs(C) <= machine_zero:
+            root = -b / (3.0 * a)
+            return [root, root, root]
+
+    omega = complex(-0.5, cmath.sqrt(3.0) / 2.0)
+
+    x1 = -(b + C + D0 / C) / (3.0 * a)
+    x2 = -(b + omega * C + D0 / (omega * C)) / (3.0 * a)
+    x3 = -(b + omega**2 * C + D0 / (omega**2 * C)) / (3.0 * a)
+
+    return [x1, x2, x3]
 
 #Load an .obj file, exclusively with the format 'v x y z' (mascons).
 def loadobjv(path):
@@ -12,6 +55,7 @@ def loadobjv(path):
     
     return np.asarray(xyz)
 
+#Decide whether or not the inertia matrix is diagonal, up to an accuracy.
 def inertia_is_diagonal(I, tolerance = 1.0e-12):
     #Extract the matrix elements.
     Ixx = abs(I[0,0])
@@ -24,7 +68,7 @@ def inertia_is_diagonal(I, tolerance = 1.0e-12):
     #Find the maximum diagonal element.
     max_diag = max(Ixx, Iyy, Izz)
 
-    #Compare off-diagonal elements against the tolerance-scaled max diagonal element.
+    #Metric : Compare off-diagonal elements against the tolerance-scaled max diagonal element.
     if Ixy >= tolerance*max_diag or Ixz >= tolerance*max_diag or Iyz >= tolerance*max_diag:
         return False
 
@@ -46,11 +90,14 @@ def inertia_eigvals(I):
     c = Ixy**2 + Ixz**2 - Ixx*Iyy + Iyz**2 - Ixx*Izz - Iyy*Izz
     d = -Ixz**2 * Iyy + 2.0*Ixy*Ixz*Iyz - Ixx*Iyz**2 - Ixy**2*Izz + Ixx*Iyy*Izz
 
-    return np.roots([-1.0, b, c, d])
+    sol = np.sort(np.array(solve_cubic(-1.0, b, c, d)).real)
+
+    return sol
 
 #Compute analytically the eigenvectors of an inertia matrix (real and symmetric).
 def inertia_eigvecs(I):
 
+    #Nested hepler function to correspond an eigenvalue to an eigenvector.
     def calculate_eigenvector(Ixx, Ixy, Ixz, Iyy, Iyz, Izz, eigval):
         a = -Ixy**2 + (Ixx - eigval)*(Iyy - eigval)
         b = -Ixy*Ixz + (Ixx - eigval)*Iyz
@@ -71,9 +118,9 @@ def inertia_eigvecs(I):
     Iyz = I[1, 2]
     Izz = I[2, 2]
 
-    eigvals = np.sort(inertia_eigvals(I))
+    eigvals = inertia_eigvals(I)
     
-    v0 = v1 = v2 = None
+    v0 = v1 = v2 = None #Initialize.
 
     if inertia_is_diagonal(I):
         #If diagonal, eigenvectors are standard basis vectors.
@@ -90,10 +137,8 @@ def inertia_eigvecs(I):
         v1 /= np.linalg.norm(v1)
         v2 /= np.linalg.norm(v2)
 
-    #Construct a 3x3 matrix with rows as the eigenvectors.
-    eigmat = np.array([v0, v1, v2])
-
-    return eigmat.T
+    #Construct and return a 3x3 matrix with columns as the eigenvectors. 
+    return np.transpose(np.array([v0, v1, v2]))
 
 #Compute the center of mass of the mascon distribution with constant density.
 def get_masc_com(masc):
@@ -135,27 +180,28 @@ masc = loadobjv('../../obj/mascons/didymain2019_NASA_1229.obj') #Mascons positio
 M = 5.320591856403073e11 #Mass of the body [kg].
 
 com = get_masc_com(masc)
-#print('Initial com : ')
-#print(com)
+print('Initial com : ')
+print((f"[ {com[0]:.15f}  {com[1]:.15f}  {com[2]:.15f} ]"))
 
 eliminate_com_offset(masc, com)
 com = get_masc_com(masc)
-#print('Final com : ')
-#print(com)
+print('Final com : ')
+print((f"[ {com[0]:.15e}  {com[1]:.15e}  {com[2]:.15e} ]"))
 
 iner = get_masc_inertia(masc, M)
-#print('\nInitial inertia : ')
-#print(iner)
+print('\nInitial inertia : ')
+print((f"[ {iner[0,0]:.15e} {iner[0,1]:.15e} {iner[0,2]:.15e} ]"))
+print((f"[ {iner[1,0]:.15e} {iner[1,1]:.15e} {iner[1,2]:.15e} ]"))
+print((f"[ {iner[2,0]:.15e} {iner[2,1]:.15e} {iner[2,2]:.15e} ]"))
 
-eigvals = np.sort(inertia_eigvals(iner))
-print(f"{eigvals[0]:.16f} {eigvals[1]:.16f} {eigvals[2]:.16f}")
+align_principal_axes_to_basis(masc, iner)
+iner = get_masc_inertia(masc, M)
+align_principal_axes_to_basis(masc, iner)
+iner = get_masc_inertia(masc, M)
+print('\nFinal inertia : ')
+print((f"[ {iner[0,0]:.15e} {iner[0,1]:.15e} {iner[0,2]:.15e} ]"))
+print((f"[ {iner[1,0]:.15e} {iner[1,1]:.15e} {iner[1,2]:.15e} ]"))
+print((f"[ {iner[2,0]:.15e} {iner[2,1]:.15e} {iner[2,2]:.15e} ]"))
 
-eigenvalues, eigenvectors = np.linalg.eigh(iner)
-print(f"{eigenvalues[0]:.16f} {eigenvalues[1]:.16f} {eigenvalues[2]:.16f}")
 
-#align_principal_axes_to_basis(masc, iner)
-#iner = get_masc_inertia(masc, M)
-#print('\nFinal inertia : ')
-#print(iner)
-
-#export_masc_to_obj(masc, 'masc_shift_rot.obj')
+#export_masc_to_obj(masc, 'py_masc_shift_rot.obj')

@@ -5,22 +5,25 @@
 #include<cstdlib>
 #include<cstring>
 #include<fstream>
+#include<Eigen/Dense>
 
 #include"typedef.h"
-#include"constant.h"
 #include"linalg.h"
 #include"rigidbody.h"
+#include"polyhedron.h"
 
 class mascons
 {
 private:
-    dmatnx3 verts;
+    bool points_exist;
+    dmatnx3 points;
 
 public:
-    //Load an .obj file, exclusively with the format 'v x y z' (mascons).
+    //Load an .obj file, exclusively with the format 'v x y z' (point mascons).
     void load_obj_file(const char *path)
     {
-        verts.clear();
+        points_exist = false;
+        points.clear();
 
         std::ifstream objfile(path);
         if (!objfile.is_open())
@@ -29,7 +32,7 @@ public:
             exit(EXIT_FAILURE);
         }
 
-        double x,y,z; //Vertices.
+        double x,y,z; //Mascon (point) coordinates.
 
         str line;
         while (getline(objfile, line))
@@ -37,70 +40,115 @@ public:
             if (line[0] == 'v' && line[1] == ' ') //Then we have a vertex line.
             {
                 sscanf(line.c_str(), "v %lf %lf %lf", &x, &y, &z);
-                verts.push_back({x,y,z});
+                points.push_back({x,y,z});
             }
         }
         objfile.close();
+        points_exist = true;
     }
 
     dvec3 get_com()
     {
         dvec3 com = {0.0,0.0,0.0};
-        for (int i = 0; i < verts.size(); ++i)
-            com = com + verts[i];
-
-        return com/verts.size();
+        for (size_t i = 0; i < points.size(); ++i)
+            com = com + points[i];
+        return com/points.size();
     }
 
     dmat3 get_inertia(const double M)
     {
-        double m = (double)M/verts.size(); //Mass of each mascon.
-
-        double Ixx,Iyy,Izz,Ixy,Ixz,Iyz;
-        Ixx = Iyy = Izz = Ixy = Ixz = Iyz = 0.0;
-
-        for (int i = 0; i < verts.size(); ++i)
+        double m = (double)M/points.size(); //Mass of each mascon.
+        double Ixx = 0.0, Iyy = 0.0, Izz = 0.0, Ixy = 0.0, Ixz = 0.0, Iyz = 0.0;
+        for (size_t i = 0; i < points.size(); ++i)
         {
-            Ixx += ( pow(verts[i][1], 2) + pow(verts[i][2], 2) ); //y[i]^2 + z[i]^2
-            Iyy += ( pow(verts[i][0], 2) + pow(verts[i][2], 2) ); //x[i]^2 + z[i]^2
-            Izz += ( pow(verts[i][0], 2) + pow(verts[i][1], 2) ); //x[i]^2 + y[i]^2
-            Ixy -= verts[i][0]*verts[i][1]; //-x[i]*y[i]
-            Ixz -= verts[i][0]*verts[i][2]; //-x[i]*z[i]
-            Iyz -= verts[i][1]*verts[i][2]; //-y[i]*z[i]
+            Ixx += ( pow(points[i][1], 2) + pow(points[i][2], 2) ); //y[i]^2 + z[i]^2
+            Iyy += ( pow(points[i][0], 2) + pow(points[i][2], 2) ); //x[i]^2 + z[i]^2
+            Izz += ( pow(points[i][0], 2) + pow(points[i][1], 2) ); //x[i]^2 + y[i]^2
+            Ixy -= points[i][0]*points[i][1]; //-x[i]*y[i]
+            Ixz -= points[i][0]*points[i][2]; //-x[i]*z[i]
+            Iyz -= points[i][1]*points[i][2]; //-y[i]*z[i]
         }
-
-        //Ixy = Iyx, Ixz = Izx, Iyz = Izy by definition.
+        //Because the matrix is real and symmetric, Ixy = Iyx, Ixz = Izx, Iyz = Izy.
         return {{{m*Ixx, m*Ixy, m*Ixz},
                  {m*Ixy, m*Iyy, m*Iyz},
                  {m*Ixz, m*Iyz, m*Izz}}};
     }
 
-    //Shift the center of mass of the polyhedron, so that it coincides with O(0,0,0).
-    void eliminate_com_offset(const dvec3 &com)
+    void eliminate_com(const dvec3 &com)
     {
-        for (size_t i = 0; i < verts.size(); ++i)
-            verts[i] = verts[i] - com;
+        for (size_t i = 0; i < points.size(); ++i)
+            points[i] = points[i] - com;
     }
 
-    //Rotate the vertices, so that the inertia matrix becomes diagonal.
-    void align_principal_axes_to_basis(const double M)
+    void diagonalize_inertia(const dmat3 &I)
     {
-        dmat3 I = get_inertia(M);
+        Eigen::Matrix3d eigenMatrix;
+        for (size_t row = 0; row < 3; ++row)
+            for (size_t col = 0; col < 3; ++col)
+                eigenMatrix(row, col) = I[row][col];
 
-        dmat3 eigvecs = inertia_eigvecs(I); //Three real and normalized vectors that form a right handed Cartesian basis.
+        Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver(eigenMatrix);
+        if (solver.info() != Eigen::Success)
+        {
+            fprintf(stderr, "Error : Eigenvalue decomposition failed. Exiting...\n");
+            exit(EXIT_FAILURE);
+        }
 
-        //Multiply each vertex vector with the rotation matrix.
-        for (size_t i = 0; i < verts.size(); ++i)
-            verts[i] = dot(eigvecs, verts[i]);
+        Eigen::Matrix3d eigenvectors = solver.eigenvectors();
+        Eigen::Matrix3d eigenvectorsT = eigenvectors.transpose();
 
-        //Now the vertices are correct. Vertex connectivity (face indices) should remain the same.
-    
-        //But the norms are wrong! They must be recomputed.
-        norms_exist = false;
-        gen_norms();
+        dmat3 eigvecs;
+        for (size_t row = 0; row < 3; ++row)
+            for (size_t col = 0; col < 3; ++col)
+                eigvecs[row][col] = eigenvectorsT(row, col);
+
+        //dmat3 eigvecs = transpose(inertia_eigvecs(I));
+        for (size_t i = 0; i < points.size(); ++i)
+            points[i] = dot(eigvecs, points[i]);
     }
 
-    
+    //This function fills with point-mascons the interior of a given polyhedron surface (poly), in accordance with a given grid resolution (grid_reso).
+    //The function assumes a (slightly scaled) circumscribed cuboid around the polyhedron, which traverses along x,y,z axes and at each point
+    //checks whether or not the current (x,y,z) point is inside the polyhedron. if yes, the grid point is appended as point-mascon to the member variable 'points'.
+    void generate_from_polyhedron(polyhedron &poly, const uvec3 &grid_reso)
+    {
+        //Get (xmax, ymax, zmax) and (xmin, ymin, zmin) of the polyhedron vertices to establish the cuboid.
+        //Then, scale it, so that the polyhedron is 'conveniently' contained.
+        dvec3 rmax = 1.1*poly.get_farthest_coordinates_per_axis();
+        dvec3 rmin = 1.1*poly.get_nearest_coordinates_per_axis();
+
+        double xmax = rmax[0];
+        double ymax = rmax[1];
+        double zmax = rmax[2];
+        double xmin = rmin[0];
+        double ymin = rmin[1];
+        double zmin = rmin[2];
+
+        //Now traverse the grid and decide whether a point is inside the polyhedron or not.
+        for (unsigned int i = 0; i < grid_reso[0]; ++i)
+        {
+            double x = xmin + i*(xmax - xmin)/((double)grid_reso[0] - 1.0);
+            for (unsigned int j = 0; j < grid_reso[1]; ++j)
+            {
+                double y = ymin + j*(ymax - ymin)/((double)grid_reso[1] - 1.0);
+                for (unsigned int k = 0; k < grid_reso[2]; ++k)
+                {
+                    double z = zmin + k*(zmax - zmin)/((double)grid_reso[2] - 1.0);
+                    dvec3 r = {x,y,z}; //Current point of the grid.
+                    if (poly.encloses_point(r))
+                        points.push_back(r);
+                }
+            }
+        }
+    }
+
+    void export_points_to_obj(const char *path)
+    {
+        FILE *fp = fopen(path,"w");
+        for (size_t i = 0; i < points.size(); ++i)
+            fprintf(fp, "v %.15lf %.15lf %.15lf\n", points[i][0],points[i][1],points[i][2]);
+        fclose(fp);
+    }
 };
 
 #endif

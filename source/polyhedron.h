@@ -9,7 +9,6 @@
 #include"typedef.h"
 #include"constant.h"
 #include"linalg.h"
-#include"rigidbody.h"
 
 class polyhedron
 {
@@ -34,9 +33,8 @@ public:
         std::ifstream objfile(path);
         if (!objfile.is_open())
         {
-            //This must never happen coz the gui will pre-detect all available .obj files in the obj/ directory.
             fprintf(stderr, "Error : '%s' could not be opened. Exiting...\n", path);
-            exit(EXIT_FAILURE); //I will fix that...
+            exit(EXIT_FAILURE);
         }
 
         double x,y,z; //Vertices.
@@ -64,6 +62,12 @@ public:
     {
         if (norms_exist)
             return;
+
+        if (faces.empty())
+        {
+            printf("Warning : faces.empty() = true. No normals are generated. Returning.\n");
+            return;
+        }
         
         norms.clear();
         norms.resize(faces.size());
@@ -74,18 +78,22 @@ public:
             dvec3 p1 = verts[faces[i][1]];
             dvec3 p2 = verts[faces[i][2]];
             perp = cross(p1-p0, p2-p1);
-            norms[i] = perp/length(perp);
+            double len = length(perp);
+            if (len > machine_zero)
+                norms[i] = perp/len;
+            else
+                norms[i] = {0.0,0.0,0.0}; //Degenerate case...
         }
         norms_exist = true;
     }
 
-    //Polyhderon's volume. This function is essential for the inertial integrals evaluation.
+    //Polyhderon's total volume.
     double get_vol()
     {
         if (vol_exists)
             return vol;
 
-        gen_norms(); //This will only evaluate the norms if norms_exist is false (the check is inside gen_norms()).
+        gen_norms();
 
         vol = 0.0;
         for (size_t i = 0; i < faces.size(); ++i)
@@ -93,7 +101,7 @@ public:
             dvec3 p0 = verts[faces[i][0]];
             dvec3 p1 = verts[faces[i][1]];
             dvec3 p2 = verts[faces[i][2]];
-            double d = p0[0]*norms[i][0] + p0[1]*norms[i][1] + p0[2]*norms[i][2]; //x*nx + y*ny + z*nz - d = 0 (plane equation)
+            double d = p0[0]*norms[i][0] + p0[1]*norms[i][1] + p0[2]*norms[i][2]; //x*nx + y*ny + z*nz - d = 0 (plane equation).
             double A = 0.5*length(cross(p1-p0, p2-p1));
             vol += d*A/3.0;
         }
@@ -101,7 +109,96 @@ public:
         return vol;
     }
 
+    //Farthest vertex distance with respect to the local coordinate system.
+    double get_farthest_vertex_distance()
+    {
+        double farthest = length(verts[0]); //Assume that the farthest vertex distance is the first one.
+        for (size_t i = 1; i < verts.size(); ++i)
+        {
+            double dist = length(verts[i]);
+            if (dist > farthest)
+                farthest = dist;
+        }
+        return farthest;
+    }
+
+    //Nearest vertex distance with respect to the local coordinate system.
+    double get_nearest_vertex_distance()
+    {
+        double nearest = length(verts[0]); //Assume that the nearest vertex distance is the first one.
+        for (size_t i = 1; i < verts.size(); ++i)
+        {
+            double dist = length(verts[i]);
+            if (dist < nearest)
+                nearest = dist;
+        }
+        return nearest;
+    }
+
+    //Get (xmax, ymax, zmax) of the polyhedron with respect to the local coordinate system.
+    dvec3 get_farthest_coordinates_per_axis()
+    {
+        dvec3 rmax = verts[0];
+        for (size_t i = 1; i < verts.size(); ++i)
+        {
+            if (verts[i][0] > rmax[0]) rmax[0] = verts[i][0];
+            if (verts[i][1] > rmax[1]) rmax[1] = verts[i][1];
+            if (verts[i][2] > rmax[2]) rmax[2] = verts[i][2];
+        }
+        return rmax;
+    }
+
+    //Get (xmin, ymin, zmin) of the polyhedron with respect to the local coordinate system.
+    dvec3 get_nearest_coordinates_per_axis()
+    {
+        dvec3 rmin = verts[0];
+        for (size_t i = 1; i < verts.size(); ++i)
+        {
+            if (verts[i][0] < rmin[0]) rmin[0] = verts[i][0];
+            if (verts[i][1] < rmin[1]) rmin[1] = verts[i][1];
+            if (verts[i][2] < rmin[2]) rmin[2] = verts[i][2];
+        }
+        return rmin;
+    }
+
+    bool encloses_point(const dvec3 &r)
+    {
+        gen_norms();
+        dvec3 pdest = 100000000.0*dvec3{pi, std::exp(1.0), std::sqrt(2.0)};
+        size_t intersections = 0;
+
+        //Loop through all the triangulated faces in search for ray intersection.
+        for (size_t j = 0; j < faces.size(); ++j)
+        {
+            //Define the triangle j from the 3 vertices p0,p1,p2.
+            dvec3 p0 = verts[faces[j][0]];
+            dvec3 p1 = verts[faces[j][1]];
+            dvec3 p2 = verts[faces[j][2]];
+            double lam = ( (p0[0] - r[0])*norms[j][0] + (p0[1] - r[1])*norms[j][1] + (p0[2] - r[2])*norms[j][2] )/( (pdest[0] - r[0])*norms[j][0] + (pdest[1] - r[1])*norms[j][1] + (pdest[2] - r[2])*norms[j][2] );
+            dvec3 pj = { r[0] + lam*(pdest[0] - r[0]),
+                         r[1] + lam*(pdest[1] - r[1]),
+                         r[2] + lam*(pdest[2] - r[2]) };
+
+
+            //Form the following 3 triangles and calculate their area.
+            double Aj01 = 0.5*length(cross(p0-pj, p1-p0)); //pj -> p0 -> p1
+            double Aj12 = 0.5*length(cross(p1-pj, p2-p1)); //pj -> p1 -> p2
+            double Aj20 = 0.5*length(cross(p2-pj, p0-p2)); //pj -> p2 -> p0
+            double A012 = 0.5*length(cross(p1-p0, p2-p1)); //p0 -> p1 -> p2
+
+            //If the sum of the 3 areas is equal to the area of the surface triangle, then pj sits upon the surface of the triangle.
+            if ( fabs(Aj01 + Aj12 + Aj20 - A012) <= machine_zero && pj[0] > r[0] && pj[1] > r[1] && pj[2] > r[2] )
+                ++intersections;
+        }
+        
+        if (intersections%2 == 1)
+            return true; //Odd : (x,y,z) is inside the polyhdernon.
+
+        return false; //Even : (x,y,z) is outside the polyhdernon.
+    }
+
     //Calculate the center of mass of an arbitrary homogeneous closed surface polyhedron.
+    /*
     dvec3 get_com()
     {
         gen_norms(); //This will only evaluate the norms if norms_exist is false (the check is inside gen_norms()).
@@ -164,8 +261,10 @@ public:
 
         return com/(4.0*get_vol());
     }
+    */
 
     //Calculate the inertia matrix of an arbitrary homogeneous closed surface polyhedron.
+    /*
     dmat3 get_inertia(const double M)
     {
         gen_norms();
@@ -204,9 +303,9 @@ public:
                 Jxx +=  coeffnz*(6.0*x1*x1 + x21*x21 + x21*x31 + x31*x31 + 4.0*x1*(x21 + x31))/12.0;
                 Jyy +=  coeffnz*(6.0*y1*y1 + y21*y21 + y21*y31 + y31*y31 + 4.0*y1*(y21 + y31))/12.0;
                 Jzz +=  coeffnz*(6*pow(d,2) + pow(nx,2)*(6*pow(x1,2) + pow(x21,2) + x21*x31 + pow(x31,2) + 4*x1*(x21 + x31)) + pow(ny,2)*(6*pow(y1,2) + pow(y21,2) + y21*y31 + pow(y31,2) + 4*y1*(y21 + y31)) - 4*d*(nx*(3*x1 + x21 + x31) + ny*(3*y1 + y21 + y31)) + nx*ny*(4*x1*(3*y1 + y21 + y31) + x21*(4*y1 + 2*y21 + y31) + x31*(4*y1 + y21 + 2*y31)))/(12.*pow(nz,2));
-                Jxy +=  coeffnz*(4*x1*(3*y1 + y21 + y31) + x21*(4*y1 + 2*y21 + y31) + x31*(4*y1 + y21 + 2*y31))/24.;
-                Jxz += -coeffnz*(-4*d*(3*x1 + x21 + x31) + 2*nx*(6*pow(x1,2) + pow(x21,2) + x21*x31 + pow(x31,2) + 4*x1*(x21 + x31)) + ny*(4*x1*(3*y1 + y21 + y31) + x21*(4*y1 + 2*y21 + y31) + x31*(4*y1 + y21 + 2*y31)))/(24.*nz);
-                Jyz += -coeffnz*(-4*d*(3*y1 + y21 + y31) + 2*ny*(6*pow(y1,2) + pow(y21,2) + y21*y31 + pow(y31,2) + 4*y1*(y21 + y31)) + nx*(4*x1*(3*y1 + y21 + y31) + x21*(4*y1 + 2*y21 + y31) + x31*(4*y1 + y21 + 2*y31)))/(24.*nz);
+                Jxy -=  coeffnz*(4*x1*(3*y1 + y21 + y31) + x21*(4*y1 + 2*y21 + y31) + x31*(4*y1 + y21 + 2*y31))/24.;
+                Jxz -= -coeffnz*(-4*d*(3*x1 + x21 + x31) + 2*nx*(6*pow(x1,2) + pow(x21,2) + x21*x31 + pow(x31,2) + 4*x1*(x21 + x31)) + ny*(4*x1*(3*y1 + y21 + y31) + x21*(4*y1 + 2*y21 + y31) + x31*(4*y1 + y21 + 2*y31)))/(24.*nz);
+                Jyz -= -coeffnz*(-4*d*(3*y1 + y21 + y31) + 2*ny*(6*pow(y1,2) + pow(y21,2) + y21*y31 + pow(y31,2) + 4*y1*(y21 + y31)) + nx*(4*x1*(3*y1 + y21 + y31) + x21*(4*y1 + 2*y21 + y31) + x31*(4*y1 + y21 + 2*y31)))/(24.*nz);
             }
             else
             {
@@ -217,9 +316,9 @@ public:
                     Jxx +=  coeffny*(6.0*x1*x1 + x21*x21 + x21*x31 + x31*x31 + 4.0*x1*(x21 + x31))/12.0;
                     Jyy +=  coeffny*(6*pow(d,2) + pow(nx,2)*(6*pow(x1,2) + pow(x21,2) + x21*x31 + pow(x31,2) + 4*x1*(x21 + x31)) + pow(nz,2)*(6*pow(z1,2) + pow(z21,2) + z21*z31 + pow(z31,2) + 4*z1*(z21 + z31)) - 4*d*(nx*(3*x1 + x21 + x31) + nz*(3*z1 + z21 + z31)) + nx*nz*(4*x1*(3*z1 + z21 + z31) + x21*(4*z1 + 2*z21 + z31) + x31*(4*z1 + z21 + 2*z31)))/(12.*pow(ny,2));
                     Jzz +=  coeffny*(6.0*z1*z1 + z21*z21 + z21*z31 + z31*z31 + 4.0*z1*(z21 + z31))/12.0;
-                    Jxy += -coeffny*(-4*d*(3*x1 + x21 + x31) + 2*nx*(6*pow(x1,2) + pow(x21,2) + x21*x31 + pow(x31,2) + 4*x1*(x21 + x31)) + nz*(4*x1*(3*z1 + z21 + z31) + x21*(4*z1 + 2*z21 + z31) + x31*(4*z1 + z21 + 2*z31)))/(24.*ny);
-                    Jxz +=  coeffny*(4*x1*(3*z1 + z21 + z31) + x21*(4*z1 + 2*z21 + z31) + x31*(4*z1 + z21 + 2*z31))/24.;
-                    Jyz += -coeffny*(-4*d*(3*z1 + z21 + z31) + 2*nz*(6*pow(z1,2) + pow(z21,2) + z21*z31 + pow(z31,2) + 4*z1*(z21 + z31)) + nx*(4*x1*(3*z1 + z21 + z31) + x21*(4*z1 + 2*z21 + z31) + x31*(4*z1 + z21 + 2*z31)))/(24.*ny);
+                    Jxy -= -coeffny*(-4*d*(3*x1 + x21 + x31) + 2*nx*(6*pow(x1,2) + pow(x21,2) + x21*x31 + pow(x31,2) + 4*x1*(x21 + x31)) + nz*(4*x1*(3*z1 + z21 + z31) + x21*(4*z1 + 2*z21 + z31) + x31*(4*z1 + z21 + 2*z31)))/(24.*ny);
+                    Jxz -=  coeffny*(4*x1*(3*z1 + z21 + z31) + x21*(4*z1 + 2*z21 + z31) + x31*(4*z1 + z21 + 2*z31))/24.;
+                    Jyz -= -coeffny*(-4*d*(3*z1 + z21 + z31) + 2*nz*(6*pow(z1,2) + pow(z21,2) + z21*z31 + pow(z31,2) + 4*z1*(z21 + z31)) + nx*(4*x1*(3*z1 + z21 + z31) + x21*(4*z1 + 2*z21 + z31) + x31*(4*z1 + z21 + 2*z31)))/(24.*ny);
                 }
                 else //fabs(nx) > machine_zero
                 {
@@ -228,9 +327,9 @@ public:
                     Jxx +=  coeffnx*(6*pow(d,2) + pow(ny,2)*(6*pow(y1,2) + pow(y21,2) + y21*y31 + pow(y31,2) + 4*y1*(y21 + y31)) + pow(nz,2)*(6*pow(z1,2) + pow(z21,2) + z21*z31 + pow(z31,2) + 4*z1*(z21 + z31)) - 4*d*(ny*(3*y1 + y21 + y31) + nz*(3*z1 + z21 + z31)) + ny*nz*(4*y1*(3*z1 + z21 + z31) + y21*(4*z1 + 2*z21 + z31) + y31*(4*z1 + z21 + 2*z31)))/(12.*pow(nx,2));
                     Jyy +=  coeffnx*(6.0*y1*y1 + y21*y21 + y21*y31 + y31*y31 + 4.0*y1*(y21 + y31))/12.0;
                     Jzz +=  coeffnx*(6.0*z1*z1 + z21*z21 + z21*z31 + z31*z31 + 4.0*z1*(z21 + z31))/12.0;
-                    Jxy += -coeffnx*(-4*d*(3*y1 + y21 + y31) + 2*ny*(6*pow(y1,2) + pow(y21,2) + y21*y31 + pow(y31,2) + 4*y1*(y21 + y31)) + nz*(4*y1*(3*z1 + z21 + z31) + y21*(4*z1 + 2*z21 + z31) + y31*(4*z1 + z21 + 2*z31)))/(24.*nx);
-                    Jxz += -coeffnx*(-4*d*(3*z1 + z21 + z31) + 2*nz*(6*pow(z1,2) + pow(z21,2) + z21*z31 + pow(z31,2) + 4*z1*(z21 + z31)) + ny*(4*y1*(3*z1 + z21 + z31) + y21*(4*z1 + 2*z21 + z31) + y31*(4*z1 + z21 + 2*z31)))/(24.*nx);
-                    Jyz +=  coeffnx*(4*y1*(3*z1 + z21 + z31) + y21*(4*z1 + 2*z21 + z31) + y31*(4*z1 + z21 + 2*z31))/24.;
+                    Jxy -= -coeffnx*(-4*d*(3*y1 + y21 + y31) + 2*ny*(6*pow(y1,2) + pow(y21,2) + y21*y31 + pow(y31,2) + 4*y1*(y21 + y31)) + nz*(4*y1*(3*z1 + z21 + z31) + y21*(4*z1 + 2*z21 + z31) + y31*(4*z1 + z21 + 2*z31)))/(24.*nx);
+                    Jxz -= -coeffnx*(-4*d*(3*z1 + z21 + z31) + 2*nz*(6*pow(z1,2) + pow(z21,2) + z21*z31 + pow(z31,2) + 4*z1*(z21 + z31)) + ny*(4*y1*(3*z1 + z21 + z31) + y21*(4*z1 + 2*z21 + z31) + y31*(4*z1 + z21 + 2*z31)))/(24.*nx);
+                    Jyz -=  coeffnx*(4*y1*(3*z1 + z21 + z31) + y21*(4*z1 + 2*z21 + z31) + y31*(4*z1 + z21 + 2*z31))/24.;
                 }
             }
         }
@@ -247,98 +346,28 @@ public:
                  {   Jxy,    Jxx + Jzz,    Jyz   },
                  {   Jxz,       Jyz,    Jxx + Jyy}}};
     }
+    */
 
     //Shift the center of mass of the polyhedron, so that it coincides with O(0,0,0).
+    /*
     void eliminate_com_offset(const dvec3 &com)
     {
         for (size_t i = 0; i < verts.size(); ++i)
             verts[i] = verts[i] - com;
     }
+    */
 
     //Rotate the vertices, so that the inertia matrix becomes diagonal.
-    void align_principal_axes_to_basis(const double M)
+    /*
+    void align_principal_axes_to_basis(const dmat3 &I)
     {
-        dmat3 I = get_inertia(M);
-
-        dmat3 eigvecs = inertia_eigvecs(I); //Three real and normalized vectors that form a right handed Cartesian basis.
-
-        //Multiply each vertex vector with the rotation matrix.
+        dmat3 eigvecs = transpose(inertia_eigvecs(I));
         for (size_t i = 0; i < verts.size(); ++i)
             verts[i] = dot(eigvecs, verts[i]);
-
-        //Now the vertices are correct. Vertex connectivity (face indices) should remain the same.
-    
-        //But the norms are wrong! They must be recomputed.
         norms_exist = false;
         gen_norms();
     }
-
-    //Farthest vertex distance with respect to the local coordinate system.
-    double get_farthest_vertex_distance()
-    {
-        double farthest = length(verts[0]); //Assume that the farthest vertex distance is the first one.
-        for (size_t i = 1; i < verts.size(); ++i)
-        {
-            double dist = length(verts[i]);
-            if (dist > farthest)
-                farthest = dist;
-        }
-        return farthest;
-    }
-
-    //Nearest vertex distance with respect to the local coordinate system.
-    double get_nearest_vertex_distance()
-    {
-        double nearest = length(verts[0]); //Assume that the nearest vertex distance is the first one.
-        for (size_t i = 1; i < verts.size(); ++i)
-        {
-            double dist = length(verts[i]);
-            if (dist < nearest)
-                nearest = dist;
-        }
-        return nearest;
-    }
+    */
 };
-
-/*
-//Parse an obj file and write down if it contains [#,v,f,vn,vt].
-bvec obj_contains_ns_v_f_vn_vt(const char *path)
-{
-    std::ifstream file(path);
-    if (!file.is_open())
-    {
-        printf("'%s' not found. Exiting...\n", path);
-        exit(EXIT_FAILURE);
-    }
-   
-    bvec ns_v_f_vn_vt = {false, false, false, false, false};
-    str row;
-    while (getline(file, row))
-    {
-        if (row[0] == '#' && !ns_v_f_vn_vt[0])
-        {
-            ns_v_f_vn_vt[0] = true;
-        }
-        else if (row[0] == 'v' && row[1] == ' ' && !ns_v_f_vn_vt[1])
-        {
-            ns_v_f_vn_vt[1] = true;
-        }
-        else if (row[0] == 'f' && row[1] == ' ' && !ns_v_f_vn_vt[2])
-        {
-            ns_v_f_vn_vt[2] = true;
-        }
-        else if (row[0] == 'v' && row[1] == 'n' && row[2] == ' '  && !ns_v_f_vn_vt[3])
-        {
-            ns_v_f_vn_vt[3] = true;
-        }
-        else if (row[0] == 'v' && row[1] == 't' && row[2] == ' '  && !ns_v_f_vn_vt[4])
-        {
-            ns_v_f_vn_vt[4] = true;
-        }
-    }
-
-    return ns_v_f_vn_vt;
-}
-*/
 
 #endif

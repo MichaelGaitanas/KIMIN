@@ -78,7 +78,7 @@ dmat3 inertia_eigvecs(const dmat3 &I)
     double Ixx = I[0][0], Ixy = I[0][1], Ixz = I[0][2], Iyy = I[1][1], Iyz = I[1][2], Izz = I[2][2];
 
     dvec3 eigvals = inertia_eigvals(I);
-    //std::sort(eigvals.begin(), eigvals.end());
+    std::sort(eigvals.begin(), eigvals.end());
 
     dvec3 v0,v1,v2;
     //Check if the matrix is diagonal. If yes, we already know the eigenvectors...
@@ -124,18 +124,6 @@ dmat3 inertia_eigvecs(const dmat3 &I)
     dmat3 eigmat = {{{v0[0], v0[1], v0[2]},
                      {v1[0], v1[1], v1[2]},
                      {v2[0], v2[1], v2[2]} }};
-
-    
-    /*
-    if (det3x3(eigmat) < 0.0)
-    {
-        //Flip the sign of one row to result in a right-handed coordsys.
-        eigmat[2][0] = -eigmat[2][0];
-        eigmat[2][1] = -eigmat[2][1];
-        eigmat[2][2] = -eigmat[2][2];
-    }
-    */
-    
 
     return transpose(eigmat);
 }
