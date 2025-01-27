@@ -161,16 +161,16 @@ public:
         return rmin;
     }
 
-    //This function decides whether or not a given point in space (r) is inside the polyhderon's (poly) surface via raycasting.
+    //This function decides whether or not a given point in space (r) is inside the polyhderon's surface via raycasting.
     //In a nutshell, a ray is casted from the point of examination (r) up to a destination point (pdest), which must be outside the
     //polyhedron's surface. Then we count the number of intersections between the ray and the polyhedron. If the number of intersections
     //is odd, then r is inside the polyhedron. Otherwise it is outside.
-    bool encloses_point(const dvec3 &r)
+    bool encloses_point(const dvec3 &r, const double tolerance = 1.0e-12)
     {
         gen_norms();
 
         //Ray's destination point. It is assumed to be very far away, aiming to be outside of the polyhedron.
-        dvec3 pdest = 100000000.0*dvec3{pi, std::exp(1.0), std::sqrt(2.0)};
+        dvec3 pdest = 10000000.0*dvec3{pi, std::exp(1.0), std::sqrt(2.0)};
         
         size_t intersections = 0;
 
@@ -197,7 +197,7 @@ public:
             double A012 = 0.5*length(cross(p1-p0, p2-p1)); //p0 -> p1 -> p2
 
             //If the sum of the 3 areas is equal to the area of the surface triangle, then pj sits upon the surface of the triangle.
-            if ( fabs(Aj01 + Aj12 + Aj20 - A012) <= machine_zero && pj[0] > r[0] && pj[1] > r[1] && pj[2] > r[2] )
+            if ( fabs(Aj01 + Aj12 + Aj20 - A012) <= tolerance && pj[0] > r[0] && pj[1] > r[1] && pj[2] > r[2] )
                 ++intersections;
         }
         
