@@ -64,7 +64,7 @@ dvec3 inertia_eigvals(const dmat3 &I)
     double c = Ixy*Ixy + Ixz*Ixz - Ixx*Iyy + Iyz*Iyz - Ixx*Izz - Iyy*Izz;
     double d = -Ixz*Ixz*Iyy + 2.0*Ixy*Ixz*Iyz - Ixx*Iyz*Iyz - Ixy*Ixy*Izz + Ixx*Iyy*Izz;
 
-    //Find the roots of the polynomial.
+    //Find the roots of the polynomial (closed form).
     dcomplexvec sol = solve_cubic(-1.0, b, c, d);
 
     //The roots ought to be real due to the 'real and symmetric' property of the matrix.

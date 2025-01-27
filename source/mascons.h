@@ -47,9 +47,35 @@ public:
         points_exist = true;
     }
 
+    //Farthest point-mascon distance with respect to the local coordinate system.
+    double get_farthest_point_distance()
+    {
+        double farthest = length(points[0]); //Assume that the farthest point distance corresponds to the first mascon.
+        for (size_t i = 1; i < points.size(); ++i)
+        {
+            double dist = length(points[i]);
+            if (dist > farthest)
+                farthest = dist;
+        }
+        return farthest;
+    }
+
+    //Nearest point-mascon distance with respect to the local coordinate system.
+    double get_nearest_point_distance()
+    {
+        double nearest = length(points[0]); //Assume that the farthest point distance corresponds to the first mascon.
+        for (size_t i = 1; i < points.size(); ++i)
+        {
+            double dist = length(points[i]);
+            if (dist < nearest)
+                nearest = dist;
+        }
+        return nearest;
+    }
+
     dvec3 get_com()
     {
-        dvec3 com = {0.0,0.0,0.0};
+        dvec3 com = dvec3{0.0,0.0,0.0};
         for (size_t i = 0; i < points.size(); ++i)
             com = com + points[i];
         return com/points.size();
@@ -74,6 +100,19 @@ public:
                  {m*Ixz, m*Iyz, m*Izz}}};
     }
 
+    //Non normalized inertial integral tensor of arbitrary order of the mascons distribution (points), assuming constant density.
+    dtens get_inertial_integrals(const double M, const int ord)
+    {
+        double m = (double)M/points.size(); //Mass of each mascon.
+        dtens J(ord+1, dmat(ord+1, dvec(ord+1, 0.0) ) ); //Initialize the tensor with zeros.
+        for (int i = 0; i < ord + 1; ++i)
+            for (int j = 0; j < ord + 1; ++j)
+                for (int k = 0; k < ord + 1; ++k)
+                    for (int n = 0; n < points.size(); ++n)
+                        J[i][j][k] += m*pow(points[n][0], i)*pow(points[n][1], j)*pow(points[n][2], k); //J_ijk = m*(x[n]^i)*(y[n]^j)*(z[n]^k)
+        return J;
+    }
+
     void eliminate_com(const dvec3 &com)
     {
         for (size_t i = 0; i < points.size(); ++i)
@@ -90,17 +129,17 @@ public:
         Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver(eigenMatrix);
         if (solver.info() != Eigen::Success)
         {
-            fprintf(stderr, "Error : Eigenvalue decomposition failed. Exiting...\n");
+            fprintf(stderr, "Error : Inertia eigenvalue decomposition failed. Exiting...\n");
             exit(EXIT_FAILURE);
         }
 
-        Eigen::Matrix3d eigenvectors = solver.eigenvectors();
-        Eigen::Matrix3d eigenvectorsT = eigenvectors.transpose();
+        //Eigen::Matrix3d eigenvalues = solver.eigenvalues(); // (lambda0 <= lambda1 <= lambda2)
+        Eigen::Matrix3d eigenvectors = solver.eigenvectors().transpose();
 
         dmat3 eigvecs;
         for (size_t row = 0; row < 3; ++row)
             for (size_t col = 0; col < 3; ++col)
-                eigvecs[row][col] = eigenvectorsT(row, col);
+                eigvecs[row][col] = eigenvectors(row, col);
 
         //dmat3 eigvecs = transpose(inertia_eigvecs(I));
         for (size_t i = 0; i < points.size(); ++i)
@@ -134,7 +173,7 @@ public:
                 for (unsigned int k = 0; k < grid_reso[2]; ++k)
                 {
                     double z = zmin + k*(zmax - zmin)/((double)grid_reso[2] - 1.0);
-                    dvec3 r = {x,y,z}; //Current point of the grid.
+                    dvec3 r = dvec3{x,y,z}; //Current point of the grid.
                     if (poly.encloses_point(r))
                         points.push_back(r);
                 }

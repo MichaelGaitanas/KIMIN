@@ -1,47 +1,4 @@
 import numpy as np
-import cmath
-
-#Root of the linear equation a*x + b = 0, where a,b are reals.
-def solve_linear(a, b, machine_zero=1e-14):
-    if abs(a) <= machine_zero:
-        return complex(float('nan'), 0.0)
-    return complex(-b / a, 0.0)
-
-#Roots of the quadratic equation a*x^2 + b*x + c = 0, where a,b,c are reals.
-def solve_quadratic(a, b, c, machine_zero=1e-14):
-    if abs(a) <= machine_zero:
-        return [solve_linear(b, c, machine_zero)]
-
-    D = b**2 - 4.0 * a * c
-    sqrt_D = cmath.sqrt(D)
-    x1 = (-b + sqrt_D) / (2.0 * a)
-    x2 = (-b - sqrt_D) / (2.0 * a)
-    return [x1, x2]
-
-#Roots of the cubic equation a*x^3 + b*x^2 + c*x + d = 0, where a,b,c,d are reals.
-def solve_cubic(a, b, c, d, machine_zero=1e-14):
-    if abs(a) <= machine_zero:
-        return solve_quadratic(b, c, d, machine_zero)
-
-    D0 = b**2 - 3.0 * a * c
-    D1 = 2.0 * b**3 - 9.0 * a * b * c + 27.0 * a**2 * d
-
-    discriminant = D1**2 - 4.0 * D0**3
-    C = cmath.exp(cmath.log((D1 + cmath.sqrt(complex(discriminant))) / 2.0) / 3.0)
-    
-    if abs(C) <= machine_zero:
-        C = cmath.exp(cmath.log((D1 - cmath.sqrt(complex(discriminant))) / 2.0) / 3.0)
-        if abs(C) <= machine_zero:
-            root = -b / (3.0 * a)
-            return [root, root, root]
-
-    omega = complex(-0.5, cmath.sqrt(3.0) / 2.0)
-
-    x1 = -(b + C + D0 / C) / (3.0 * a)
-    x2 = -(b + omega * C + D0 / (omega * C)) / (3.0 * a)
-    x3 = -(b + omega**2 * C + D0 / (omega**2 * C)) / (3.0 * a)
-
-    return [x1, x2, x3]
 
 #Load an .obj file, exclusively with the format 'v x y z' (mascons).
 def loadobjv(path):
@@ -55,7 +12,7 @@ def loadobjv(path):
     
     return np.asarray(xyz)
 
-#Decide whether or not the inertia matrix is diagonal, up to an accuracy.
+#Decide whether or not the inertia matrix is diagonal, up to an accuracy (tolerance).
 def inertia_is_diagonal(I, tolerance = 1.0e-12):
     #Extract the matrix elements.
     Ixx = abs(I[0,0])
@@ -90,7 +47,7 @@ def inertia_eigvals(I):
     c = Ixy**2 + Ixz**2 - Ixx*Iyy + Iyz**2 - Ixx*Izz - Iyy*Izz
     d = -Ixz**2 * Iyy + 2.0*Ixy*Ixz*Iyz - Ixx*Iyz**2 - Ixy**2*Izz + Ixx*Iyy*Izz
 
-    sol = np.sort(np.array(solve_cubic(-1.0, b, c, d)).real)
+    sol = np.sort(np.roots([-1.0, b, c, d]).real)
 
     return sol
 
@@ -145,14 +102,13 @@ def get_masc_com(masc):
     return np.sum(masc, axis = 0)/len(masc)
 
 #Shift the center of mass of the mascon distribution with constant density, so that it coincides with O(0,0,0).
-def eliminate_com_offset(masc, com):
+def eliminate_com(masc, com):
     masc -= com
 
 #Compute the moment of inertia of a mascon distribution with constant density.
 def get_masc_inertia(masc, M):
     m = M/len(masc) #Mass of each mascon.
     Ixx = Iyy = Izz = Ixy = Ixz = Iyz = 0.0
-
     for x, y, z in masc:
         Ixx += y**2 + z**2
         Iyy += x**2 + z**2
@@ -166,8 +122,8 @@ def get_masc_inertia(masc, M):
                         [Ixz, Iyz, Izz] ])
 
 #Rotate the mascon distribution with constant density, so that its local axes coincide with the principal axes of inertia.
-def align_principal_axes_to_basis(masc, I):
-    eigenvalues, eigenvectors = np.linalg.eigh(I)
+def diagonalize_inertia(masc, I):
+    eigenvalues, eigenvectors = np.linalg.eigh(I) #Eigenvalues are automatically sorted...
     #eigenvectors = inertia_eigvecs(I)
     masc[:] = np.dot(masc, eigenvectors)
 
@@ -176,14 +132,16 @@ def export_masc_to_obj(masc, path):
         for x, y, z in masc:
             file.write(f"v {x:.15f} {y:.15f} {z:.15f}\n")
 
+#########################################################################################################################################################
+
 masc = loadobjv('../../obj/mascons/didymain2019_NASA_1229.obj') #Mascons positions ( x [km], y [km], z [km] ).
-M = 5.320591856403073e11 #Mass of the body [kg].
+M = 5.320591856403073e11 #total mass of the body [kg].
 
 com = get_masc_com(masc)
 print('Initial com : ')
 print((f"[ {com[0]:.15f}  {com[1]:.15f}  {com[2]:.15f} ]"))
 
-eliminate_com_offset(masc, com)
+eliminate_com(masc, com)
 com = get_masc_com(masc)
 print('Final com : ')
 print((f"[ {com[0]:.15e}  {com[1]:.15e}  {com[2]:.15e} ]"))
@@ -194,14 +152,11 @@ print((f"[ {iner[0,0]:.15e} {iner[0,1]:.15e} {iner[0,2]:.15e} ]"))
 print((f"[ {iner[1,0]:.15e} {iner[1,1]:.15e} {iner[1,2]:.15e} ]"))
 print((f"[ {iner[2,0]:.15e} {iner[2,1]:.15e} {iner[2,2]:.15e} ]"))
 
-align_principal_axes_to_basis(masc, iner)
-iner = get_masc_inertia(masc, M)
-align_principal_axes_to_basis(masc, iner)
+diagonalize_inertia(masc, iner)
 iner = get_masc_inertia(masc, M)
 print('\nFinal inertia : ')
 print((f"[ {iner[0,0]:.15e} {iner[0,1]:.15e} {iner[0,2]:.15e} ]"))
 print((f"[ {iner[1,0]:.15e} {iner[1,1]:.15e} {iner[1,2]:.15e} ]"))
 print((f"[ {iner[2,0]:.15e} {iner[2,1]:.15e} {iner[2,2]:.15e} ]"))
 
-
-#export_masc_to_obj(masc, 'py_masc_shift_rot.obj')
+export_masc_to_obj(masc, 'mascons_python.obj')

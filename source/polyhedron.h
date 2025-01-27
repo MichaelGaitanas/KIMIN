@@ -18,7 +18,7 @@ private:
     dmatnx3 verts;
     umatnx3 faces;
     dmatnx3 norms;
-    double vol; //Polyhedron's total volume.
+    double vol;
 
 public:
     //Load the .obj file assuming it has the classical form 'v x y z' and 'f i j k'.
@@ -65,7 +65,7 @@ public:
 
         if (faces.empty())
         {
-            printf("Warning : faces.empty() = true. No normals are generated. Returning.\n");
+            printf("Warning : faces.empty() = true. No normals are generated.\n");
             return;
         }
         
@@ -82,12 +82,12 @@ public:
             if (len > machine_zero)
                 norms[i] = perp/len;
             else
-                norms[i] = {0.0,0.0,0.0}; //Degenerate case...
+                norms[i] = dvec3{0.0,0.0,0.0}; //Degenerate case...
         }
         norms_exist = true;
     }
 
-    //Polyhderon's total volume.
+    //Calculate the polyhderon's total volume.
     double get_vol()
     {
         if (vol_exists)
@@ -161,24 +161,34 @@ public:
         return rmin;
     }
 
+    //This function decides whether or not a given point in space (r) is inside the polyhderon's (poly) surface via raycasting.
+    //In a nutshell, a ray is casted from the point of examination (r) up to a destination point (pdest), which must be outside the
+    //polyhedron's surface. Then we count the number of intersections between the ray and the polyhedron. If the number of intersections
+    //is odd, then r is inside the polyhedron. Otherwise it is outside.
     bool encloses_point(const dvec3 &r)
     {
         gen_norms();
+
+        //Ray's destination point. It is assumed to be very far away, aiming to be outside of the polyhedron.
         dvec3 pdest = 100000000.0*dvec3{pi, std::exp(1.0), std::sqrt(2.0)};
+        
         size_t intersections = 0;
 
-        //Loop through all the triangulated faces in search for ray intersection.
+        //The polyhderon is basically a collection of triangles. To find intersections between the ray and the polyhderon,
+        //we essentially loop through all the faces and check.
         for (size_t j = 0; j < faces.size(); ++j)
         {
             //Define the triangle j from the 3 vertices p0,p1,p2.
             dvec3 p0 = verts[faces[j][0]];
             dvec3 p1 = verts[faces[j][1]];
             dvec3 p2 = verts[faces[j][2]];
+            //By solving the equation of a line and a plane, we find intersection point pj.
             double lam = ( (p0[0] - r[0])*norms[j][0] + (p0[1] - r[1])*norms[j][1] + (p0[2] - r[2])*norms[j][2] )/( (pdest[0] - r[0])*norms[j][0] + (pdest[1] - r[1])*norms[j][1] + (pdest[2] - r[2])*norms[j][2] );
-            dvec3 pj = { r[0] + lam*(pdest[0] - r[0]),
-                         r[1] + lam*(pdest[1] - r[1]),
-                         r[2] + lam*(pdest[2] - r[2]) };
+            dvec3 pj = dvec3{ r[0] + lam*(pdest[0] - r[0]),
+                              r[1] + lam*(pdest[1] - r[1]),
+                              r[2] + lam*(pdest[2] - r[2]) };
 
+            //We must check however if the ray intersects the triangle j and not the whole extended mathematical plane.
 
             //Form the following 3 triangles and calculate their area.
             double Aj01 = 0.5*length(cross(p0-pj, p1-p0)); //pj -> p0 -> p1
