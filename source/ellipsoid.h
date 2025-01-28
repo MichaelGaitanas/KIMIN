@@ -12,12 +12,12 @@
 dmat3 ell_inertia(const double M, const dvec3 &semiaxes)
 {
     double a = semiaxes[0], b = semiaxes[1], c = semiaxes[2];
-    double Ix = M*(b*b + c*c)/5.0;
-    double Iy = M*(a*a + c*c)/5.0;
-    double Iz = M*(a*a + b*b)/5.0;
-    return {{{Ix,0.0,0.0},
-             {0.0,Iy,0.0},
-             {0.0,0.0,Iz}}};
+    double Ixx = M*(b*b + c*c)/5.0;
+    double Iyy = M*(a*a + c*c)/5.0;
+    double Izz = M*(a*a + b*b)/5.0;
+    return {{{Ixx,0.0,0.0},
+             {0.0,Iyy,0.0},
+             {0.0,0.0,Izz}}};
 }
 
 //Non normalized inertial integral tensor of arbitrary order a triaxial ellipsoid with constant density.

@@ -1,39 +1,44 @@
-#include <Eigen/Dense>
-#include <iostream>
-#include <array>
+#include<cstdio>
 
-int main() {
-    // Example symmetric 3x3 matrix
-    Eigen::Matrix3d myMatrix;
-    myMatrix << 1, 2, 1,
-                2, 3, 2,
-                1, 2, 4;
+#include"../../source/typedef.h"
+#include"../../source/linalg.h"
+#include"../../source/polyhedron.h"
+#include"../../source/mascons.h"
 
-    // Compute eigenvalues and eigenvectors
-    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver(myMatrix);
+int main()
+{
+    polyhedron poly;
+    poly.load_obj_file("../../obj/psyche_viikinkoski2018.obj");
+    mascons aster;
+    aster.generate_from_polyhedron(poly, uvec3{24,24,35});
 
-    // Extract eigenvalues and eigenvectors
-    Eigen::Vector3d eigenvalues = solver.eigenvalues();
-    Eigen::Matrix3d eigenvectors = solver.eigenvectors();
+    aster.export_points_to_obj("cartesian_mascons_cpp.obj");
 
-    // Define custom sorting order for indices
-    std::array<int, 3> indices = {2, 0, 1}; // Example: Sort by index 2, 0, 1
+    double M = 5.320591856403073e3;
 
-    // Containers for sorted eigenvalues and eigenvectors
-    Eigen::Vector3d sortedEigenvalues;
-    Eigen::Matrix3d sortedEigenvectors;
+    dvec3 com = aster.get_com();
+    printf("Initial com : \n");
+    printf("[ %.15lf  %.15lf  %.15lf ]\n", com[0],com[1],com[2]);
+    aster.eliminate_com(com);
+    com = aster.get_com();
+    printf("Final com : \n");
+    printf("[ %.15e  %.15e  %.15e ]\n\n", com[0],com[1],com[2]);
 
-    // Reorder eigenvalues and eigenvectors according to indices
-    for (int i = 0; i < 3; ++i) {
-        sortedEigenvalues(i) = eigenvalues(indices[i]);
-        sortedEigenvectors.col(i) = eigenvectors.col(indices[i]);
-    }
+    dmat3 iner = aster.get_inertia(M);
+    printf("Initial inertia : \n");
+    printf("[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n\n", iner[0][0],iner[0][1],iner[0][2],
+                                                                                            iner[1][0],iner[1][1],iner[1][2],
+                                                                                            iner[2][0],iner[2][1],iner[2][2]);
 
-    // Output the results
-    std::cout << "Original eigenvalues:\n" << eigenvalues << "\n\n";
-    std::cout << "Original eigenvectors:\n" << eigenvectors << "\n\n";
-    std::cout << "Sorted eigenvalues:\n" << sortedEigenvalues << "\n\n";
-    std::cout << "Sorted eigenvectors:\n" << sortedEigenvectors << "\n";
+    aster.diagonalize_inertia(iner);
+    iner = aster.get_inertia(M);
+    printf("Final inertia : \n");
+    printf("[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n\n", iner[0][0],iner[0][1],iner[0][2],
+                                                                                            iner[1][0],iner[1][1],iner[1][2],
+                                                                                            iner[2][0],iner[2][1],iner[2][2]);
+
+    
+    aster.export_points_to_obj("fixed_cartesian_mascons_cpp.obj");
 
     return 0;
 }

@@ -8,7 +8,7 @@
 int main()
 {
     polyhedron poly;
-    poly.load_obj_file("../../obj/untitled.obj");
+    poly.load_obj_file("../../obj/psyche_viikinkoski2018.obj");
 
     mascons aster;
     aster.generate_from_polyhedron(poly, uvec3{23,24,25});

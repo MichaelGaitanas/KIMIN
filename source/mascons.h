@@ -121,29 +121,62 @@ public:
 
     void diagonalize_inertia(const dmat3 &I)
     {
-        Eigen::Matrix3d eigenMatrix;
+        double Ixx = I[0][0];
+        double Iyy = I[1][1];
+        double Izz = I[2][2];
+
+        Eigen::Matrix3d eigen_iner;
         for (size_t row = 0; row < 3; ++row)
             for (size_t col = 0; col < 3; ++col)
-                eigenMatrix(row, col) = I[row][col];
+                eigen_iner(row, col) = I[row][col];
 
-        Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver(eigenMatrix);
+        Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver(eigen_iner);
         if (solver.info() != Eigen::Success)
         {
             fprintf(stderr, "Error : Inertia eigenvalue decomposition failed. Exiting...\n");
             exit(EXIT_FAILURE);
         }
+        Eigen::Vector3d eigenvalues = solver.eigenvalues(); // (lambda0 <= lambda1 <= lambda2)
+        Eigen::Matrix3d eigenvectors = solver.eigenvectors();
 
-        //Eigen::Matrix3d eigenvalues = solver.eigenvalues(); // (lambda0 <= lambda1 <= lambda2)
-        Eigen::Matrix3d eigenvectors = solver.eigenvectors().transpose();
+        uvec3 indices;
+        if (Ixx < Iyy && Iyy < Izz)
+            indices = uvec3{0,1,2};
+        else if (Ixx < Izz && Izz < Iyy)
+            indices = uvec3{0,2,1};
+        else if (Iyy < Ixx && Ixx < Izz)
+            indices = uvec3{1,0,2};
+        else if (Iyy < Izz && Izz < Ixx)
+            indices = uvec3{1,2,0};
+        else if (Izz < Iyy && Iyy < Ixx)
+            indices = uvec3{2,1,0};
+        else if (Izz < Ixx && Ixx < Iyy)
+            indices = uvec3{2,0,1};
+        else
+        {
+            printf("Equality! Exiting...\n");
+            exit(EXIT_FAILURE);
+        }
+
+        Eigen::Vector3d sortedEigenvalues;
+        Eigen::Matrix3d sortedEigenvectors;
+        //Reorder eigenvalues and eigenvectors according to indices.
+        for (int i = 0; i < 3; ++i)
+        {
+            sortedEigenvalues(i) = eigenvalues(indices[i]);
+            sortedEigenvectors.col(i) = eigenvectors.col(indices[i]);
+        }
 
         dmat3 eigvecs;
         for (size_t row = 0; row < 3; ++row)
             for (size_t col = 0; col < 3; ++col)
-                eigvecs[row][col] = eigenvectors(row, col);
+                eigvecs[row][col] = sortedEigenvectors(row, col);
+
+        dmat3 ev = transpose(eigvecs);
 
         //dmat3 eigvecs = transpose(inertia_eigvecs(I));
         for (size_t i = 0; i < points.size(); ++i)
-            points[i] = dot(eigvecs, points[i]);
+            points[i] = dot(ev, points[i]);
     }
 
     //This function fills with point-mascons the interior of a given polyhedron surface (poly), in accordance with a given grid resolution (grid_reso).
