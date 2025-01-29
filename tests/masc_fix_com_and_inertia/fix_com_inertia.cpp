@@ -8,14 +8,11 @@
 int main()
 {
     polyhedron poly;
-    poly.load_obj_file("../../obj/psyche_viikinkoski2018.obj");
-
+    poly.load_obj_file("../../obj/untitled.obj");
     mascons aster;
-    aster.generate_from_polyhedron(poly, uvec3{23,24,25});
+    aster.generate_from_polyhedron(poly, uvec3{33,33,33});
 
     aster.export_points_to_obj("cartesian_mascons_cpp.obj");
-
-    /*
 
     double M = 5.320591856403073e6;
 
@@ -44,7 +41,6 @@ int main()
 
     
     aster.export_points_to_obj("fixed_cartesian_mascons_cpp.obj");
-    */
 
     return 0;
 }
