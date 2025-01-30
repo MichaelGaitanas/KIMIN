@@ -6,194 +6,200 @@ if not os.path.isdir('plots/'):
     os.mkdir('plots/')
 
 t = np.loadtxt('io/time.txt')/86400.0 #[days]
-rpy = np.loadtxt('io/roll_pitch_yaw.txt')*180/np.pi #[deg]
-rotmat = np.loadtxt('io/rotation_matrix.txt') #[ ]
-quat = np.loadtxt('io/quaternion.txt') #[ ]
-wb = np.loadtxt('io/w_body.txt') #[rad/sec]
-wi = np.loadtxt('io/w_inertial.txt') #[rad/sec]
+rv = np.loadtxt('io/pos_vel.txt') #[km]
+rpy1 = np.loadtxt('io/roll_pitch_yaw_1.txt')*180/np.pi #[deg]
+w1b = np.loadtxt('io/w1_body.txt') #[rad/sec]
+w1i = np.loadtxt('io/w1_inertial.txt') #[rad/sec]
+rpy2 = np.loadtxt('io/roll_pitch_yaw_2.txt')*180/np.pi #[deg]
+w2b = np.loadtxt('io/w2_body.txt') #[rad/sec]
+w2i = np.loadtxt('io/w2_inertial.txt') #[rad/sec]
 ener_mom = np.loadtxt('io/energy_momentum.txt') #E [kg*km^2/sec^2] and L [kg*km^2/sec]
 
 E = ener_mom[:,0]
-dE = np.abs((E - E[0]))/E[0]
+dE = np.abs((E - E[0])/E[0])
 L = np.sqrt(ener_mom[:,1]**2 + ener_mom[:,2]**2 + ener_mom[:,3]**2)
-dL = np.abs((L - L[0]))/L[0]
+dL = np.abs((L - L[0])/L[0])
 
 ################################################################################
 
 plt.figure()
 plt.xlabel('t [days]')
-plt.ylabel('roll [deg]')
+plt.ylabel('rel x [km]')
 plt.gcf().subplots_adjust(left = 0.2)
-plt.plot(t, rpy[:,0])
-plt.savefig('plots/roll.png')
+plt.plot(t, rv[:,0])
+plt.savefig('plots/relx.png')
 
 plt.figure()
 plt.xlabel('t [days]')
-plt.ylabel('pitch [deg]')
+plt.ylabel('rel y [km]')
 plt.gcf().subplots_adjust(left = 0.2)
-plt.plot(t, rpy[:,1])
-plt.savefig('plots/pitch.png')
+plt.plot(t, rv[:,1])
+plt.savefig('plots/rely.png')
 
 plt.figure()
 plt.xlabel('t [days]')
-plt.ylabel('yaw [deg]')
+plt.ylabel('rel z [km]')
 plt.gcf().subplots_adjust(left = 0.2)
-plt.plot(t, rpy[:,2])
-plt.savefig('plots/yaw.png')
+plt.plot(t, rv[:,2])
+plt.savefig('plots/relz.png')
+
+plt.figure()
+plt.xlabel('t [days]')
+plt.ylabel('rel dist [km]')
+plt.gcf().subplots_adjust(left = 0.2)
+plt.plot(t, np.sqrt(rv[:,0]**2 + rv[:,1]**2 + rv[:,2]**2))
+plt.savefig('plots/rel_dist.png')
 
 ################################################################################
 
 plt.figure()
 plt.xlabel('t [days]')
-plt.ylabel('a11 [ ]')
+plt.ylabel('roll1 [deg]')
 plt.gcf().subplots_adjust(left = 0.2)
-plt.plot(t, rotmat[:,0])
-plt.savefig('plots/mat_a11.png')
+plt.plot(t, rpy1[:,0])
+plt.savefig('plots/roll1.png')
 
 plt.figure()
 plt.xlabel('t [days]')
-plt.ylabel('a12 [ ]')
+plt.ylabel('pitch1 [deg]')
 plt.gcf().subplots_adjust(left = 0.2)
-plt.plot(t, rotmat[:,1])
-plt.savefig('plots/mat_a12.png')
+plt.plot(t, rpy1[:,1])
+plt.savefig('plots/pitch1.png')
 
 plt.figure()
 plt.xlabel('t [days]')
-plt.ylabel('a13 [ ]')
+plt.ylabel('yaw1 [deg]')
 plt.gcf().subplots_adjust(left = 0.2)
-plt.plot(t, rotmat[:,2])
-plt.savefig('plots/mat_a13.png')
-
-plt.figure()
-plt.xlabel('t [days]')
-plt.ylabel('a21 [ ]')
-plt.gcf().subplots_adjust(left = 0.2)
-plt.plot(t, rotmat[:,3])
-plt.savefig('plots/mat_a21.png')
-
-plt.figure()
-plt.xlabel('t [days]')
-plt.ylabel('a22 [ ]')
-plt.gcf().subplots_adjust(left = 0.2)
-plt.plot(t, rotmat[:,4])
-plt.savefig('plots/mat_a22.png')
-
-plt.figure()
-plt.xlabel('t [days]')
-plt.ylabel('a23 [ ]')
-plt.gcf().subplots_adjust(left = 0.2)
-plt.plot(t, rotmat[:,5])
-plt.savefig('plots/mat_a23.png')
-
-plt.figure()
-plt.xlabel('t [days]')
-plt.ylabel('a31 [ ]')
-plt.gcf().subplots_adjust(left = 0.2)
-plt.plot(t, rotmat[:,6])
-plt.savefig('plots/mat_a31.png')
-
-plt.figure()
-plt.xlabel('t [days]')
-plt.ylabel('a32 [ ]')
-plt.gcf().subplots_adjust(left = 0.2)
-plt.plot(t, rotmat[:,7])
-plt.savefig('plots/mat_a32.png')
-
-plt.figure()
-plt.xlabel('t [days]')
-plt.ylabel('a33 [ ]')
-plt.gcf().subplots_adjust(left = 0.2)
-plt.plot(t, rotmat[:,8])
-plt.savefig('plots/mat_a33.png')
+plt.plot(t, rpy1[:,2])
+plt.savefig('plots/yaw1.png')
 
 ################################################################################
 
 plt.figure()
 plt.xlabel('t [days]')
-plt.ylabel('q0 [ ]')
+plt.ylabel('w1ix [rad/sec]')
 plt.gcf().subplots_adjust(left = 0.2)
-plt.plot(t, quat[:,0])
-plt.savefig('plots/quat0.png')
+plt.plot(t, w1i[:,0])
+plt.savefig('plots/w1ix.png')
 
 plt.figure()
 plt.xlabel('t [days]')
-plt.ylabel('q1 [ ]')
+plt.ylabel('w1iy [rad/sec]')
 plt.gcf().subplots_adjust(left = 0.2)
-plt.plot(t, quat[:,1])
-plt.savefig('plots/quat1.png')
+plt.plot(t, w1i[:,1])
+plt.savefig('plots/w1iy.png')
 
 plt.figure()
 plt.xlabel('t [days]')
-plt.ylabel('q2 [ ]')
+plt.ylabel('w1iz [rad/sec]')
 plt.gcf().subplots_adjust(left = 0.2)
-plt.plot(t, quat[:,2])
-plt.savefig('plots/quat2.png')
-
-plt.figure()
-plt.xlabel('t [days]')
-plt.ylabel('q3 [ ]')
-plt.gcf().subplots_adjust(left = 0.2)
-plt.plot(t, quat[:,3])
-plt.savefig('plots/quat3.png')
+plt.plot(t, w1i[:,2])
+plt.savefig('plots/w1iz.png')
 
 ################################################################################
 
 plt.figure()
 plt.xlabel('t [days]')
-plt.ylabel('wix [rad/sec]')
+plt.ylabel('w1bx [rad/sec]')
 plt.gcf().subplots_adjust(left = 0.2)
-plt.plot(t, wi[:,0])
-plt.savefig('plots/wix.png')
+plt.plot(t, w1b[:,0])
+plt.savefig('plots/w1bx.png')
 
 plt.figure()
 plt.xlabel('t [days]')
-plt.ylabel('wiy [rad/sec]')
+plt.ylabel('w1by [rad/sec]')
 plt.gcf().subplots_adjust(left = 0.2)
-plt.plot(t, wi[:,1])
-plt.savefig('plots/wiy.png')
+plt.plot(t, w1b[:,1])
+plt.savefig('plots/w1by.png')
 
 plt.figure()
 plt.xlabel('t [days]')
-plt.ylabel('wiz [rad/sec]')
+plt.ylabel('w1bz [rad/sec]')
 plt.gcf().subplots_adjust(left = 0.2)
-plt.plot(t, wi[:,2])
-plt.savefig('plots/wiz.png')
+plt.plot(t, w1b[:,2])
+plt.savefig('plots/w1bz.png')
 
 ################################################################################
 
 plt.figure()
 plt.xlabel('t [days]')
-plt.ylabel('wbx [rad/sec]')
+plt.ylabel('roll2 [deg]')
 plt.gcf().subplots_adjust(left = 0.2)
-plt.plot(t, wb[:,0])
-plt.savefig('plots/wbx.png')
+plt.plot(t, rpy2[:,0])
+plt.savefig('plots/roll2.png')
 
 plt.figure()
 plt.xlabel('t [days]')
-plt.ylabel('wby [rad/sec]')
+plt.ylabel('pitch2 [deg]')
 plt.gcf().subplots_adjust(left = 0.2)
-plt.plot(t, wb[:,1])
-plt.savefig('plots/wby.png')
+plt.plot(t, rpy2[:,1])
+plt.savefig('plots/pitch2.png')
 
 plt.figure()
 plt.xlabel('t [days]')
-plt.ylabel('wbz [rad/sec]')
+plt.ylabel('yaw2 [deg]')
 plt.gcf().subplots_adjust(left = 0.2)
-plt.plot(t, wb[:,2])
-plt.savefig('plots/wbz.png')
+plt.plot(t, rpy2[:,2])
+plt.savefig('plots/yaw2.png')
 
 ################################################################################
 
 plt.figure()
 plt.xlabel('t [days]')
-plt.ylabel('E [kg*km^2/sec^2]')
+plt.ylabel('w2ix [rad/sec]')
+plt.gcf().subplots_adjust(left = 0.2)
+plt.plot(t, w2i[:,0])
+plt.savefig('plots/w2ix.png')
+
+plt.figure()
+plt.xlabel('t [days]')
+plt.ylabel('w2iy [rad/sec]')
+plt.gcf().subplots_adjust(left = 0.2)
+plt.plot(t, w2i[:,1])
+plt.savefig('plots/w2iy.png')
+
+plt.figure()
+plt.xlabel('t [days]')
+plt.ylabel('w2iz [rad/sec]')
+plt.gcf().subplots_adjust(left = 0.2)
+plt.plot(t, w2i[:,2])
+plt.savefig('plots/w2iz.png')
+
+################################################################################
+
+plt.figure()
+plt.xlabel('t [days]')
+plt.ylabel('w2bx [rad/sec]')
+plt.gcf().subplots_adjust(left = 0.2)
+plt.plot(t, w2b[:,0])
+plt.savefig('plots/w2bx.png')
+
+plt.figure()
+plt.xlabel('t [days]')
+plt.ylabel('w2by [rad/sec]')
+plt.gcf().subplots_adjust(left = 0.2)
+plt.plot(t, w2b[:,1])
+plt.savefig('plots/w2by.png')
+
+plt.figure()
+plt.xlabel('t [days]')
+plt.ylabel('w2bz [rad/sec]')
+plt.gcf().subplots_adjust(left = 0.2)
+plt.plot(t, w2b[:,2])
+plt.savefig('plots/w2bz.png')
+
+################################################################################
+
+plt.figure()
+plt.xlabel('t [days]')
+plt.ylabel('ener [kg*km^2/sec^2]')
 plt.gcf().subplots_adjust(left = 0.2)
 plt.plot(t, E)
 plt.savefig('plots/ener.png')
 
 plt.figure()
 plt.xlabel('t [days]')
-plt.ylabel('L [kg*km^2/sec]')
+plt.ylabel('mom [kg*km^2/sec]')
 plt.gcf().subplots_adjust(left = 0.2)
 plt.plot(t, L)
 plt.savefig('plots/mom.png')
@@ -214,4 +220,4 @@ plt.savefig('plots/dmom.png')
 
 ################################################################################
 
-plt.show()
+#plt.show()

@@ -119,83 +119,89 @@ public:
             points[i] = points[i] - com;
     }
 
+    //Diagonalize the inertia matrix of the mascons distribution. This happens by rotating all the mascons (points) in a way, such that the
+    //final mascons distribution yields a diagonal inertia matrix. The rotation matrix is constructed by the eigenvectors of the inertia matrix.
     void diagonalize_inertia(const dmat3 &I)
     {
-        double Ixx = I[0][0];
-        double Iyy = I[1][1];
-        double Izz = I[2][2];
-
-        Eigen::Matrix3d eigen_iner;
+        //Convert the dmat3 datatype to Eigen's.
+        Eigen::Matrix3d eigen_I;
         for (size_t row = 0; row < 3; ++row)
             for (size_t col = 0; col < 3; ++col)
-                eigen_iner(row, col) = I[row][col];
+                eigen_I(row, col) = I[row][col];
 
-        Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver(eigen_iner);
+        //Solve the eigensystem (3x3, real and symmetric matrix).
+        Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver(eigen_I);
         if (solver.info() != Eigen::Success)
         {
             fprintf(stderr, "Error : Inertia eigenvalue decomposition failed. Exiting...\n");
             exit(EXIT_FAILURE);
         }
-        Eigen::Vector3d eigenvalues = solver.eigenvalues(); // (lam0 <= lam1 <= lam2)
+        Eigen::Vector3d eigenvalues = solver.eigenvalues(); //By default, Eigen sorts them in ascending order : lambda0 <= lambda1 <= lambda2
         Eigen::Matrix3d eigenvectors = solver.eigenvectors();
 
-        /*
-        uvec3 indices;
-        if (Ixx < Iyy && Iyy < Izz)
-        {
+        //Extract the diagonal elements.
+        double Ixx = I[0][0];
+        double Iyy = I[1][1];
+        double Izz = I[2][2];
+
+        //Reorder the eigenvalues appropriately.
+        uvec3 indices; //Order by which the eigenvalues will be sorted (and thus order of the eigenvectors in the final rotation matrix).
+        if (Ixx < Iyy && Iyy < Izz) //Case : Ixx < Iyy < Izz
             indices = uvec3{0,1,2};
-            printf("Case : Ixx < Iyy < Izz\n");
-        }
-        else if (Ixx < Izz && Izz < Iyy)
-        {
+        else if (Ixx < Izz && Izz < Iyy) //Case : Ixx < Izz < Iyy
             indices = uvec3{0,2,1};
-            printf("Case : Ixx < Izz < Iyy\n");
-        }
-        else if (Iyy < Ixx && Ixx < Izz)
-        {
+        else if (Iyy < Ixx && Ixx < Izz) //Case : Iyy < Ixx < Izz
             indices = uvec3{1,0,2};
-            printf("Case : Iyy < Ixx < Izz\n");
-        }
-        else if (Iyy < Izz && Izz < Ixx)
-        {
+        else if (Iyy < Izz && Izz < Ixx) //Case : Iyy < Izz < Ixx
             indices = uvec3{2,0,1};
-            printf("Case : Iyy < Izz < Ixx\n");
-        }
-        else if (Izz < Iyy && Iyy < Ixx)
-        {
+        else if (Izz < Iyy && Iyy < Ixx) //Case : Izz < Iyy < Ixx
             indices = uvec3{2,1,0};
-            printf("Case : Izz < Iyy < Ixx\n");
-        }
-        else if (Izz < Ixx && Ixx < Iyy)
-        {
+        else //Case : Izz < Ixx < Iyy
             indices = uvec3{1,2,0};
-            printf("Case : Izz < Ixx < Iyy\n");
-        }
-        else
+
+        Eigen::Vector3d reordered_eigenvalues;
+        Eigen::Matrix3d reordered_eigenvectors;
+        //Reorder eigenvalues and eigenvectors according to indices[].
+        for (size_t i = 0; i < 3; ++i)
         {
-            printf("Equality! Exiting...\n");
-            exit(EXIT_FAILURE);
+            reordered_eigenvalues(i) = eigenvalues(indices[i]);
+            reordered_eigenvectors.col(i) = eigenvectors.col(indices[i]);
         }
 
-        Eigen::Vector3d sortedEigenvalues;
-        Eigen::Matrix3d sortedEigenvectors;
-        //Reorder eigenvalues and eigenvectors according to indices.
-        for (int i = 0; i < 3; ++i)
-        {
-            sortedEigenvalues(i) = eigenvalues(indices[i]);
-            sortedEigenvectors.col(i) = eigenvectors.col(indices[i]);
-        }*/
+        Eigen::Vector3d x_axis(1,0,0);
+        Eigen::Vector3d y_axis(0,1,0);
+        Eigen::Vector3d z_axis(0,0,1);
 
-        dmat3 eigvecs;
+        Eigen::Vector3d eigvec_x_axis = reordered_eigenvectors.col(0);
+        Eigen::Vector3d eigvec_y_axis = reordered_eigenvectors.col(1);
+        Eigen::Vector3d eigvec_z_axis = reordered_eigenvectors.col(2);
+
+        if (eigvec_x_axis.dot(x_axis) < 0) 
+            eigvec_x_axis = -eigvec_x_axis;
+        if (eigvec_y_axis.dot(y_axis) < 0) 
+            eigvec_y_axis = -eigvec_y_axis;
+        if (eigvec_z_axis.dot(z_axis) < 0)
+            eigvec_z_axis = -eigvec_z_axis;
+
+        //Rebuild into a 3x3 matrix.
+        Eigen::Matrix3d eigen_rot_mat;
+        eigen_rot_mat.col(0) = eigvec_x_axis;
+        eigen_rot_mat.col(1) = eigvec_y_axis;
+        eigen_rot_mat.col(2) = eigvec_z_axis;
+        if (eigen_rot_mat.determinant() < 0)
+            eigen_rot_mat.col(2) = -eigen_rot_mat.col(2); //Flip just one column (here the last, but any one would do). This renders the eigenvectors as right-handed coordinate system.
+
+        eigen_rot_mat.transposeInPlace();
+
+        //Now convert the Eigen variable eigen_rot_mat to dmat3 (fin_rot_mat).
+        dmat3 fin_rot_mat;
         for (size_t row = 0; row < 3; ++row)
             for (size_t col = 0; col < 3; ++col)
-                eigvecs[row][col] = eigenvectors(row, col);
+                fin_rot_mat[row][col] = eigen_rot_mat(row, col);
 
-        //dmat3 ev = transpose(eigvecs);
-
-        //dmat3 eigvecs = transpose(inertia_eigvecs(I));
+        //Apply the rotation to all the points of the rigid body.
         for (size_t i = 0; i < points.size(); ++i)
-            points[i] = dot(eigvecs, points[i]);
+            points[i] = dot(fin_rot_mat, points[i]);
     }
 
     //This function fills with point-mascons the interior of a given polyhedron surface (poly), in accordance with a given grid resolution (grid_reso).

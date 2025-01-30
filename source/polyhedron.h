@@ -207,6 +207,30 @@ public:
         return false; //Even : (x,y,z) is outside the polyhdernon.
     }
 
+    dvec3 get_vertices_com()
+    {
+        dvec3 com = dvec3{0.0,0.0,0.0};
+        for (size_t i = 0; i < verts.size(); ++i)
+            com = com + verts[i];
+        return com/verts.size();
+    }
+
+    void eliminate_com(const dvec3 &com)
+    {
+        for (size_t i = 0; i < verts.size(); ++i)
+            verts[i] = verts[i] - com;
+    }
+
+    void export_vf_to_obj(const char *path)
+    {
+        FILE *fp = fopen(path,"w");
+        for (size_t i = 0; i < verts.size(); ++i)
+            fprintf(fp, "v %.15lf %.15lf %.15lf\n", verts[i][0],verts[i][1],verts[i][2]);
+        for (size_t i = 0; i < faces.size(); ++i)
+            fprintf(fp, "f %u %u %u\n", faces[i][0]+1,faces[i][1]+1,faces[i][2]+1);
+        fclose(fp);
+    }
+
     //Calculate the center of mass of an arbitrary homogeneous closed surface polyhedron.
     /*
     dvec3 get_com()
@@ -355,15 +379,6 @@ public:
         return {{{Jyy + Jzz,    Jxy,       Jxz   },
                  {   Jxy,    Jxx + Jzz,    Jyz   },
                  {   Jxz,       Jyz,    Jxx + Jyy}}};
-    }
-    */
-
-    //Shift the center of mass of the polyhedron, so that it coincides with O(0,0,0).
-    /*
-    void eliminate_com_offset(const dvec3 &com)
-    {
-        for (size_t i = 0; i < verts.size(); ++i)
-            verts[i] = verts[i] - com;
     }
     */
 

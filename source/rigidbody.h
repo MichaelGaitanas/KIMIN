@@ -55,6 +55,7 @@ bool inertia_is_diagonal(const dmat3 &I, const double tolerance = 1.0e-12)
 }
 
 //Calculate the eigenvalues of the inertia matrix, assuming it is 3x3, real and symmetric.
+/*
 dvec3 inertia_eigvals(const dmat3 &I)
 {
     double Ixx = I[0][0], Ixy = I[0][1], Ixz = I[0][2], Iyy = I[1][1], Iyz = I[1][2], Izz = I[2][2];
@@ -71,8 +72,10 @@ dvec3 inertia_eigvals(const dmat3 &I)
     //Hence we manually get rid of the imaginary part by returning the real part only.
     return {sol[0].real(), sol[1].real(), sol[2].real()};
 }
+*/
 
 //Calculate the eigenvectors of the inertia matrix, assuming it is 3x3, real and symmetric.
+/*
 dmat3 inertia_eigvecs(const dmat3 &I)
 {
     double Ixx = I[0][0], Ixy = I[0][1], Ixz = I[0][2], Iyy = I[1][1], Iyz = I[1][2], Izz = I[2][2];
@@ -127,6 +130,7 @@ dmat3 inertia_eigvecs(const dmat3 &I)
 
     return transpose(eigmat);
 }
+*/
 
 //Sphere-sphere collision detection criterion.
 bool sphere_sphere_collision(const double distance, const double R1, const double R2)

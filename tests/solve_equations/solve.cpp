@@ -16,7 +16,7 @@ int main()
     b = 22.0;
     double c = 763;
     dcomplexvec x_quad = solve_quadratic(a,b,c);
-    printf("size(x) = %ld\n", x_quad.size());
+    printf("size = %ld\n", x_quad.size());
     printf("[%.16lf, %.16lf*i]\n", x_quad[0].real(), x_quad[0].imag());
     printf("[%.16lf, %.16lf*i]\n\n", x_quad[1].real(), x_quad[1].imag());
 
@@ -26,7 +26,7 @@ int main()
     c = -0.00003;
     double d = 4;
     dcomplexvec x_cub = solve_cubic(a,b,c,d);
-    printf("size(x) = %ld\n", x_cub.size());
+    printf("size = %ld\n", x_cub.size());
     printf("[%.16lf, %.16lf*i]\n", x_cub[0].real(), x_cub[0].imag());
     printf("[%.16lf, %.16lf*i]\n", x_cub[1].real(), x_cub[1].imag());
     printf("[%.16lf, %.16lf*i]\n\n", x_cub[2].real(), x_cub[2].imag());
@@ -38,7 +38,7 @@ int main()
     d = -3111.0;
     double e = -5.1234;
     dcomplexvec x_quart = solve_quartic(a,b,c,d,e);
-    printf("size(x) = %ld\n", x_quart.size());
+    printf("size = %ld\n", x_quart.size());
     printf("[%.16lf, %.16lf*i]\n", x_quart[0].real(), x_quart[0].imag());
     printf("[%.16lf, %.16lf*i]\n", x_quart[1].real(), x_quart[1].imag());
     printf("[%.16lf, %.16lf*i]\n", x_quart[2].real(), x_quart[2].imag());
