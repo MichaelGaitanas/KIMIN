@@ -11,7 +11,9 @@ int main()
     poly.load_obj_file("../../obj/toutatis3k_radar.obj");
     
     mascons aster;
+    printf("Generating mascons... ");
     aster.generate_from_polyhedron(poly, uvec3{25,26,27});
+    printf("Done.\n\n");
 
     aster.export_points_to_obj("io/raycast_mascons.obj");
 
