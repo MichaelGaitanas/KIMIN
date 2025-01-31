@@ -21,13 +21,12 @@ dvec3 quat2ang(const dvec4 &q)
     double roll = atan2( 2.0*(q[2]*q[3] + q[0]*q[1]), q[0]*q[0] - q[1]*q[1] - q[2]*q[2] + q[3]*q[3] );
 
     //Pitch :
-    double pitch, coeff = q[1]*q[3] - q[0]*q[2];
-    if (-2.0*coeff >= 1.0)
-        pitch = 2.0*pi;
-    else if (-2.0*coeff <= -1.0)
-        pitch = -2.0*pi;
-    else
-        pitch = asin(-2.0*coeff);
+    double coeff = 2.0*(q[0]*q[2] - q[1]*q[3]);
+    if (coeff > 1.0)
+        coeff = 1.0;
+    if (coeff < -1.0)
+        coeff = -1.0;
+    double pitch = asin(coeff);
 
     //Yaw :
     double yaw = atan2( 2.0*(q[1]*q[2] + q[0]*q[3]), q[0]*q[0] + q[1]*q[1] - q[2]*q[2] - q[3]*q[3] );
