@@ -5,24 +5,22 @@
 #include<cstdlib>
 #include<cstring>
 #include<fstream>
+
 #include<Eigen/Dense>
 
 #include"typedef.h"
 #include"linalg.h"
-#include"rigidbody.h"
 #include"polyhedron.h"
 
 class mascons
 {
 private:
-    bool points_exist;
     dmatnx3 points;
 
 public:
-    //Load an .obj file, exclusively with the format 'v x y z' (point mascons).
+    //Load the vertices ('v x y z') from an .obj file (assuming them to be point mascons).
     void load_obj_file(const char *path)
     {
-        points_exist = false;
         points.clear();
 
         std::ifstream objfile(path);
@@ -32,7 +30,7 @@ public:
             exit(EXIT_FAILURE);
         }
 
-        double x,y,z; //Mascon (point) coordinates.
+        double x,y,z; //Point mascon coordinates.
 
         str line;
         while (getline(objfile, line))
@@ -44,10 +42,31 @@ public:
             }
         }
         objfile.close();
-        points_exist = true;
     }
 
-    //Farthest point-mascon distance with respect to the local coordinate system.
+    //Export to an .obj file the current state of 'points' member variable, in the form 'v x y z'.
+    void export_obj_file(const char *path)
+    {
+        FILE *fp = fopen(path,"w");
+        for (size_t i = 0; i < points.size(); ++i)
+            fprintf(fp, "v %.15lf %.15lf %.15lf\n", points[i][0],points[i][1],points[i][2]);
+        fclose(fp);
+    }
+
+    //Display to the terminal the coordinates of the mascons.
+    void print_points()
+    {
+        for (size_t i = 0; i < points.size(); ++i)
+            printf("[ %.15lf   %.15lf   %.15lf ]\n", points[i][0],points[i][1],points[i][2]);
+    }
+
+    //Get the total number of the current mascons.
+    size_t get_total()
+    {
+        return points.size();
+    }
+
+    //Farthest point mascon distance with respect to the local coordinate system.
     double get_farthest_point_distance()
     {
         double farthest = length(points[0]); //Assume that the farthest point distance corresponds to the first mascon.
@@ -60,10 +79,10 @@ public:
         return farthest;
     }
 
-    //Nearest point-mascon distance with respect to the local coordinate system.
+    //Nearest point mascon distance with respect to the local coordinate system.
     double get_nearest_point_distance()
     {
-        double nearest = length(points[0]); //Assume that the farthest point distance corresponds to the first mascon.
+        double nearest = length(points[0]); //Assume that the nearest point distance corresponds to the first mascon.
         for (size_t i = 1; i < points.size(); ++i)
         {
             double dist = length(points[i]);
@@ -73,6 +92,7 @@ public:
         return nearest;
     }
 
+    //Calculate the center of mass of the mascons distribution, assuming homogeneous mass density.
     dvec3 get_com()
     {
         dvec3 com = dvec3{0.0,0.0,0.0};
@@ -81,6 +101,7 @@ public:
         return com/points.size();
     }
 
+    //Calculate the inertia matrix of the mascons distribution, assuming homogeneous mass density.
     dmat3 get_inertia(const double M)
     {
         double m = (double)M/points.size(); //Mass of each mascon.
@@ -100,7 +121,7 @@ public:
                  {m*Ixz, m*Iyz, m*Izz}}};
     }
 
-    //Non normalized inertial integral tensor of arbitrary order of the mascons distribution (points), assuming constant density.
+    //Inertial integral tensor of arbitrary order of the mascons distribution, assuming homogeneous mass density (non normalized).
     dtens get_inertial_integrals(const double M, const int ord)
     {
         double m = (double)M/points.size(); //Mass of each mascon.
@@ -108,20 +129,21 @@ public:
         for (int i = 0; i < ord + 1; ++i)
             for (int j = 0; j < ord + 1; ++j)
                 for (int k = 0; k < ord + 1; ++k)
-                    for (int n = 0; n < points.size(); ++n)
+                    for (size_t n = 0; n < points.size(); ++n)
                         J[i][j][k] += m*pow(points[n][0], i)*pow(points[n][1], j)*pow(points[n][2], k); //J_ijk = m*(x[n]^i)*(y[n]^j)*(z[n]^k)
         return J;
     }
 
-    void eliminate_com(const dvec3 &com)
+    //This function translates all the mascon points, such that the resulted center of mass coincides with the local origin (zero). Homogeneous mass density is assumed.
+    void set_com_zero(const dvec3 &com)
     {
         for (size_t i = 0; i < points.size(); ++i)
             points[i] = points[i] - com;
     }
 
-    //Diagonalize the inertia matrix of the mascons distribution. This happens by rotating all the mascons (points) in a way, such that the
-    //final mascons distribution yields a diagonal inertia matrix. The rotation matrix is constructed by the eigenvectors of the inertia matrix.
-    void diagonalize_inertia(const dmat3 &I)
+    //This function rotates all the mascon points, such that the resulted inertia matrix becomes diagonal. The rotation happens via left-multiplication of all
+    //the points (vectors) with a rotation matrix, which is basically the eigenvectors of the inertia matrix. Again homogeneous mass density is assumed.
+    void set_inertia_diagonal(const dmat3 &I)
     {
         //Convert the dmat3 datatype to Eigen's.
         Eigen::Matrix3d eigen_I;
@@ -136,18 +158,17 @@ public:
             fprintf(stderr, "Error : Inertia eigenvalue decomposition failed. Exiting...\n");
             exit(EXIT_FAILURE);
         }
-        Eigen::Vector3d eigenvalues = solver.eigenvalues(); //By default, Eigen sorts them in ascending order : lambda0 <= lambda1 <= lambda2
+        Eigen::Vector3d eigenvalues = solver.eigenvalues(); //By default, Eigen sorts them in ascending order : eigenvalues[0] <= eigenvalues[1] <= eigenvalues[2]
         Eigen::Matrix3d eigenvectors = solver.eigenvectors();
 
         //Extract the diagonal elements.
         double Ixx = I[0][0];
         double Iyy = I[1][1];
         double Izz = I[2][2];
-
         //Reorder the eigenvalues appropriately.
         uvec3 indices; //Order by which the eigenvalues will be sorted (and thus order of the eigenvectors in the final rotation matrix).
         if (Ixx < Iyy && Iyy < Izz) //Case : Ixx < Iyy < Izz
-            indices = uvec3{0,1,2};
+            indices = uvec3{0,1,2}; //default by Eigen.
         else if (Ixx < Izz && Izz < Iyy) //Case : Ixx < Izz < Iyy
             indices = uvec3{0,2,1};
         else if (Iyy < Ixx && Ixx < Izz) //Case : Iyy < Ixx < Izz
@@ -202,13 +223,17 @@ public:
         //Apply the rotation to all the points of the rigid body.
         for (size_t i = 0; i < points.size(); ++i)
             points[i] = dot(fin_rot_mat, points[i]);
+
+        //Done!
     }
 
-    //This function fills with point-mascons the interior of a given polyhedron surface (poly), in accordance with a given grid resolution (grid_reso).
-    //The function assumes a (slightly scaled) circumscribed cuboid around the polyhedron, which traverses along x,y,z axes and at each point
-    //checks whether or not the current (x,y,z) point is inside the polyhedron. if yes, the grid point is appended as point-mascon to the member variable 'points'.
+    //This function fills with point mascons the interior of a given polyhedron surface (poly), in accordance with a given grid resolution (grid_reso).
+    //The function assumes a (slightly scaled) circumscribed cuboid-grid around the input polyhedron. The grid is traversed along x,y,z axes and at each grid-point,
+    //the function checks whether or not that grid-point is inside the polyhedron. If yes, the grid-point is appended as point mascon to the member variable 'points'.
     void generate_from_polyhedron(polyhedron &poly, const uvec3 &grid_reso)
     {
+        points.clear();
+
         //Get (xmax, ymax, zmax) and (xmin, ymin, zmin) of the polyhedron vertices to establish the cuboid.
         //Then, scale it, so that the polyhedron is 'conveniently' contained.
         dvec3 rmax = 1.1*poly.get_farthest_coordinates_per_axis();
@@ -232,19 +257,38 @@ public:
                 {
                     double z = zmin + k*(zmax - zmin)/((double)grid_reso[2] - 1.0);
                     dvec3 r = dvec3{x,y,z}; //Current point of the grid.
-                    if (poly.encloses_point(r))
+                    if (poly.encloses_point(r)) //Raycast test.
                         points.push_back(r);
                 }
             }
         }
     }
 
-    void export_points_to_obj(const char *path)
+    //This function fills with point mascons the interior of a given ellipsoid (semiaxes), in accordance with a given grid resolution (grid_reso).
+    //The function assumes a (slightly scaled) circumscribed cuboid-grid around the input ellipsoid. The grid is traversed along x,y,z axes and at each grid-point,
+    //the function checks whether or not that grid-point is inside the ellipsoid, via the equation x^2/a^2 + y^2/b^2 + z^2/c^2 = 1. If yes, the grid-point is
+    //appended as point mascon to the member variable 'points'.
+    void generate_from_ellipsoid(const dvec3 &semiaxes, const uvec3 &grid_reso)
     {
-        FILE *fp = fopen(path,"w");
-        for (size_t i = 0; i < points.size(); ++i)
-            fprintf(fp, "v %.15lf %.15lf %.15lf\n", points[i][0],points[i][1],points[i][2]);
-        fclose(fp);
+        points.clear();
+
+        double a = 1.1*semiaxes[0];
+        double b = 1.1*semiaxes[1];
+        double c = 1.1*semiaxes[2];
+        for (unsigned int i = 0; i < grid_reso[0]; ++i)
+        {
+            double x = -a + 2.0*i*a/((double)grid_reso[0] - 1.0);
+            for (unsigned int j = 0; j < grid_reso[1]; ++j)
+            {
+                double y = -b + 2.0*j*b/((double)grid_reso[1] - 1.0);
+                for (unsigned int k = 0; k < grid_reso[2]; ++k)
+                {
+                    double z = -c + 2.0*k*c/((double)grid_reso[2] - 1.0);
+                    if ( x*x/(a*a) + y*y/(b*b) + z*z/(c*c) < 1.0 )
+                        points.push_back(dvec3{x,y,z});
+                }
+            }
+        }
     }
 };
 

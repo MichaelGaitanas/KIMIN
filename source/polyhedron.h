@@ -21,7 +21,7 @@ private:
     double vol;
 
 public:
-    //Load the .obj file assuming it has the classical form 'v x y z' and 'f i j k'.
+    //Load the .obj file assuming it contains vertcies and faces ('v x y z' and 'f i j k').
     void load_obj_file(const char *path)
     {
         norms_exist = false;
@@ -38,7 +38,7 @@ public:
         }
 
         double x,y,z; //Vertices.
-        unsigned int vi1,vi2,vi3; //Faces (vertex indices).
+        unsigned int vi1,vi2,vi3; //Faces.
 
         str line;
         while (getline(objfile, line))
@@ -162,7 +162,7 @@ public:
     }
 
     //This function decides whether or not a given point in space (r) is inside the polyhderon's surface via raycasting.
-    //In a nutshell, a ray is casted from the point of examination (r) up to a destination point (pdest), which must be outside the
+    //A ray is casted from the point of examination (r) up to a destination point (pdest), which must be outside the
     //polyhedron's surface. Then we count the number of intersections between the ray and the polyhedron. If the number of intersections
     //is odd, then r is inside the polyhedron. Otherwise it is outside.
     bool encloses_point(const dvec3 &r, const double tolerance = 1.0e-12)
@@ -207,7 +207,8 @@ public:
         return false; //Even : (x,y,z) is outside the polyhdernon.
     }
 
-    dvec3 get_vertices_com()
+    //Calculate the center of mass of the surface vertices of the polyhedron.
+    dvec3 get_com_vertices()
     {
         dvec3 com = dvec3{0.0,0.0,0.0};
         for (size_t i = 0; i < verts.size(); ++i)
@@ -215,13 +216,14 @@ public:
         return com/verts.size();
     }
 
-    void eliminate_com(const dvec3 &com)
+    void shift_vertices(const dvec3 &com)
     {
         for (size_t i = 0; i < verts.size(); ++i)
             verts[i] = verts[i] - com;
     }
 
-    void export_vf_to_obj(const char *path)
+    //Export to an .obj file the current vertices and faces of the polyhedron mesh ('v x y z' and 'f i j k).
+    void export_obj_vf(const char *path)
     {
         FILE *fp = fopen(path,"w");
         for (size_t i = 0; i < verts.size(); ++i)

@@ -33,6 +33,7 @@ dvec3 euler_rhs(const dvec3 &w, const dmat3 &I, const dvec3 &tau)
     return {dw0, dw1, dw2};
 }
 
+/*
 bool inertia_is_diagonal(const dmat3 &I, const double tolerance = 1.0e-12)
 {
     double Ixx = I[0][0], Ixy = I[0][1], Ixz = I[0][2], Iyy = I[1][1], Iyz = I[1][2], Izz = I[2][2];
@@ -53,6 +54,7 @@ bool inertia_is_diagonal(const dmat3 &I, const double tolerance = 1.0e-12)
     //However, if all off-diagonal checks pass, the inertia matrix is considered diagonal.
     return true;
 }
+*/
 
 //Calculate the eigenvalues of the inertia matrix, assuming it is 3x3, real and symmetric.
 /*
