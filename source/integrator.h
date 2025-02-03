@@ -11,6 +11,7 @@
 #include"conversion.h"
 #include"ellipsoid.h"
 #include"polyhedron.h"
+#include"mascons.h"
 #include"rigidbody.h"
 #include"gravity.h"
 #include"properties_panel.h"
@@ -21,7 +22,7 @@ class integrator
 public:
     properties_panel properties; //The user's choice of inputs in the gui.
 
-    polyhedron aster1, aster2;
+    polyhedron poly1, poly2;
 
     double m; //Reduced binary mass ( m = M1*M2/(M1 + M2) ).
     dmat3 I1, I2; //Moments of inetia.
@@ -173,55 +174,64 @@ public:
         //1) The Brillouin radii, 2) The inertial inertial integrals of the corresponding chosen order.
         if (properties.ell_checkbox)
         {
-            //We load the .obj models of the ellipsoids.
-            //Note : Sphere is loaded, but as you can see, the ell_functions are called that are meant for an ellipsoid.
-            //However if the user renderers the 3D scene, the unit spheres will be scaled in accordance with the chosen a1,b1,c1 and a2,b2,c2 of the ellipsoids.
-            aster1.load_obj_file("../obj/icosphere_rad1.obj");
-            aster2.load_obj_file("../obj/icosphere_rad1.obj");
-
+            //We load the .obj models of the ellipsoids. The dynamics will be computed via analytical ellipsoid parameters,
+            //but when the user renderers the 3D scene, those polyhedral unit spheres will be scaled in accordance with the
+            //chosen a1,b1,c1 and a2,b2,c2 of the ellipsoids.
+            poly1.load_obj_file("../obj/icosphere_rad1.obj");
+            poly2.load_obj_file("../obj/icosphere_rad1.obj");
             brillouin1 = ell_brillouin(properties.semiaxes1);
             brillouin2 = ell_brillouin(properties.semiaxes2);
+            I1 = ell_inertia(properties.M1, properties.semiaxes1);
+            I2 = ell_inertia(properties.M2, properties.semiaxes2);
             if (properties.ord2_checkbox)
             {
                 J1 = ell_integrals(properties.M1, properties.semiaxes1, 2);
                 J2 = ell_integrals(properties.M2, properties.semiaxes2, 2);
-                I1 = ell_inertia(properties.M1, properties.semiaxes1);
-                I2 = ell_inertia(properties.M2, properties.semiaxes2);
             }
             else if (properties.ord3_checkbox)
             {
                 J1 = ell_integrals(properties.M1, properties.semiaxes1, 3);
                 J2 = ell_integrals(properties.M2, properties.semiaxes2, 3);
-                I1 = ell_inertia(properties.M1, properties.semiaxes1);
-                I2 = ell_inertia(properties.M2, properties.semiaxes2);
             }
             else //Only 'ord4_checkbox' remains...
             {
                 J1 = ell_integrals(properties.M1, properties.semiaxes1, 4);
                 J2 = ell_integrals(properties.M2, properties.semiaxes2, 4);
-                I1 = ell_inertia(properties.M1, properties.semiaxes1);
-                I2 = ell_inertia(properties.M2, properties.semiaxes2);
             }
         }
         else //.obj file
         {
-            /*
-            aster1.load_obj_file(properties.obj1_path.c_str());
-            dvec3 com = aster1.get_com();
-            if (length(com) > 1.0e-13)
-                aster1.eliminate_com_offset(com);
-            I1 = aster1.get_inertia(properties.M1);
-            if (!inertia_is_diagonal(I1))
-                aster1.align_principal_axes_to_basis(properties.M1);
-            brillouin1 = aster1.get_farthest_vertex_distance();
+            poly1.load_obj_file(("../obj/" + properties.obj1_path).c_str());
+            mascons masc1;
+            masc1.generate_from_polyhedron(poly1, uvec3{20,20,20});
+            masc1.set_com_zero();
+            masc1.set_inertia_diagonal(properties.M1);
+            brillouin1 = poly1.get_farthest_vertex_distance();
+            
+            poly2.load_obj_file(("../obj/" + properties.obj2_path).c_str());
+            mascons masc2;
+            masc2.generate_from_polyhedron(poly2, uvec3{20,20,20});
+            masc2.set_com_zero();
+            masc2.set_inertia_diagonal(properties.M2);
+            brillouin2 = poly2.get_farthest_vertex_distance();
 
-            aster2.load_obj_file(properties.obj2_path.c_str());
-            com = aster2.get_com();
-            if (length(com) > 1.0e-13)
-                aster2.eliminate_com_offset(com);
-
-            brillouin2 = aster2.get_farthest_vertex_distance();
-            */
+            I1 = masc1.get_inertia(properties.M1);
+            I2 = masc2.get_inertia(properties.M2);
+            if (properties.ord2_checkbox)
+            {
+                J1 = masc1.get_inertial_integrals(properties.M1, 2);
+                J2 = masc2.get_inertial_integrals(properties.M2, 2);
+            }
+            else if (properties.ord3_checkbox)
+            {
+                J1 = masc1.get_inertial_integrals(properties.M1, 3);
+                J2 = masc2.get_inertial_integrals(properties.M2, 3);
+            }
+            else //Only 'ord4_checkbox' remains...
+            {
+                J1 = masc1.get_inertial_integrals(properties.M1, 4);
+                J2 = masc2.get_inertial_integrals(properties.M2, 4);
+            }
         }
 
         //Preparation 5 : If the user assumed a kinetic impactor, then (based on theory) we apply a momentum (velocity)

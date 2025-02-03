@@ -11,8 +11,8 @@
 #include"../../source/linalg.h"
 #include"../../source/conversion.h"
 #include"../../source/rigidbody.h"
-#include"../../source/ellipsoid.h"
 #include"../../source/gravity.h"
+#include"../../source/polyhedron.h"
 
 double M1,M2,m; //m = M1*M2/(M1+M2)
 dtens J1,J2; //Inertial integral tensors.
@@ -86,18 +86,27 @@ int main()
 {
     M1 = 5.320591856403073e11; //[kg]
     M2 = 4.940814359692687e9; //[kg]
-    dvec3 semiaxes1 = {0.418765, 0.416194, 0.39309}; //[km]
-    dvec3 semiaxes2 = {0.104, 0.080, 0.066}; //[km]
-
     m = M1*M2/(M1 + M2);
-    J1 = ell_integrals(M1, semiaxes1, 2);
-    J2 = ell_integrals(M2, semiaxes2, 2);
-    I1 = ell_inertia(M1, semiaxes1);
-    I2 = ell_inertia(M2, semiaxes2);
 
-    //Collision parameters.
-    double brillouin_radius1 = ell_brillouin(semiaxes1);
-    double brillouin_radius2 = ell_brillouin(semiaxes2);
+    std::filesystem::create_directory("io");
+
+    polyhedron poly1;
+    poly1.load_obj_file("../../obj/didymain2019.obj");
+    poly1.set_com_zero();
+    poly1.set_inertia_diagonal(M1);
+    poly1.export_obj_file_vf("io/poly1_fixed.obj");
+    I1 = poly1.get_inertia(M1);
+    J1 = poly1.get_inertial_integrals_ord2(M1);
+    double brillouin_radius1 = poly1.get_farthest_vertex_distance();
+
+    polyhedron poly2;
+    poly2.load_obj_file("../../obj/dimorphos_ellipsoid.obj");
+    poly2.set_com_zero();
+    poly2.set_inertia_diagonal(M2);
+    poly2.export_obj_file_vf("io/poly2_fixed.obj");
+    I2 = poly2.get_inertia(M2);
+    J2 = poly2.get_inertial_integrals_ord2(M2);
+    double brillouin_radius2 = poly2.get_farthest_vertex_distance();
 
     //Time parameters.
     double t, t0 = 0.0; //[sec]
@@ -166,7 +175,6 @@ int main()
     }
     
     //Write 'orbit' data into files.
-    std::filesystem::create_directory("io");
     FILE *fpt = fopen("io/time.txt","w");
     FILE *fprv = fopen("io/pos_vel.txt","w");
     FILE *fpq1 = fopen("io/q1.txt","w");

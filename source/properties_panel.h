@@ -56,7 +56,6 @@ public:
     bool run_pressed; //Whether or not the 'Run' button has been pressed.
     bool abort_pressed; //Whether or not the 'Abort' button has been pressed.
 
-    /*
     properties_panel() : sim_name(""),
                          ell_checkbox(false),
                          semiaxes1(dvec3{0.0,0.0,0.0}),
@@ -101,8 +100,8 @@ public:
                          run_pressed(false),
                          abort_pressed(false)
     { }
-    */
 
+   /*
     properties_panel() : sim_name("test sim"),
                          ell_checkbox(true),
                          semiaxes1(dvec3{0.5,0.4,0.3}),
@@ -147,6 +146,7 @@ public:
                          run_pressed(false),
                          abort_pressed(false)
     { }
+    */
 
     //This function receives as input a 'path' to a directory and as a result it returns a vector of paths, corresponding
     //to all the .obj files (even inside child directories) found inside 'path'.

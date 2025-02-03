@@ -135,16 +135,19 @@ public:
     }
 
     //This function translates all the mascon points, such that the resulted center of mass coincides with the local origin (zero). Homogeneous mass density is assumed.
-    void set_com_zero(const dvec3 &com)
+    void set_com_zero()
     {
+        dvec3 com = get_com();
         for (size_t i = 0; i < points.size(); ++i)
             points[i] = points[i] - com;
     }
 
     //This function rotates all the mascon points, such that the resulted inertia matrix becomes diagonal. The rotation happens via left-multiplication of all
     //the points (vectors) with a rotation matrix, which is basically the eigenvectors of the inertia matrix. Again homogeneous mass density is assumed.
-    void set_inertia_diagonal(const dmat3 &I)
+    void set_inertia_diagonal(const double M)
     {
+        dmat3 I = get_inertia(M);
+
         //Convert the dmat3 datatype to Eigen's.
         Eigen::Matrix3d eigen_I;
         for (size_t row = 0; row < 3; ++row)

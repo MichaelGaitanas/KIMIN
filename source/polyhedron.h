@@ -6,6 +6,8 @@
 #include<cstring>
 #include<fstream>
 
+#include<Eigen/Dense>
+
 #include"typedef.h"
 #include"constant.h"
 #include"linalg.h"
@@ -55,6 +57,17 @@ public:
             }
         }
         objfile.close();
+    }
+
+    //Export to an .obj file the current vertices and faces of the polyhedron mesh ('v x y z' and 'f i j k).
+    void export_obj_file_vf(const char *path)
+    {
+        FILE *fp = fopen(path,"w");
+        for (size_t i = 0; i < verts.size(); ++i)
+            fprintf(fp, "v %.15lf %.15lf %.15lf\n", verts[i][0],verts[i][1],verts[i][2]);
+        for (size_t i = 0; i < faces.size(); ++i)
+            fprintf(fp, "f %u %u %u\n", faces[i][0]+1,faces[i][1]+1,faces[i][2]+1);
+        fclose(fp);
     }
 
     //Generate the polyhderon's normals.
@@ -207,7 +220,7 @@ public:
         return false; //Even : (x,y,z) is outside the polyhdernon.
     }
 
-    //Calculate the center of mass of the surface vertices of the polyhedron.
+    //Calculate the center of mass of the surface vertices of the polyhedron, assuming homogeneous mass density.
     dvec3 get_com_vertices()
     {
         dvec3 com = dvec3{0.0,0.0,0.0};
@@ -216,28 +229,10 @@ public:
         return com/verts.size();
     }
 
-    void shift_vertices(const dvec3 &com)
-    {
-        for (size_t i = 0; i < verts.size(); ++i)
-            verts[i] = verts[i] - com;
-    }
-
-    //Export to an .obj file the current vertices and faces of the polyhedron mesh ('v x y z' and 'f i j k).
-    void export_obj_vf(const char *path)
-    {
-        FILE *fp = fopen(path,"w");
-        for (size_t i = 0; i < verts.size(); ++i)
-            fprintf(fp, "v %.15lf %.15lf %.15lf\n", verts[i][0],verts[i][1],verts[i][2]);
-        for (size_t i = 0; i < faces.size(); ++i)
-            fprintf(fp, "f %u %u %u\n", faces[i][0]+1,faces[i][1]+1,faces[i][2]+1);
-        fclose(fp);
-    }
-
-    //Calculate the center of mass of an arbitrary homogeneous closed surface polyhedron.
-    /*
+    //Calculate the center of mass of the polyhedron, assuming homogeneous mass density (volume -> surface integrals via Gauss theorem).
     dvec3 get_com()
     {
-        gen_norms(); //This will only evaluate the norms if norms_exist is false (the check is inside gen_norms()).
+        gen_norms();
 
         dvec3 com = {0.0,0.0,0.0};
         for (size_t i = 0; i < faces.size(); ++i)
@@ -297,11 +292,9 @@ public:
 
         return com/(4.0*get_vol());
     }
-    */
 
-    //Calculate the inertia matrix of an arbitrary homogeneous closed surface polyhedron.
-    /*
-    dmat3 get_inertia(const double M)
+    //Calculate the inertia matrix of the polyhedron, assuming homogeneous mass density (volume -> surface integrals via Gauss theorem).
+    dmat3 get_inertia(const double M, bool inertial_integrals = false)
     {
         gen_norms();
 
@@ -378,23 +371,124 @@ public:
         Jxz *= ord2_coeff;
         Jyz *= ord2_coeff;
 
+        if (inertial_integrals)
+            return {{{Jxx,  0.0,  0.0},
+                     {0.0,  Jyy,  0.0},
+                     {0.0,  0.0,  Jzz}}};
+
         return {{{Jyy + Jzz,    Jxy,       Jxz   },
                  {   Jxy,    Jxx + Jzz,    Jyz   },
                  {   Jxz,       Jyz,    Jxx + Jyy}}};
     }
-    */
 
-    //Rotate the vertices, so that the inertia matrix becomes diagonal.
-    /*
-    void align_principal_axes_to_basis(const dmat3 &I)
+    dtens get_inertial_integrals_ord2(const double M)
     {
-        dmat3 eigvecs = transpose(inertia_eigvecs(I));
+        const int ord = 2;
+        dtens J(ord+1, dmat(ord+1, dvec(ord+1, 0.0) ) ); //Initialize the tensor with zeros.
+        dmat3 Jint = get_inertia(M, true);
+        J[2][0][0] = Jint[0][0]; //Jxx
+        J[0][2][0] = Jint[1][1]; //Jyy
+        J[0][0][2] = Jint[2][2]; //Jzz
+        return J;
+    }
+
+    //This function translates all the vertices, such that the resulted center of mass coincides with the local origin (zero). Homogeneous mass density is assumed.
+    void set_com_zero()
+    {
+        dvec3 com = get_com();
         for (size_t i = 0; i < verts.size(); ++i)
-            verts[i] = dot(eigvecs, verts[i]);
+            verts[i] = verts[i] - com;
+    }
+
+    //This function rotates all the surface vertices, such that the resulted inertia matrix becomes diagonal. The rotation happens via left-multiplication of all
+    //the vertices with a rotation matrix, which is basically the eigenvectors of the inertia matrix. Again homogeneous mass density is assumed.
+    void set_inertia_diagonal(const double M)
+    {
+        dmat3 I = get_inertia(M);
+
+        //Convert the dmat3 datatype to Eigen's.
+        Eigen::Matrix3d eigen_I;
+        for (size_t row = 0; row < 3; ++row)
+            for (size_t col = 0; col < 3; ++col)
+                eigen_I(row, col) = I[row][col];
+
+        //Solve the eigensystem (3x3, real and symmetric matrix).
+        Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver(eigen_I);
+        if (solver.info() != Eigen::Success)
+        {
+            fprintf(stderr, "Error : Inertia eigenvalue decomposition failed. Exiting...\n");
+            exit(EXIT_FAILURE);
+        }
+        Eigen::Vector3d eigenvalues = solver.eigenvalues(); //By default, Eigen sorts them in ascending order : eigenvalues[0] <= eigenvalues[1] <= eigenvalues[2]
+        Eigen::Matrix3d eigenvectors = solver.eigenvectors();
+
+        //Extract the diagonal elements.
+        double Ixx = I[0][0];
+        double Iyy = I[1][1];
+        double Izz = I[2][2];
+        //Reorder the eigenvalues appropriately.
+        uvec3 indices; //Order by which the eigenvalues will be sorted (and thus order of the eigenvectors in the final rotation matrix).
+        if (Ixx < Iyy && Iyy < Izz) //Case : Ixx < Iyy < Izz
+            indices = uvec3{0,1,2}; //default by Eigen.
+        else if (Ixx < Izz && Izz < Iyy) //Case : Ixx < Izz < Iyy
+            indices = uvec3{0,2,1};
+        else if (Iyy < Ixx && Ixx < Izz) //Case : Iyy < Ixx < Izz
+            indices = uvec3{1,0,2};
+        else if (Iyy < Izz && Izz < Ixx) //Case : Iyy < Izz < Ixx
+            indices = uvec3{2,0,1};
+        else if (Izz < Iyy && Iyy < Ixx) //Case : Izz < Iyy < Ixx
+            indices = uvec3{2,1,0};
+        else //Case : Izz < Ixx < Iyy
+            indices = uvec3{1,2,0};
+
+        Eigen::Vector3d reordered_eigenvalues;
+        Eigen::Matrix3d reordered_eigenvectors;
+        //Reorder eigenvalues and eigenvectors according to indices[].
+        for (size_t i = 0; i < 3; ++i)
+        {
+            reordered_eigenvalues(i) = eigenvalues(indices[i]);
+            reordered_eigenvectors.col(i) = eigenvectors.col(indices[i]);
+        }
+
+        Eigen::Vector3d x_axis(1,0,0);
+        Eigen::Vector3d y_axis(0,1,0);
+        Eigen::Vector3d z_axis(0,0,1);
+
+        Eigen::Vector3d eigvec_x_axis = reordered_eigenvectors.col(0);
+        Eigen::Vector3d eigvec_y_axis = reordered_eigenvectors.col(1);
+        Eigen::Vector3d eigvec_z_axis = reordered_eigenvectors.col(2);
+
+        if (eigvec_x_axis.dot(x_axis) < 0) 
+            eigvec_x_axis = -eigvec_x_axis;
+        if (eigvec_y_axis.dot(y_axis) < 0) 
+            eigvec_y_axis = -eigvec_y_axis;
+        if (eigvec_z_axis.dot(z_axis) < 0)
+            eigvec_z_axis = -eigvec_z_axis;
+
+        //Rebuild into a 3x3 matrix.
+        Eigen::Matrix3d eigen_rot_mat;
+        eigen_rot_mat.col(0) = eigvec_x_axis;
+        eigen_rot_mat.col(1) = eigvec_y_axis;
+        eigen_rot_mat.col(2) = eigvec_z_axis;
+        if (eigen_rot_mat.determinant() < 0)
+            eigen_rot_mat.col(2) = -eigen_rot_mat.col(2); //Flip just one column (here the last, but any one would do). This renders the eigenvectors as right-handed coordinate system.
+
+        eigen_rot_mat.transposeInPlace();
+
+        //Now convert the Eigen variable eigen_rot_mat to dmat3 (fin_rot_mat).
+        dmat3 fin_rot_mat;
+        for (size_t row = 0; row < 3; ++row)
+            for (size_t col = 0; col < 3; ++col)
+                fin_rot_mat[row][col] = eigen_rot_mat(row, col);
+
+        //Apply the rotation to all the vertices of the rigid body.
+        for (size_t i = 0; i < verts.size(); ++i)
+            verts[i] = dot(fin_rot_mat, verts[i]);
+
+        //Since the vertices rotated, either we have to rotate the normals as well, or just recompute them...
         norms_exist = false;
         gen_norms();
     }
-    */
 };
 
 #endif
