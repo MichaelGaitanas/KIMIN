@@ -392,6 +392,92 @@ public:
         return J;
     }
 
+    /*
+    dtens get_inertial_integrals_ord3(const double M)
+    {
+        gen_norms();
+
+        double Jxx = 0.0, Jyy = 0.0, Jzz = 0.0;
+        double Jxxx = 0.0, Jyyy = 0.0, Jzzz = 0.0, Jxxy = 0.0, Jxyy = 0.0, Jxxz = 0.0, Jxzz = 0.0, Jyyz = 0.0, Jyzz = 0.0, Jxyz = 0.0;
+        for (size_t i = 0; i < faces.size(); ++i)
+        {
+            double x1 = verts[faces[i][0]][0];
+            double y1 = verts[faces[i][0]][1];
+            double z1 = verts[faces[i][0]][2];
+            
+            double x2 = verts[faces[i][1]][0];
+            double y2 = verts[faces[i][1]][1];
+            double z2 = verts[faces[i][1]][2];
+
+            double x3 = verts[faces[i][2]][0];
+            double y3 = verts[faces[i][2]][1];
+            double z3 = verts[faces[i][2]][2];
+
+            double x21 = x2 - x1;
+            double x31 = x3 - x1;
+            double y21 = y2 - y1;
+            double y31 = y3 - y1;
+            double z21 = z2 - z1;
+            double z31 = z3 - z1;
+
+            double nx = norms[i][0];
+            double ny = norms[i][1];
+            double nz = norms[i][2];
+            double d = x1*nx + y1*ny + z1*nz; //x*nx + y*ny + z*nz - d = 0 (plane equation)
+            
+            if (fabs(nz) > machine_zero)
+            {
+                double Jacxy = fabs(x21*y31 - x31*y21);
+                double coeffnz = d*Jacxy/fabs(nz);
+                Jxx +=  coeffnz*(6.0*x1*x1 + x21*x21 + x21*x31 + x31*x31 + 4.0*x1*(x21 + x31))/12.0;
+                Jyy +=  coeffnz*(6.0*y1*y1 + y21*y21 + y21*y31 + y31*y31 + 4.0*y1*(y21 + y31))/12.0;
+                Jzz +=  coeffnz*(6*pow(d,2) + pow(nx,2)*(6*pow(x1,2) + pow(x21,2) + x21*x31 + pow(x31,2) + 4*x1*(x21 + x31)) + pow(ny,2)*(6*pow(y1,2) + pow(y21,2) + y21*y31 + pow(y31,2) + 4*y1*(y21 + y31)) - 4*d*(nx*(3*x1 + x21 + x31) + ny*(3*y1 + y21 + y31)) + nx*ny*(4*x1*(3*y1 + y21 + y31) + x21*(4*y1 + 2*y21 + y31) + x31*(4*y1 + y21 + 2*y31)))/(12.*pow(nz,2));
+            }
+            else
+            {
+                if (fabs(ny) > machine_zero)
+                {
+                    double Jacxz = fabs(x21*z31 - x31*z21);
+                    double coeffny = d*Jacxz/fabs(ny);
+                    Jxx +=  coeffny*(6.0*x1*x1 + x21*x21 + x21*x31 + x31*x31 + 4.0*x1*(x21 + x31))/12.0;
+                    Jyy +=  coeffny*(6*pow(d,2) + pow(nx,2)*(6*pow(x1,2) + pow(x21,2) + x21*x31 + pow(x31,2) + 4*x1*(x21 + x31)) + pow(nz,2)*(6*pow(z1,2) + pow(z21,2) + z21*z31 + pow(z31,2) + 4*z1*(z21 + z31)) - 4*d*(nx*(3*x1 + x21 + x31) + nz*(3*z1 + z21 + z31)) + nx*nz*(4*x1*(3*z1 + z21 + z31) + x21*(4*z1 + 2*z21 + z31) + x31*(4*z1 + z21 + 2*z31)))/(12.*pow(ny,2));
+                    Jzz +=  coeffny*(6.0*z1*z1 + z21*z21 + z21*z31 + z31*z31 + 4.0*z1*(z21 + z31))/12.0;
+                }
+                else //fabs(nx) > machine_zero
+                {
+                    double Jacyz = fabs(y21*z31 - y31*z21);
+                    double coeffnx = d*Jacyz/fabs(nx);
+                    Jxx +=  coeffnx*(6*pow(d,2) + pow(ny,2)*(6*pow(y1,2) + pow(y21,2) + y21*y31 + pow(y31,2) + 4*y1*(y21 + y31)) + pow(nz,2)*(6*pow(z1,2) + pow(z21,2) + z21*z31 + pow(z31,2) + 4*z1*(z21 + z31)) - 4*d*(ny*(3*y1 + y21 + y31) + nz*(3*z1 + z21 + z31)) + ny*nz*(4*y1*(3*z1 + z21 + z31) + y21*(4*z1 + 2*z21 + z31) + y31*(4*z1 + z21 + 2*z31)))/(12.*pow(nx,2));
+                    Jyy +=  coeffnx*(6.0*y1*y1 + y21*y21 + y21*y31 + y31*y31 + 4.0*y1*(y21 + y31))/12.0;
+                    Jzz +=  coeffnx*(6.0*z1*z1 + z21*z21 + z21*z31 + z31*z31 + 4.0*z1*(z21 + z31))/12.0;
+                }
+            }
+        }
+
+        const int ord = 3;
+        dtens J(ord+1, dmat(ord+1, dvec(ord+1, 0.0) ) ); //Initialize the tensor with zeros.
+        
+        double ord2_coeff = M/(5.0*get_vol());
+        J[2][0][0] = Jxx*ord2_coeff;
+        J[0][2][0] = Jyy*ord2_coeff;
+        J[0][0][2] = Jzz*ord2_coeff;
+
+        double ord3_coeff = M/(6.0*get_vol());
+        J[3][0][0] = Jxxx*ord3_coeff;
+        J[0][3][0] = Jyyy*ord3_coeff;
+        J[0][0][3] = Jzzz*ord3_coeff;
+        J[2][1][0] = Jxxy*ord3_coeff;
+        J[1][2][0] = Jxyy*ord3_coeff;
+        J[2][0][1] = Jxxz*ord3_coeff;
+        J[1][0][2] = Jxzz*ord3_coeff;
+        J[0][2][1] = Jyyz*ord3_coeff;
+        J[0][1][2] = Jyzz*ord3_coeff;
+        J[1][1][1] = Jxyz*ord3_coeff;
+
+        return J;
+    }
+    */
+
     //This function translates all the vertices, such that the resulted center of mass coincides with the local origin (zero). Homogeneous mass density is assumed.
     void set_com_zero()
     {
