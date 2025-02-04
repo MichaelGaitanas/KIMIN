@@ -282,6 +282,24 @@ double mut_pot_integrals_ord4(const dvec3 &r, const double M1, const dtens &J1, 
     return V0 + V2 + V3 + V4;
 }
 
+//Mutual potential of 2 rigid bodies, assuming mascon distributions with constant densities.
+double mut_pot_masc(const dvec3 &r, const double M1, const dmatnx3 &masc1, const dmat3 &A1,
+                                    const double M2, const dmatnx3 &masc2, const dmat3 &A2)
+{
+    double sum = 0.0;
+    for (size_t i = 0; i < masc1.size(); ++i)
+    {
+        dvec3 a1i = dot(A1, masc1[i]);
+        for (size_t j = 0; j < masc2.size(); ++j)
+        {
+            dvec3 a2j = dot(A2, masc2[j]);
+            dvec3 dij = r + a2j - a1i;
+            sum += 1.0/length(dij);
+        }
+    }
+    return -G*M1*M2*sum/(masc1.size()*masc2.size());
+}
+
 /* End of gravity potential expressions. */
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -649,6 +667,25 @@ dvec3 mut_force_integrals_ord4(const dvec3 &r, const double M1, const dtens &J1,
                            dV_dl2*dl2_dr + dV_dm2*dm2_dr + dV_dn2*dn2_dr);
 }
 
+//Mutual force of 2 rigid bodies, assuming mascon distributions with constant densities.
+dvec3 mut_force_masc(const dvec3 &r, const double M1, const dmatnx3 &masc1, const dmat3 &A1,
+                                     const double M2, const dmatnx3 &masc2, const dmat3 &A2)
+{
+    dvec3 sum = {0.0,0.0,0.0};
+    for (size_t i = 0; i < masc1.size(); ++i)
+    {
+        dvec3 a1i = dot(A1, masc1[i]);
+        for (size_t j = 0; j < masc2.size(); ++j)
+        {
+            dvec3 a2j = dot(A2, masc2[j]);
+            dvec3 dij = r + a2j - a1i;
+            double len = length(dij);
+            sum = sum + dij/(len*len*len);
+        }
+    }
+    return -G*M1*M2*sum/(masc1.size()*masc2.size());
+}
+
 /* End of gravity force expressions. */
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -855,6 +892,25 @@ dvec3 mut_torque_integrals_ord4(const dvec3 &r,                  const dtens &J1
 
     //tau1
     return -cross(a1, dV_da1) - cross(a2, dV_da2) - cross(a3, dV_da3);
+}
+
+//Mutual gravity torque of 2 rigid bodies, assuming mascon distributions with constant densities.
+dvec3 mut_torque_masc(const dvec3 &r, const double M1, const dmatnx3 &masc1, const dmat3 &A1,
+                                      const double M2, const dmatnx3 &masc2, const dmat3 &A2)
+{
+    dvec3 sum  = {0.0,0.0,0.0};
+    for (size_t i = 0; i < masc1.size(); ++i)
+    {
+        dvec3 a1i = dot(A1, masc1[i]);
+        for (size_t j = 0; j < masc2.size(); ++j)
+        {
+            dvec3 a2j = dot(A2, masc2[j]);
+            dvec3 dij = r + a2j - a1i;
+            double len = length(dij);
+            sum = sum + cross(a1i,dij)/(len*len*len);
+        }
+    }
+    return G*M1*M2*sum/(masc1.size()*masc2.size());
 }
 
 /* End of gravity torque expressions. */
