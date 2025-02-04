@@ -60,6 +60,12 @@ public:
             printf("[ %.15lf   %.15lf   %.15lf ]\n", points[i][0],points[i][1],points[i][2]);
     }
 
+    //Retrieve the current mascons distro.
+    dmatnx3 get_points()
+    {
+        return points;
+    }
+
     //Get the total number of the current mascons.
     size_t get_total()
     {

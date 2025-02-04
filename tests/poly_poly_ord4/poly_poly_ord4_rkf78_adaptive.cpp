@@ -12,7 +12,6 @@
 #include"../../source/conversion.h"
 #include"../../source/rigidbody.h"
 #include"../../source/gravity.h"
-#include"../../source/mascons.h"
 #include"../../source/polyhedron.h"
 
 double M1,M2,m; //m = M1*M2/(M1+M2)
@@ -36,9 +35,9 @@ void odes(const boost::array<double, 20> &state, boost::array<double, 20> &dstat
     dmat3 A1 = quat2mat(q1);
     dmat3 A2 = quat2mat(q2);
 
-    dvec3 force = mut_force_integrals_ord2(r, M1,J1,A1, M2,J2,A2);
+    dvec3 force = mut_force_integrals_ord4(r, M1,J1,A1, M2,J2,A2);
 
-    dvec3 tau1i = mut_torque_integrals_ord2(r, J1,A1, M2);
+    dvec3 tau1i = mut_torque_integrals_ord4(r, J1,A1, M2,J2,A2);
     dvec3 tau2i = -tau1i - cross(r,force);
 
     dvec3 tau1b = iner2body(tau1i,A1);
@@ -91,35 +90,23 @@ int main()
 
     std::filesystem::create_directory("io");
 
-    polyhedron poly;
-    
-    printf("Generating mascons 1... ");
-    poly.load_obj_file("../../obj/didymain2019.obj");
-    mascons masc1;
-    masc1.generate_from_polyhedron(poly, uvec3{20,20,20});
-    masc1.export_obj_file("io/masc1.obj");
-    masc1.set_com_zero();
-    masc1.set_inertia_diagonal(M1);
-    masc1.export_obj_file("io/masc1_fixed.obj");
-    I1 = masc1.get_inertia(M1);
-    J1 = masc1.get_inertial_integrals(M1, 2);
-    double brillouin_radius1 = masc1.get_farthest_point_distance();
-    printf("Done.\n");
+    polyhedron poly1;
+    poly1.load_obj_file("../../obj/didymain2019.obj");
+    poly1.set_com_zero();
+    poly1.set_inertia_diagonal(M1);
+    poly1.export_obj_file_vf("io/poly1_fixed.obj");
+    I1 = poly1.get_inertia(M1);
+    J1 = poly1.get_inertial_integrals_ord4(M1);
+    double brillouin_radius1 = poly1.get_farthest_vertex_distance();
 
-    printf("Generating mascons 2... ");
-    poly.load_obj_file("../../obj/dimorphos_ellipsoid.obj");
-    mascons masc2;
-    masc2.generate_from_polyhedron(poly, uvec3{20,20,20});
-    masc2.export_obj_file("io/masc2.obj");
-    masc2.set_com_zero();
-    masc2.set_inertia_diagonal(M2);
-    masc2.export_obj_file("io/masc2_fixed.obj");
-    I2 = masc2.get_inertia(M2);
-    J2 = masc2.get_inertial_integrals(M2, 2);    
-    double brillouin_radius2 = masc2.get_farthest_point_distance();
-    printf("Done.\n");
-
-    printf("Running simulation... ");
+    polyhedron poly2;
+    poly2.load_obj_file("../../obj/dimorphos_ellipsoid.obj");
+    poly2.set_com_zero();
+    poly2.set_inertia_diagonal(M2);
+    poly2.export_obj_file_vf("io/poly2_fixed.obj");
+    I2 = poly2.get_inertia(M2);
+    J2 = poly2.get_inertial_integrals_ord4(M2);
+    double brillouin_radius2 = poly2.get_farthest_vertex_distance();
 
     //Time parameters.
     double t, t0 = 0.0; //[sec]
@@ -214,7 +201,7 @@ int main()
         dvec3 rpy1 = quat2ang(q1);
         dvec3 rpy2 = quat2ang(q2);
 
-        double energy = 0.5*m*dot(v,v) + 0.5*dot( dot(w1b,I1), w1b) + 0.5*dot( dot(w2b,I2), w2b) + mut_pot_integrals_ord2(r, M1,J1,A1, M2,J2,A2);
+        double energy = 0.5*m*dot(v,v) + 0.5*dot( dot(w1b,I1), w1b) + 0.5*dot( dot(w2b,I2), w2b) + mut_pot_integrals_ord4(r, M1,J1,A1, M2,J2,A2);
         dvec3 momentum = m*cross(r,v) + dot(A1, dot(I1,w1b)) + dot(A2, dot(I2,w2b));
 
         fprintf(fpt,"%.16lf\n", orbit[i][0]);
@@ -248,8 +235,6 @@ int main()
     FILE *fpcollision = fopen("io/collision.txt","w");
     fprintf(fpcollision, "Collision detected : %s", collision ? "Yes" : "No");
     fclose(fpcollision);
-
-    printf("Done.\n");
 
     return 0;
 }
