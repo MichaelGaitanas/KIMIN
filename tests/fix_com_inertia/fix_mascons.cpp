@@ -16,7 +16,7 @@ int main()
     
     mascons masc;
     printf("Generating mascons... ");
-    masc.generate_from_polyhedron(poly, uvec3{71,71,71});
+    masc.generate_from_polyhedron(poly, uvec3{51,51,51});
     printf("Done.\n\n");
 
     std::filesystem::create_directory("io");
@@ -34,7 +34,7 @@ int main()
     printf("Final com : \n");
     printf("[ %.15e  %.15e  %.15e ]\n\n", com[0],com[1],com[2]);
 
-    double M = 1.0; //Total mass of the mascons distro.
+    double M = 123456.0; //Total mass of the mascons distro.
     
     dmat3 iner = masc.get_inertia(M);
     printf("Initial inertia : \n");
