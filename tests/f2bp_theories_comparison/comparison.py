@@ -2,8 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-#if not os.path.exists('../masc_masc_exact/io/time.txt')
-
 t_masc_ord2 = np.loadtxt('../masc_masc_ord2/io/time.txt')/86400.0 #[days]
 rv_masc_ord2 = np.loadtxt('../masc_masc_ord2/io/pos_vel.txt') #[km]
 EL_masc_ord2 = np.loadtxt('../masc_masc_ord2/io/energy_momentum.txt') #E [kg*km^2/sec^2] and L [kg*km^2/sec]
@@ -30,19 +28,19 @@ rpy2_masc_exact = np.loadtxt('../masc_masc_exact/io/roll_pitch_yaw_2.txt')*180/n
 
 ###############################################################################################
 
-t_poly_ord2 = np.loadtxt('../masc_masc_ord2/io/time.txt')/86400.0 #[days]
+t_poly_ord2 = np.loadtxt('../poly_poly_ord2/io/time.txt')/86400.0 #[days]
 rv_poly_ord2 = np.loadtxt('../poly_poly_ord2/io/pos_vel.txt') #[km]
 EL_poly_ord2 = np.loadtxt('../poly_poly_ord2/io/energy_momentum.txt') #E [kg*km^2/sec^2] and L [kg*km^2/sec]
 rpy1_poly_ord2 = np.loadtxt('../poly_poly_ord2/io/roll_pitch_yaw_1.txt')*180/np.pi #[deg]
 rpy2_poly_ord2 = np.loadtxt('../poly_poly_ord2/io/roll_pitch_yaw_2.txt')*180/np.pi #[deg]
 
-t_poly_ord3 = np.loadtxt('../masc_masc_ord3/io/time.txt')/86400.0 #[days]
+t_poly_ord3 = np.loadtxt('../poly_poly_ord3/io/time.txt')/86400.0 #[days]
 rv_poly_ord3 = np.loadtxt('../poly_poly_ord3/io/pos_vel.txt') #[km]
 EL_poly_ord3 = np.loadtxt('../poly_poly_ord3/io/energy_momentum.txt') #E [kg*km^2/sec^2] and L [kg*km^2/sec]
 rpy1_poly_ord3 = np.loadtxt('../poly_poly_ord3/io/roll_pitch_yaw_1.txt')*180/np.pi #[deg]
 rpy2_poly_ord3 = np.loadtxt('../poly_poly_ord3/io/roll_pitch_yaw_2.txt')*180/np.pi #[deg]
 
-t_poly_ord4 = np.loadtxt('../masc_masc_ord4/io/time.txt')/86400.0 #[days]
+t_poly_ord4 = np.loadtxt('../poly_poly_ord4/io/time.txt')/86400.0 #[days]
 rv_poly_ord4 = np.loadtxt('../poly_poly_ord4/io/pos_vel.txt') #[km]
 EL_poly_ord4 = np.loadtxt('../poly_poly_ord4/io/energy_momentum.txt') #E [kg*km^2/sec^2] and L [kg*km^2/sec]
 rpy1_poly_ord4 = np.loadtxt('../poly_poly_ord4/io/roll_pitch_yaw_1.txt')*180/np.pi #[deg]

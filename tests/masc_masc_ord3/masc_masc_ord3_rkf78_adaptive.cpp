@@ -91,12 +91,12 @@ int main()
 
     std::filesystem::create_directory("io");
 
-    polyhedron poly;
+    polyhedron poly1,poly2;
     
     printf("Generating mascons 1... ");
-    poly.load_obj_file("../../obj/didymain2019.obj");
+    poly1.load_obj_file("../../obj/didymain2019.obj");
     mascons masc1;
-    masc1.generate_from_polyhedron(poly, uvec3{20,20,20});
+    masc1.generate_from_polyhedron(poly1, uvec3{20,20,20});
     masc1.export_obj_file("io/masc1.obj");
     masc1.set_com_zero();
     masc1.set_inertia_diagonal(M1);
@@ -107,9 +107,9 @@ int main()
     printf("Done.\n");
 
     printf("Generating mascons 2... ");
-    poly.load_obj_file("../../obj/dimorphos_ellipsoid.obj");
+    poly2.load_obj_file("../../obj/dimorphos_ellipsoid.obj");
     mascons masc2;
-    masc2.generate_from_polyhedron(poly, uvec3{20,20,20});
+    masc2.generate_from_polyhedron(poly2, uvec3{20,20,20});
     masc2.export_obj_file("io/masc2.obj");
     masc2.set_com_zero();
     masc2.set_inertia_diagonal(M2);
