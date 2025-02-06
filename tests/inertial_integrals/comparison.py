@@ -1,6 +1,5 @@
 import math as ma
 import numpy as np
-import scipy as sp
 
 #Load an .obj file, exclusively with the format 'v x y z'.
 def loadobjv(path):
@@ -28,7 +27,7 @@ def loadobjvf(path):
                 i,j,k = int(temp[1]),int(temp[2]),int(temp[3])
                 ijk.append([i,j,k])
     
-    return np.asarray(xyz), np.asarray(ijk) - 1
+    return np.array(xyz, dtype=np.float64), np.array(ijk, dtype=np.int64) - 1
 
 #Generate the (non normalized) inertial integrals tensor of order 'ord', of a mascons distribution 'masc', of total mass 'M' with constant density.
 def masc_integrals(M,masc,ord):
@@ -37,7 +36,7 @@ def masc_integrals(M,masc,ord):
     for i in range(ord+1):
         for j in range(ord+1):
             for k in range(ord+1):
-                J[i,j,k] = m*np.sum((masc[:,0]**i)*(masc[:,1]**j)*(masc[:,2]**k)) #m*(x[n]^i)*(y[n]^j)*(z[n]^k), where n is the mascon's enumeration
+                J[i,j,k] = m*np.sum((masc[:,0]**i)*(masc[:,1]**j)*(masc[:,2]**k)) #m*(x[n]^i)*(y[n]^j)*(z[n]^k), where n is the mascon's enumeration.
     return J
 
 #Computes the total volume of a polyhedron assuming that the latter is a bunch of
@@ -83,7 +82,7 @@ def tet_sums(l,m,n, x1,x2,x3, y1,y2,y3, z1,z2,z3):
 #'rho' is the mass density of the polyhedron.
 def poly_integrals(rho,verts,faces,ord):
 	faces = faces[:, ~np.all(np.isnan(faces), axis = 0)]
-	J = np.zeros([ord+1, ord+1, ord+1])
+	J = np.zeros([ord+1, ord+1, ord+1], dtype=np.float64)
 	for l in range(ord+1):
 		for m in range(ord+1-l):
 			for n in range(ord+1-m-l):
@@ -95,10 +94,15 @@ def poly_integrals(rho,verts,faces,ord):
 					J[l,m,n] += rho*Ta*tet_sums(l,m,n,x1[0],x2[0],x3[0],x1[1],x2[1],x3[1],x1[2],x2[2],x3[2])
 	return J
 
-#masc = loadobjv('../../obj/mascons/model.obj') #mascons positions ([km],[km],[km])
-verts, faces = loadobjvf('../../obj/didymain2019.obj') #mascons positions ([km],[km],[km])
-M = 5.320591856403073e11 #mass of the body [kg]
-ord = 6
-J = masc_integrals(M,verts,ord)
-#J = poly_integrals(M/poly_vol_tet(verts,faces), verts, faces, ord)
-print(J)
+masc = loadobjv('../../obj/mascons/patroclus_ellipsoid_48723_fixed.obj') #mascons positions ([km],[km],[km])
+verts, faces = loadobjvf('../../obj/patr.obj')
+M = 123456.0 #mass of the body [kg]
+ord = 2
+
+Jmasc = masc_integrals(M,masc,ord)
+Jpoly = poly_integrals(M/poly_vol_tet(verts,faces), verts, faces, ord)
+
+for i in range(Jpoly.shape[0]):  # Depth
+    for j in range(Jpoly.shape[1]):  # Rows
+        for k in range(Jpoly.shape[2]):  # Columns
+            print(f"J[{i}][{j}][{k}] : {Jpoly[i, j, k]:.10e}, {Jmasc[i, j, k]:.10e}")
