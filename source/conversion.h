@@ -151,7 +151,7 @@ double M2E(const double M, const double e)
     return wrap_to_2pi(E);
 }
 
-//Calculate the mean anomaly, given the eccentric anomaly.
+//Calculate the mean anomaly, given the eccentric anomaly and the eccentricity.
 double E2M(const double E, const double e)
 {
     double M = E - e*sin(E);
@@ -162,13 +162,12 @@ double E2M(const double E, const double e)
 //Now it solves M = e*sinh(H) - H, using the Newton–Raphson method.
 double M2H(const double M, const double e)
 {
-    //For very small M, H is approximately M.
     if (fabs(M) < machine_zero)
         return M;
 
     double H0, H;
     int iter = 0;   
-    H = H0 = M/(e - 1.0); // Initial guess, using linearization H0 ~ M/(e - 1).
+    H = H0 = M/(e - 1.0); //Initial guess, using linearization H0 ~ M/(e - 1).
     do
     {
         H0 = H;
@@ -186,55 +185,17 @@ double M2H(const double M, const double e)
     return H;
 }
 
-//Convert Keplerian elements to Cartesian.
-dvec6 kep2cart(const dvec6 &kep, const double GM)
+//Calculate the mean anomaly, given the hyperbolic anomaly and the eccentricity.
+double H2M(const double H, const double e)
 {
-    double a  = kep[0];
-    double e  = kep[1]; 
-    double i  = kep[2];
-    double Om = kep[3];
-    double w  = kep[4];
-    double M  = kep[5];
-
-    double E = M2E(M,e); //Eccentric anomaly.
-    double f = 2.0*atan(sqrt((1.0 + e)/(1.0 - e))*tan(E/2.0)); //True anomaly.
-    double p = a*(1.0 - e*e); //Semilatus rectum.
-    double sqrt_GM_div_p = sqrt(GM/p);
-
-    //Precompute trigonometric stuff.
-    double sini = sin(i), cosi = cos(i);
-    double sinOm = sin(Om), cosOm = cos(Om);
-    double sinw = sin(w), cosw = cos(w);
-    double sinf = sin(f), cosf = cos(f);
-
-    //Cartesian elements defined on the orbital plane (plz = plvz = 0).
-    double plx = p*cosf/(1.0 + e*cosf);
-    double ply = p*sinf/(1.0 + e*cosf);
-    double plvx = -sqrt_GM_div_p*sinf;
-    double plvy = sqrt_GM_div_p*(e + cosf);
-
-    //Rotation matrix (3rd column is not needed since plz = plvz = 0).
-    double A11 = cosw*cosOm - sinw*cosi*sinOm;
-    double A12 = -sinw*cosOm - cosw*cosi*sinOm;
-    double A21 = cosw*sinOm + sinw*cosi*cosOm;
-    double A22 = -sinw*sinOm + cosw*cosi*cosOm;
-    double A31 = sinw*sini;
-    double A32 = cosw*sini;
-
-    //Inertial Cartesian elements.
-    double x = A11*plx + A12*ply;
-    double y = A21*plx + A22*ply;
-    double z = A31*plx + A32*ply;
-    double vx = A11*plvx + A12*plvy;
-    double vy = A21*plvx + A22*plvy;
-    double vz = A31*plvx + A32*plvy;
-
-    return {x,y,z,vx,vy,vz};
+    double M = e*sinh(H) - H;
+    return M; //Here we do not wrap in 2*pi, because the hyperbolic mean anomaly is not a periodic angle (unlike in the elliptical case).
 }
 
 //Convert Keplerian elements to Cartesian.
 dvec6 kep2cart(const dvec6 &kep, const double GM)
 {
+    //Extract into symbols for visibility.
     double a  = kep[0];
     double e  = kep[1]; 
     double i  = kep[2];
@@ -246,7 +207,7 @@ dvec6 kep2cart(const dvec6 &kep, const double GM)
     if (e < 1.0) //Osculating ellipse.
     {
         if (a < 0.0)
-            a = -a;
+            a = -a; //I forgive you and make it positive...
         
         double E = M2E(M, e); //Eccentric anomaly.
         f = 2.0*atan(sqrt((1.0 + e)/(1.0 - e))*tan(E/2.0));
@@ -255,7 +216,7 @@ dvec6 kep2cart(const dvec6 &kep, const double GM)
     else //Osculating hyperbola.
     {
         if (a > 0.0)
-            a = -a; //Remember a is negative in the hyperbola.
+            a = -a; //a is negative in the hyperbola.
 
         double H = M2H(M, e); //Hyperbolic anomaly.
         f = 2.0*atan(sqrt((1.0 + e)/(e - 1.0))*tanh(H/2.0));
@@ -395,14 +356,21 @@ dvec6 cart2kep(const dvec6 &cart, const double GM)
         f = acos(clamp_cos(cosf));
     }
 
-    //Eccentric anomaly.
-    double sinE = sin(f)*sqrt(1.0 - e*e)/(1.0 + e*cosf);
-    double cosE = (e + cosf)/(1.0 + e*cosf);
-    double E = atan2(sinE, cosE);
-
-    //Mean anomaly (6th Keplerian element).
-    double M = E2M(E,e);
-
+    double M; //Mean anomaly (6th Keplerian element).
+    if (e < 1.0) //Osculating ellipse.
+    {
+        //Eccentric anomaly calculation.
+        double sinE = sin(f)*sqrt(1.0 - e*e)/(1.0 + e*cosf);
+        double cosE = (e + cosf)/(1.0 + e*cosf);
+        double E = atan2(sinE, cosE);
+        M = E2M(E,e);
+    }
+    else //Osculating hyperbola.
+    {
+        double H = 2.0*atanh(sqrt((e - 1.0)/(e + 1.0))*tan(f/2.0));
+        M = H2M(H,e);
+    }
+    
     return {a,e,i,Om,w,M};
 }
 
