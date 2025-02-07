@@ -28,7 +28,7 @@ dtens ell_integrals(const double M, const dvec3 &semiaxes, const int ord)
     for (int i = 0; i < ord + 1; ++i)
         for (int j = 0; j < ord + 1; ++j)
             for (int k = 0; k < ord + 1; ++k)
-                if (i%2 == 0 && j%2 == 0 && k%2 == 0) //Otherwise the triple integral yields zero.
+                if (i%2 == 0 && j%2 == 0 && k%2 == 0 && i + j + k <= ord) //Otherwise the triple integral either yields zero, or does not appear as a principal axes integral in the potential/force/torque expressions.
                     J[i][j][k] = (3.0*M/(4.0*pi))*pow(a,i)*pow(b,j)*pow(c,k)*std::tgamma(0.5*(i+1))*std::tgamma(0.5*(j+1))*std::tgamma(0.5*(k+1))/std::tgamma(0.5*(i+j+k+5));
     return J;
 }

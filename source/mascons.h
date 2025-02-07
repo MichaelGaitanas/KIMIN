@@ -136,7 +136,8 @@ public:
             for (int j = 0; j < ord + 1; ++j)
                 for (int k = 0; k < ord + 1; ++k)
                     for (size_t n = 0; n < points.size(); ++n)
-                        J[i][j][k] += m*pow(points[n][0], i)*pow(points[n][1], j)*pow(points[n][2], k); //J_ijk = m*(x[n]^i)*(y[n]^j)*(z[n]^k)
+                        if (i + j + k <= ord) //Compute only the principal axes inertial integrals that appear in the potential, force and torque expressions.
+                            J[i][j][k] += m*pow(points[n][0], i)*pow(points[n][1], j)*pow(points[n][2], k); //J_ijk = m*(x[n]^i)*(y[n]^j)*(z[n]^k)
         return J;
     }
 
