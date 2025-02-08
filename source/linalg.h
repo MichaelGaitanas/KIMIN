@@ -237,7 +237,7 @@ void swap(double &a, double &b)
 //Root of the linear equation a*x + b = 0, where a,b are reals.
 dcomplex solve_linear(const double a, const double b)
 {
-    if (fabs(a) <= machine_zero)
+    if (fabs(a) <= 1e-15)
     {
         //nan + i*0.0
         return dcomplex(std::numeric_limits<double>::quiet_NaN(), 0.0);
@@ -249,7 +249,7 @@ dcomplex solve_linear(const double a, const double b)
 //Roots of the quadratic equation a*x^2 + b*x + c = 0, where a,b,c are reals.
 dcomplexvec solve_quadratic(const double a, const double b, const double c)
 {
-    if (fabs(a) <= machine_zero)
+    if (fabs(a) <= 1e-15)
     {
         return dcomplexvec({solve_linear(b,c)});
     }
@@ -264,7 +264,7 @@ dcomplexvec solve_quadratic(const double a, const double b, const double c)
 //Roots of the cubic equation a*x^3 + b*x^2 + c*x + d = 0, where a,b,c,d are reals.
 dcomplexvec solve_cubic(const double a, const double b, const double c, const double d)
 {
-    if (fabs(a) <= machine_zero)
+    if (fabs(a) <= 1e-15)
     {
         dcomplexvec sol = solve_quadratic(b,c,d);
         if (sol.size() == 2)
@@ -278,10 +278,10 @@ dcomplexvec solve_cubic(const double a, const double b, const double c, const do
     double D1 = 2.0*b*b*b - 9.0*a*b*c + 27.0*a*a*d;
 
     dcomplex C = pow( (D1 + sqrt(dcomplex(D1*D1 - 4.0*D0*D0*D0)))/2.0 , 1.0/3.0);
-    if ( fabs(C.real()) <= machine_zero && fabs(C.imag()) <= machine_zero )
+    if ( fabs(C.real()) <= 1e-15 && fabs(C.imag()) <= 1e-15 )
     {
         C = pow( (D1 - sqrt(dcomplex(D1*D1 - 4.0*D0*D0*D0)))/2.0 , 1.0/3.0);
-        if ( fabs(C.real()) <= machine_zero && fabs(C.imag()) <= machine_zero )
+        if ( fabs(C.real()) <= 1e-15 && fabs(C.imag()) <= 1e-15 )
         {
             return dcomplexvec({-b/(3.0*a), -b/(3.0*a), -b/(3.0*a)}); //triple solution
         }
@@ -300,7 +300,7 @@ dcomplexvec solve_cubic(const double a, const double b, const double c, const do
 //Roots of the quartic equation a*x^4 + b*x^3 + c*x^2 + d*x + e = 0, where a,b,c,d,e are reals.
 dcomplexvec solve_quartic(const double a, const double b, const double c, const double d, const double e)
 {
-    if (fabs(a) <= machine_zero)
+    if (fabs(a) <= 1e-15)
     {
         dcomplexvec sol = solve_cubic(b,c,d,e);
         if (sol.size() == 3)
@@ -318,7 +318,7 @@ dcomplexvec solve_quartic(const double a, const double b, const double c, const 
     double B = b*b*b/(8.0*a*a*a) - b*c/(2.0*a*a) + (double)d/a;
     double C = -3.0*b*b*b*b/(256.0*a*a*a*a) + c*b*b/(16.0*a*a*a) - b*d/(4.0*a*a) + (double)e/a;
 
-    if (fabs(B) <= machine_zero)
+    if (fabs(B) <= 1e-15)
     {
         dcomplex x1 = -b/(4.0*a) + sqrt( 0.5*(-A + sqrt(dcomplex(A*A - 4.0*C))) );
         dcomplex x2 = -b/(4.0*a) - sqrt( 0.5*(-A + sqrt(dcomplex(A*A - 4.0*C))) );
@@ -333,7 +333,7 @@ dcomplexvec solve_quartic(const double a, const double b, const double c, const 
     dcomplex U = pow(R, 1.0/3.0);
 
     dcomplex Y;
-    if (fabs(U.real()) <= machine_zero && fabs(U.imag()) <= machine_zero)
+    if (fabs(U.real()) <= 1e-15 && fabs(U.imag()) <= 1e-15)
     {
         Y = -5.0*A/6.0 - pow(Q, 1.0/3.0);
     }

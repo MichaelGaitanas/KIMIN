@@ -178,7 +178,7 @@ public:
         //Reorder the eigenvalues appropriately.
         uvec3 indices; //Order by which the eigenvalues will be sorted (and thus order of the eigenvectors in the final rotation matrix).
         if (Ixx < Iyy && Iyy < Izz) //Case : Ixx < Iyy < Izz
-            indices = uvec3{0,1,2}; //default by Eigen.
+            indices = uvec3{0,1,2}; //Default by Eigen.
         else if (Ixx < Izz && Izz < Iyy) //Case : Ixx < Izz < Iyy
             indices = uvec3{0,2,1};
         else if (Iyy < Ixx && Ixx < Izz) //Case : Iyy < Ixx < Izz
@@ -187,8 +187,10 @@ public:
             indices = uvec3{2,0,1};
         else if (Izz < Iyy && Iyy < Ixx) //Case : Izz < Iyy < Ixx
             indices = uvec3{2,1,0};
-        else //Case : Izz < Ixx < Iyy
+        else if (Izz < Ixx && Ixx < Iyy) //Case : Izz < Ixx < Iyy
             indices = uvec3{1,2,0};
+        else //This implies that some sort of equality was found between Ixx,Iyy,Izz, but this is not expected, as we are dealing with double precision.
+            indices = uvec3{0,1,2}; //Stick to the default by Eigen. I might fix it later...
 
         Eigen::Vector3d reordered_eigenvalues;
         Eigen::Matrix3d reordered_eigenvectors;

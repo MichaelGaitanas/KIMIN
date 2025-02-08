@@ -241,7 +241,7 @@ public:
         }
 
         //Possible error 11 : Relative position/velocity (mutual distance must be > 0).
-        if (cart_kep_var_choice == 0 && length(dvec3{cart[0], cart[1], cart[2]}) <= machine_zero)
+        if (cart_kep_var_choice == 0 && length(dvec3{cart[0], cart[1], cart[2]}) <= 1e-15)
             errors.push_back("[Error] :  Invalid set of 'x', 'y', 'z' (mutual distance must be positive).");
 
         //Possible error 12 : Relative Keplerian elements ('a' must be > 0, 'e' must be in [0,1))
@@ -266,13 +266,13 @@ public:
         //Note : In case of non normalized quaternion input, the program normalizes them both automatically.
         if (orient_var_choice == 1)
         {
-            if (length(q1) <= machine_zero)
+            if (length(q1) <= 1e-15)
                 errors.push_back("[Error] :  Quaternion 1 ('q10', 'q11', 'q12', 'q13') must be nonzero.");
             else //Normalize it no matter what.
                 q1 = quat2unit(q1); //This correction will be visible in the gui.
 
             //The same for q2 :
-            if (length(q2) <= machine_zero)
+            if (length(q2) <= 1e-15)
                 errors.push_back("[Error] :  Quaternion 2 ('q20', 'q21', 'q22', 'q23') must be nonzero.");
             else //Normalize it no matter what.
                 q2 = quat2unit(q2); //This correction will be visible in the gui.

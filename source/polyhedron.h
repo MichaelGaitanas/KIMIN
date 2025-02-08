@@ -92,7 +92,7 @@ public:
             dvec3 p2 = verts[faces[i][2]];
             perp = cross(p1-p0, p2-p1);
             double len = length(perp);
-            if (len > machine_zero)
+            if (len > 1e-15)
                 norms[i] = perp/len;
             else
                 norms[i] = dvec3{0.0,0.0,0.0}; //Degenerate case...
@@ -178,7 +178,7 @@ public:
     //A ray is casted from the point of examination (r) up to a destination point (pdest), which must be outside the
     //polyhedron's surface. Then we count the number of intersections between the ray and the polyhedron. If the number of intersections
     //is odd, then r is inside the polyhedron. Otherwise it is outside.
-    bool encloses_point(const dvec3 &r, const double tolerance = 1.0e-12)
+    bool encloses_point(const dvec3 &r)
     {
         gen_norms();
 
@@ -210,7 +210,7 @@ public:
             double A012 = 0.5*length(cross(p1-p0, p2-p1)); //p0 -> p1 -> p2
 
             //If the sum of the 3 areas is equal to the area of the surface triangle, then pj sits upon the surface of the triangle.
-            if ( fabs(Aj01 + Aj12 + Aj20 - A012) <= tolerance && pj[0] > r[0] && pj[1] > r[1] && pj[2] > r[2] )
+            if ( fabs(Aj01 + Aj12 + Aj20 - A012) <= 1e-12 && pj[0] > r[0] && pj[1] > r[1] && pj[2] > r[2] ) //I need to fix this...
                 ++intersections;
         }
         
@@ -777,7 +777,7 @@ public:
         //Reorder the eigenvalues appropriately.
         uvec3 indices; //Order by which the eigenvalues will be sorted (and thus order of the eigenvectors in the final rotation matrix).
         if (Ixx < Iyy && Iyy < Izz) //Case : Ixx < Iyy < Izz
-            indices = uvec3{0,1,2}; //default by Eigen.
+            indices = uvec3{0,1,2}; //Default by Eigen.
         else if (Ixx < Izz && Izz < Iyy) //Case : Ixx < Izz < Iyy
             indices = uvec3{0,2,1};
         else if (Iyy < Ixx && Ixx < Izz) //Case : Iyy < Ixx < Izz
@@ -786,8 +786,10 @@ public:
             indices = uvec3{2,0,1};
         else if (Izz < Iyy && Iyy < Ixx) //Case : Izz < Iyy < Ixx
             indices = uvec3{2,1,0};
-        else //Case : Izz < Ixx < Iyy
+        else if (Izz < Ixx && Ixx < Iyy) //Case : Izz < Ixx < Iyy
             indices = uvec3{1,2,0};
+        else //This implies that some sort of equality was found between Ixx,Iyy,Izz, but this is not expected, as we are dealing with double precision.
+            indices = uvec3{0,1,2}; //Stick to the default by Eigen. I might fix it later...
 
         Eigen::Vector3d reordered_eigenvalues;
         Eigen::Matrix3d reordered_eigenvectors;

@@ -109,9 +109,9 @@ dvec3 body2iner(const dvec3 &vbody, const dmat3 &A)
 double clamp_cos(double cosx)
 {
     if (cosx > 1.0)
-        cosx = 1.0;
-    else if (cosx < -1.0)
-        cosx = -1.0;
+        return 1.0;
+    if (cosx < -1.0)
+        return -1.0;
     return cosx;
 }
 
@@ -128,7 +128,7 @@ double wrap_to_2pi(double angle)
 //inverting Kepler's equation through a Newton-Raphson method.
 double M2E(const double M, const double e)
 {
-    if (fabs(sin(M)) < machine_zero)
+    if (fabs(sin(M)) < 1e-15)
         return M;
 
     double E0, E;
@@ -142,11 +142,11 @@ double M2E(const double M, const double e)
         //Loop escape criterion.
         if (++iter > 20)
         {
-            fprintf(stderr, "In M2E(), N-R did not converge sufficiently. Returning as E the last E_i of the method (E_i = %.15lf [rad]) for which |E_i - E_(i-1)| = %.15e.\n", E, fabs(E-E0));
+            printf("Warning : In M2E(), N-R did not converge sufficiently. Returning as E the last E_i of the method (E_i = %.15lf [rad]) for which |E_i - E_(i-1)| = %.15e.\n", E, fabs(E-E0));
             return wrap_to_2pi(E);
         }
     }
-    while (fabs(E - E0) > machine_zero);
+    while (fabs(E - E0) > 1e-15);
 
     return wrap_to_2pi(E);
 }
@@ -162,7 +162,7 @@ double E2M(const double E, const double e)
 //Now it solves M = e*sinh(H) - H, using the Newton–Raphson method.
 double M2H(const double M, const double e)
 {
-    if (fabs(M) < machine_zero)
+    if (fabs(M) < 1e-15)
         return M;
 
     double H0, H;
@@ -176,11 +176,11 @@ double M2H(const double M, const double e)
         //Loop escape criterion.
         if (++iter > 20)
         {
-            fprintf(stderr, "In M2H(), N-R did not converge sufficiently. Returning the last H (H = %.15lf [rad]) with |H - H0| = %.15e.\n", H, fabs(H - H0));
+            printf("Warning : In M2H(), N-R did not converge sufficiently. Returning as H the last H_i of the method (H_i = %.15lf [rad]) for which |H_i - H_(i-1)| = %.15e.\n", H, fabs(H-H0));
             return H;
         }
     }
-    while (fabs(H - H0) > machine_zero);
+    while (fabs(H - H0) > 1e-15);
     
     return H;
 }
@@ -300,7 +300,7 @@ dvec6 cart2kep(const dvec6 &cart, const double GM)
 
     //Longitude of ascending node (4th Keplerian element).
     double Om;
-    if (n > machine_zero)
+    if (n > 1e-15)
     {
         double cosOm = nx/n;
         Om = acos(clamp_cos(cosOm));
@@ -312,10 +312,10 @@ dvec6 cart2kep(const dvec6 &cart, const double GM)
 
     //Argument of periapsis (5th Keplerian element).
     double w;
-    if (e > machine_zero)
+    if (e > 1e-15)
     {
         double cosw;
-        if (n > machine_zero)
+        if (n > 1e-15)
         {
             cosw = (nx*ex + ny*ey)/(e*n);
             w = acos(clamp_cos(cosw));
@@ -333,9 +333,9 @@ dvec6 cart2kep(const dvec6 &cart, const double GM)
 
     //True anomaly.
     double f, cosf;
-    if (n > machine_zero)
+    if (n > 1e-15)
     {
-        if (e > machine_zero)
+        if (e > 1e-15)
         {
             cosf = (ex*x + ey*y + ez*z)/(e*r);
             f = acos(clamp_cos(cosf));
@@ -531,8 +531,6 @@ void integrals2stokes(const dtens &J, dmat &C, dmat &S, const double R0, bool su
             S[n].push_back(supernormcoeff*auxcoeff*Snm_step(n,m,N)); //S[n][m] = supernormcoeff*auxcoeff*Snm_step(n,m,N)
         }
     }
-
-    return;
 }
 
 #endif
