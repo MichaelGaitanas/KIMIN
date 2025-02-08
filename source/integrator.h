@@ -11,7 +11,6 @@
 #include"conversion.h"
 #include"ellipsoid.h"
 #include"polyhedron.h"
-#include"mascons.h"
 #include"rigidbody.h"
 #include"gravity.h"
 #include"properties_panel.h"
@@ -177,8 +176,8 @@ public:
             //We load the .obj models of the ellipsoids. The dynamics will be computed via analytical ellipsoid parameters,
             //but when the user renderers the 3D scene, those polyhedral unit spheres will be scaled in accordance with the
             //chosen a1,b1,c1 and a2,b2,c2 of the ellipsoids.
-            poly1.load_obj_file("../obj/icosphere_rad1.obj");
-            poly2.load_obj_file("../obj/icosphere_rad1.obj");
+            poly1.load_obj_file("../obj/uvsphere64x64_rad1.obj");
+            poly2.load_obj_file("../obj/uvsphere64x64_rad1.obj");
             brillouin1 = ell_brillouin(properties.semiaxes1);
             brillouin2 = ell_brillouin(properties.semiaxes2);
             I1 = ell_inertia(properties.M1, properties.semiaxes1);
@@ -202,35 +201,31 @@ public:
         else //.obj file
         {
             poly1.load_obj_file(("../obj/" + properties.obj1_path).c_str());
-            mascons masc1;
-            masc1.generate_from_polyhedron(poly1, uvec3{20,20,20});
-            masc1.set_com_zero();
-            masc1.set_inertia_diagonal(properties.M1);
+            poly1.set_com_zero();
+            poly1.set_inertia_diagonal(properties.M1);
             brillouin1 = poly1.get_farthest_vertex_distance();
             
             poly2.load_obj_file(("../obj/" + properties.obj2_path).c_str());
-            mascons masc2;
-            masc2.generate_from_polyhedron(poly2, uvec3{20,20,20});
-            masc2.set_com_zero();
-            masc2.set_inertia_diagonal(properties.M2);
+            poly2.set_com_zero();
+            poly2.set_inertia_diagonal(properties.M2);
             brillouin2 = poly2.get_farthest_vertex_distance();
 
-            I1 = masc1.get_inertia(properties.M1);
-            I2 = masc2.get_inertia(properties.M2);
+            I1 = poly1.get_inertia(properties.M1);
+            I2 = poly2.get_inertia(properties.M2);
             if (properties.ord2_checkbox)
             {
-                J1 = masc1.get_inertial_integrals(properties.M1, 2);
-                J2 = masc2.get_inertial_integrals(properties.M2, 2);
+                J1 = poly1.get_inertial_integrals_ord2(properties.M1);
+                J2 = poly2.get_inertial_integrals_ord2(properties.M2);
             }
             else if (properties.ord3_checkbox)
             {
-                J1 = masc1.get_inertial_integrals(properties.M1, 3);
-                J2 = masc2.get_inertial_integrals(properties.M2, 3);
+                J1 = poly1.get_inertial_integrals_ord3(properties.M1);
+                J2 = poly2.get_inertial_integrals_ord3(properties.M2);
             }
             else //Only 'ord4_checkbox' remains...
             {
-                J1 = masc1.get_inertial_integrals(properties.M1, 4);
-                J2 = masc2.get_inertial_integrals(properties.M2, 4);
+                J1 = poly1.get_inertial_integrals_ord4(properties.M1);
+                J2 = poly2.get_inertial_integrals_ord4(properties.M2);
             }
         }
 

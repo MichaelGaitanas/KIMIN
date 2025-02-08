@@ -253,7 +253,7 @@ public:
             if (kep[1] < 0.0 || kep[1] >= 1.0)
                 errors.push_back("[Error] :  Eccentricity 'e' must be in [0,1).");
             if (kep[2] < 0.0 || kep[2] >= 180.0)
-                errors.push_back("[Error] :  Inclination 'i' must be in [0,180).");
+                errors.push_back("[Error] :  Inclination 'i' must be in [0,180].");
             if (kep[3] < 0.0 || kep[3] >= 360.0)
                 errors.push_back("[Error] :  Longitude of ascending node 'Ω' must be in [0,360).");
             if (kep[4] < 0.0 || kep[4] >= 360.0)
