@@ -250,16 +250,8 @@ public:
         {
             if (kep[0] <= 0.0)
                 errors.push_back("[Error] :  Semi-major axis 'a' must be positive.");
-            if (kep[1] < 0.0 || kep[1] >= 1.0)
-                errors.push_back("[Error] :  Eccentricity 'e' must be in [0,1).");
-            if (kep[2] < 0.0 || kep[2] >= 180.0)
-                errors.push_back("[Error] :  Inclination 'i' must be in [0,180].");
-            if (kep[3] < 0.0 || kep[3] >= 360.0)
-                errors.push_back("[Error] :  Longitude of ascending node 'Ω' must be in [0,360).");
-            if (kep[4] < 0.0 || kep[4] >= 360.0)
-                errors.push_back("[Error] :  Argument of periapsis 'ω' must be in [0,360).");
-            if (kep[5] < 0.0 || kep[5] >= 360.0)
-                errors.push_back("[Error] :  Mean anomaly 'M' must be in [0,360).");
+            if (kep[1] < 0.0 || fabs(kep[1] - 1.0) <= 1e-15)
+                errors.push_back("[Error] :  Eccentricity 'e' must be in [0,1)U(1,inf).");
         }
 
         //Possible error 13 : Quaternion (both must be nonzero).

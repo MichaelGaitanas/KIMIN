@@ -23,18 +23,7 @@ int main()
         if (find_assignment_operator(fp)) fscanf(fp, "%lf", &cart[i]);
     fclose(fp);
 
-    printf("\nM1 = %.15e\n", M1);
-    printf("M2 = %.15e\n\n", M2);
-
-    printf("x  = %.15lf\n", cart[0]);
-    printf("y  = %.15lf\n", cart[1]);
-    printf("z  = %.15lf\n", cart[2]);
-    printf("vx = %.15lf\n", cart[3]);
-    printf("vy = %.15lf\n", cart[4]);
-    printf("vz = %.15lf\n\n", cart[5]);
-
     dvec6 kep = cart2kep(cart, G*(M1+M2));
-
     printf("a  = %.15lf\n", kep[0]);
     printf("e  = %.15lf\n", kep[1]);
     printf("i  = %.15lf\n", kep[2]*180.0/pi);

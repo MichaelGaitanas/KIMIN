@@ -193,6 +193,8 @@ double H2M(const double H, const double e)
 }
 
 //Convert Keplerian elements to Cartesian.
+//Note : a must be nonzero, and e must be in [0,1) or (1,inf). Expect however high sensitivity when e is close to 1 from the right (e.g. e = 1.1), due to M2H().
+//The angles i,Om,w,M, can be any real number.
 dvec6 kep2cart(const dvec6 &kep, const double GM)
 {
     //Extract into symbols for visibility.
@@ -216,7 +218,7 @@ dvec6 kep2cart(const dvec6 &kep, const double GM)
     else //Osculating hyperbola.
     {
         if (a > 0.0)
-            a = -a; //a is negative in the hyperbola.
+            a = -a; //Again I forgive you (a is negative in the hyperbola).
 
         double H = M2H(M, e); //Hyperbolic anomaly.
         f = 2.0*atan(sqrt((1.0 + e)/(e - 1.0))*tanh(H/2.0));
@@ -356,7 +358,8 @@ dvec6 cart2kep(const dvec6 &cart, const double GM)
         f = acos(clamp_cos(cosf));
     }
 
-    double M; //Mean anomaly (6th Keplerian element).
+    //Mean anomaly (6th Keplerian element).
+    double M;
     if (e < 1.0) //Osculating ellipse.
     {
         //Eccentric anomaly calculation.
@@ -373,6 +376,106 @@ dvec6 cart2kep(const dvec6 &cart, const double GM)
     
     return {a,e,i,Om,w,M};
 }
+
+/*
+dvec6 cart2kep(const dvec6 &cart, const double GM)
+{
+    // 1) Extract Cartesian state
+    double x  = cart[0];
+    double y  = cart[1];
+    double z  = cart[2];
+    double vx = cart[3];
+    double vy = cart[4];
+    double vz = cart[5];
+
+    // 2) Some basic magnitudes
+    double r       = sqrt(x*x + y*y + z*z);
+    double v2      = vx*vx + vy*vy + vz*vz;
+    double rdotv   = x*vx + y*vy + z*vz;
+
+    // 3) Angular momentum vector h = r x v
+    double hx = y*vz - z*vy;
+    double hy = z*vx - x*vz;
+    double hz = x*vy - y*vx;
+    double h2 = hx*hx + hy*hy + hz*hz;
+    double h  = sqrt(h2);
+
+    // 4) Eccentricity vector e_vec
+    //    e_vec = ( (v^2 - mu/r)*r - (r·v)*v ) / mu
+    double p1  = (v2 - GM/r)/GM;
+    double p2  = -rdotv/GM;
+    double ex  = p1*x + p2*vx;
+    double ey  = p1*y + p2*vy;
+    double ez  = p1*z + p2*vz;
+    double e   = sqrt(ex*ex + ey*ey + ez*ez);
+
+    // 5) Semi-latus rectum p = h^2 / mu
+    double p = h2 / GM;
+
+    // 6) Semi-major axis a = |p / (1 - e^2)| (PyKEP always takes absolute value)
+    double a = 0.0;
+    double denom = 1.0 - e*e;
+    a = fabs(p / denom);
+
+    // 7) Inclination i = acos(hz / |h|)
+    double cosi = (h == 0.0 ? 1.0 : hz / h);
+    double i = acos(clamp_cos(cosi));
+
+    // 8) Node vector n = k x h => normalize => produce NaN if h is parallel to k
+    //    i.e. if i=0 or i=pi => n=0 => next steps => NaN
+    double kx = 0.0, ky = 0.0, kz = 1.0;
+    double nx = ky*hz - kz*hy;  // cross(k, h)
+    double ny = kz*hx - kx*hz;
+    double nmag = sqrt(nx*nx + ny*ny);
+
+    // Force normalization: if nmag=0 => nx,ny become Inf or NaN => subsequent acos => NaN
+    nx /= nmag;  // potential Inf/NaN
+    ny /= nmag;  // potential Inf/NaN
+
+    // 9) Longitude of ascending node Om = acos(n.x)
+    double Om = acos(clamp_cos(nx));
+    if (ny < 0.0)
+        Om = 2.0*pi - Om;
+
+    // 10) Argument of periapsis w = angle between n and e_vec
+    //     dot(n,e_vec)/(e) => (nx*ex + ny*ey)/( e )
+    double temp_w = (nx*ex + ny*ey)/( e );
+    double w = acos(clamp_cos(temp_w));
+    // sign depends on ez
+    if (ez < 0.0)
+        w = 2.0*pi - w;
+
+    // 11) Compute the true anomaly f
+    //     cos f = (e_vec · r0)/(e * r)
+    double cosf = (ex*x + ey*y + ez*z)/( e*r );
+    double f    = acos(clamp_cos(cosf));
+    // if radial velocity is negative => f in (pi,2pi)
+    if (rdotv < 0.0)
+        f = 2.0*pi - f;
+
+    // 12) Mean anomaly M
+    double M = 0.0;
+    if (e < 1.0) {
+        // Elliptic => find eccentric anomaly E, then M = E - e sinE
+        double denom_f = 1.0 + e*cos(f);
+        if (fabs(denom_f) < 1e-15) {
+            // degenerate geometry => might produce large E
+            // fallback: E = f or something
+        }
+        double sinE = sin(f)*sqrt(1.0 - e*e)/denom_f;
+        double cosE = (e + cos(f))/denom_f;
+        double EccA = atan2(sinE, cosE);
+        M = E2M(EccA, e);  // i.e.  wrap_to_2pi(EccA - e sinE)
+    } else {
+        // Hyperbolic => H = 2 atanh( sqrt((e-1)/(e+1)) * tan(f/2) ), then M= e sinh(H) - H
+        double arg = tan(f/2.0) * sqrt((e - 1.0)/(e + 1.0));
+        double H   = 2.0*atanh(arg);
+        M = H2M(H, e);     // e*sinh(H) - H
+    }
+
+    return {a, e, i, Om, w, M};
+}
+*/
 
 //Convert cylindrical coordinates to Cartesian.
 dvec3 cyl2cart(const dvec3 &cyl)
