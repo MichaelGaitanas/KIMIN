@@ -25,11 +25,11 @@ M1 = 5.320591856403073e15 #[kg]
 M2 = 4.940814359692687e14 #[kg]
 
 x  = 3 #[km]
-y  = 1 #km]
-z  = 0 #[km]
-vx = 0 #[km/sec]
+y  = 0.32 #km]
+z  = -1 #[km]
+vx = 0.001 #[km/sec]
 vy = 0.011373781832982 #[km/sec]
-vz = 0 #[km/sec]
+vz = -0.01 #[km/sec]
 
 kep = pk.ic2par([x,y,z],[vx,vy,vz], G*(M1+M2))
 

@@ -171,7 +171,7 @@ double M2H(const double M, const double e)
     do
     {
         H0 = H;
-        H = H0 - (e*sinh(H0) - H0 - M) /(e*cosh(H0) - 1.0);
+        H = H0 - (e*sinh(H0) - H0 - M)/(e*cosh(H0) - 1.0);
         
         //Loop escape criterion.
         if (++iter > 20)
@@ -412,7 +412,7 @@ dvec6 cart2kep(const dvec6 &cart, const double GM)
     // 5) Semi-latus rectum p = h^2 / mu
     double p = h2 / GM;
 
-    // 6) Semi-major axis a = |p / (1 - e^2)| (PyKEP always takes absolute value)
+    // 6) Semi-major axis a = |p / (1 - e^2)| 
     double a = 0.0;
     double denom = 1.0 - e*e;
     a = fabs(p / denom);
@@ -509,7 +509,7 @@ dvec3 spher2cart(const dvec3 &spher, bool latitude_origin_is_the_north_pole = tr
         y = r*sin(lon)*sin(lat);
         z = r*cos(lat);
     }
-    else //latitude's origin is the equator
+    else //Latitude's origin is the equator
     {
         x = r*cos(lon)*cos(lat);
         y = r*sin(lon)*cos(lat);
@@ -534,7 +534,7 @@ dvec3 cart2spher(const dvec3 &cart, bool latitude_origin_is_the_north_pole = tru
         lat = atan2(sqrt(x*x + y*y), z);
         //and the inverse transformation would be : { x = r*cos(lon)*sin(lat), y = r*sin(lon)*sin(lat), z = r*cos(lat) }
     }
-    else //latitude's origin is the equator
+    else //Latitude's origin is the equator
     {
         r = sqrt(x*x + y*y + z*z);
         lon = atan2(y,x);

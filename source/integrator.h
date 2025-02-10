@@ -136,7 +136,7 @@ public:
     //Before the actual integration of the ODEs starts, we do some preparations.
     void prepare(std::atomic<bool> &abort_flag, std::atomic<float> &progress, console_panel &console)
     {
-        console.add_time_and_then_text("[Integrator] : Integrator preparation started.");
+        console.add_time_and_then_text("[Integrator] : Preparation started.");
         progress.store(0.0f);
 
         m = properties.M1*properties.M2/(properties.M1 + properties.M2);
@@ -253,7 +253,7 @@ public:
         if (!abort_flag.load())
         {
             progress.store(1.0f);
-            console.add_time_and_then_text("[Integrator] : Integrator preparation ended.");
+            console.add_time_and_then_text("[Integrator] : Preparation ended.");
         }
     }
 
@@ -272,11 +272,7 @@ public:
 
         boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 20>> rkf78_const;
         auto rkf78_adaptive = boost::numeric::odeint::make_controlled(properties.target_error, properties.target_error, boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 20>>());
-        /*
-        if (properties.target_error <= 5.0*std::numeric_limits<double>::epsilon())
-            properties.target_error = 5.0*std::numeric_limits<double>::epsilon();
         boost::numeric::odeint::bulirsch_stoer<boost::array<double, 20>> bstoer_adaptive(properties.target_error, properties.target_error);
-        */
 
         char formatted_text[128];
         
@@ -304,7 +300,7 @@ public:
             //Check the abort flag (the user might want to kill the integration by pressing the 'Abort' button in the gui).
             if (abort_flag.load())
             {
-                sprintf(formatted_text, "[Integrator] : Integration was aborted at t = %5.2lf [days].", t/86400.0);
+                sprintf(formatted_text, "[Integrator] : Integration aborted at t = %5.2lf [days].", t/86400.0);
                 console.add_time_and_then_text(formatted_text);
                 break;
             }
@@ -316,9 +312,11 @@ public:
                 t += dt;
                 //Note : Boost's do_step() does NOT update internally t, hence we have to do it ourselves.
             }
-            else
+            else if (properties.integration_method_var_choice == 1)
                 rkf78_adaptive.try_step(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, init_guess_time_step);
-                //Note : But try_step() DOES update internally t, hence we do not touch it in this case.
+            else
+                bstoer_adaptive.try_step(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, init_guess_time_step);
+            //Note : But try_step() DOES update internally t, hence we do not touch it in this case.
 
             //Update the progressbar value in [0,1].
             progress.store((t-t0)/(tmax-t0));

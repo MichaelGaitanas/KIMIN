@@ -32,7 +32,7 @@ public:
 
     double M1, M2; //'M1', 'M2' double fields (referring to 'Body 1' and 'Body 2' respectively).
 
-    int integration_method_var_choice; //Initial choice is 0, meaning RKF78 constant. 1 means RKF78 adaptive.
+    int integration_method_var_choice; //Initial choice is 0, meaning RKF78 constant. 1 means RKF78 adaptive and 2 means Bulirsch-Stoer.
     double epoch, dur, step; //'Epoch', 'Duration', 'Step' double fields.
     double target_error; //'Target error' double field.
 
@@ -425,10 +425,10 @@ public:
 
         ImGui::Text("Numerical method");
 
-        //Integration method (RKF78 constant, or RKF78 adaptive).
+        //Integration method (RKF78 constant, RKF78 adaptive, Bulirsch–Stoer adaptive).
         ImGui::PushItemWidth(200.0f);
             ImGui::PushID(id++);
-                static const char *integration_method_var[2] = {"RKF78 constant", "RKF78 adaptive"}; //Which numerical method for integration of the ODEs.
+                static const char *integration_method_var[3] = {"RKF78 (constant)", "RKF78 (adaptive)", "Bulirsch-Stoer (adaptive)"}; //Which numerical method for integration of the ODEs.
                 ImGui::Combo("  ", &integration_method_var_choice, integration_method_var, IM_ARRAYSIZE(integration_method_var));
             ImGui::PopID();
         ImGui::PopItemWidth();
