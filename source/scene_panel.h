@@ -18,6 +18,8 @@ private:
     bvec plot_w1i, plot_w1b; //Buttons : [ω1ix, ω1iy, ω1iz] and [ω1bx, ω1by, ω1bz].
     bvec plot_w2i, plot_w2b; //Buttons : [ω2ix, ω2iy, ω2iz] and [ω2bx, ω2by, ω2bz].
     bvec plot_ener_mom_rel_err; //Energy and angular momentum magnitude relative errors.
+    
+    bool render_scene, play_video;
 
     solution sol;
 
@@ -133,6 +135,36 @@ private:
         ImGui::Dummy(ImVec2(0.0f,7.5f));
     }
 
+    void render_scene_buttons()
+    {
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
+        ImGui::Text("State");
+        if (render_scene)
+            ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered));
+        else
+            ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_Button));
+
+        if (ImGui::Button("Render", ImVec2(80.0f, 25.0f)))
+            render_scene = !render_scene;
+        ImGui::PopStyleColor();
+
+        ImGui::SameLine();
+        
+        if (!render_scene)
+        {
+            ImGui::BeginDisabled();
+            ImGui::Button("Play",  ImVec2(80.0f, 25.0f));
+            ImGui::SameLine();
+            ImGui::Button("Pause", ImVec2(80.0f, 25.0f));
+            ImGui::EndDisabled();
+        }
+        else
+        {
+            
+        }
+
+    }
+
 public:
     scene_panel() : plot_cart({false,false,false,false, false,false,false,false}),
                     plot_kep({false,false,false,false,false,false}),
@@ -142,7 +174,8 @@ public:
                     plot_w1b({false,false,false}),
                     plot_w2i({false,false,false}),
                     plot_w2b({false,false,false}),
-                    plot_ener_mom_rel_err({false,false})
+                    plot_ener_mom_rel_err({false,false}),
+                    render_scene(false)
     { }
 
     void copy_solution(solution &sol)
@@ -220,7 +253,16 @@ public:
         ImGui::SetNextItemOpen(false, ImGuiCond_FirstUseEver);
         if (ImGui::CollapsingHeader("Video 3D"))
         {
-
+            if (!sol.dist.size()) //Criterion that applies when the simulation hasn't been performed.
+            {
+                ImGui::BeginDisabled();
+                render_scene_buttons();
+                ImGui::EndDisabled();   
+            }
+            else
+            {
+                render_scene_buttons();
+            }
         }
         ImGui::End();
     }

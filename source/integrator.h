@@ -272,6 +272,11 @@ public:
 
         boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 20>> rkf78_const;
         auto rkf78_adaptive = boost::numeric::odeint::make_controlled(properties.target_error, properties.target_error, boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 20>>());
+        /*
+        if (properties.target_error <= 5.0*std::numeric_limits<double>::epsilon())
+            properties.target_error = 5.0*std::numeric_limits<double>::epsilon();
+        boost::numeric::odeint::bulirsch_stoer<boost::array<double, 20>> bstoer_adaptive(properties.target_error, properties.target_error);
+        */
 
         char formatted_text[128];
         
