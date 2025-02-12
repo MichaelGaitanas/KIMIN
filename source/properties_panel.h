@@ -149,11 +149,12 @@ public:
     { }
 
     //This function receives as input a 'path' to a directory and as a result it returns a vector of paths, corresponding
-    //to all the .obj files (even inside child directories) found inside 'path'.
+    //to all the .obj files found inside 'path'.
     std::vector<std::filesystem::path> list_obj_files(const char *path)
     {
-        std::vector<std::filesystem::path> paths; 
-        for (const auto &entry : std::filesystem::recursive_directory_iterator(path))
+        std::vector<std::filesystem::path> paths;
+        //for (const auto &entry : std::filesystem::recursive_directory_iterator(path)) //(Look recursively inside child directories as well.)
+        for (const auto &entry : std::filesystem::directory_iterator(path))
             //Check if the entry is a regular file and has a ".obj" extension.
             if (entry.is_regular_file() && entry.path().extension() == ".obj")
                 paths.push_back(entry.path().filename());
@@ -188,70 +189,70 @@ public:
         //Possible error 1 : Simulation name (empty, pure spaces, begin with space, illegal characters).
         str sim_name_copy = sim_name;
         if ( (sim_name_copy.empty()) || (sim_name_copy.find_first_not_of(' ') == str::npos) || (sim_name_copy[0] == ' ') || (sim_name_copy.find_first_of("<>:\"/\\|?*") != str::npos) )
-            errors.push_back("[Error] :  'Simulation name' is invalid.");
+            errors.push_back("[Error] : 'Simulation name' is invalid.");
 
         //Possible error 2 : Shape model checkboxes (at least one must be checked when the 'Run' button has been pressed).
         if (!ell_checkbox && !obj_checkbox)
-            errors.push_back("[Error] :  Neither 'Ellipsoids', nor '.obj files' is selected for determining the shapes.");
+            errors.push_back("[Error] : Neither 'Ellipsoids', nor '.obj files' is selected for determining the shapes.");
 
         //Possible error 3 : 'OK' button in the Elliposid parameters window (it must be clicked so that the parameters are taken into account).
         if (ell_checkbox && !ell_clicked_ok)
-            errors.push_back("[Error] :  'OK' button must be pressed in the 'Ellipsoid parameters' window.");
+            errors.push_back("[Error] : 'OK' button must be pressed in the 'Ellipsoid parameters' window.");
 
         //Possible error 4 : 'OK' button in the '.obj files' window (it must be clicked so that the .obj files are taken into account).
         if (obj_checkbox && !obj_clicked_ok)
-            errors.push_back("[Error] :  'OK' button must be pressed in the '.obj files' window.");
+            errors.push_back("[Error] : 'OK' button must be pressed in the '.obj files' window.");
 
         //Possible error 5 : Ellipsoids semiaxes (all semiaxes must be > 0).
         if (ell_checkbox)
         {
             if (semiaxes1[0] <= 0.0 || semiaxes1[1] <= 0.0 || semiaxes1[2] <= 0.0)
-                errors.push_back("[Error] :  'a1', 'b1', 'c1' must be positive numbers.");
+                errors.push_back("[Error] : 'a1', 'b1', 'c1' must be positive numbers.");
             if (semiaxes2[0] <= 0.0 || semiaxes2[1] <= 0.0 || semiaxes2[2] <= 0.0)
-                errors.push_back("[Error] :  'a2', 'b2', 'c2' must be positive numbers.");
+                errors.push_back("[Error] : 'a2', 'b2', 'c2' must be positive numbers.");
         }
 
         //Possible error 6 : .obj files (at least one .obj file per body must be selected).
         if (obj_checkbox)
         {
             if (obj1_clicked_index == -1)
-                errors.push_back("[Error] :  No .obj file is selected for 'Body 1'.");
+                errors.push_back("[Error] : No .obj file is selected for 'Body 1'.");
             if (obj2_clicked_index == -1)
-                errors.push_back("[Error] :  No .obj file is selected for 'Body 2'.");
+                errors.push_back("[Error] : No .obj file is selected for 'Body 2'.");
         }
 
         //Possible error 8 : Mutual potential checkboxes (at least one must be checked).
         if (!ord2_checkbox && !ord3_checkbox && !ord4_checkbox)
-            errors.push_back("[Error] :  Neither 'Order 2', nor 'Order 3', nor 'Order 4' mutual potential is selected.");
+            errors.push_back("[Error] : Neither 'Order 2', nor 'Order 3', nor 'Order 4' mutual potential is selected.");
 
         //Possible error 9 : Masses (both M1 and M2 must be > 0).
         if (M1 <= 0.0 || M2 <= 0.0)
-            errors.push_back("[Error] :  'M1', 'M2' must be positive numbers.");
+            errors.push_back("[Error] : 'M1', 'M2' must be positive numbers.");
 
         //Possible error 10 : Time parameters ('Epoch' and 'Duration' must be >= 0, 'Step' must be <= 'Duration' and 'Target error' must be > 0).
         if (integration_method_var_choice == 0)
         {
             if (!(epoch >= 0.0 && dur > 0.0 && step <= dur))
-                errors.push_back("[Error] :  Invalid set of 'Epoch', 'Duration', 'Step'.");
+                errors.push_back("[Error] : Invalid set of 'Epoch', 'Duration', 'Step'.");
         }
         else
         {
             if (!(epoch >= 0.0 && dur > 0.0 && target_error > 0.0))
-                errors.push_back("[Error] :  Invalid set of 'Epoch', 'Duration', 'Target error'.");
+                errors.push_back("[Error] : Invalid set of 'Epoch', 'Duration', 'Target error'.");
         }
 
         //Possible error 11 : Relative position/velocity (mutual distance must be > 0).
         if (cart_kep_var_choice == 0 && length(dvec3{cart[0], cart[1], cart[2]}) <= 1e-15)
-            errors.push_back("[Error] :  Invalid set of 'x', 'y', 'z' (mutual distance must be positive).");
+            errors.push_back("[Error] : Invalid set of 'x', 'y', 'z' (mutual distance must be positive).");
 
         //Possible error 12 : Relative Keplerian elements ('a' must be > 0, 'e' must be in [0,1))
         //Note : 'e' can actually become >= 1 and handled, but first we need to extend the functions cart2kep() and kep2cart() a little bit (maybe later...).
         if (cart_kep_var_choice == 1)
         {
             if (kep[0] <= 0.0)
-                errors.push_back("[Error] :  Semi-major axis 'a' must be positive.");
+                errors.push_back("[Error] : Semi-major axis 'a' must be positive.");
             if (kep[1] < 0.0 || fabs(kep[1] - 1.0) <= 1e-15)
-                errors.push_back("[Error] :  Eccentricity 'e' must be in [0,1)U(1,inf).");
+                errors.push_back("[Error] : Eccentricity 'e' must be in [0,1)U(1,inf).");
         }
 
         //Possible error 13 : Quaternion (both must be nonzero).
@@ -259,20 +260,20 @@ public:
         if (orient_var_choice == 1)
         {
             if (length(q1) <= 1e-15)
-                errors.push_back("[Error] :  Quaternion 1 ('q10', 'q11', 'q12', 'q13') must be nonzero.");
+                errors.push_back("[Error] : Quaternion 1 ('q10', 'q11', 'q12', 'q13') must be nonzero.");
             else //Normalize it no matter what.
                 q1 = quat2unit(q1); //This correction will be visible in the gui.
 
             //The same for q2 :
             if (length(q2) <= 1e-15)
-                errors.push_back("[Error] :  Quaternion 2 ('q20', 'q21', 'q22', 'q23') must be nonzero.");
+                errors.push_back("[Error] : Quaternion 2 ('q20', 'q21', 'q22', 'q23') must be nonzero.");
             else //Normalize it no matter what.
                 q2 = quat2unit(q2); //This correction will be visible in the gui.
         }
 
         //Possible error 14 : 'OK' button in the Elliposid parameters window (it must be clicked so that the parameters are taken into account).
         if (impactor_checkbox && !impactor_clicked_ok)
-            errors.push_back("[Error] :  'OK' button must be pressed in the 'Impactor parameters' window.");
+            errors.push_back("[Error] : 'OK' button must be pressed in the 'Impactor parameters' window.");
 
         //Possible error 15 : Impactor's parameters (mass must be >= 0).
         if (impactor_checkbox && M_impact < 0.0)

@@ -50,7 +50,7 @@ public:
 
     void construct(std::atomic<bool> &abort_flag, std::atomic<float> &progress, console_panel &console)
     {
-        console.add_time_and_then_text("[Solution] : Solution construction started.");
+        console.add_time_and_then_text("[Solution] : Construction started.");
         progress.store(0.0f);
 
         double energy_at_t0, momentum_at_t0;
@@ -159,7 +159,7 @@ public:
         if (!abort_flag.load())
         {
             progress.store(1.0f);
-            console.add_time_and_then_text("[Solution] : Solution construction ended.");
+            console.add_time_and_then_text("[Solution] : Construction ended.");
         }
     }
 
@@ -232,7 +232,7 @@ public:
 
     void export_txt_files(std::atomic<bool> &abort_flag, std::atomic<float> &progress, console_panel &console)
     {
-        console.add_time_and_then_text("[Solution] : Solution export started.");
+        console.add_time_and_then_text("[Solution] : Export (.txt) started.");
         progress.store(0.0f);
 
         const char *sim_name = integr.properties.sim_name;
@@ -300,13 +300,13 @@ public:
         if (!abort_flag.load())
         {
             progress.store(1.0f);
-            console.add_time_and_then_text("[Solution] : Solution export ended.");
+            console.add_time_and_then_text("[Solution] : Export (.txt) ended.");
         }
     }
 
     void export_json_files(std::atomic<bool> &abort_flag, std::atomic<float> &progress, console_panel &console)
     {
-        console.add_time_and_then_text("[Solution] : Solution JSON export started.");
+        console.add_time_and_then_text("[Solution] : Export (.json) started.");
         progress.store(0.0f);
 
         const char *sim_name = integr.properties.sim_name;
@@ -350,7 +350,7 @@ public:
         if (!abort_flag.load())
         {
             progress.store(1.0f);
-            console.add_time_and_then_text("[Solution] : Solution JSON export ended.");
+            console.add_time_and_then_text("[Solution] : Export (.json) ended.");
         }
     }
 };

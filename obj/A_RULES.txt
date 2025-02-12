@@ -15,7 +15,7 @@ Regarding the .obj files (asteroid models), the following rules must be satisfie
    like comments, names, vertex groups, etc... will be ignored. Make sure that the .obj file does not contain normals or UV (texture)
    coordinates, as these will change the face indices lines format.
 
-6) Already existing .obj files are provided in th /obj folder. Feel free to use them or add your own.
+6) Already existing .obj files are provided in the /obj folder. Feel free to use them or add your own.
 
 7) Be reasonable with what you are trying to simulate. Although the .obj files of a red supergiant star along with a tiny cubesat are
    valid in loading, the corresponding detailed mutual dynamics and graphics rendering will probably fail as the software is designed
