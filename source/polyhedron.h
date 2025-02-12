@@ -16,10 +16,12 @@ class polyhedron
 {
 private:
     bool norms_exist;
+    bool edges_exist;
     bool vol_exists;
     dmatnx3 verts;
     umatnx3 faces;
     dmatnx3 norms;
+    umatnx4 edges;
     double vol;
 
 public:
@@ -27,10 +29,12 @@ public:
     void load_obj_file(const char *path)
     {
         norms_exist = false;
+        edges_exist = false;
         vol_exists = false;
         verts.clear();
         faces.clear();
         norms.clear();
+        edges.clear();
 
         std::ifstream objfile(path);
         if (!objfile.is_open())
@@ -98,6 +102,47 @@ public:
                 norms[i] = dvec3{0.0,0.0,0.0}; //Degenerate case...
         }
         norms_exist = true;
+    }
+
+    //Generate the polyhedron's edge indices (no duplicates) along with their current face index and their neighboring face index.
+    //Result of edges : [edge index 1, edge index 2, face index in which it belongs, neighbour face index]
+    void gen_edges()
+    {
+        if (edges_exist)
+            return;
+        
+        if (faces.empty())
+        {
+            printf("Warning : faces.empty() = true. No edges are generated.\n");
+            return;
+        }
+
+        edges.clear();
+        //edges.resize(faces.size());
+        for (size_t i = 0; i < faces.size(); ++i)
+        {
+            size_t f0 = faces[i][0];
+            size_t f1 = faces[i][1];
+            size_t f2 = faces[i][2];
+            edges.push_back({f0,f1, i, -1});
+            edges.push_back({f1,f2, i, -1});
+            edges.push_back({f2,f0, i, -1});
+        }
+
+        for (size_t i = 0; i < edges.size() - 1; ++i)
+        {
+            for (int j = i + 1; j < edges.size(); ++j)
+            {
+                if ((edges[i][0] == edges[j][0] || edges[i][0] == edges[j][1]) &&
+                    (edges[i][1] == edges[j][0] || edges[i][1] == edges[j][1]))
+                {
+                    edges[i][3] = edges[j][2];
+                    edges.erase(edges.begin() + j, edges.begin() + j + 1); //Erase the j-th row of edges[][] matrix.
+                    break;
+                }
+            }
+        }
+        edges_exist = true;
     }
 
     //Calculate the polyhderon's total volume.
@@ -825,7 +870,7 @@ public:
 
         eigen_rot_mat.transposeInPlace();
 
-        //Now convert the Eigen variable eigen_rot_mat to dmat3 (fin_rot_mat).
+        //Now convert the Eigen variable eigen_rot_mat back to our dmat3 (fin_rot_mat).
         dmat3 fin_rot_mat;
         for (size_t row = 0; row < 3; ++row)
             for (size_t col = 0; col < 3; ++col)
@@ -835,7 +880,7 @@ public:
         for (size_t i = 0; i < verts.size(); ++i)
             verts[i] = dot(fin_rot_mat, verts[i]);
 
-        //Since the vertices rotated, either we have to rotate the normals as well, or just recompute them...
+        //Since the vertices rotated, either we have to rotate the normals as well (with the same matrix), or just recompute them...
         norms_exist = false;
         gen_norms();
     }
