@@ -5,6 +5,7 @@
 #include<cstdlib>
 #include<cstring>
 #include<fstream>
+#include<algorithm>
 
 #include<Eigen/Dense>
 
@@ -21,7 +22,7 @@ private:
     dmatnx3 verts;
     umatnx3 faces;
     dmatnx3 norms;
-    umatnx4 edges;
+    umatnx2 edges;
     double vol;
 
 public:
@@ -104,8 +105,7 @@ public:
         norms_exist = true;
     }
 
-    //Generate the polyhedron's edge indices (no duplicates) along with their current face index and their neighboring face index.
-    //Result of edges : [edge index 1, edge index 2, face index in which it belongs, neighbour face index]
+    //Generate the polyhedron's (unique) edge indices.
     void gen_edges()
     {
         if (edges_exist)
@@ -118,31 +118,77 @@ public:
         }
 
         edges.clear();
-        //edges.resize(faces.size());
+        edges.resize(3*faces.size());
+        size_t edge_index = 0;
         for (size_t i = 0; i < faces.size(); ++i)
         {
-            size_t f0 = faces[i][0];
-            size_t f1 = faces[i][1];
-            size_t f2 = faces[i][2];
-            edges.push_back({f0,f1, i, -1});
-            edges.push_back({f1,f2, i, -1});
-            edges.push_back({f2,f0, i, -1});
+            unsigned int f0 = faces[i][0];
+            unsigned int f1 = faces[i][1];
+            unsigned int f2 = faces[i][2];
+            //Store each edge as a sorted pair (smallest index first).
+            edges[edge_index++] = {std::min(f0, f1), std::max(f0, f1)};
+            edges[edge_index++] = {std::min(f1, f2), std::max(f1, f2)};
+            edges[edge_index++] = {std::min(f2, f0), std::max(f2, f0)};
         }
 
-        for (size_t i = 0; i < edges.size() - 1; ++i)
-        {
-            for (int j = i + 1; j < edges.size(); ++j)
-            {
-                if ((edges[i][0] == edges[j][0] || edges[i][0] == edges[j][1]) &&
-                    (edges[i][1] == edges[j][0] || edges[i][1] == edges[j][1]))
-                {
-                    edges[i][3] = edges[j][2];
-                    edges.erase(edges.begin() + j, edges.begin() + j + 1); //Erase the j-th row of edges[][] matrix.
-                    break;
-                }
-            }
-        }
+        //Remove any unused capacity if any...
+        edges.resize(edge_index);
+
+        //Sort the edges to prepare for duplicate removal.
+        std::sort(edges.begin(), edges.end());
+        //Now remove duplicates.
+        edges.erase(std::unique(edges.begin(), edges.end()), edges.end());
+
         edges_exist = true;
+    }
+
+    //This function whether or not the polyhedron is a closed manifold, i.e. closed surface (with no boundaries).
+    //E.g. Cuboid, asteroid, torus, etc... 
+    bool is_closed_manifold()
+    {   
+        if (faces.empty())
+        {
+            printf("Warning : faces.empty() = true. Returning false.\n");
+            return false; //Because an empty mesh isn't a closed manifold.
+        }
+
+        umatnx2 local_edges;
+        local_edges.resize(3*faces.size());
+        size_t edge_index = 0;
+        for (size_t i = 0; i < faces.size(); ++i)
+        {
+            unsigned int f0 = faces[i][0];
+            unsigned int f1 = faces[i][1];
+            unsigned int f2 = faces[i][2];
+            //Store each edge as a sorted pair (smallest index first).
+            local_edges[edge_index++] = {std::min(f0, f1), std::max(f0, f1)};
+            local_edges[edge_index++] = {std::min(f1, f2), std::max(f1, f2)};
+            local_edges[edge_index++] = {std::min(f2, f0), std::max(f2, f0)};
+        }
+
+        //Remove any unused capacity if any...
+        local_edges.resize(edge_index);
+
+        //Sort the edges lexicographically.
+        std::sort(local_edges.begin(), local_edges.end());
+
+        //Now, each unique edge should appear exactly twice.
+        for (size_t i = 0; i < local_edges.size(); )
+        {
+            size_t count = 1;
+            for (size_t j = i + 1; j < local_edges.size(); ++j)
+            {
+                if (local_edges[i][0] == local_edges[j][0] && local_edges[i][1] == local_edges[j][1])
+                    ++count;
+                else
+                    break;
+            }
+            if (count != 2)
+                return false;
+            i += count;
+        }
+    
+    return true;
     }
 
     //Calculate the polyhderon's total volume.
@@ -178,6 +224,26 @@ public:
                 farthest = dist;
         }
         return farthest;
+    }
+
+    dmatnx3 get_verts()
+    {
+        return verts;
+    }
+
+    dmatnx3 get_norms()
+    {
+        return norms;
+    }
+
+    umatnx3 get_faces()
+    {
+        return faces;
+    }
+
+    umatnx2 get_edges()
+    {
+        return edges;
     }
 
     //Nearest vertex distance with respect to the local coordinate system.

@@ -12,6 +12,7 @@
 #include"constant.h"
 #include"linalg.h"
 #include"conversion.h"
+#include"polyhedron.h"
 
 class properties_panel
 {
@@ -212,13 +213,27 @@ public:
                 errors.push_back("[Error] : 'a2', 'b2', 'c2' must be positive numbers.");
         }
 
-        //Possible error 6 : .obj files (at least one .obj file per body must be selected).
+        //Possible error 6 : .obj files (at least one .obj file per body must be selected). Also the polyhedra must be closed manifold geometries.
         if (obj_checkbox)
         {
             if (obj1_clicked_index == -1)
                 errors.push_back("[Error] : No .obj file is selected for 'Body 1'.");
+            else
+            {
+                polyhedron poly;
+                poly.load_obj_file(("../obj/" + obj1_path).c_str());
+                if (!poly.is_closed_manifold())
+                    errors.push_back("[Error] : Invalid .obj file for 'Body 1' (non closed manifold).");
+            }
             if (obj2_clicked_index == -1)
                 errors.push_back("[Error] : No .obj file is selected for 'Body 2'.");
+            else
+            {
+                polyhedron poly;
+                poly.load_obj_file(("../obj/" + obj2_path).c_str());
+                if (!poly.is_closed_manifold())
+                    errors.push_back("[Error] : Invalid .obj file for 'Body 2' (non closed manifold).");
+            }
         }
 
         //Possible error 8 : Mutual potential checkboxes (at least one must be checked).
