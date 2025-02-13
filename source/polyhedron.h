@@ -40,8 +40,8 @@ public:
         std::ifstream objfile(path);
         if (!objfile.is_open())
         {
-            fprintf(stderr, "Error : '%s' could not be opened. Exiting...\n", path);
-            exit(EXIT_FAILURE);
+            fprintf(stderr, "Error : '%s' could not be opened. Returning from load_obj_file().\n", path);
+            return;
         }
 
         double x,y,z; //Vertices.
@@ -83,7 +83,7 @@ public:
 
         if (faces.empty())
         {
-            printf("Warning : faces.empty() = true. No normals are generated.\n");
+            printf("Warning : faces.empty() = true. No normals are generated. Returning from gen_norms().\n");
             return;
         }
         
@@ -113,7 +113,7 @@ public:
         
         if (faces.empty())
         {
-            printf("Warning : faces.empty() = true. No edges are generated.\n");
+            printf("Warning : faces.empty() = true. No edges are generated. Returning from gen_edges().\n");
             return;
         }
 
@@ -140,6 +140,37 @@ public:
         edges.erase(std::unique(edges.begin(), edges.end()), edges.end());
 
         edges_exist = true;
+    }
+
+    bool is_kimin_valid_obj(const char *path)
+    {
+        std::ifstream objfile(path);
+        if (!objfile.is_open())
+        {
+            fprintf(stderr, "Error : '%s' could not be opened. Returning from 'false' from is_kimin_valid_obj().\n", path);
+            return false;
+        }
+    
+        bool has_verts = false;
+        bool has_faces = false;
+        str line;
+        while (getline(objfile, line))
+        {
+            if (line[0] == 'v' && line[1] == ' ')
+                has_verts = true;
+            else if (line[0] == 'f' && line[1] == ' ')
+                has_faces = true;
+            else if (line[0] == 'v' && line[1] == 'n' && line[2] == ' ')
+                return false;
+            else if (line[0] == 'v' && line[1] == 't' && line[2] == ' ')
+                return false;
+        }
+        objfile.close();
+
+        if (has_verts && has_faces)
+            return true;
+
+        return false;
     }
 
     //This function whether or not the polyhedron is a closed manifold, i.e. closed surface (with no boundaries).

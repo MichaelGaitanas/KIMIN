@@ -236,10 +236,10 @@ public:
         progress.store(0.0f);
 
         const char *sim_name = integr.properties.sim_name;
-        //Create the 'simulations' directory that will store all other simulation sub-directories.
-        bool root_sim_dir = std::filesystem::create_directory("../simulations");
+        //Create the 'simulations' (root) directory that will store all other simulation sub-directories.
+        std::filesystem::create_directory("../simulations");
         //Create the current simulation directory 'sim_name' that will store the .txt files.
-        bool current_sim_dir = std::filesystem::create_directory("../simulations/" + str(sim_name));
+        std::filesystem::create_directory("../simulations/" + str(sim_name));
 
         //Create the txt contents
         FILE *file_t        = fopen(("../simulations/" + str(sim_name) + "/time.txt"              ).c_str(), "w");

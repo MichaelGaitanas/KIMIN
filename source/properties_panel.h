@@ -221,18 +221,28 @@ public:
             else
             {
                 polyhedron poly;
-                poly.load_obj_file(("../obj/" + obj1_path).c_str());
-                if (!poly.is_closed_manifold())
-                    errors.push_back("[Error] : Invalid .obj file for 'Body 1' (non closed manifold).");
+                if (poly.is_kimin_valid_obj(("../obj/" + obj1_path).c_str()))
+                {
+                    poly.load_obj_file(("../obj/" + obj1_path).c_str());
+                    if (!poly.is_closed_manifold())
+                        errors.push_back("[Error] : Invalid .obj file for 'Body 1' (non closed manifold).");
+                }
+                else
+                    errors.push_back("[Error] : Invalid .obj file for 'Body 1' (it must contain only vertices and faces).");
             }
             if (obj2_clicked_index == -1)
                 errors.push_back("[Error] : No .obj file is selected for 'Body 2'.");
             else
             {
                 polyhedron poly;
-                poly.load_obj_file(("../obj/" + obj2_path).c_str());
-                if (!poly.is_closed_manifold())
-                    errors.push_back("[Error] : Invalid .obj file for 'Body 2' (non closed manifold).");
+                if (poly.is_kimin_valid_obj(("../obj/" + obj2_path).c_str()))
+                {
+                    poly.load_obj_file(("../obj/" + obj2_path).c_str());
+                    if (!poly.is_closed_manifold())
+                        errors.push_back("[Error] : Invalid .obj file for 'Body 2' (non closed manifold).");
+                }
+                else
+                    errors.push_back("[Error] : Invalid .obj file for 'Body 2' (it must contain only vertices and faces).");
             }
         }
 
