@@ -236,15 +236,18 @@ private:
             ImGui::Dummy(ImVec2(0.0f,7.5f));
             ImGui::Text("Frame");
             ImGui::SameLine();
+            ImGui::SetCursorPosX(60.0f);
             ImGui::SliderScalar("##35", ImGuiDataType_U64, &current_frame, &zero_frame, &max_frame, "%llu");
+
+            ImGui::Text("Rate");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(60.0f);
+            ImGui::SliderInt("##36", &frame_rate, 0, 60, "%d");
+
             if (sol.t.empty())
                 ImGui::Text("Time : 0.00  [days]");
             else
                 ImGui::Text("Time : %.2f  [days]",(float)sol.t[current_frame]);
-
-            ImGui::Text("Rate");
-            ImGui::SameLine();
-            ImGui::SliderInt("##36", &frame_rate, 0, 60, "%d");
 
             ImGui::EndDisabled();
         }
@@ -255,11 +258,15 @@ private:
             ImGui::Dummy(ImVec2(0.0f,7.5f));
             ImGui::Text("Frame");
             ImGui::SameLine();
+            ImGui::SetCursorPosX(60.0f);
             ImGui::SliderScalar("##35", ImGuiDataType_U64, &current_frame, &zero_frame, &max_frame, "%llu");
-            ImGui::Text("Time : %.2f  [days]",(float)sol.t[current_frame]);
+
             ImGui::Text("Rate");
             ImGui::SameLine();
+            ImGui::SetCursorPosX(60.0f);
             ImGui::SliderInt("##36", &frame_rate, 0, 60, "%d");
+
+            ImGui::Text("Time : %.2f  [days]",(float)sol.t[current_frame]);
             //Now we call our 3D content rendering function.
             content3D();
         }

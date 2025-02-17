@@ -1,3 +1,6 @@
+/* This class acts as a gui kernel. It does not contain the commands that actually render the GUI (like ImGui:: ...), but rather handles
+   initializations, allocates/deallocates memory for some core stuff, handles threading, etc... In general it acts as a communicator.  */
+
 #ifndef GUI_H
 #define GUI_H
 
@@ -30,13 +33,13 @@ public:
     //We enumerate 3 possible time consuming tasks throughout the whole code : 1) Shape (.obj) loading and preparation, 2) Numerical integration, 3) Solution construction.
     //We set these 3 tasks to run at a separate thread to prevent gui freezing.
 
-    //The following class instances are basically what you see in the gui, once KIMIN launches.
+    //The following class instances are basically what you see in the gui, once KIMIN is launched.
     top_bar_panel topbar;
     properties_panel properties;
     console_panel console;
     scene_panel scene;
 
-    solution *sol;
+    solution *sol; //This will basically contain everything regarding the simulation (user inputs, numerical integrator results, orbit data, etc...).
 
     //Initialize imgui and implot along with some settings.
     gui(GLFWwindow *wpointer) : sol(nullptr)

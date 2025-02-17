@@ -1,3 +1,5 @@
+/* This class handles the glfw window functionality. */
+
 #ifndef WINDOW_H
 #define WINDOW_H
 
@@ -56,13 +58,15 @@ public:
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
-        //glfwWindowHint(GLFW_REFRESH_RATE, 60);
+        glfwWindowHint(GLFW_REFRESH_RATE, 60);
         glfwWindowHint(GLFW_SAMPLES, 4); //Anti-aliasing samples.
 
         GLFWmonitor *monitor = glfwGetPrimaryMonitor();
         const GLFWvidmode *mode = glfwGetVideoMode(monitor);
         width = mode->width;
         height = mode->height;
+        //That being said, when the gui launches, it will be in windowed-fullscreen mode.
+        //If the rescale button is clicked, the size remain, unless the user resizes the window from the corners.
 
         wpointer = glfwCreateWindow(width, height, "KIMIN", nullptr, nullptr);
         if (wpointer == nullptr)
@@ -74,9 +78,8 @@ public:
         glfwSetWindowUserPointer(wpointer, this);
         glfwMakeContextCurrent(wpointer);
         glfwSetWindowSizeLimits(wpointer, 400,400, GLFW_DONT_CARE,GLFW_DONT_CARE);
-        //glfwSwapInterval(1);
+        glfwSwapInterval(1);
 
-        
         glewExperimental = GL_TRUE;
         if (glewInit() != GLEW_OK)
         {
@@ -85,7 +88,6 @@ public:
             glfwTerminate();
             exit(EXIT_FAILURE);
         }
-        
 
         //Register the desired callback functions.
         glfwSetFramebufferSizeCallback(wpointer, framebuffer_size_callback);
@@ -98,7 +100,7 @@ public:
         glfwTerminate();
     }
 
-    //This is the app's function that runs all the time - the game loop.
+    //This is the app's function that runs all the time - frame by frame.
     void game_loop()
     {   
         gui ui(wpointer); //Instantiate the user interface along with some settings defined in the corresponding contructor (gui.h).
@@ -108,8 +110,8 @@ public:
         glClearColor(0.06f,0.06f,0.06f,1.0f);
         while (!glfwWindowShouldClose(wpointer))
         {
-            //At every frame (iteration), the color buffer (background) is cleared with the corresponding color value set by glClearColor().
-            //The depth buffer is cleared, only if 3D content is displayed.
+            //At every frame (while-iteration), the color buffer (background) is cleared with the corresponding color value set by glClearColor().
+            //The depth buffer however, is cleared only if 3D content is displayed (see scene_panel.h).
             glClear(GL_COLOR_BUFFER_BIT);
 
             ui.begin();

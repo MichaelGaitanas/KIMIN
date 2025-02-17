@@ -30,11 +30,11 @@ private:
     
     double vol;
 
-    //OpenGL-related members :
-    bool    gl_ready       = false;  //Have we uploaded to GPU?
-    unsigned int  gl_vao         = 0;      //VAO handle
-    unsigned int  gl_vbo         = 0;      //VBO handle
-    size_t  gl_vertexCount = 0;      //*triangle* vertices in the buffer
+    //OpenGL - related members.
+    bool gl_ready = false;  //Have we uploaded to GPU?
+    unsigned int  gl_vao = 0; //VAO handle
+    unsigned int  gl_vbo = 0; //VBO handle
+    size_t  gl_vertexCount = 0; //*triangle* vertices in the buffer
 
 public:
     //Load the .obj file assuming it contains vertcies and faces ('v x y z' and 'f i j k').
@@ -1018,12 +1018,12 @@ public:
 
         for (size_t i = 0; i < faces.size(); ++i)
         {
-            const dvec3& normal = norms[i];
+            const dvec3 &normal = norms[i];
             // For each of the 3 vertices of face i
             for (int k = 0; k < 3; k++)
             {
                 unsigned int vidx = faces[i][k];
-                const dvec3& pos = verts[vidx];
+                const dvec3 &pos = verts[vidx];
 
                 // position
                 gl_data.push_back((float)pos[0]);
