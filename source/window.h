@@ -52,11 +52,11 @@ public:
             glfwTerminate();
             exit(EXIT_FAILURE);
         }
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
-        glfwWindowHint(GLFW_REFRESH_RATE, 60);
+        //glfwWindowHint(GLFW_REFRESH_RATE, 60);
         glfwWindowHint(GLFW_SAMPLES, 4); //Anti-aliasing samples.
 
         GLFWmonitor *monitor = glfwGetPrimaryMonitor();
@@ -74,18 +74,18 @@ public:
         glfwSetWindowUserPointer(wpointer, this);
         glfwMakeContextCurrent(wpointer);
         glfwSetWindowSizeLimits(wpointer, 400,400, GLFW_DONT_CARE,GLFW_DONT_CARE);
-        glfwSwapInterval(1);
+        //glfwSwapInterval(1);
 
-        /*
+        
         glewExperimental = GL_TRUE;
         if (glewInit() != GLEW_OK)
         {
             fprintf(stderr, "Error : Failed to initialize glew. Exiting...\n");
-            glfwDestroyWindow(window);
+            glfwDestroyWindow(wpointer);
             glfwTerminate();
             exit(EXIT_FAILURE);
         }
-        */
+        
 
         //Register the desired callback functions.
         glfwSetFramebufferSizeCallback(wpointer, framebuffer_size_callback);
@@ -116,7 +116,7 @@ public:
             ui.topbar.render();
             ui.properties.render(ui.task_is_running.load(), ui.task_was_aborted.load(), ui.task_progress.load());
             ui.console.render();
-            ui.scene.render();
+            ui.scene.render(width, height);
             ui.render();
 
             ui.process_run_and_abort_buttons();

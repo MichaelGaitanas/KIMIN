@@ -4,7 +4,7 @@
 #include<cstdio>
 #include<cmath>
 #include<atomic>
-#include <nlohmann/json.hpp>
+#include<nlohmann/json.hpp>
 
 #include"constant.h"
 #include"typedef.h"
@@ -165,17 +165,14 @@ public:
 
     void reduce_vector(dvec &vec, const size_t final_size)
     {
-        size_t current_size = vec.size();
-        double step = ((double)current_size - 1.0)/((double)final_size - 1.0);
-
-        dvec reduced;
-        reduced.reserve(final_size);
+        double step = (vec.size() - 1.0)/(final_size - 1.0);
+        dvec reduced(final_size);
         for (size_t i = 0; i < final_size; ++i)
         {
             size_t index = (size_t)(i*step);
-            reduced.push_back(vec[index]);
+            reduced[i] = vec[index];
         }
-        vec = std::move(reduced);
+        vec = std::move(reduced); //Fast copy.
     }
 
     void reduce_to(const size_t final_size)
@@ -228,6 +225,13 @@ public:
         reduce_vector(manom, final_size);
         reduce_vector(ener_rel_err, final_size);
         reduce_vector(mom_rel_err, final_size);
+    }
+
+    solution get_reduced_solution(const size_t final_size) const
+    {
+        solution reduced = *this; // copy full solution
+        reduced.reduce_to(final_size); // reduce all vectors in the copy
+        return reduced;
     }
 
     void export_txt_files(std::atomic<bool> &abort_flag, std::atomic<float> &progress, console_panel &console)

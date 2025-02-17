@@ -50,7 +50,7 @@ public:
         (void)io;
         ImGui::StyleColorsDark();
         ImGui_ImplGlfw_InitForOpenGL(wpointer, true);
-        ImGui_ImplOpenGL3_Init("#version 330");
+        ImGui_ImplOpenGL3_Init("#version 450");
         ImGuiStyle &imstyle = ImGui::GetStyle();
         imstyle.FrameRounding = 6.0f;
         imstyle.WindowRounding = 6.0f;

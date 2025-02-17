@@ -57,6 +57,8 @@ public:
     bool run_pressed; //Whether or not the 'Run' button has been pressed.
     bool abort_pressed; //Whether or not the 'Abort' button has been pressed.
 
+    polyhedron poly1, poly2;
+
     /*
     properties_panel() : sim_name(""),
                          ell_checkbox(false),
@@ -211,6 +213,15 @@ public:
                 errors.push_back("[Error] : 'a1', 'b1', 'c1' must be positive numbers.");
             if (semiaxes2[0] <= 0.0 || semiaxes2[1] <= 0.0 || semiaxes2[2] <= 0.0)
                 errors.push_back("[Error] : 'a2', 'b2', 'c2' must be positive numbers.");
+
+            if (semiaxes1[0] > 0.0 && semiaxes1[1] > 0.0 && semiaxes1[2] > 0.0 &&
+                semiaxes2[0] > 0.0 && semiaxes2[1] > 0.0 && semiaxes2[2] > 0.0)
+            {
+                poly1.load_obj_file("../obj/uvsphere64x64_rad1.obj");
+                poly1.gen_norms();
+                poly2.load_obj_file("../obj/uvsphere64x64_rad1.obj");
+                poly2.gen_norms();
+            }
         }
 
         //Possible error 6 : .obj files (at least one .obj file per body must be selected). Also the polyhedra must be closed manifold geometries.
@@ -220,11 +231,10 @@ public:
                 errors.push_back("[Error] : No .obj file is selected for 'Body 1'.");
             else
             {
-                polyhedron poly;
-                if (poly.is_kimin_valid_obj(("../obj/" + obj1_path).c_str()))
+                if (poly1.is_kimin_valid_obj(("../obj/" + obj1_path).c_str()))
                 {
-                    poly.load_obj_file(("../obj/" + obj1_path).c_str());
-                    if (!poly.is_closed_manifold())
+                    poly1.load_obj_file(("../obj/" + obj1_path).c_str());
+                    if (!poly1.is_closed_manifold())
                         errors.push_back("[Error] : Invalid .obj file for 'Body 1' (non closed manifold).");
                 }
                 else
@@ -234,11 +244,10 @@ public:
                 errors.push_back("[Error] : No .obj file is selected for 'Body 2'.");
             else
             {
-                polyhedron poly;
-                if (poly.is_kimin_valid_obj(("../obj/" + obj2_path).c_str()))
+                if (poly2.is_kimin_valid_obj(("../obj/" + obj2_path).c_str()))
                 {
-                    poly.load_obj_file(("../obj/" + obj2_path).c_str());
-                    if (!poly.is_closed_manifold())
+                    poly2.load_obj_file(("../obj/" + obj2_path).c_str());
+                    if (!poly2.is_closed_manifold())
                         errors.push_back("[Error] : Invalid .obj file for 'Body 2' (non closed manifold).");
                 }
                 else

@@ -1,24 +1,25 @@
 Regarding the .obj files (asteroid models), the following rules must be satisfied, so that everything works correctly :
 
-1) The .obj files must exist in the /obj folder.
+1) The .obj files must exist in the /obj folder, but NOT in any other sub-folders (e.g. mascons), or whatever new folder is created by the user.
 
-2) The mesh must be a closed surface (manifold geometry). E.g. box, sphere, potato, etc...
+2) The mesh must be a closed manifold geometry (closed surface). E.g. box, sphere, potato, etc... However, an open sheet is not valid.
+   A corresponding error message will appear in the KIMIN's console if the user tries to load such a shape file.
 
-3) It does NOT matter if the mesh is convex or not. E.g. Churyumov Gerasimenko (non-convex) is totally fine.
+3) It does NOT matter if the mesh is convex or not. E.g. Churyumov Gerasimenko asteroid (which non-convex) is totally fine.
 
 4) The mesh must be triangulated and the face indices in the .obj file must be ordered in a counter-clockwise manner
    when viewed from the front (the side from which the normal points outwards). If you have generated the .obj file via a 3D
-   modelling software or if you are using a pre-made .obj file of an asteroid from a catalog/database, then this assumption is
+   modelling software (e.g. Blender) or if you are using a pre-made .obj file of an asteroid from a catalog/database, then this assumption is
    probably already satisfied.
 
 5) The .obj file must contain only vertices (in the format 'v x y z') and face indices (in the format 'f i j k'). Any other content
-   like comments, names, vertex groups, etc... will be ignored. Make sure that the .obj file does not contain normals or UV (texture)
-   coordinates, as these will change the face indices lines format.
+   like comments, names, vertex groups, etc... will be ignored. Make sure that the .obj file does NOT contain normals or UV (texture)
+   coordinates, as these will change the face indices lines format. In such a case, a corresponding error message will appear in the KIMIN's console.
 
-6) Already existing .obj files are provided in the /obj folder. Feel free to use them or add your own.
+6) Already existing .obj files are provided in the /obj folder as examples. Feel free to use them or add your own.
 
-7) Be reasonable with what you are trying to simulate. Although the .obj files of a red supergiant star along with a tiny cubesat are
-   valid in loading, the corresponding detailed mutual dynamics and graphics rendering will probably fail as the software is designed
+7) Be reasonable with what you are trying to simulate regarding the sizes. Although the .obj file of a red supergiant star along with a tiny cubesat are
+   valid, the corresponding detailed mutual dynamics and graphics rendering might fail regarding the accuracy, as the software is designed
    to handle asteroid-scaled sizes and numbers.
    
 8) For the currently existing obj meshes, the vertices are assumed to be in [km].

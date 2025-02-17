@@ -1,11 +1,14 @@
 #ifndef POLYHEDRON_H
 #define POLYHEDRON_H
 
+#include<GL/glew.h>
+
 #include<cstdio>
 #include<cstdlib>
 #include<cstring>
 #include<fstream>
 #include<algorithm>
+#include<vector>
 
 #include<Eigen/Dense>
 
@@ -19,11 +22,19 @@ private:
     bool norms_exist;
     bool edges_exist;
     bool vol_exists;
+
     dmatnx3 verts;
     umatnx3 faces;
     dmatnx3 norms;
     umatnx2 edges;
+    
     double vol;
+
+    //OpenGL-related members :
+    bool    gl_ready       = false;  //Have we uploaded to GPU?
+    unsigned int  gl_vao         = 0;      //VAO handle
+    unsigned int  gl_vbo         = 0;      //VBO handle
+    size_t  gl_vertexCount = 0;      //*triangle* vertices in the buffer
 
 public:
     //Load the .obj file assuming it contains vertcies and faces ('v x y z' and 'f i j k').
@@ -89,16 +100,15 @@ public:
         
         norms.clear();
         norms.resize(faces.size());
-        dvec3 perp;
         for (size_t i = 0; i < faces.size(); ++i)
         {
             dvec3 p0 = verts[faces[i][0]];
             dvec3 p1 = verts[faces[i][1]];
             dvec3 p2 = verts[faces[i][2]];
-            perp = cross(p1-p0, p2-p1);
+            dvec3 perp = cross(p1-p0, p2-p1);
             double len = length(perp);
             if (len > 1e-15)
-                norms[i] = perp/len;
+                norms[i] = perp/len; //Unit normal.
             else
                 norms[i] = dvec3{0.0,0.0,0.0}; //Degenerate case...
         }
@@ -173,8 +183,8 @@ public:
         return false;
     }
 
-    //This function whether or not the polyhedron is a closed manifold, i.e. closed surface (with no boundaries).
-    //E.g. Cuboid, asteroid, torus, etc... 
+    //This member function decides whether or not the polyhedron is a closed manifold, i.e. closed surface (with no boundaries).
+    //E.g. Cuboid, asteroid, torus, etc...
     bool is_closed_manifold()
     {   
         if (faces.empty())
@@ -980,6 +990,107 @@ public:
         //Since the vertices rotated, either we have to rotate the normals as well (with the same matrix), or just recompute them...
         norms_exist = false;
         gen_norms();
+    }
+
+    bool isGLReady() const
+    {
+        return gl_ready;
+    }
+
+    //Build and upload to the GPU an interleaved (position + normal) buffer for flat shading.
+    //Each face gets 3 vertices, each with the same normal = face normal.
+    void set_as_gl_mesh()
+    {
+        //If we already have a VAO, destroy it first to avoid leaking.
+        if (gl_ready)
+            destroy_gl_mesh();
+
+        // Safety check
+        if (faces.empty() || verts.empty() || norms.empty())
+        {
+            printf("polyhedron::set_as_gl_mesh() warning: no faces or norms.\n");
+            return;
+        }
+
+        // Build a CPU-side array of floats: (x, y, z, nx, ny, nz) per vertex
+        std::vector<float> gl_data;
+        gl_data.reserve(faces.size() * 3 * 6); // 3 verts per face, 6 floats each
+
+        for (size_t i = 0; i < faces.size(); ++i)
+        {
+            const dvec3& normal = norms[i];
+            // For each of the 3 vertices of face i
+            for (int k = 0; k < 3; k++)
+            {
+                unsigned int vidx = faces[i][k];
+                const dvec3& pos = verts[vidx];
+
+                // position
+                gl_data.push_back((float)pos[0]);
+                gl_data.push_back((float)pos[1]);
+                gl_data.push_back((float)pos[2]);
+                // normal
+                gl_data.push_back((float)normal[0]);
+                gl_data.push_back((float)normal[1]);
+                gl_data.push_back((float)normal[2]);
+            }
+        }
+
+        // The total number of triangle vertices
+        gl_vertexCount = gl_data.size() / 6; // each vertex has 6 floats
+
+        // Create and bind a VAO
+        glGenVertexArrays(1, &gl_vao);
+
+        glBindVertexArray(gl_vao);
+
+        // Create a VBO and upload the data
+        glGenBuffers(1, &gl_vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, gl_vbo);
+        glBufferData(GL_ARRAY_BUFFER, gl_data.size() * sizeof(float), gl_data.data(), GL_STATIC_DRAW);
+
+        // Enable and specify the layout of the position data (location = 0)
+        // stride = 6 * sizeof(float), position offset = 0
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+
+        // Enable and specify the layout of the normal data (location = 1)
+        // normal offset = 3 * sizeof(float)
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+        glEnableVertexAttribArray(1);
+
+        // Unbind VAO (so we don’t accidentally modify it elsewhere)
+        glBindVertexArray(0);
+
+        gl_ready = true;
+    }
+
+    // Simple draw function: bind VAO, draw triangles
+    void draw_gl_mesh() const
+    {
+        if (!gl_ready)
+            return; // Nothing to draw
+
+        glBindVertexArray(gl_vao);
+        glDrawArrays(GL_TRIANGLES, 0, (GLsizei)gl_vertexCount);
+        glBindVertexArray(0);
+    }
+
+    // Cleanup GPU resources
+    void destroy_gl_mesh()
+    {
+        if (gl_vbo != 0)
+        {
+            glDeleteBuffers(1, &gl_vbo);
+            gl_vbo = 0;
+        }
+        if (gl_vao != 0)
+        {
+            glDeleteVertexArrays(1, &gl_vao);
+            gl_vao = 0;
+        }
+        gl_vertexCount = 0;
+        gl_ready       = false;
     }
 };
 
