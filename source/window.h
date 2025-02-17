@@ -65,8 +65,8 @@ public:
         const GLFWvidmode *mode = glfwGetVideoMode(monitor);
         width = mode->width;
         height = mode->height;
-        //That being said, when the gui launches, it will be in windowed-fullscreen mode.
-        //If the rescale button is clicked, the size remain, unless the user resizes the window from the corners.
+        //That being said, when the gui launches, it is in windowed-fullscreen mode.
+        //If the rescale button is clicked, the size remains, unless the user resizes it from the corners.
 
         wpointer = glfwCreateWindow(width, height, "KIMIN", nullptr, nullptr);
         if (wpointer == nullptr)
@@ -110,8 +110,6 @@ public:
         glClearColor(0.06f,0.06f,0.06f,1.0f);
         while (!glfwWindowShouldClose(wpointer))
         {
-            //At every frame (while-iteration), the color buffer (background) is cleared with the corresponding color value set by glClearColor().
-            //The depth buffer however, is cleared only if 3D content is displayed (see scene_panel.h).
             glClear(GL_COLOR_BUFFER_BIT);
 
             ui.begin();

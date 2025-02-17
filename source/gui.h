@@ -27,11 +27,10 @@
 class gui
 {
 public:
+    //These variables are meant to be used to perform, track and control tasks that happen at separate threads, to prevent GUI freezing.
     std::atomic<bool> task_is_running{false};
     std::atomic<bool> task_was_aborted{false};
     std::atomic<float> task_progress{0.0f};
-    //We enumerate 3 possible time consuming tasks throughout the whole code : 1) Shape (.obj) loading and preparation, 2) Numerical integration, 3) Solution construction.
-    //We set these 3 tasks to run at a separate thread to prevent gui freezing.
 
     //The following class instances are basically what you see in the gui, once KIMIN is launched.
     top_bar_panel topbar;
@@ -135,7 +134,7 @@ public:
         }
     }
 
-     //Export the solution when requested from the top bar panel.
+    //Export the solution when requested from the top bar panel.
     void process_export_buttons()
     {
         if (sol != nullptr && sol->t.size() > 0) //Ensure that a solution is available.
@@ -144,8 +143,11 @@ public:
 
             if (topbar.export_txt_clicked)
             {
-                sol->export_txt_files(task_was_aborted, task_progress, console);
-                topbar.export_txt_clicked = false; //Reset the flag after exporting.
+                std::thread exportThread([this]() {
+                    sol->export_txt_files(console);
+                });
+                exportThread.detach(); // Or join later if you need to synchronize.
+                topbar.export_txt_clicked = false; // Reset the flag.
             }
 
             if (topbar.export_json_clicked)

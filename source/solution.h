@@ -234,10 +234,9 @@ public:
         return reduced;
     }
 
-    void export_txt_files(std::atomic<bool> &abort_flag, std::atomic<float> &progress, console_panel &console)
+    void export_txt_files(console_panel &console)
     {
         console.add_time_and_then_text("[Solution] : Export (.txt) started.");
-        progress.store(0.0f);
 
         const char *sim_name = integr.properties.sim_name;
         //Create the 'simulations' (root) directory that will store all other simulation sub-directories.
@@ -277,9 +276,6 @@ public:
             fprintf(file_w2i,      "%.16lf %.16lf %.16lf\n",                       w2ix[i],   w2iy[i], w2iz[i]);
             fprintf(file_kep,      "%.16lf %.16lf %.16lf %.16lf %.16lf %.16lf\n",   sma[i],    ecc[i],  inc[i], raan[i], argper[i], manom[i]); 
             fprintf(file_ener_mom, "%.16lf %.16lf\n",                      ener_rel_err[i], mom_rel_err[i]);
-
-            //Update the progressbar value in [0,1].
-            progress.store(i/(float)t.size());
         }
 
         fclose(file_t);
@@ -301,11 +297,7 @@ public:
         fprintf(file_collision,"Collision detected : %s", integr.collision ? "Yes" : "No");
         fclose(file_collision);
 
-        if (!abort_flag.load())
-        {
-            progress.store(1.0f);
-            console.add_time_and_then_text("[Solution] : Export (.txt) ended.");
-        }
+        console.add_time_and_then_text("[Solution] : Export (.txt) ended.");
     }
 
     void export_json_files(std::atomic<bool> &abort_flag, std::atomic<float> &progress, console_panel &console)
