@@ -300,10 +300,9 @@ public:
         console.add_time_and_then_text("[Solution] : Export (.txt) ended.");
     }
 
-    void export_json_files(std::atomic<bool> &abort_flag, std::atomic<float> &progress, console_panel &console)
+    void export_json_files(console_panel &console)
     {
         console.add_time_and_then_text("[Solution] : Export (.json) started.");
-        progress.store(0.0f);
 
         const char *sim_name = integr.properties.sim_name;
         //Create the 'simulations' directory that will store all other simulation sub-directories.
@@ -311,7 +310,7 @@ public:
         //Create the current simulation directory 'sim_name' that will store the .json files.
         std::filesystem::create_directory("../simulations/" + std::string(sim_name));
 
-        // Export vectors grouped as required
+        //Export vectors grouped as required.
         auto export_group_to_json = [&](const std::string &file_name, const std::vector<std::pair<std::string, dvec>> &group) {
             json json_data = json::array();
             for (const auto &pair : group) {
@@ -322,7 +321,7 @@ public:
             json_file.close();
         };
 
-        // Export each group to a JSON file
+        //Export each group to a JSON file.
         export_group_to_json("time", { {"time", t} });
         export_group_to_json("rel_pos", { {"x", x}, {"y", y}, {"z", z}, {"dist", dist} });
         export_group_to_json("rel_vel", { {"vx", vx}, {"vy", vy}, {"vz", vz}, {"vel", vel} });
@@ -337,17 +336,13 @@ public:
         export_group_to_json("keplerian", { {"sma", sma}, {"ecc", ecc}, {"inc", inc}, {"raan", raan}, {"argper", argper}, {"manom", manom} });
         export_group_to_json("ener_mom_rel_error", { {"energy_rel_err", ener_rel_err}, {"momentum_rel_err", mom_rel_err} });
 
-        // Write collision status to a separate JSON file
+        //Write collision status to a separate JSON file.
         json collision_data = { {"collision", integr.collision ? "Yes" : "No"} };
         std::ofstream collision_file("../simulations/" + std::string(sim_name) + "/collision.json");
         collision_file << std::setw(4) << collision_data << std::endl;
         collision_file.close();
 
-        if (!abort_flag.load())
-        {
-            progress.store(1.0f);
-            console.add_time_and_then_text("[Solution] : Export (.json) ended.");
-        }
+        console.add_time_and_then_text("[Solution] : Export (.json) ended.");
     }
 };
 

@@ -132,10 +132,9 @@ private:
 
 public:
     //Before the actual integration of the ODEs starts, we do some preparations.
-    void prepare(std::atomic<bool> &abort_flag, std::atomic<float> &progress, console_panel &console)
+    void prepare(console_panel &console)
     {
-        console.add_time_and_then_text("[Shape] : Loading started.");
-        progress.store(0.0f);
+        console.add_time_and_then_text("[Shape] : Inertial intgrals computation started.");
 
         m = properties.M1*properties.M2/(properties.M1 + properties.M2);
 
@@ -241,11 +240,7 @@ public:
         collision = false; //Assuming no collision when the simulation starts.
         orbit.clear();
 
-        if (!abort_flag.load())
-        {
-            progress.store(1.0f);
-            console.add_time_and_then_text("[Shape] : Loading ended.");
-        }
+        console.add_time_and_then_text("[Shape] : Inertial intgrals computation ended.");
     }
 
     void run(std::atomic<bool> &abort_flag, std::atomic<float> &progress, console_panel &console)

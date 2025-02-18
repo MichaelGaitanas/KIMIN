@@ -106,7 +106,7 @@ public:
                 std::thread task_thread([&]()
                 {
                     integrator *integr = new integrator(properties);
-                    integr->prepare(task_was_aborted, task_progress, console);
+                    integr->prepare(console);
                     integr->run(task_was_aborted, task_progress, console);
                     if (!task_was_aborted.load())
                     {
@@ -134,7 +134,10 @@ public:
         }
     }
 
-    //Export the solution when requested from the top bar panel.
+    //Export the solution when requested from the top bar panel. This happens with separate threads, just like
+    //the integr->prepare(), integr->run(), etc... However, note that currently, this is not thread safe because
+    //one might attempt to export a previous solution, while a new one is on the fly. I'll fix it, but for now, only
+    //export when solution is complete.
     void process_export_buttons()
     {
         if (sol != nullptr && sol->t.size() > 0) //Ensure that a solution is available.
@@ -143,23 +146,26 @@ public:
 
             if (topbar.export_txt_clicked)
             {
-                std::thread exportThread([this]() {
+                std::thread export_sol_thread([this]()
+                {
                     sol->export_txt_files(console);
                 });
-                exportThread.detach(); // Or join later if you need to synchronize.
-                topbar.export_txt_clicked = false; // Reset the flag.
+                export_sol_thread.detach();
+                topbar.export_txt_clicked = false; //Reset the flag after exporting the txt.
             }
 
             if (topbar.export_json_clicked)
             {
-                sol->export_json_files(task_was_aborted, task_progress, console);
-                topbar.export_json_clicked = false; //Reset the flag after exporting.
+                std::thread export_sol_thread([this]()
+                {
+                    sol->export_json_files(console);
+                });
+                export_sol_thread.detach();
+                topbar.export_json_clicked = false; //Reset the flag after exporting json.
             }
         }
         else
-        {
             topbar.export_is_enabled = false;
-        }
     }
 };
 
