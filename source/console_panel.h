@@ -33,7 +33,7 @@ private:
         if (buffer.size() > max_buffer_size)
         {
             buffer.clear();
-            buffer.append("[Info] : Console buffer was auto - cleared due to size limit.");
+            buffer.append("[Console] : Automatic clearance of the console.");
             scroll_to_bottom = true;
         }
     }

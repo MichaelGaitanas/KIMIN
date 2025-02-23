@@ -27,21 +27,24 @@
 class gui
 {
 public:
-    //These variables are meant to be used to perform, track and control tasks that happen at separate threads, to prevent GUI freezing.
-    std::atomic<bool> task_is_running{false};
-    std::atomic<bool> task_was_aborted{false};
-    std::atomic<float> task_progress{0.0f};
-
     //The following class instances are basically what you see in the gui, once KIMIN is launched.
     top_bar_panel topbar;
     properties_panel properties;
     console_panel console;
     scene_panel scene;
 
-    solution *sol; //This will basically contain everything regarding the simulation (user inputs, numerical integrator results, orbit data, etc...).
+    //'solution' class contains all data regarding the simulation (user inputs, numerical integrator results, orbit, etc...).
+    solution *sol;
 
-    //Initialize imgui and implot along with some settings.
-    gui(GLFWwindow *wpointer) : sol(nullptr)
+    //These variables are meant to track and control separate thread tasks, to prevent GUI freezing.
+    std::atomic<bool> task_is_running, task_was_aborted;
+    std::atomic<float> task_progress;
+
+    //Initialize imgui, implot (along with some settings)a nd the class members.
+    gui(GLFWwindow *wpointer) : sol(nullptr),
+                                task_is_running(false),
+                                task_was_aborted(false),
+                                task_progress(0.0f)
     {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
@@ -66,7 +69,7 @@ public:
     //Free gui resources.
     ~gui()
     {
-        delete sol; //Clean up the solution if allocated.
+        delete sol; //Clean up the solution if allocated. If not (nullptr), the 'delete' operator does nothing.
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplGlfw_Shutdown();
         ImPlot::DestroyContext(); //Strictly BEFORE Imgui::DestroyContext();
@@ -88,6 +91,13 @@ public:
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     }
 
+    void poll_events()
+    {
+        process_run_and_abort_buttons();
+        process_export_buttons();
+    }
+
+private:
     //'Run' and 'Abort' buttons functionality logic.
     void process_run_and_abort_buttons()
     {
@@ -110,12 +120,12 @@ public:
                     integr->run(task_was_aborted, task_progress, console);
                     if (!task_was_aborted.load())
                     {
-                        delete sol;
+                        delete sol; //Clean up the solution if allocated. If not (nullptr), the 'delete' operator does nothing.
                         sol = new solution(*integr);
                         sol->construct(task_was_aborted, task_progress, console);
                         scene.copy_solution(*sol);
                     }
-                    delete integr;
+                    delete integr; //The integrator lives only inside the current thread scope.
                     task_is_running.store(false);
                 });
                 task_thread.detach();

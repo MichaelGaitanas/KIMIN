@@ -624,7 +624,7 @@ public:
             ImGui::Button("Abort", ImVec2(70.0f, 25.0f));
             ImGui::EndDisabled();
         }
-        else //Now the opposite happens. "Run" is disabled, coz a task is running and "Abort" is enabled, so that one may stop the running.
+        else //Now the opposite happens. "Run" is disabled, coz a task is running and "Abort" is enabled, so that one may stop the running task (integration).
         {
             ImGui::BeginDisabled();
             ImGui::Button("Run", ImVec2(70.0f, 25.0f));

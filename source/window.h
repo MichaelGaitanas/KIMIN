@@ -119,8 +119,7 @@ public:
             ui.scene.render(width, height);
             ui.render();
 
-            ui.process_run_and_abort_buttons();
-            ui.process_export_buttons();
+            ui.poll_events();
 
             glfwSwapBuffers(wpointer);
             glfwPollEvents();

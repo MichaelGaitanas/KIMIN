@@ -30,7 +30,7 @@ public:
     dvec q20, q21, q22, q23;
     dvec w2bx, w2by, w2bz;
 
-    //The following members were not directly evaluates by the integrator. Instead, we use what the integrator evaluated to evaluate the following.
+    //The following members were NOT directly evaluated by the integrator. Instead, we use what the integrator evaluated to evaluate the following.
 
     dvec dist, vel;
     dvec roll1, pitch1, yaw1; 
@@ -55,7 +55,66 @@ public:
 
         double energy_at_t0, momentum_at_t0;
 
-        for (size_t i = 0; i < integr.orbit.size(); ++i)
+        const size_t N = integr.orbit.size();
+        
+        t.resize(N);
+        
+        x.resize(N);
+        y.resize(N);
+        z.resize(N);
+
+        vx.resize(N);
+        vy.resize(N);
+        vz.resize(N);
+
+        q10.resize(N);
+        q11.resize(N);
+        q12.resize(N);
+        q13.resize(N);
+
+        w1bx.resize(N);
+        w1by.resize(N);
+        w1bz.resize(N);
+
+        q20.resize(N);
+        q21.resize(N);
+        q22.resize(N);
+        q23.resize(N);
+
+        w2bx.resize(N);
+        w2by.resize(N);
+        w2bz.resize(N);
+
+        dist.resize(N);
+        vel.resize(N);
+
+        roll1.resize(N);
+        pitch1.resize(N);
+        yaw1.resize(N);
+
+        roll2.resize(N);
+        pitch2.resize(N);
+        yaw2.resize(N);
+
+        w1ix.resize(N);
+        w1iy.resize(N);
+        w1iz.resize(N);
+
+        w2ix.resize(N);
+        w2iy.resize(N);
+        w2iz.resize(N);
+
+        sma.resize(N);
+        ecc.resize(N);
+        inc.resize(N);
+        raan.resize(N);
+        argper.resize(N);
+        manom.resize(N);
+
+        ener_rel_err.resize(N);
+        mom_rel_err.resize(N);
+
+        for (size_t i = 0; i < N; ++i)
         {
             //Extract the integr.orbit[][] matrix into temporary variables for readability (though one could operate directly on integr.orbit[][]).
             //Remember integr.orbit contains : (t, x,y,z, vx,vy,vz, q10,q11,q12,q13, w1bx,w1by,w1bz, q20,q21,q22,q23, w2bx,w2by,w2bz) at each line i.
@@ -95,65 +154,65 @@ public:
                 momentum_at_t0 = momentum;
             }
 
-            t.push_back(integr.orbit[i][0]/86400.0);
+            t[i] = integr.orbit[i][0]/86400.0;
 
-            x.push_back(r[0]);
-            y.push_back(r[1]);
-            z.push_back(r[2]);
+            x[i] = r[0];
+            y[i] = r[1];
+            z[i] = r[2];
 
-            vx.push_back(v[0]);
-            vy.push_back(v[1]);
-            vz.push_back(v[2]);
+            vx[i] = v[0];
+            vy[i] = v[1];
+            vz[i] = v[2];
 
-            q10.push_back(q1[0]);
-            q11.push_back(q1[1]);
-            q12.push_back(q1[2]);
-            q13.push_back(q1[3]);
+            q10[i] = q1[0];
+            q11[i] = q1[1];
+            q12[i] = q1[2];
+            q13[i] = q1[3];
 
-            w1bx.push_back(w1b[0]);
-            w1by.push_back(w1b[1]);
-            w1bz.push_back(w1b[2]);
+            w1bx[i] = w1b[0];
+            w1by[i] = w1b[1];
+            w1bz[i] = w1b[2];
 
-            q20.push_back(q2[0]);
-            q21.push_back(q2[1]);
-            q22.push_back(q2[2]);
-            q23.push_back(q2[3]);
+            q20[i] = q2[0];
+            q21[i] = q2[1];
+            q22[i] = q2[2];
+            q23[i] = q2[3];
 
-            w2bx.push_back(w2b[0]);
-            w2by.push_back(w2b[1]);
-            w2bz.push_back(w2b[2]);
+            w2bx[i] = w2b[0];
+            w2by[i] = w2b[1];
+            w2bz[i] = w2b[2];
 
-            dist.push_back(length(r));
-            vel.push_back(length(v));
+            dist[i] = length(r);
+            vel[i]  = length(v);
 
-            roll1.push_back(rpy1[0]*180.0/pi);
-            pitch1.push_back(rpy1[1]*180.0/pi);
-            yaw1.push_back(rpy1[2]*180.0/pi);
+            roll1[i]  = rpy1[0]*180.0/pi;
+            pitch1[i] = rpy1[1]*180.0/pi;
+            yaw1[i]   = rpy1[2]*180.0/pi;
 
-            roll2.push_back(rpy2[0]*180.0/pi);
-            pitch2.push_back(rpy2[1]*180.0/pi);
-            yaw2.push_back(rpy2[2]*180.0/pi);
+            roll2[i]  = rpy2[0]*180.0/pi;
+            pitch2[i] = rpy2[1]*180.0/pi;
+            yaw2[i]   = rpy2[2]*180.0/pi;
 
-            w1ix.push_back(w1i[0]);
-            w1iy.push_back(w1i[1]);
-            w1iz.push_back(w1i[2]);
+            w1ix[i] = w1i[0];
+            w1iy[i] = w1i[1];
+            w1iz[i] = w1i[2];
 
-            w2ix.push_back(w2i[0]);
-            w2iy.push_back(w2i[1]);
-            w2iz.push_back(w2i[2]);
+            w2ix[i] = w2i[0];
+            w2iy[i] = w2i[1];
+            w2iz[i] = w2i[2];
 
-            sma.push_back(kep[0]);
-            ecc.push_back(kep[1]);
-            inc.push_back(kep[2]*180.0/pi);
-            raan.push_back(kep[3]*180.0/pi);
-            argper.push_back(kep[4]*180.0/pi);
-            manom.push_back(kep[5]*180.0/pi);
+            sma[i]    = kep[0];
+            ecc[i]    = kep[1];
+            inc[i]    = kep[2]*180.0/pi;
+            raan[i]   = kep[3]*180.0/pi;
+            argper[i] = kep[4]*180.0/pi;
+            manom[i]  = kep[5]*180.0/pi;
 
-            ener_rel_err.push_back(fabs((energy - energy_at_t0)/energy_at_t0)); //0 at t = 0.
-            mom_rel_err.push_back(fabs((momentum - momentum_at_t0)/momentum_at_t0)); //0 at t = 0.
+            ener_rel_err[i] = fabs((energy - energy_at_t0)/energy_at_t0); //0 at t = 0.
+            mom_rel_err[i]  = fabs((momentum - momentum_at_t0)/momentum_at_t0); //0 at t = 0.
 
             //Update the progressbar value in [0,1].
-            progress.store(i/(float)integr.orbit.size());
+            progress.store(i/(float)N);
         }
 
         if (!abort_flag.load())
