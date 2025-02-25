@@ -134,7 +134,7 @@ public:
     //Before the actual integration of the ODEs starts, we do some preparations.
     void prepare(console_panel &console)
     {
-        console.add_time_and_then_text("[Shape] : Inertial intgrals computation started.");
+        console.add_timed_text("[Shape] : Computing inertial integrals... ");
 
         m = properties.M1*properties.M2/(properties.M1 + properties.M2);
 
@@ -240,12 +240,12 @@ public:
         collision = false; //Assuming no collision when the simulation starts.
         orbit.clear();
 
-        console.add_time_and_then_text("[Shape] : Inertial intgrals computation ended.");
+        console.add_text("Done.\n");
     }
 
     void run(std::atomic<bool> &abort_flag, std::atomic<float> &progress, console_panel &console)
     {
-        console.add_time_and_then_text("[Integrator] : Propagation started.");
+        console.add_timed_text("[Integrator] : Propagating orbit... ");
         progress.store(0.0f);
 
         //Initial conditions.
@@ -277,8 +277,8 @@ public:
             //Check for sphere-sphere collision detection between the 2 asteroids.
             if (sphere_sphere_collision(length(dvec3{state[0],state[1],state[2]}), brillouin1, brillouin2))
             {
-                sprintf(formatted_text,"[Integrator] : Collision detected at t = %5.2lf [days].", t/86400.0);
-                console.add_time_and_then_text(formatted_text);
+                sprintf(formatted_text,"Collision detected at t = %5.2lf [days].\n", t/86400.0);
+                console.add_text(formatted_text);
                 collision = true;
                 break;
             }
@@ -286,8 +286,8 @@ public:
             //Check the abort flag (the user might want to kill the integration by pressing the 'Abort' button in the gui).
             if (abort_flag.load())
             {
-                sprintf(formatted_text, "[Integrator] : Aborted at t = %5.2lf [days].", t/86400.0);
-                console.add_time_and_then_text(formatted_text);
+                sprintf(formatted_text, "Aborted at t = %5.2lf [days].\n", t/86400.0);
+                console.add_text(formatted_text);
                 break;
             }
             
@@ -308,10 +308,10 @@ public:
             progress.store((t-t0)/(tmax-t0));
         }
 
-        if (!abort_flag.load())
+        if (!abort_flag.load() && !collision)
         {
             progress.store(1.0f);
-            console.add_time_and_then_text("[Integrator] : Propagation ended.");
+            console.add_text("Done.\n");
         }
     }
 };

@@ -162,7 +162,7 @@ private:
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f,7.5f));
 
-        ImGui::Text("Integrals of motion");
+        ImGui::Text("Integrals of motion errors");
         plot_ener_mom_rel_err[0] = common_onoff_button("Energy",   ImVec2(80.0f, 25.0f), plot_ener_mom_rel_err[0]); ImGui::SameLine();
         plot_ener_mom_rel_err[1] = common_onoff_button("Momentum", ImVec2(80.0f, 25.0f), plot_ener_mom_rel_err[1]);
         ImGui::Dummy(ImVec2(0.0f,7.5f));

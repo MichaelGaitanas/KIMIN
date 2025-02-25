@@ -48,10 +48,9 @@ public:
         this->integr = integr;
     }
 
-    void construct(std::atomic<bool> &abort_flag, std::atomic<float> &progress, console_panel &console)
+    void construct(console_panel &console)
     {
-        console.add_time_and_then_text("[Solution] : Construction started.");
-        progress.store(0.0f);
+        console.add_timed_text("[Solution] : Constructing solution... ");
 
         double energy_at_t0, momentum_at_t0;
 
@@ -210,16 +209,9 @@ public:
 
             ener_rel_err[i] = fabs((energy - energy_at_t0)/energy_at_t0); //0 at t = 0.
             mom_rel_err[i]  = fabs((momentum - momentum_at_t0)/momentum_at_t0); //0 at t = 0.
-
-            //Update the progressbar value in [0,1].
-            progress.store(i/(float)N);
         }
 
-        if (!abort_flag.load())
-        {
-            progress.store(1.0f);
-            console.add_time_and_then_text("[Solution] : Construction ended.");
-        }
+        console.add_text("Done.\n");
     }
 
     void reduce_vector(dvec &vec, const size_t final_size)
@@ -295,7 +287,7 @@ public:
 
     void export_txt_files(console_panel &console)
     {
-        console.add_time_and_then_text("[Solution] : Export (.txt) started.");
+        console.add_timed_text("[Solution] : Exporting .txt solution... ");
 
         const char *sim_name = integr.properties.sim_name;
         //Create the 'simulations' (root) directory that will store all other simulation sub-directories.
@@ -356,12 +348,12 @@ public:
         fprintf(file_collision,"Collision detected : %s", integr.collision ? "Yes" : "No");
         fclose(file_collision);
 
-        console.add_time_and_then_text("[Solution] : Export (.txt) ended.");
+        console.add_text("Done.\n");
     }
 
     void export_json_files(console_panel &console)
     {
-        console.add_time_and_then_text("[Solution] : Export (.json) started.");
+        console.add_timed_text("[Solution] : Exporting .json solution... ");
 
         const char *sim_name = integr.properties.sim_name;
         //Create the 'simulations' directory that will store all other simulation sub-directories.
@@ -401,7 +393,7 @@ public:
         collision_file << std::setw(4) << collision_data << std::endl;
         collision_file.close();
 
-        console.add_time_and_then_text("[Solution] : Export (.json) ended.");
+        console.add_text("Done.\n");
     }
 };
 

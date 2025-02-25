@@ -75,11 +75,10 @@ public:
     }
 
     //Add formatted local time and then formatted text to the console.
-    void add_time_and_then_text(const char *text)
+    void add_timed_text(const char *text)
     {
         add_text(get_local_time().c_str());
         add_text(text);
-        add_text("\n");
     }
 
     //Render the console imgui window.

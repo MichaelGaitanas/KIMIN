@@ -122,7 +122,7 @@ private:
                     {
                         delete sol; //Clean up the solution if allocated. If not (nullptr), the 'delete' operator does nothing.
                         sol = new solution(*integr);
-                        sol->construct(task_was_aborted, task_progress, console);
+                        sol->construct(console);
                         scene.copy_solution(*sol);
                     }
                     delete integr; //The integrator lives only inside the current thread scope.
@@ -132,7 +132,7 @@ private:
             }
             else
                 for (size_t i = 0; i < errors.size(); ++i)
-                    console.add_time_and_then_text(errors[i].c_str());
+                    console.add_timed_text(errors[i].c_str());
         }
 
         //'Abort' protocol.
