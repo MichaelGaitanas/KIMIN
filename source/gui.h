@@ -1,5 +1,5 @@
-/* This class acts as a gui kernel. It does not contain the commands that actually render the GUI (like ImGui:: ...), but rather handles
-   initializations, allocates/deallocates memory for some core stuff, handles threading, etc... In general it acts as a communicator.  */
+/* This class acts as the kernel of the gui. It does not contain the commands that actually render the GUI (e.g. ImGui::Button() ...), but rather handles
+   initializations, allocates/deallocates memory for some core stuff, handles threading, etc... */
 
 #ifndef GUI_H
 #define GUI_H
@@ -12,7 +12,6 @@
 #include<GL/glew.h>
 #include<GLFW/glfw3.h>
 
-#include<cmath>
 #include<thread>
 #include<atomic>
 
@@ -33,7 +32,7 @@ public:
     console_panel console;
     scene_panel scene;
 
-    //'solution' class contains all data regarding the simulation (user inputs, numerical integrator results, orbit, etc...).
+    //The 'solution' class contains all data regarding the simulation (user inputs, numerical integrator results, orbit, etc...).
     solution *sol;
 
     //These variables are meant to track and control separate thread tasks, to prevent GUI freezing.
@@ -69,7 +68,7 @@ public:
     //Free gui resources.
     ~gui()
     {
-        delete sol; //Clean up the solution if allocated. If not (nullptr), the 'delete' operator does nothing.
+        delete sol; //Clean up the solution if allocated. If not (i.e. if sol is nullptr), the 'delete' operator does nothing.
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplGlfw_Shutdown();
         ImPlot::DestroyContext(); //Strictly BEFORE Imgui::DestroyContext();
@@ -91,6 +90,7 @@ public:
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     }
 
+    //This function basically sums up the logic of all possible gui events.
     void poll_events()
     {
         process_run_and_abort_buttons();
@@ -98,25 +98,22 @@ public:
     }
 
 private:
-    //'Run' and 'Abort' buttons functionality logic.
+    //'Run' and 'Abort' buttons logic.
     void process_run_and_abort_buttons()
     {
-        //'Run' protocol.
         if (properties.run_pressed && !task_is_running.load())
         {
-            //Reset the 2 flags.
+            //(Re)set the 2 flags.
             properties.run_pressed = false;
             task_was_aborted.store(false);
             
-            strvec errors = properties.validate();
-            if (!errors.size())
+            std::thread task_thread([&]()
             {
-                task_is_running.store(true);
-                //Launch a new simulation in a separate thread.
-                std::thread task_thread([&]()
+                if (properties.validate(task_progress, console)) //No input errors were found, so proceed with the simulation.
                 {
                     integrator *integr = new integrator(properties);
                     integr->prepare(console);
+                    task_is_running.store(true); //We assume that from this point on, the task is running because this affects the state of the 'Abort' button, which can be pressed only during the integration.
                     integr->run(task_was_aborted, task_progress, console);
                     if (!task_was_aborted.load())
                     {
@@ -125,14 +122,12 @@ private:
                         sol->construct(console);
                         scene.copy_solution(*sol);
                     }
+                    //In case abort, the previous solution (if present) exists in the memory.
                     delete integr; //The integrator lives only inside the current thread scope.
                     task_is_running.store(false);
-                });
-                task_thread.detach();
-            }
-            else
-                for (size_t i = 0; i < errors.size(); ++i)
-                    console.add_timed_text(errors[i].c_str());
+                }
+            });
+            task_thread.detach();
         }
 
         //'Abort' protocol.
@@ -147,7 +142,7 @@ private:
     //Export the solution when requested from the top bar panel. This happens with separate threads, just like
     //the integr->prepare(), integr->run(), etc... However, note that currently, this is not thread safe because
     //one might attempt to export a previous solution, while a new one is on the fly. I'll fix it, but for now, only
-    //export when solution is complete.
+    //export when solution is completed.
     void process_export_buttons()
     {
         if (sol != nullptr && sol->t.size() > 0) //Ensure that a solution is available.

@@ -277,7 +277,7 @@ public:
             //Check for sphere-sphere collision detection between the 2 asteroids.
             if (sphere_sphere_collision(length(dvec3{state[0],state[1],state[2]}), brillouin1, brillouin2))
             {
-                sprintf(formatted_text,"Collision detected at t = %5.2lf [days].\n", t/86400.0);
+                sprintf(formatted_text,"< Collision detected at t = %5.2lf [days]. >\n", t/86400.0);
                 console.add_text(formatted_text);
                 collision = true;
                 break;
@@ -286,7 +286,7 @@ public:
             //Check the abort flag (the user might want to kill the integration by pressing the 'Abort' button in the gui).
             if (abort_flag.load())
             {
-                sprintf(formatted_text, "Aborted at t = %5.2lf [days].\n", t/86400.0);
+                sprintf(formatted_text, "< Aborted at t = %5.2lf [days]. > \n", t/86400.0);
                 console.add_text(formatted_text);
                 break;
             }

@@ -13,6 +13,7 @@
 #include"linalg.h"
 #include"conversion.h"
 #include"polyhedron.h"
+#include"console_panel.h"
 
 class properties_panel
 {
@@ -181,38 +182,36 @@ public:
         ImGui::PopItemWidth();
     }
 
-    //This member functions processes all the user inputs and checkes if they are valid (assuming some rules).
-    //If all inputs are valid, the function returns an entirely empty vector of strings (empty because it contains no erros).
-    //Otherwise the returned vector contains string messages, each corresponding to an invalid input. In this case,
-    //the vector of strings will be displayed on the console and the simulation will not run.
-    strvec validate()
-    {
-        strvec errors; //This is empty now coz errors.size() is 0.
+    //This member functions processes all the user inputs and checks if they are valid (assuming some rules).
+    //If not, the corresponding errors will be displayed on the console and the simulation will not run.
+    bool validate(std::atomic<float> &progress, console_panel &console)
+    {   
+        progress.store(0.0f);
         
         //Possible error 1 : Simulation name (empty, pure spaces, begin with space, illegal characters).
         str sim_name_copy = sim_name;
         if ( (sim_name_copy.empty()) || (sim_name_copy.find_first_not_of(' ') == str::npos) || (sim_name_copy[0] == ' ') || (sim_name_copy.find_first_of("<>:\"/\\|?*") != str::npos) )
-            errors.push_back("[Error] : 'Simulation name' is invalid.\n");
+            {console.add_timed_text("[Error] : 'Simulation name' is invalid.\n"); return false;}
 
         //Possible error 2 : Shape model checkboxes (at least one must be checked when the 'Run' button has been pressed).
         if (!ell_checkbox && !obj_checkbox)
-            errors.push_back("[Error] : Neither 'Ellipsoids', nor '.obj files' is selected for determining the shapes.\n");
+            {console.add_timed_text("[Error] : Neither 'Ellipsoids', nor '.obj files' is selected for determining the shapes.\n"); return false;}
 
         //Possible error 3 : 'OK' button in the Elliposid parameters window (it must be clicked so that the parameters are taken into account).
         if (ell_checkbox && !ell_clicked_ok)
-            errors.push_back("[Error] : 'OK' button must be pressed in the 'Ellipsoid parameters' window.\n");
+            {console.add_timed_text("[Error] : 'OK' button must be pressed in the 'Ellipsoid parameters' window.\n"); return false;}
 
         //Possible error 4 : 'OK' button in the '.obj files' window (it must be clicked so that the .obj files are taken into account).
         if (obj_checkbox && !obj_clicked_ok)
-            errors.push_back("[Error] : 'OK' button must be pressed in the '.obj files' window.\n");
+            {console.add_timed_text("[Error] : 'OK' button must be pressed in the '.obj files' window.\n"); return false;}
 
         //Possible error 5 : Ellipsoids semiaxes (all semiaxes must be > 0).
         if (ell_checkbox)
         {
             if (semiaxes1[0] <= 0.0 || semiaxes1[1] <= 0.0 || semiaxes1[2] <= 0.0)
-                errors.push_back("[Error] : 'a1', 'b1', 'c1' must be positive numbers.\n");
+                {console.add_timed_text("[Error] : 'a1', 'b1', 'c1' must be positive numbers.\n"); return false;}
             if (semiaxes2[0] <= 0.0 || semiaxes2[1] <= 0.0 || semiaxes2[2] <= 0.0)
-                errors.push_back("[Error] : 'a2', 'b2', 'c2' must be positive numbers.\n");
+                {console.add_timed_text("[Error] : 'a2', 'b2', 'c2' must be positive numbers.\n"); return false;}
 
             if (semiaxes1[0] > 0.0 && semiaxes1[1] > 0.0 && semiaxes1[2] > 0.0 &&
                 semiaxes2[0] > 0.0 && semiaxes2[1] > 0.0 && semiaxes2[2] > 0.0)
@@ -226,94 +225,100 @@ public:
 
         //Possible error 6 : .obj files (at least one .obj file per body must be selected). Also the polyhedra must be closed manifold geometries.
         if (obj_checkbox)
-        {
+        {   
             if (obj1_clicked_index == -1)
-                errors.push_back("[Error] : No .obj file is selected for 'Body 1'.\n");
+                {console.add_timed_text("[Error] : No .obj file is selected for 'Body 1'.\n"); return false;}
             else
             {
+                console.add_timed_text("[Shape] : Loading .obj file 1... ");
                 if (poly1.is_kimin_valid_obj(("../obj/" + obj1_path).c_str()))
                 {
                     poly1.load_obj_file(("../obj/" + obj1_path).c_str());
                     if (!poly1.is_closed_manifold())
-                        errors.push_back("[Error] : Invalid .obj file for 'Body 1' (non closed manifold).\n");
+                        {console.add_text("< Invalid .obj file for 'Body 1' (non closed manifold). >\n"); return false;}
+                    else
+                        console.add_text("Done.\n");
                 }
                 else
-                    errors.push_back("[Error] : Invalid .obj file for 'Body 1' (it must contain only vertices and faces).\n");
+                    {console.add_text("< Invalid .obj file for 'Body 1' (it must contain only vertices and faces). >\n"); return false;}
             }
             if (obj2_clicked_index == -1)
-                errors.push_back("[Error] : No .obj file is selected for 'Body 2'.\n");
+                {console.add_timed_text("[Error] : No .obj file is selected for 'Body 2'.\n"); return false;}
             else
             {
+                console.add_timed_text("[Shape] : Loading .obj file 2... ");
                 if (poly2.is_kimin_valid_obj(("../obj/" + obj2_path).c_str()))
                 {
                     poly2.load_obj_file(("../obj/" + obj2_path).c_str());
                     if (!poly2.is_closed_manifold())
-                        errors.push_back("[Error] : Invalid .obj file for 'Body 2' (non closed manifold).\n");
+                        {console.add_text("< Invalid .obj file for 'Body 2' (non closed manifold). >\n"); return false;}
+                    else
+                        console.add_text("Done.\n");
                 }
                 else
-                    errors.push_back("[Error] : Invalid .obj file for 'Body 2' (it must contain only vertices and faces).\n");
+                    {console.add_text("< Invalid .obj file for 'Body 2' (it must contain only vertices and faces). >\n"); return false;}
             }
         }
 
-        //Possible error 8 : Mutual potential checkboxes (at least one must be checked).
+        //Possible error 7 : Mutual potential checkboxes (at least one must be checked).
         if (!ord2_checkbox && !ord3_checkbox && !ord4_checkbox)
-            errors.push_back("[Error] : Neither 'Order 2', nor 'Order 3', nor 'Order 4' mutual potential is selected.\n");
+            {console.add_timed_text("[Error] : Neither 'Order 2', nor 'Order 3', nor 'Order 4' mutual potential is selected.\n"); return false;}
 
-        //Possible error 9 : Masses (both M1 and M2 must be > 0).
+        //Possible error 8 : Masses (both M1 and M2 must be > 0).
         if (M1 <= 0.0 || M2 <= 0.0)
-            errors.push_back("[Error] : 'M1', 'M2' must be positive numbers.\n");
+            {console.add_timed_text("[Error] : 'M1', 'M2' must be positive numbers.\n"); return false;}
 
-        //Possible error 10 : Time parameters ('Epoch' and 'Duration' must be >= 0, 'Step' must be <= 'Duration' and 'Target error' must be > 0).
+        //Possible error 9 : Time parameters ('Epoch' and 'Duration' must be >= 0, 'Step' must be <= 'Duration' and 'Target error' must be > 0).
         if (integration_method_var_choice == 0)
         {
             if (!(epoch >= 0.0 && dur > 0.0 && step <= dur))
-                errors.push_back("[Error] : Invalid set of 'Epoch', 'Duration', 'Step'.\n");
+                {console.add_timed_text("[Error] : Invalid set of 'Epoch', 'Duration', 'Step'.\n"); return false;}
         }
         else
         {
             if (!(epoch >= 0.0 && dur > 0.0 && target_error > 0.0))
-                errors.push_back("[Error] : Invalid set of 'Epoch', 'Duration', 'Target error'.\n");
+                {console.add_timed_text("[Error] : Invalid set of 'Epoch', 'Duration', 'Target error'.\n"); return false;}
         }
 
-        //Possible error 11 : Relative position/velocity (mutual distance must be > 0).
+        //Possible error 10 : Relative position/velocity (mutual distance must be > 0).
         if (cart_kep_var_choice == 0 && length(dvec3{cart[0], cart[1], cart[2]}) <= 1e-15)
-            errors.push_back("[Error] : Invalid set of 'x', 'y', 'z' (mutual distance must be positive).\n");
+            {console.add_timed_text("[Error] : Invalid set of 'x', 'y', 'z' (mutual distance must be positive).\n"); return false;}
 
-        //Possible error 12 : Relative Keplerian elements ('a' must be > 0, 'e' must be in [0,1))
+        //Possible error 11 : Relative Keplerian elements ('a' must be > 0, 'e' must be in [0,1))
         //Note : 'e' can actually become >= 1 and handled, but first we need to extend the functions cart2kep() and kep2cart() a little bit (maybe later...).
         if (cart_kep_var_choice == 1)
         {
             if (kep[0] <= 0.0)
-                errors.push_back("[Error] : Semi-major axis 'a' must be positive.\n");
+                {console.add_timed_text("[Error] : Semi-major axis 'a' must be positive.\n"); return false;}
             if (kep[1] < 0.0 || fabs(kep[1] - 1.0) <= 1e-15)
-                errors.push_back("[Error] : Eccentricity 'e' must be in [0,1)U(1,inf).\n");
+                {console.add_timed_text("[Error] : Eccentricity 'e' must be in [0,1)U(1,inf).\n"); return false;}
         }
 
-        //Possible error 13 : Quaternion (both must be nonzero).
+        //Possible error 12 : Quaternion (both must be nonzero).
         //Note : In case of non normalized quaternion input, the program normalizes them both automatically.
         if (orient_var_choice == 1)
         {
             if (length(q1) <= 1e-15)
-                errors.push_back("[Error] : Quaternion 1 ('q10', 'q11', 'q12', 'q13') must be nonzero.\n");
+                {console.add_timed_text("[Error] : Quaternion 1 ('q10', 'q11', 'q12', 'q13') must be nonzero.\n"); return false;}
             else //Normalize it no matter what.
                 q1 = quat2unit(q1); //This correction will be visible in the gui.
 
             //The same for q2 :
             if (length(q2) <= 1e-15)
-                errors.push_back("[Error] : Quaternion 2 ('q20', 'q21', 'q22', 'q23') must be nonzero.\n");
+                {console.add_timed_text("[Error] : Quaternion 2 ('q20', 'q21', 'q22', 'q23') must be nonzero.\n"); return false;}
             else //Normalize it no matter what.
                 q2 = quat2unit(q2); //This correction will be visible in the gui.
         }
 
-        //Possible error 14 : 'OK' button in the Elliposid parameters window (it must be clicked so that the parameters are taken into account).
+        //Possible error 13 : 'OK' button in the Elliposid parameters window (it must be clicked so that the parameters are taken into account).
         if (impactor_checkbox && !impactor_clicked_ok)
-            errors.push_back("[Error] : 'OK' button must be pressed in the 'Impactor parameters' window.\n");
+            {console.add_timed_text("[Error] : 'OK' button must be pressed in the 'Impactor parameters' window.\n"); return false;}
 
-        //Possible error 15 : Impactor's parameters (mass must be >= 0).
+        //Possible error 14 : Impactor's parameters (mass must be >= 0).
         if (impactor_checkbox && M_impact < 0.0)
-            errors.push_back("[Error] : Impactor's 'Mass' must be non negative.\n");
-   
-        return errors;
+            {console.add_timed_text("[Error] : Impactor's 'Mass' must be non negative.\n"); return false;}
+
+        return true;
     }
 
     //This is the function that draws the properties panel and processes the corresponding logic.
@@ -635,7 +640,7 @@ public:
         }
 
         //Progress bar.
-        ImGui::Text("Simulation progress");
+        ImGui::Text("Integrator progress");
         if (task_was_aborted.load())
             ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.7f,0.0f,0.0f, 1.0f)); //Red.
         else
