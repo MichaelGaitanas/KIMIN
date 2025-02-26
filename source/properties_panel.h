@@ -271,7 +271,7 @@ public:
         //Possible error 9 : Time parameters ('Epoch' and 'Duration' must be >= 0, 'Step' must be <= 'Duration' and 'Target error' must be > 0).
         if (integration_method_var_choice == 0)
         {
-            if (!(epoch >= 0.0 && dur > 0.0 && step <= dur))
+            if (!(epoch >= 0.0 && dur > 0.0 && step <= dur && step > 0.0))
                 {console.add_timed_text("[Error] : Invalid set of 'Epoch', 'Duration', 'Step'.\n"); return false;}
         }
         else
