@@ -1,3 +1,5 @@
+/* This class handles the rendering logic of the left panel (properties) in the gui */
+
 #ifndef PROPERTIES_PANEL_H
 #define PROPERTIES_PANEL_H
 

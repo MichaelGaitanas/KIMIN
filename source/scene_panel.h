@@ -1,3 +1,5 @@
+/* This class handles the rendering logic of the right panel (scene) in the gui AND the actual 3D scene. */
+
 #ifndef SCENE_PANEL_H
 #define SCENE_PANEL_H
 
@@ -170,14 +172,12 @@ private:
         ImGui::Dummy(ImVec2(0.0f,7.5f));
     }
 
-    void content3D()
+    void render_3d_content()
     {
         glClear(GL_DEPTH_BUFFER_BIT);
         
-        if (!sol.integr.properties.poly1.isGLReady())
-            sol.integr.properties.poly1.set_as_gl_mesh();
-        if (!sol.integr.properties.poly2.isGLReady())
-            sol.integr.properties.poly2.set_as_gl_mesh();
+        sol.integr.properties.poly1.set_as_gl_mesh();
+        sol.integr.properties.poly2.set_as_gl_mesh();
         
         static shader shad("../shaders/vertex/trans_mvpn.vert", "../shaders/fragment/dir_light_ad.frag");
         shad.use();
@@ -216,7 +216,8 @@ private:
         shad.set_mat4_uniform("model", model);
         sol.integr.properties.poly2.draw_gl_mesh();
 
-        if (play_pause_video && current_frame < total_frames - 1) current_frame++;
+        if (play_pause_video && current_frame < total_frames - 1)
+            current_frame++;
     }
 
     void render_scene_buttons()
@@ -268,7 +269,7 @@ private:
 
             ImGui::Text("Time : %.2f  [days]",(float)sol.t[current_frame]);
             //Now we call our 3D content rendering function.
-            content3D();
+            render_3d_content();
         }
     }
 

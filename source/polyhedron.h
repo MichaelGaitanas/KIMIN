@@ -19,22 +19,21 @@
 class polyhedron
 {
 private:
-    bool norms_exist;
-    bool edges_exist;
-    bool vol_exists;
-
     dmatnx3 verts;
     umatnx3 faces;
     dmatnx3 norms;
     umatnx2 edges;
-    
-    double vol;
+
+    double vol; //Polyhedron's volume.
+
+    bool norms_exist;
+    bool edges_exist;
+    bool vol_exists;
 
     //OpenGL - related members.
-    bool gl_ready = false;  //Have we uploaded to GPU?
-    unsigned int  gl_vao = 0; //VAO handle
-    unsigned int  gl_vbo = 0; //VBO handle
-    size_t  gl_vertexCount = 0; //*triangle* vertices in the buffer
+    bool gl_ready = false; //Whether or not the mesh data are uploaded to the gpu.
+    unsigned int gl_vao = 0, gl_vbo = 0; //Vertex array and vertex buffer objects.
+    size_t gl_vertex_count = 0; //*triangle* vertices in the interleaved buffer.
 
 public:
     //Load the .obj file assuming it contains vertcies and faces ('v x y z' and 'f i j k').
@@ -413,7 +412,7 @@ public:
             double nz = norms[i][2];
             double d = x1*nx + y1*ny + z1*nz; //x*nx + y*ny + z*nz - d = 0 (plane equation)
 
-            //Pick the index of the greatest absolute normal component, as this will be the most stable in the computation of the center of mass (sum).
+            //Pick the index of the greatest absolute normal component, as this will be the most stable in the computation.
             double absnx = fabs(nx);
             double absny = fabs(ny);
             double absnz = fabs(nz);
@@ -492,7 +491,7 @@ public:
             double nz = norms[i][2];
             double d = x1*nx + y1*ny + z1*nz; //x*nx + y*ny + z*nz - d = 0 (plane equation)
             
-            //Pick the index of the greatest absolute normal component, as this will be the most stable in the computation of the center of mass (sum).
+            //Pick the index of the greatest absolute normal component, as this will be the most stable in the computation.
             double absnx = fabs(nx);
             double absny = fabs(ny);
             double absnz = fabs(nz);
@@ -605,7 +604,7 @@ public:
             double nz = norms[i][2];
             double d = x1*nx + y1*ny + z1*nz; //x*nx + y*ny + z*nz - d = 0 (plane equation)
             
-            //Pick the index of the greatest absolute normal component, as this will be the most stable in the computation of the center of mass (sum).
+            //Pick the index of the greatest absolute normal component, as this will be the most stable in the computation.
             double absnx = fabs(nx);
             double absny = fabs(ny);
             double absnz = fabs(nz);
@@ -734,7 +733,7 @@ public:
             double nz = norms[i][2];
             double d = x1*nx + y1*ny + z1*nz; //x*nx + y*ny + z*nz - d = 0 (plane equation)
             
-            //Pick the index of the greatest absolute normal component, as this will be the most stable in the computation of the center of mass (sum).
+            //Pick the index of the greatest absolute normal component, as this will be the most stable in the computation.
             double absnx = fabs(nx);
             double absny = fabs(ny);
             double absnz = fabs(nz);
@@ -992,92 +991,70 @@ public:
         gen_norms();
     }
 
-    bool isGLReady() const
-    {
-        return gl_ready;
-    }
-
-    //Build and upload to the GPU an interleaved (position + normal) buffer for flat shading.
-    //Each face gets 3 vertices, each with the same normal = face normal.
+    //Build and upload to the GPU an interleaved (position + normal) buffer for flat shading (Lambert).
     void set_as_gl_mesh()
     {
-        //If we already have a VAO, destroy it first to avoid leaking.
+        //If the polyhedron is already ready for drawing, exit the function.
         if (gl_ready)
-            destroy_gl_mesh();
+            return;
 
-        // Safety check
+        clear_gl_mesh();
+
+        //Safety check.
         if (faces.empty() || verts.empty() || norms.empty())
         {
-            printf("polyhedron::set_as_gl_mesh() warning: no faces or norms.\n");
+            printf("Warning : In set_as_gl_mesh(), essential mesh data (vertices || faces || normals) are missing. Returning.\n");
             return;
         }
 
-        // Build a CPU-side array of floats: (x, y, z, nx, ny, nz) per vertex
-        std::vector<float> gl_data;
-        gl_data.reserve(faces.size() * 3 * 6); // 3 verts per face, 6 floats each
-
+        std::vector<float> interleaved_buffer;
+        interleaved_buffer.reserve(3*6*faces.size()); //3 vertices per face, 6 floats each.
         for (size_t i = 0; i < faces.size(); ++i)
         {
-            const dvec3 &normal = norms[i];
-            // For each of the 3 vertices of face i
+            const dvec3 &n = norms[i];
             for (int k = 0; k < 3; k++)
             {
-                unsigned int vidx = faces[i][k];
-                const dvec3 &pos = verts[vidx];
+                const dvec3 &v = verts[faces[i][k]];
 
-                // position
-                gl_data.push_back((float)pos[0]);
-                gl_data.push_back((float)pos[1]);
-                gl_data.push_back((float)pos[2]);
-                // normal
-                gl_data.push_back((float)normal[0]);
-                gl_data.push_back((float)normal[1]);
-                gl_data.push_back((float)normal[2]);
+                interleaved_buffer.push_back((float)v[0]);
+                interleaved_buffer.push_back((float)v[1]);
+                interleaved_buffer.push_back((float)v[2]);
+
+                interleaved_buffer.push_back((float)n[0]);
+                interleaved_buffer.push_back((float)n[1]);
+                interleaved_buffer.push_back((float)n[2]);
             }
         }
+        gl_vertex_count = interleaved_buffer.size()/6; //Because each vertex has 6 float attributes bound.
 
-        // The total number of triangle vertices
-        gl_vertexCount = gl_data.size() / 6; // each vertex has 6 floats
-
-        // Create and bind a VAO
         glGenVertexArrays(1, &gl_vao);
-
         glBindVertexArray(gl_vao);
 
-        // Create a VBO and upload the data
         glGenBuffers(1, &gl_vbo);
         glBindBuffer(GL_ARRAY_BUFFER, gl_vbo);
-        glBufferData(GL_ARRAY_BUFFER, gl_data.size() * sizeof(float), gl_data.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, interleaved_buffer.size()*sizeof(float), interleaved_buffer.data(), GL_STATIC_DRAW);
 
-        // Enable and specify the layout of the position data (location = 0)
-        // stride = 6 * sizeof(float), position offset = 0
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)0);
         glEnableVertexAttribArray(0);
 
-        // Enable and specify the layout of the normal data (location = 1)
-        // normal offset = 3 * sizeof(float)
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)(3*sizeof(float)));
         glEnableVertexAttribArray(1);
 
-        // Unbind VAO (so we don’t accidentally modify it elsewhere)
         glBindVertexArray(0);
 
         gl_ready = true;
     }
 
-    // Simple draw function: bind VAO, draw triangles
+    //Draw the polyhedral mesh.
     void draw_gl_mesh() const
     {
-        if (!gl_ready)
-            return; // Nothing to draw
-
         glBindVertexArray(gl_vao);
-        glDrawArrays(GL_TRIANGLES, 0, (GLsizei)gl_vertexCount);
+        glDrawArrays(GL_TRIANGLES, 0, (GLsizei)gl_vertex_count);
         glBindVertexArray(0);
     }
 
-    // Cleanup GPU resources
-    void destroy_gl_mesh()
+    //Cleanup GPU resources. This basically resets the OpenGL - related members back to what u see in the beginning of the class.
+    void clear_gl_mesh()
     {
         if (gl_vbo != 0)
         {
@@ -1089,8 +1066,8 @@ public:
             glDeleteVertexArrays(1, &gl_vao);
             gl_vao = 0;
         }
-        gl_vertexCount = 0;
-        gl_ready       = false;
+        gl_vertex_count = 0;
+        gl_ready = false;
     }
 };
 

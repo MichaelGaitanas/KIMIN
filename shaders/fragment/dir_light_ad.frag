@@ -13,7 +13,7 @@ vec3 light_dir = vec3(1.0f,1.0f,1.0f); //Direction of the (directional) light in
 void main()
 {
     //Ambient color component.
-    float ambient = 0.15f;
+    float ambient = 0.1f;
 
     //Diffuse color component.
     vec3 norm = normalize(normal);

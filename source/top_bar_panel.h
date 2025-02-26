@@ -1,3 +1,5 @@
+/* This class handles the rendering logic of the top bar in the gui. */
+
 #ifndef TOP_BAR_PANEL_H
 #define TOP_BAR_PANEL_H
 
