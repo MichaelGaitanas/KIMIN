@@ -223,7 +223,7 @@ private:
     void render_scene_buttons()
     {
         ImGui::Dummy(ImVec2(0.0f,7.5f));
-        ImGui::Text("State");
+        ImGui::Text("Content state");
         render_scene = common_onoff_button("Render", ImVec2(80.0f, 25.0f), render_scene);
 
         ImGui::SameLine();
@@ -251,6 +251,12 @@ private:
                 ImGui::Text("Time : %.2f  [days]",(float)sol.t[current_frame]);
 
             ImGui::EndDisabled();
+
+            ImGui::Dummy(ImVec2(0.0f,7.5f));
+            ImGui::Separator();
+            ImGui::Dummy(ImVec2(0.0f,7.5f));
+
+            ImGui::Text("Camera");
         }
         else
         {
@@ -268,6 +274,13 @@ private:
             ImGui::SliderInt("##36", &frame_rate, 0, 60, "%d");
 
             ImGui::Text("Time : %.2f  [days]",(float)sol.t[current_frame]);
+
+            ImGui::Dummy(ImVec2(0.0f,7.5f));
+            ImGui::Separator();
+            ImGui::Dummy(ImVec2(0.0f,7.5f));
+
+            ImGui::Text("Camera");
+
             //Now we call our 3D content rendering function.
             render_3d_content();
         }
