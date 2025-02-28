@@ -29,7 +29,7 @@ private:
     bool render_scene, play_pause_video;
     uint64_t zero_frame, current_frame, total_frames;
 
-    // New members for frame rate update
+    //New members for frame rate update
     int frame_rate;           // Frame updates per second (from slider: 0 to 60)
     float frame_accumulator;  // Accumulates fractional frames between updates
 
@@ -217,7 +217,33 @@ private:
         sol.integr.properties.poly2.draw_gl_mesh();
 
         if (play_pause_video && current_frame < total_frames - 1)
-            current_frame++;
+        {
+            if (frame_rate == 0)
+            {
+                // The slider is set to 0 => paused
+                // Do not increment current_frame
+            }
+            else if (frame_rate < 60)
+            {
+                // We do a time-based step to achieve the chosen frame_rate
+                frame_accumulator += ImGui::GetIO().DeltaTime;
+                float step = 1.0f / static_cast<float>(frame_rate);
+
+                // In case dt is large (e.g., if the user drags the window), 
+                // use a while() so we don’t “miss” increments:
+                while (frame_accumulator >= step && current_frame < total_frames - 1)
+                {
+                    current_frame++;
+                    frame_accumulator -= step;
+                }
+            }
+            else
+            {
+                // frame_rate == 60 => let it play as fast as the machine can handle
+                // i.e. increment every time we render:
+                current_frame++;
+            }
+        }
     }
 
     void render_scene_buttons()
