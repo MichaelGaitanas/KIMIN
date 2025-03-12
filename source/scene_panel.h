@@ -333,8 +333,8 @@ public:
 
     void copy_solution(const solution &full_sol)
     {
-        //Create a reduced copy for plotting (e.g., 1000 points) without modifying full_sol
-        solution plot_sol = full_sol.get_reduced_solution(1000);
+        //Create a reduced copy for plotting (e.g., 4000 points) without modifying full_sol
+        solution plot_sol = full_sol.get_reduced_solution(4000);
         this->sol = full_sol;
         this->sol_reduced = plot_sol;
         current_frame = 0; //(Re)set the whole scene to correspond at the first frame. This will automatically set the frame slider to 0
