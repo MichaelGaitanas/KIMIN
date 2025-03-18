@@ -110,7 +110,7 @@ public:
         glClearColor(0.06f,0.06f,0.06f,1.0f);
         while (!glfwWindowShouldClose(wpointer))
         {
-            glClear(GL_COLOR_BUFFER_BIT);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             ui.begin();
             ui.topbar.render();

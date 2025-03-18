@@ -33,6 +33,8 @@ private:
     int frame_rate;           // Frame updates per second (from slider: 0 to 60)
     float frame_accumulator;  // Accumulates fractional frames between updates
 
+    float cam_fov;
+
     solution sol, sol_reduced;
 
     int win_width, win_height;
@@ -173,9 +175,7 @@ private:
     }
 
     void render_3d_content()
-    {
-        glClear(GL_DEPTH_BUFFER_BIT);
-        
+    {        
         sol.integr.properties.poly1.set_as_gl_mesh();
         sol.integr.properties.poly2.set_as_gl_mesh();
         
@@ -185,7 +185,7 @@ private:
         glm::vec3 cam_pos = glm::vec3(0.0f,-5.0f,3.0f);
         glm::vec3 cam_aim = glm::vec3(0.0f,0.0f,0.0f);
         glm::vec3 cam_up = glm::vec3(0.0f,0.0f,1.0f);
-        glm::mat4 projection = glm::infinitePerspective(glm::radians(45.0f), (float)win_width/(float)win_height, 0.5f);
+        glm::mat4 projection = glm::infinitePerspective(glm::radians(cam_fov), (float)win_width/(float)win_height, 0.5f);
         glm::mat4 view = glm::lookAt(cam_pos, cam_aim, cam_up);
         shad.set_mat4_uniform("projection", projection);
         shad.set_mat4_uniform("view", view);
@@ -283,6 +283,9 @@ private:
             ImGui::Dummy(ImVec2(0.0f,7.5f));
 
             ImGui::Text("Camera");
+            ImGui::Text("FoV");
+            ImGui::SameLine();
+            ImGui::SliderFloat("[deg]", &cam_fov, 1.0f, 179.0f, "%.0f");
         }
         else
         {
@@ -306,6 +309,9 @@ private:
             ImGui::Dummy(ImVec2(0.0f,7.5f));
 
             ImGui::Text("Camera");
+            ImGui::Text("FoV");
+            ImGui::SameLine();
+            ImGui::SliderFloat("[deg]", &cam_fov, 1.0f, 179.0f, "%.0f");
 
             //Now we call our 3D content rendering function.
             render_3d_content();
@@ -327,8 +333,9 @@ public:
                     zero_frame(0),
                     current_frame(0),
                     total_frames(0),
-                    frame_rate(0), // Start with 0 fps update (effectively paused)
-                    frame_accumulator(0.0f)
+                    frame_rate(60),
+                    frame_accumulator(0.0f),
+                    cam_fov(45.0f)
     { }
 
     void copy_solution(const solution &full_sol)

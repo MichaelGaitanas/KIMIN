@@ -1,3 +1,5 @@
+/* Commonly used variable types throughout the whole project. */
+
 #ifndef TYPEDEF_H
 #define TYPEDEF_H
 
@@ -5,8 +7,6 @@
 #include<vector>
 #include<string>
 #include<complex>
-
-/* Commonly used variable types. */
 
 typedef std::string str; //Classical std string.
 typedef std::vector<str> strvec; //Vector of n std strings.
