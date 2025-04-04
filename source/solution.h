@@ -5,6 +5,7 @@
 #include<cmath>
 #include<atomic>
 #include<nlohmann/json.hpp>
+#include<algorithm>
 
 #include"constant.h"
 #include"typedef.h"

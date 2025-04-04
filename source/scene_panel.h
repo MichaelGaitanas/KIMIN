@@ -29,16 +29,66 @@ private:
     bool render_scene, play_pause_video;
     uint64_t zero_frame, current_frame, total_frames;
 
-    //New members for frame rate update
-    int frame_rate;           // Frame updates per second (from slider: 0 to 60)
-    float frame_accumulator;  // Accumulates fractional frames between updates
+    int frame_rate;  //Frame updates per second.
+    float frame_accumulator;  //Accumulates fractional frames between updates.
 
-    float cam_fov;
+    float cam_dist, cam_lon, cam_lat; //Camera's position in spherical coordinates.
+    float cam_fov; //Camera's (vertical) field of view.
+    glm::vec3 cam_aim;
+    float rmin_com, rmax_com;
 
-    solution sol, sol_reduced;
+    float dir_light_lon, dir_light_lat; //Light's direction (longitude and latitude).
+    glm::vec3 aster1_col, aster2_col; //Colors of the asteroids.
 
-    int win_width, win_height;
+    solution sol, sol_reduced; //The 'sol' contains all the orbital data and is used to render the 3D scene. The 'sol_reduced' is used for the 2D plots.
 
+    int win_width, win_height; //These are copies of the members 'width' and 'height' of the window class. Neede to compute the projection matrix.
+
+public:
+    scene_panel() : plot_cart({false,false,false,false, false,false,false,false}),
+                    plot_kep({false,false,false,false,false,false}),
+                    plot_rpy1({false,false,false}),
+                    plot_rpy2({false,false,false}),
+                    plot_w1i({false,false,false}),
+                    plot_w1b({false,false,false}),
+                    plot_w2i({false,false,false}),
+                    plot_w2b({false,false,false}),
+                    plot_ener_mom_rel_err({false,false}),
+                    render_scene(false),
+                    play_pause_video(false),
+                    zero_frame(0),
+                    current_frame(0),
+                    total_frames(0),
+                    frame_rate(60),
+                    frame_accumulator(0.0f),
+                    cam_dist(0.0f),
+                    cam_lon(270.0f),
+                    cam_lat(60.0f),
+                    cam_fov(60.0f),
+                    cam_aim(glm::vec3(0.0f,0.0f,0.0f)),
+                    rmin_com(0.0f),
+                    rmax_com(0.0f),
+                    dir_light_lon(0.0f),
+                    dir_light_lat(45.0f),
+                    aster1_col(glm::vec3(0.6f,0.6f,0.6f)),
+                    aster2_col(glm::vec3(0.6f,0.6f,0.6f))
+    { }
+
+    void copy_solution(const solution &full_sol)
+    {
+        //Create a reduced copy for plotting (e.g., 4000 points) without modifying full_sol
+        solution plot_sol = full_sol.get_reduced_solution(4000);
+        this->sol = full_sol;
+        this->sol_reduced = plot_sol;
+        current_frame = 0; //(Re)set the whole scene to correspond at the first frame. This will automatically set the frame slider to 0
+        play_pause_video = false; //Pause state.
+
+        rmin_com = sol.integr.brillouin1 + sol.integr.brillouin2;
+        rmax_com = *std::max_element(sol.dist.begin(), sol.dist.end());
+        cam_dist = 5.0f*(*std::max_element(sol.dist.begin(), sol.dist.end()));
+    }
+
+    //This function controls the on/off logic of a clickable button in the gui.
     bool common_onoff_button(const char *label, const ImVec2 &dimensions, bool state)
     {
         if (state)
@@ -53,7 +103,7 @@ private:
         return state;
     }
 
-    inline size_t map_frame_to_reduced(const size_t frame, const size_t original_size, const size_t reduced_size)
+    inline size_t map_frame_to_reduced_sol(const size_t frame, const size_t original_size, const size_t reduced_size)
     {
         //Edge cases.
         if (reduced_size == 0 || original_size <= 1 || reduced_size <= 1)
@@ -65,13 +115,14 @@ private:
         //Round to nearest integer.
         size_t i_reduced = (size_t)std::floor(val + 0.5);
     
-        //Clamp to [0, reduced_size - 1]
+        //Clamp to [0, reduced_size - 1].
         if (i_reduced >= reduced_size)
             i_reduced = reduced_size - 1;
     
         return i_reduced;
     }
 
+    //This function plots the data {t,f(t)}, where t is time and f(t) is the plot_func.
     bool common_plot(const char *begin_id, const char *begin_plot_id, const char *yaxis_str, bool bool_plot_func, dvec &plot_func)
     {
         ImGui::SetNextWindowPos( ImVec2(4.0f*ImGui::GetIO().DisplaySize.x/7.0f, 0.0f), ImGuiCond_FirstUseEver);
@@ -84,7 +135,7 @@ private:
             ImPlot::PlotLine("", &sol_reduced.t[0], &plot_func[0], sol_reduced.t.size());
             
             //Current frame marker logic :
-            size_t i_reduced = map_frame_to_reduced(current_frame, sol.t.size(), sol_reduced.t.size());
+            size_t i_reduced = map_frame_to_reduced_sol(current_frame, sol.t.size(), sol_reduced.t.size());
             ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 6.0f, ImColor(0, 255, 0, 255), 1.0f, ImColor(0, 255, 0, 255));
             ImPlot::PlotScatter("Current frame", &sol_reduced.t[i_reduced], &plot_func[i_reduced], 1);
 
@@ -99,99 +150,39 @@ private:
         ImGui::End();
         return bool_plot_func;
     }
-    
-    void render_plot_buttons()
-    {
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
-
-        ImGui::Text("Position (relative)");
-        plot_cart[0] = common_onoff_button("x", ImVec2(50.0f, 20.0f), plot_cart[0]); ImGui::SameLine();
-        plot_cart[1] = common_onoff_button("y", ImVec2(50.0f, 20.0f), plot_cart[1]); ImGui::SameLine();
-        plot_cart[2] = common_onoff_button("z", ImVec2(50.0f, 20.0f), plot_cart[2]); ImGui::SameLine();
-        plot_cart[3] = common_onoff_button("r", ImVec2(50.0f, 20.0f), plot_cart[3]);
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
-
-        ImGui::Text("Velocity (relative)");
-        plot_cart[4] = common_onoff_button("υx", ImVec2(50.0f, 20.0f), plot_cart[4]); ImGui::SameLine();
-        plot_cart[5] = common_onoff_button("υy", ImVec2(50.0f, 20.0f), plot_cart[5]); ImGui::SameLine();
-        plot_cart[6] = common_onoff_button("υz", ImVec2(50.0f, 20.0f), plot_cart[6]); ImGui::SameLine();
-        plot_cart[7] = common_onoff_button("υ" , ImVec2(50.0f, 20.0f), plot_cart[7]);
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
-
-        ImGui::Text("Keplerian elements (relative)");
-        plot_kep[0] = common_onoff_button("a", ImVec2(35.0f, 20.0f), plot_kep[0]); ImGui::SameLine();
-        plot_kep[1] = common_onoff_button("e", ImVec2(35.0f, 20.0f), plot_kep[1]); ImGui::SameLine();
-        plot_kep[2] = common_onoff_button("i", ImVec2(35.0f, 20.0f), plot_kep[2]); ImGui::SameLine();
-        plot_kep[3] = common_onoff_button("Ω", ImVec2(35.0f, 20.0f), plot_kep[3]); ImGui::SameLine();
-        plot_kep[4] = common_onoff_button("ω", ImVec2(35.0f, 20.0f), plot_kep[4]); ImGui::SameLine();
-        plot_kep[5] = common_onoff_button("M", ImVec2(35.0f, 20.0f), plot_kep[5]);
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
-
-        ImGui::Text("Euler angles (XYZ)");
-        plot_rpy1[0] = common_onoff_button("roll 1",  ImVec2(50.0f, 20.0f), plot_rpy1[0]); ImGui::SameLine();
-        plot_rpy1[1] = common_onoff_button("pitch 1", ImVec2(50.0f, 20.0f), plot_rpy1[1]); ImGui::SameLine();
-        plot_rpy1[2] = common_onoff_button("yaw 1",   ImVec2(50.0f, 20.0f), plot_rpy1[2]);
-        plot_rpy2[0] = common_onoff_button("roll 2",  ImVec2(50.0f, 20.0f), plot_rpy2[0]); ImGui::SameLine();
-        plot_rpy2[1] = common_onoff_button("pitch 2", ImVec2(50.0f, 20.0f), plot_rpy2[1]); ImGui::SameLine();
-        plot_rpy2[2] = common_onoff_button("yaw 2",   ImVec2(50.0f, 20.0f), plot_rpy2[2]);
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
-
-        ImGui::Text("Body 1 angular velocity (inertial/body)");
-        plot_w1i[0] = common_onoff_button("ω1ix", ImVec2(50.0f, 20.0f), plot_w1i[0]); ImGui::SameLine();
-        plot_w1i[1] = common_onoff_button("ω1iy", ImVec2(50.0f, 20.0f), plot_w1i[1]); ImGui::SameLine();
-        plot_w1i[2] = common_onoff_button("ω1iz", ImVec2(50.0f, 20.0f), plot_w1i[2]);
-        plot_w1b[0] = common_onoff_button("ω1bx", ImVec2(50.0f, 20.0f), plot_w1b[0]); ImGui::SameLine();
-        plot_w1b[1] = common_onoff_button("ω1by", ImVec2(50.0f, 20.0f), plot_w1b[1]); ImGui::SameLine();
-        plot_w1b[2] = common_onoff_button("ω1bz", ImVec2(50.0f, 20.0f), plot_w1b[2]);
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
-
-        ImGui::Text("Body 2 angular velocity (inertial/body)");
-        plot_w2i[0] = common_onoff_button("ω2ix", ImVec2(50.0f, 20.0f), plot_w2i[0]); ImGui::SameLine();
-        plot_w2i[1] = common_onoff_button("ω2iy", ImVec2(50.0f, 20.0f), plot_w2i[1]); ImGui::SameLine();
-        plot_w2i[2] = common_onoff_button("ω2iz", ImVec2(50.0f, 20.0f), plot_w2i[2]);
-        plot_w2b[0] = common_onoff_button("ω2bx", ImVec2(50.0f, 20.0f), plot_w2b[0]); ImGui::SameLine();
-        plot_w2b[1] = common_onoff_button("ω2by", ImVec2(50.0f, 20.0f), plot_w2b[1]); ImGui::SameLine();
-        plot_w2b[2] = common_onoff_button("ω2bz", ImVec2(50.0f, 20.0f), plot_w2b[2]);
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
-
-        ImGui::Text("Integrals of motion errors");
-        plot_ener_mom_rel_err[0] = common_onoff_button("Energy",   ImVec2(80.0f, 25.0f), plot_ener_mom_rel_err[0]); ImGui::SameLine();
-        plot_ener_mom_rel_err[1] = common_onoff_button("Momentum", ImVec2(80.0f, 25.0f), plot_ener_mom_rel_err[1]);
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
-    }
 
     void render_3d_content()
-    {        
+    {
+        //Prepare the polyhedral meshes for rendering, by the running appropriate - GPU - tasks.
         sol.integr.properties.poly1.set_as_gl_mesh();
         sol.integr.properties.poly2.set_as_gl_mesh();
         
+        //Instantiate the shader.
         static shader shad("../shaders/vertex/trans_mvpn.vert", "../shaders/fragment/dir_light_ad.frag");
         shad.use();
 
-        glm::vec3 cam_pos = glm::vec3(0.0f,-5.0f,3.0f);
-        glm::vec3 cam_aim = glm::vec3(0.0f,0.0f,0.0f);
-        glm::vec3 cam_up = glm::vec3(0.0f,0.0f,1.0f);
-        glm::mat4 projection = glm::infinitePerspective(glm::radians(cam_fov), (float)win_width/(float)win_height, 0.5f);
+        //The user controls the light's direction from the gui, assuming spherical coords (longitude and latitude).
+        //Here we convert them back to Cartesian coords and end them to the fragment shader.
+        glm::vec3 light_dir = glm::vec3(cos(glm::radians(dir_light_lon))*sin(glm::radians(dir_light_lat)),
+                                        sin(glm::radians(dir_light_lon))*sin(glm::radians(dir_light_lat)),
+                                        cos(glm::radians(dir_light_lat)));
+        shad.set_vec3_uniform("light_dir", light_dir);
+
+        glm::mat4 projection = glm::infinitePerspective(glm::radians(cam_fov), win_width/(float)win_height, 0.1f);
+
+        glm::vec3 cam_pos = cam_dist*glm::vec3(cos(glm::radians(cam_lon))*sin(glm::radians(cam_lat)),
+                                               sin(glm::radians(cam_lon))*sin(glm::radians(cam_lat)),
+                                               cos(glm::radians(cam_lat)));
+        //The cam_up vector is equal to the minus unit latitude basis vector (expressed as a function of the cartesian unit vectors). cam_up = -hat(θ(hat(x),hat(y),hat(z))).
+        glm::vec3 cam_up = -glm::vec3(cos(glm::radians(cam_lat))*cos(glm::radians(cam_lon)),
+                                      cos(glm::radians(cam_lat))*sin(glm::radians(cam_lon)),
+                                     -sin(glm::radians(cam_lat)));
         glm::mat4 view = glm::lookAt(cam_pos, cam_aim, cam_up);
         shad.set_mat4_uniform("projection", projection);
         shad.set_mat4_uniform("view", view);
 
-       double cm1fac = -sol.integr.properties.M2/(sol.integr.properties.M1 + sol.integr.properties.M2);
-       double cm2fac =  sol.integr.properties.M1/(sol.integr.properties.M1 + sol.integr.properties.M2);
+        double cm1fac = -sol.integr.properties.M2/(sol.integr.properties.M1 + sol.integr.properties.M2);
+        double cm2fac =  sol.integr.properties.M1/(sol.integr.properties.M1 + sol.integr.properties.M2);
 
         glm::vec3 pos1 = (float)cm1fac*glm::vec3(sol.x[current_frame],sol.y[current_frame],sol.z[current_frame]);
         glm::vec3 pos2 = (float)cm2fac*glm::vec3(sol.x[current_frame],sol.y[current_frame],sol.z[current_frame]);
@@ -204,6 +195,7 @@ private:
         if (sol.integr.properties.ell_checkbox)
             model = glm::scale(model, glm::vec3(sol.integr.properties.semiaxes1[0], sol.integr.properties.semiaxes1[1], sol.integr.properties.semiaxes1[2]));
         shad.set_mat4_uniform("model", model);
+        shad.set_vec3_uniform("mesh_col", aster1_col);
         sol.integr.properties.poly1.draw_gl_mesh();
 
         model = glm::mat4(1.0f);
@@ -214,6 +206,7 @@ private:
         if (sol.integr.properties.ell_checkbox)
             model = glm::scale(model, glm::vec3(sol.integr.properties.semiaxes2[0], sol.integr.properties.semiaxes2[1], sol.integr.properties.semiaxes2[2]));
         shad.set_mat4_uniform("model", model);
+        shad.set_vec3_uniform("mesh_col", aster2_col);
         sol.integr.properties.poly2.draw_gl_mesh();
 
         if (play_pause_video && current_frame < total_frames - 1)
@@ -245,111 +238,190 @@ private:
             }
         }
     }
+    
+    //Draw the 2D plot buttons in the gui.
+    void render_plot_buttons()
+    {
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
+
+        ImGui::Text("Position (relative)");
+        plot_cart[0] = common_onoff_button("x##1", ImVec2(50.0f, 20.0f), plot_cart[0]); ImGui::SameLine();
+        plot_cart[1] = common_onoff_button("y##2", ImVec2(50.0f, 20.0f), plot_cart[1]); ImGui::SameLine();
+        plot_cart[2] = common_onoff_button("z##3", ImVec2(50.0f, 20.0f), plot_cart[2]); ImGui::SameLine();
+        plot_cart[3] = common_onoff_button("r##4", ImVec2(50.0f, 20.0f), plot_cart[3]);
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
+
+        ImGui::Text("Velocity (relative)");
+        plot_cart[4] = common_onoff_button("υx##5", ImVec2(50.0f, 20.0f), plot_cart[4]); ImGui::SameLine();
+        plot_cart[5] = common_onoff_button("υy##6", ImVec2(50.0f, 20.0f), plot_cart[5]); ImGui::SameLine();
+        plot_cart[6] = common_onoff_button("υz##7", ImVec2(50.0f, 20.0f), plot_cart[6]); ImGui::SameLine();
+        plot_cart[7] = common_onoff_button("υ##8" , ImVec2(50.0f, 20.0f), plot_cart[7]);
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
+
+        ImGui::Text("Keplerian elements (relative)");
+        plot_kep[0] = common_onoff_button("a##9", ImVec2(35.0f, 20.0f), plot_kep[0]); ImGui::SameLine();
+        plot_kep[1] = common_onoff_button("e##10", ImVec2(35.0f, 20.0f), plot_kep[1]); ImGui::SameLine();
+        plot_kep[2] = common_onoff_button("i##11", ImVec2(35.0f, 20.0f), plot_kep[2]); ImGui::SameLine();
+        plot_kep[3] = common_onoff_button("Ω##12", ImVec2(35.0f, 20.0f), plot_kep[3]); ImGui::SameLine();
+        plot_kep[4] = common_onoff_button("ω##13", ImVec2(35.0f, 20.0f), plot_kep[4]); ImGui::SameLine();
+        plot_kep[5] = common_onoff_button("M##14", ImVec2(35.0f, 20.0f), plot_kep[5]);
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
+
+        ImGui::Text("Euler angles (XYZ)");
+        plot_rpy1[0] = common_onoff_button("roll 1##15",  ImVec2(50.0f, 20.0f), plot_rpy1[0]); ImGui::SameLine();
+        plot_rpy1[1] = common_onoff_button("pitch 1##16", ImVec2(50.0f, 20.0f), plot_rpy1[1]); ImGui::SameLine();
+        plot_rpy1[2] = common_onoff_button("yaw 1##17",   ImVec2(50.0f, 20.0f), plot_rpy1[2]);
+        plot_rpy2[0] = common_onoff_button("roll 2##18",  ImVec2(50.0f, 20.0f), plot_rpy2[0]); ImGui::SameLine();
+        plot_rpy2[1] = common_onoff_button("pitch 2##19", ImVec2(50.0f, 20.0f), plot_rpy2[1]); ImGui::SameLine();
+        plot_rpy2[2] = common_onoff_button("yaw 2##20",   ImVec2(50.0f, 20.0f), plot_rpy2[2]);
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
+
+        ImGui::Text("Body 1 angular velocity (inertial/body)");
+        plot_w1i[0] = common_onoff_button("ω1ix##21", ImVec2(50.0f, 20.0f), plot_w1i[0]); ImGui::SameLine();
+        plot_w1i[1] = common_onoff_button("ω1iy##22", ImVec2(50.0f, 20.0f), plot_w1i[1]); ImGui::SameLine();
+        plot_w1i[2] = common_onoff_button("ω1iz##23", ImVec2(50.0f, 20.0f), plot_w1i[2]);
+        plot_w1b[0] = common_onoff_button("ω1bx##24", ImVec2(50.0f, 20.0f), plot_w1b[0]); ImGui::SameLine();
+        plot_w1b[1] = common_onoff_button("ω1by##25", ImVec2(50.0f, 20.0f), plot_w1b[1]); ImGui::SameLine();
+        plot_w1b[2] = common_onoff_button("ω1bz##26", ImVec2(50.0f, 20.0f), plot_w1b[2]);
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
+
+        ImGui::Text("Body 2 angular velocity (inertial/body)");
+        plot_w2i[0] = common_onoff_button("ω2ix##27", ImVec2(50.0f, 20.0f), plot_w2i[0]); ImGui::SameLine();
+        plot_w2i[1] = common_onoff_button("ω2iy##28", ImVec2(50.0f, 20.0f), plot_w2i[1]); ImGui::SameLine();
+        plot_w2i[2] = common_onoff_button("ω2iz##29", ImVec2(50.0f, 20.0f), plot_w2i[2]);
+        plot_w2b[0] = common_onoff_button("ω2bx##30", ImVec2(50.0f, 20.0f), plot_w2b[0]); ImGui::SameLine();
+        plot_w2b[1] = common_onoff_button("ω2by##31", ImVec2(50.0f, 20.0f), plot_w2b[1]); ImGui::SameLine();
+        plot_w2b[2] = common_onoff_button("ω2bz##32", ImVec2(50.0f, 20.0f), plot_w2b[2]);
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
+
+        ImGui::Text("Integrals of motion errors");
+        plot_ener_mom_rel_err[0] = common_onoff_button("Energy##33",   ImVec2(80.0f, 25.0f), plot_ener_mom_rel_err[0]); ImGui::SameLine();
+        plot_ener_mom_rel_err[1] = common_onoff_button("Momentum##34", ImVec2(80.0f, 25.0f), plot_ener_mom_rel_err[1]);
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
+    }
 
     void render_scene_buttons()
     {
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
+        ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Text("Content state");
-        render_scene = common_onoff_button("Render", ImVec2(80.0f, 25.0f), render_scene);
-
+        render_scene = common_onoff_button("Render##35", ImVec2(80.0f, 25.0f), render_scene);
         ImGui::SameLine();
-        
         total_frames = static_cast<uint64_t>(sol.t.size());
         uint64_t max_frame = (total_frames > 0) ? total_frames - 1 : 0;
-        if (!render_scene)
+
+        bool disabled = !render_scene;
+
+        if (disabled)
         {
             ImGui::BeginDisabled();
-            ImGui::Button("Play/Pause",  ImVec2(80.0f, 25.0f));
-            ImGui::Dummy(ImVec2(0.0f,7.5f));
-            ImGui::Text("Frame");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(60.0f);
-            ImGui::SliderScalar("##35", ImGuiDataType_U64, &current_frame, &zero_frame, &max_frame, "%llu");
-
-            ImGui::Text("Rate");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(60.0f);
-            ImGui::SliderInt("##36", &frame_rate, 0, 60, "%d");
-
-            if (sol.t.empty())
-                ImGui::Text("Time : 0.00  [days]");
-            else
-                ImGui::Text("Time : %.2f  [days]",(float)sol.t[current_frame]);
-
+            ImGui::Button("Play/Pause", ImVec2(80.0f, 25.0f));
             ImGui::EndDisabled();
-
-            ImGui::Dummy(ImVec2(0.0f,7.5f));
-            ImGui::Separator();
-            ImGui::Dummy(ImVec2(0.0f,7.5f));
-
-            ImGui::Text("Camera");
-            ImGui::Text("FoV");
-            ImGui::SameLine();
-            ImGui::SliderFloat("[deg]", &cam_fov, 1.0f, 179.0f, "%.0f");
         }
         else
         {
             if (ImGui::Button("Play/Pause", ImVec2(80.0f, 25.0f)))
                 play_pause_video = !play_pause_video;
-            ImGui::Dummy(ImVec2(0.0f,7.5f));
-            ImGui::Text("Frame");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(60.0f);
-            ImGui::SliderScalar("##35", ImGuiDataType_U64, &current_frame, &zero_frame, &max_frame, "%llu");
-
-            ImGui::Text("Rate");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(60.0f);
-            ImGui::SliderInt("##36", &frame_rate, 0, 60, "%d");
-
-            ImGui::Text("Time : %.2f  [days]",(float)sol.t[current_frame]);
-
-            ImGui::Dummy(ImVec2(0.0f,7.5f));
-            ImGui::Separator();
-            ImGui::Dummy(ImVec2(0.0f,7.5f));
-
-            ImGui::Text("Camera");
-            ImGui::Text("FoV");
-            ImGui::SameLine();
-            ImGui::SliderFloat("[deg]", &cam_fov, 1.0f, 179.0f, "%.0f");
-
-            //Now we call our 3D content rendering function.
-            render_3d_content();
         }
-    }
 
-public:
-    scene_panel() : plot_cart({false,false,false,false, false,false,false,false}),
-                    plot_kep({false,false,false,false,false,false}),
-                    plot_rpy1({false,false,false}),
-                    plot_rpy2({false,false,false}),
-                    plot_w1i({false,false,false}),
-                    plot_w1b({false,false,false}),
-                    plot_w2i({false,false,false}),
-                    plot_w2b({false,false,false}),
-                    plot_ener_mom_rel_err({false,false}),
-                    render_scene(false),
-                    play_pause_video(false),
-                    zero_frame(0),
-                    current_frame(0),
-                    total_frames(0),
-                    frame_rate(60),
-                    frame_accumulator(0.0f),
-                    cam_fov(45.0f)
-    { }
+        if (disabled)
+            ImGui::BeginDisabled();
 
-    void copy_solution(const solution &full_sol)
-    {
-        //Create a reduced copy for plotting (e.g., 4000 points) without modifying full_sol
-        solution plot_sol = full_sol.get_reduced_solution(4000);
-        this->sol = full_sol;
-        this->sol_reduced = plot_sol;
-        current_frame = 0; //(Re)set the whole scene to correspond at the first frame. This will automatically set the frame slider to 0
-        play_pause_video = false; //Pause state.
+        ImGui::Dummy(ImVec2(0.0f, 7.5f));
+        ImGui::Text("Frame");
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(55.0f);
+        ImGui::SliderScalar("##36", ImGuiDataType_U64, &current_frame, &zero_frame, &max_frame, "%llu");
+
+        ImGui::Text("Rate");
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(55.0f);
+        ImGui::SliderInt("##37", &frame_rate, 0, 60, "%d");
+
+        if (sol.t.empty())
+            ImGui::Text("Time : 0.00  [days]");
+        else
+            ImGui::Text("Time : %.2f  [days]", (float)sol.t[current_frame]);
+
+        ImGui::Dummy(ImVec2(0.0f, 7.5f));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0.0f, 7.5f));
+
+        ImGui::Text("Camera setup");
+
+        ImGui::Text("Dist");
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(40.0f);
+        ImGui::SliderFloat("[km]##38", &cam_dist, 1.1f*rmin_com, 50.0f*rmax_com);
+
+        ImGui::Text("Lon");
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(40.0f);
+        ImGui::SliderFloat("[deg]##39", &cam_lon, 0.0f, 360.0f);
+
+        ImGui::Text("Lat");
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(40.0f);
+        ImGui::SliderFloat("[deg]##40", &cam_lat, 0.0f, 180.0f);
+
+        ImGui::Text("FoV");
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(40.0f);
+        ImGui::SliderFloat("[deg]##41", &cam_fov, 1.0f, 179.0f, "%.0f");
+
+        ImGui::Dummy(ImVec2(0.0f, 7.5f));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0.0f, 7.5f));
+
+        ImGui::Text("Sun direction");
+
+        ImGui::Text("Lon");
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(40.0f);
+        ImGui::SliderFloat("[deg]##42", &dir_light_lon, 0.0f, 360.0f);
+
+        ImGui::Text("Lat");
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(40.0f);
+        ImGui::SliderFloat("[deg]##43", &dir_light_lat, 0.0f, 180.0f);
+
+        ImGui::Dummy(ImVec2(0.0f, 7.5f));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0.0f, 7.5f));
+
+        ImGui::Text("Colors");
+
+        ImGui::Text("Body 1 ");
+        ImGui::SameLine();
+        ImGui::ColorEdit3("##44", glm::value_ptr(aster1_col), ImGuiColorEditFlags_NoInputs);
+
+        ImGui::Text("Body 2 ");
+        ImGui::SameLine();
+        ImGui::ColorEdit3("##45", glm::value_ptr(aster2_col), ImGuiColorEditFlags_NoInputs);
+
+        if (disabled)
+            ImGui::EndDisabled();
+
+        if (!disabled)
+            render_3d_content();
     }
     
     void render(const int win_width, const int win_height)
     {
+        //Copy the window's dimensions to the members.
         this->win_width = win_width;
         this->win_height = win_height;
 
@@ -370,49 +442,49 @@ public:
             {
                 render_plot_buttons();
 
-                if (plot_cart[0]) plot_cart[0] = common_plot("##1", "Relative x",        "x [km]",        plot_cart[0], sol_reduced.x);
-                if (plot_cart[1]) plot_cart[1] = common_plot("##2", "Relative y",        "y [km]",        plot_cart[1], sol_reduced.y);
-                if (plot_cart[2]) plot_cart[2] = common_plot("##3", "Relative z",        "z [km]",        plot_cart[2], sol_reduced.z);
-                if (plot_cart[3]) plot_cart[3] = common_plot("##4", "Relative distance", "distance [km]", plot_cart[3], sol_reduced.dist);
+                if (plot_cart[0]) plot_cart[0] = common_plot("##101", "Relative x",        "x [km]",        plot_cart[0], sol_reduced.x);
+                if (plot_cart[1]) plot_cart[1] = common_plot("##102", "Relative y",        "y [km]",        plot_cart[1], sol_reduced.y);
+                if (plot_cart[2]) plot_cart[2] = common_plot("##103", "Relative z",        "z [km]",        plot_cart[2], sol_reduced.z);
+                if (plot_cart[3]) plot_cart[3] = common_plot("##104", "Relative distance", "distance [km]", plot_cart[3], sol_reduced.dist);
 
-                if (plot_cart[4]) plot_cart[4] = common_plot("##5", "Relative υx",          "υx [km/sec]",          plot_cart[4], sol_reduced.vx);
-                if (plot_cart[5]) plot_cart[5] = common_plot("##6", "Relative υy",          "υy [km/sec]",          plot_cart[5], sol_reduced.vy);
-                if (plot_cart[6]) plot_cart[6] = common_plot("##7", "Relative υz",          "υz [km/sec]",          plot_cart[6], sol_reduced.vz);
-                if (plot_cart[7]) plot_cart[7] = common_plot("##8", "Relative υ magnitude", "υ magnitude [km/sec]", plot_cart[7], sol_reduced.vel);
+                if (plot_cart[4]) plot_cart[4] = common_plot("##105", "Relative υx",          "υx [km/sec]",          plot_cart[4], sol_reduced.vx);
+                if (plot_cart[5]) plot_cart[5] = common_plot("##106", "Relative υy",          "υy [km/sec]",          plot_cart[5], sol_reduced.vy);
+                if (plot_cart[6]) plot_cart[6] = common_plot("##107", "Relative υz",          "υz [km/sec]",          plot_cart[6], sol_reduced.vz);
+                if (plot_cart[7]) plot_cart[7] = common_plot("##108", "Relative υ magnitude", "υ magnitude [km/sec]", plot_cart[7], sol_reduced.vel);
 
-                if (plot_kep[0]) plot_kep[0] = common_plot("##9",  "Semi-major axis",             "a [km]",  plot_kep[0], sol_reduced.sma);
-                if (plot_kep[1]) plot_kep[1] = common_plot("##10", "Eccentricity",                "e [  ]",  plot_kep[1], sol_reduced.ecc);
-                if (plot_kep[2]) plot_kep[2] = common_plot("##11", "Inclination",                 "i [deg]", plot_kep[2], sol_reduced.inc);
-                if (plot_kep[3]) plot_kep[3] = common_plot("##12", "Longitude of ascending node", "Ω [deg]", plot_kep[3], sol_reduced.raan);
-                if (plot_kep[4]) plot_kep[4] = common_plot("##13", "Argument of periapsis",       "ω [deg]", plot_kep[4], sol_reduced.argper);
-                if (plot_kep[5]) plot_kep[5] = common_plot("##14", "Mean anomaly",                "M [deg]", plot_kep[5], sol_reduced.manom);
+                if (plot_kep[0]) plot_kep[0] = common_plot("##109",  "Semi-major axis",             "a [km]",  plot_kep[0], sol_reduced.sma);
+                if (plot_kep[1]) plot_kep[1] = common_plot("##110", "Eccentricity",                "e [  ]",  plot_kep[1], sol_reduced.ecc);
+                if (plot_kep[2]) plot_kep[2] = common_plot("##111", "Inclination",                 "i [deg]", plot_kep[2], sol_reduced.inc);
+                if (plot_kep[3]) plot_kep[3] = common_plot("##112", "Longitude of ascending node", "Ω [deg]", plot_kep[3], sol_reduced.raan);
+                if (plot_kep[4]) plot_kep[4] = common_plot("##113", "Argument of periapsis",       "ω [deg]", plot_kep[4], sol_reduced.argper);
+                if (plot_kep[5]) plot_kep[5] = common_plot("##114", "Mean anomaly",                "M [deg]", plot_kep[5], sol_reduced.manom);
 
-                if (plot_rpy1[0]) plot_rpy1[0] = common_plot("##15", "Body 1 roll",  "roll 1 [deg]",  plot_rpy1[0], sol_reduced.roll1);
-                if (plot_rpy1[1]) plot_rpy1[1] = common_plot("##16", "Body 1 pitch", "pitch 1 [deg]", plot_rpy1[1], sol_reduced.pitch1);
-                if (plot_rpy1[2]) plot_rpy1[2] = common_plot("##17", "Body 1 yaw",   "yaw 1 [deg]",   plot_rpy1[2], sol_reduced.yaw1);
+                if (plot_rpy1[0]) plot_rpy1[0] = common_plot("##115", "Body 1 roll",  "roll 1 [deg]",  plot_rpy1[0], sol_reduced.roll1);
+                if (plot_rpy1[1]) plot_rpy1[1] = common_plot("##116", "Body 1 pitch", "pitch 1 [deg]", plot_rpy1[1], sol_reduced.pitch1);
+                if (plot_rpy1[2]) plot_rpy1[2] = common_plot("##117", "Body 1 yaw",   "yaw 1 [deg]",   plot_rpy1[2], sol_reduced.yaw1);
 
-                if (plot_rpy2[0]) plot_rpy2[0] = common_plot("##18", "Body 2 roll",  "roll 2 [deg]",  plot_rpy2[0], sol_reduced.roll2);
-                if (plot_rpy2[1]) plot_rpy2[1] = common_plot("##19", "Body 2 pitch", "pitch 2 [deg]", plot_rpy2[1], sol_reduced.pitch2);
-                if (plot_rpy2[2]) plot_rpy2[2] = common_plot("##20", "Body 2 yaw",   "yaw 2 [deg]",   plot_rpy2[2], sol_reduced.yaw2);
+                if (plot_rpy2[0]) plot_rpy2[0] = common_plot("##118", "Body 2 roll",  "roll 2 [deg]",  plot_rpy2[0], sol_reduced.roll2);
+                if (plot_rpy2[1]) plot_rpy2[1] = common_plot("##119", "Body 2 pitch", "pitch 2 [deg]", plot_rpy2[1], sol_reduced.pitch2);
+                if (plot_rpy2[2]) plot_rpy2[2] = common_plot("##120", "Body 2 yaw",   "yaw 2 [deg]",   plot_rpy2[2], sol_reduced.yaw2);
 
-                if (plot_w1i[0]) plot_w1i[0] = common_plot("##21", "Body 1 ωx (inertial frame)", "ω1ix [rad/sec]", plot_w1i[0], sol_reduced.w1ix);
-                if (plot_w1i[1]) plot_w1i[1] = common_plot("##22", "Body 1 ωy (inertial frame)", "ω1iy [rad/sec]", plot_w1i[1], sol_reduced.w1iy);
-                if (plot_w1i[2]) plot_w1i[2] = common_plot("##23", "Body 1 ωz (inertial frame)", "ω1iz [rad/sec]", plot_w1i[2], sol_reduced.w1iz);
+                if (plot_w1i[0]) plot_w1i[0] = common_plot("##121", "Body 1 ωx (inertial frame)", "ω1ix [rad/sec]", plot_w1i[0], sol_reduced.w1ix);
+                if (plot_w1i[1]) plot_w1i[1] = common_plot("##122", "Body 1 ωy (inertial frame)", "ω1iy [rad/sec]", plot_w1i[1], sol_reduced.w1iy);
+                if (plot_w1i[2]) plot_w1i[2] = common_plot("##123", "Body 1 ωz (inertial frame)", "ω1iz [rad/sec]", plot_w1i[2], sol_reduced.w1iz);
 
-                if (plot_w1b[0]) plot_w1b[0] = common_plot("##24", "Body 1 ωx (body frame)", "ω1bx [rad/sec]", plot_w1b[0], sol_reduced.w1bx);
-                if (plot_w1b[1]) plot_w1b[1] = common_plot("##25", "Body 1 ωy (body frame)", "ω1by [rad/sec]", plot_w1b[1], sol_reduced.w1by);
-                if (plot_w1b[2]) plot_w1b[2] = common_plot("##26", "Body 1 ωz (body frame)", "ω1bz [rad/sec]", plot_w1b[2], sol_reduced.w1bz);
+                if (plot_w1b[0]) plot_w1b[0] = common_plot("##124", "Body 1 ωx (body frame)", "ω1bx [rad/sec]", plot_w1b[0], sol_reduced.w1bx);
+                if (plot_w1b[1]) plot_w1b[1] = common_plot("##125", "Body 1 ωy (body frame)", "ω1by [rad/sec]", plot_w1b[1], sol_reduced.w1by);
+                if (plot_w1b[2]) plot_w1b[2] = common_plot("##126", "Body 1 ωz (body frame)", "ω1bz [rad/sec]", plot_w1b[2], sol_reduced.w1bz);
 
-                if (plot_w2i[0]) plot_w2i[0] = common_plot("##27", "Body 2 ωx (inertial frame)", "ω2ix [rad/sec]", plot_w2i[0], sol_reduced.w2ix);
-                if (plot_w2i[1]) plot_w2i[1] = common_plot("##28", "Body 2 ωy (inertial frame)", "ω2iy [rad/sec]", plot_w2i[1], sol_reduced.w2iy);
-                if (plot_w2i[2]) plot_w2i[2] = common_plot("##29", "Body 2 ωz (inertial frame)", "ω2iz [rad/sec]", plot_w2i[2], sol_reduced.w2iz);
+                if (plot_w2i[0]) plot_w2i[0] = common_plot("##127", "Body 2 ωx (inertial frame)", "ω2ix [rad/sec]", plot_w2i[0], sol_reduced.w2ix);
+                if (plot_w2i[1]) plot_w2i[1] = common_plot("##128", "Body 2 ωy (inertial frame)", "ω2iy [rad/sec]", plot_w2i[1], sol_reduced.w2iy);
+                if (plot_w2i[2]) plot_w2i[2] = common_plot("##129", "Body 2 ωz (inertial frame)", "ω2iz [rad/sec]", plot_w2i[2], sol_reduced.w2iz);
 
-                if (plot_w2b[0]) plot_w2b[0] = common_plot("##30", "Body 2 ωx (body frame)", "ω2bx [rad/sec]", plot_w2b[0], sol_reduced.w2bx);
-                if (plot_w2b[1]) plot_w2b[1] = common_plot("##31", "Body 2 ωy (body frame)", "ω2by [rad/sec]", plot_w2b[1], sol_reduced.w2by);
-                if (plot_w2b[2]) plot_w2b[2] = common_plot("##32", "Body 2 ωz (body frame)", "ω2bz [rad/sec]", plot_w2b[2], sol_reduced.w2bz);
+                if (plot_w2b[0]) plot_w2b[0] = common_plot("##130", "Body 2 ωx (body frame)", "ω2bx [rad/sec]", plot_w2b[0], sol_reduced.w2bx);
+                if (plot_w2b[1]) plot_w2b[1] = common_plot("##131", "Body 2 ωy (body frame)", "ω2by [rad/sec]", plot_w2b[1], sol_reduced.w2by);
+                if (plot_w2b[2]) plot_w2b[2] = common_plot("##132", "Body 2 ωz (body frame)", "ω2bz [rad/sec]", plot_w2b[2], sol_reduced.w2bz);
 
-                if (plot_ener_mom_rel_err[0]) plot_ener_mom_rel_err[0] = common_plot("##33", "Energy relative error",             "energy error [  ]",   plot_ener_mom_rel_err[0], sol_reduced.ener_rel_err);
-                if (plot_ener_mom_rel_err[1]) plot_ener_mom_rel_err[1] = common_plot("##34", "Momentum magnitude relative error", "momentum error [  ]", plot_ener_mom_rel_err[1], sol_reduced.mom_rel_err);
+                if (plot_ener_mom_rel_err[0]) plot_ener_mom_rel_err[0] = common_plot("##133", "Energy relative error",             "energy error [  ]",   plot_ener_mom_rel_err[0], sol_reduced.ener_rel_err);
+                if (plot_ener_mom_rel_err[1]) plot_ener_mom_rel_err[1] = common_plot("##134", "Momentum magnitude relative error", "momentum error [  ]", plot_ener_mom_rel_err[1], sol_reduced.mom_rel_err);
 
             }
             ImGui::PopStyleColor();
@@ -427,9 +499,7 @@ public:
                 ImGui::EndDisabled();   
             }
             else
-            {
                 render_scene_buttons();
-            }
         }
         ImGui::End();
     }

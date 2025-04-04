@@ -253,19 +253,6 @@ public:
         return vol;
     }
 
-    //Farthest vertex distance with respect to the local coordinate system.
-    double get_farthest_vertex_distance()
-    {
-        double farthest = length(verts[0]); //Assume that the farthest vertex distance is the first one.
-        for (size_t i = 1; i < verts.size(); ++i)
-        {
-            double dist = length(verts[i]);
-            if (dist > farthest)
-                farthest = dist;
-        }
-        return farthest;
-    }
-
     dmatnx3 get_verts()
     {
         return verts;
@@ -284,6 +271,19 @@ public:
     umatnx2 get_edges()
     {
         return edges;
+    }
+
+    //Farthest vertex distance with respect to the local coordinate system.
+    double get_farthest_vertex_distance()
+    {
+        double farthest = length(verts[0]); //Assume that the farthest vertex distance is the first one.
+        for (size_t i = 1; i < verts.size(); ++i)
+        {
+            double dist = length(verts[i]);
+            if (dist > farthest)
+                farthest = dist;
+        }
+        return farthest;
     }
 
     //Nearest vertex distance with respect to the local coordinate system.
@@ -1046,7 +1046,7 @@ public:
     }
 
     //Draw the polyhedral mesh.
-    void draw_gl_mesh() const
+    void draw_gl_mesh()
     {
         glBindVertexArray(gl_vao);
         glDrawArrays(GL_TRIANGLES, 0, (GLsizei)gl_vertex_count);
