@@ -35,10 +35,25 @@ private:
     float cam_dist, cam_lon, cam_lat; //Camera's position in spherical coordinates.
     float cam_fov; //Camera's (vertical) field of view.
     glm::vec3 cam_aim;
-    float rmin_com, rmax_com;
+    float cam_rmin, cam_rmax;
 
-    float dir_light_lon, dir_light_lat; //Light's direction (longitude and latitude).
+    float dir_light_dist, dir_light_lon, dir_light_lat; //Directional light's position in spherical coordinates.
+
+    int shadow_tex_reso; //Shadow image resolution.
+
     glm::vec3 aster1_col, aster2_col; //Colors of the asteroids.
+
+    float fc, fl;
+
+    bool render_aster1, render_aster2;
+
+    bool first_time_here;
+
+
+    float light_rmax;
+    glm::mat4 dir_light_projection;
+
+    unsigned int fbo_depth, tex_depth; //IDs to hold the depth fbo and the depth texture (for the shadow map).
 
     solution sol, sol_reduced; //The 'sol' contains all the orbital data and is used to render the 3D scene. The 'sol_reduced' is used for the 2D plots.
 
@@ -66,13 +81,48 @@ public:
                     cam_lat(60.0f),
                     cam_fov(60.0f),
                     cam_aim(glm::vec3(0.0f,0.0f,0.0f)),
-                    rmin_com(0.0f),
-                    rmax_com(0.0f),
+                    cam_rmin(0.0f),
+                    cam_rmax(0.0f),
+                    dir_light_dist(0.0f),
                     dir_light_lon(0.0f),
                     dir_light_lat(45.0f),
+                    shadow_tex_reso(2048),
                     aster1_col(glm::vec3(0.6f,0.6f,0.6f)),
-                    aster2_col(glm::vec3(0.6f,0.6f,0.6f))
+                    aster2_col(glm::vec3(0.6f,0.6f,0.6f)),
+                    fc(1.1f),
+                    fl(1.2f),
+                    render_aster1(true),
+                    render_aster2(true)
     { }
+
+    //Setup the depth framebuffer.
+    void setup_fbo_depth()
+    {
+        if (fbo_depth)
+        {
+            glDeleteFramebuffers(1, &fbo_depth);
+            glDeleteTextures(1, &tex_depth);
+        }
+        glGenFramebuffers(1, &fbo_depth);
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo_depth);
+        glGenTextures(1, &tex_depth);
+        glBindTexture(GL_TEXTURE_2D, tex_depth);
+        //Shadow mapping is highly sensitive to depth precision, hence the 32 bits.
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, shadow_tex_reso, shadow_tex_reso, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);  
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        constexpr float border_col[] = {1.0f, 1.0f, 1.0f, 1.0f}; //Pure white that is, coz white color corresponds to maximum depth.
+        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border_col);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, tex_depth, 0);
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+            fprintf(stderr, "Depth framebuffer is not completed!\n");
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
 
     void copy_solution(const solution &full_sol)
     {
@@ -83,9 +133,15 @@ public:
         current_frame = 0; //(Re)set the whole scene to correspond at the first frame. This will automatically set the frame slider to 0
         play_pause_video = false; //Pause state.
 
-        rmin_com = sol.integr.brillouin1 + sol.integr.brillouin2;
-        rmax_com = *std::max_element(sol.dist.begin(), sol.dist.end());
+        cam_rmin = sol.integr.brillouin1 + sol.integr.brillouin2;
+        cam_rmax = *std::max_element(sol.dist.begin(), sol.dist.end());
         cam_dist = 5.0f*(*std::max_element(sol.dist.begin(), sol.dist.end()));
+
+        light_rmax = cam_rmin + cam_rmax;
+        dir_light_dist = fl*light_rmax;
+        dir_light_projection = glm::ortho(-fc*light_rmax,fc*light_rmax, -fc*light_rmax,fc*light_rmax, (fl-fc)*light_rmax, 2.0f*fc*light_rmax);
+
+        first_time_here = true;
     }
 
     //This function controls the on/off logic of a clickable button in the gui.
@@ -156,17 +212,29 @@ public:
         //Prepare the polyhedral meshes for rendering, by the running appropriate - GPU - tasks.
         sol.integr.properties.poly1.set_as_gl_mesh();
         sol.integr.properties.poly2.set_as_gl_mesh();
+        if (first_time_here)
+        {
+            setup_fbo_depth();
+            first_time_here = false;
+        }
         
         //Instantiate the shader.
-        static shader shad("../shaders/vertex/trans_mvpn.vert", "../shaders/fragment/dir_light_ad.frag");
-        shad.use();
+        static shader shad_depth("../shaders/vertex/trans_dir_light_mvp.vert","../shaders/fragment/nothing.frag");
+        static shader shad_dir_light_with_shadow("../shaders/vertex/trans_mvpn_shadow.vert","../shaders/fragment/dir_light_ad_shadow.frag");
 
         //The user controls the light's direction from the gui, assuming spherical coords (longitude and latitude).
         //Here we convert them back to Cartesian coords and end them to the fragment shader.
-        glm::vec3 light_dir = glm::vec3(cos(glm::radians(dir_light_lon))*sin(glm::radians(dir_light_lat)),
-                                        sin(glm::radians(dir_light_lon))*sin(glm::radians(dir_light_lat)),
-                                        cos(glm::radians(dir_light_lat)));
-        shad.set_vec3_uniform("light_dir", light_dir);
+        glm::vec3 light_dir = dir_light_dist*glm::vec3(cos(glm::radians(dir_light_lon))*sin(glm::radians(dir_light_lat)),
+                                                       sin(glm::radians(dir_light_lon))*sin(glm::radians(dir_light_lat)),
+                                                       cos(glm::radians(dir_light_lat)));
+        float dir_light_up_x = 0.0f, dir_light_up_y = 0.0f, dir_light_up_z = 1.0f;
+        if (glm::abs(glm::normalize(light_dir).z) > 0.999f)
+        {
+            dir_light_up_y = 1.0f;
+            dir_light_up_z = 0.0f;
+        }
+        glm::mat4 dir_light_view = glm::lookAt(light_dir, glm::vec3(0.0f), glm::vec3(dir_light_up_x, dir_light_up_y, dir_light_up_z));
+        glm::mat4 dir_light_pv = dir_light_projection*dir_light_view; //Directional light's projection*view (total) matrix.
 
         glm::mat4 projection = glm::infinitePerspective(glm::radians(cam_fov), win_width/(float)win_height, 0.1f);
 
@@ -178,15 +246,25 @@ public:
                                       cos(glm::radians(cam_lat))*sin(glm::radians(cam_lon)),
                                      -sin(glm::radians(cam_lat)));
         glm::mat4 view = glm::lookAt(cam_pos, cam_aim, cam_up);
-        shad.set_mat4_uniform("projection", projection);
-        shad.set_mat4_uniform("view", view);
+
+        shad_dir_light_with_shadow.use();
+        shad_dir_light_with_shadow.set_mat4_uniform("projection", projection);
+        shad_dir_light_with_shadow.set_mat4_uniform("view", view);
+        shad_dir_light_with_shadow.set_mat4_uniform("dir_light_pv", dir_light_pv);
+        shad_dir_light_with_shadow.set_vec3_uniform("light_dir", light_dir);
+
+        shad_depth.use();
+        shad_depth.set_mat4_uniform("dir_light_pv", dir_light_pv);
 
         double cm1fac = -sol.integr.properties.M2/(sol.integr.properties.M1 + sol.integr.properties.M2);
         double cm2fac =  sol.integr.properties.M1/(sol.integr.properties.M1 + sol.integr.properties.M2);
 
         glm::vec3 pos1 = (float)cm1fac*glm::vec3(sol.x[current_frame],sol.y[current_frame],sol.z[current_frame]);
         glm::vec3 pos2 = (float)cm2fac*glm::vec3(sol.x[current_frame],sol.y[current_frame],sol.z[current_frame]);
-
+        
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo_depth);
+        glViewport(0,0, shadow_tex_reso,shadow_tex_reso);
+        glClear(GL_DEPTH_BUFFER_BIT);
         glm::mat4 model = glm::mat4(1.0f);
         model = glm::translate(model, pos1);
         model = glm::rotate(model, glm::radians((float)sol.yaw1[current_frame]),   glm::vec3(0.0f,0.0f,1.0f));
@@ -194,10 +272,8 @@ public:
         model = glm::rotate(model, glm::radians((float)sol.roll1[current_frame]),  glm::vec3(1.0f,0.0f,0.0f));
         if (sol.integr.properties.ell_checkbox)
             model = glm::scale(model, glm::vec3(sol.integr.properties.semiaxes1[0], sol.integr.properties.semiaxes1[1], sol.integr.properties.semiaxes1[2]));
-        shad.set_mat4_uniform("model", model);
-        shad.set_vec3_uniform("mesh_col", aster1_col);
+        shad_depth.set_mat4_uniform("model", model);
         sol.integr.properties.poly1.draw_gl_mesh();
-
         model = glm::mat4(1.0f);
         model = glm::translate(model, pos2);
         model = glm::rotate(model, glm::radians((float)sol.yaw2[current_frame]),   glm::vec3(0.0f,0.0f,1.0f));
@@ -205,9 +281,40 @@ public:
         model = glm::rotate(model, glm::radians((float)sol.roll2[current_frame]),  glm::vec3(1.0f,0.0f,0.0f));
         if (sol.integr.properties.ell_checkbox)
             model = glm::scale(model, glm::vec3(sol.integr.properties.semiaxes2[0], sol.integr.properties.semiaxes2[1], sol.integr.properties.semiaxes2[2]));
-        shad.set_mat4_uniform("model", model);
-        shad.set_vec3_uniform("mesh_col", aster2_col);
+        shad_depth.set_mat4_uniform("model", model);
         sol.integr.properties.poly2.draw_gl_mesh();
+
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0,0, win_width,win_height);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tex_depth);
+        shad_dir_light_with_shadow.use();
+        shad_dir_light_with_shadow.set_int_uniform("sample_shadow", 0);
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, pos1);
+        model = glm::rotate(model, glm::radians((float)sol.yaw1[current_frame]),   glm::vec3(0.0f,0.0f,1.0f));
+        model = glm::rotate(model, glm::radians((float)sol.pitch1[current_frame]), glm::vec3(0.0f,1.0f,0.0f));
+        model = glm::rotate(model, glm::radians((float)sol.roll1[current_frame]),  glm::vec3(1.0f,0.0f,0.0f));
+        if (sol.integr.properties.ell_checkbox)
+            model = glm::scale(model, glm::vec3(sol.integr.properties.semiaxes1[0], sol.integr.properties.semiaxes1[1], sol.integr.properties.semiaxes1[2]));
+        shad_dir_light_with_shadow.set_mat4_uniform("model", model);
+        shad_dir_light_with_shadow.set_vec3_uniform("mesh_col", aster1_col);
+        if (render_aster1)
+            sol.integr.properties.poly1.draw_gl_mesh();
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, pos2);
+        model = glm::rotate(model, glm::radians((float)sol.yaw2[current_frame]),   glm::vec3(0.0f,0.0f,1.0f));
+        model = glm::rotate(model, glm::radians((float)sol.pitch2[current_frame]), glm::vec3(0.0f,1.0f,0.0f));
+        model = glm::rotate(model, glm::radians((float)sol.roll2[current_frame]),  glm::vec3(1.0f,0.0f,0.0f));
+        if (sol.integr.properties.ell_checkbox)
+            model = glm::scale(model, glm::vec3(sol.integr.properties.semiaxes2[0], sol.integr.properties.semiaxes2[1], sol.integr.properties.semiaxes2[2]));
+        shad_dir_light_with_shadow.set_mat4_uniform("model", model);
+        shad_dir_light_with_shadow.set_vec3_uniform("mesh_col", aster2_col);
+        if (render_aster2)
+            sol.integr.properties.poly2.draw_gl_mesh();
+        glBindTexture(GL_TEXTURE_2D, 0);
 
         if (play_pause_video && current_frame < total_frames - 1)
         {
@@ -365,7 +472,7 @@ public:
         ImGui::Text("Dist");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[km]##38", &cam_dist, 1.1f*rmin_com, 50.0f*rmax_com);
+        ImGui::SliderFloat("[km]##38", &cam_dist, 1.1f*cam_rmin, 40.0f*cam_rmax);
 
         ImGui::Text("Lon");
         ImGui::SameLine();
@@ -402,15 +509,41 @@ public:
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
 
+        ImGui::Text("Shadow");
+
+        ImGui::Text("Reso");
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(40.0f);
+        if (ImGui::SliderInt("[pix]##44", &shadow_tex_reso, 1024, 8192))
+            setup_fbo_depth();
+
+        ImGui::Dummy(ImVec2(0.0f, 7.5f));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0.0f, 7.5f));
+
+        ImGui::Text("Visibility");
+
+        static bool bhahaha=true, bhohoho=true;
+        ImGui::Text("Body 1");
+        ImGui::SameLine();
+        ImGui::Checkbox("##45", &render_aster1);
+        ImGui::Text("Body 2");
+        ImGui::SameLine();
+        ImGui::Checkbox("##46", &render_aster2);
+
+        ImGui::Dummy(ImVec2(0.0f, 7.5f));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0.0f, 7.5f));
+
         ImGui::Text("Colors");
 
         ImGui::Text("Body 1 ");
         ImGui::SameLine();
-        ImGui::ColorEdit3("##44", glm::value_ptr(aster1_col), ImGuiColorEditFlags_NoInputs);
+        ImGui::ColorEdit3("##47", glm::value_ptr(aster1_col), ImGuiColorEditFlags_NoInputs);
 
         ImGui::Text("Body 2 ");
         ImGui::SameLine();
-        ImGui::ColorEdit3("##45", glm::value_ptr(aster2_col), ImGuiColorEditFlags_NoInputs);
+        ImGui::ColorEdit3("##48", glm::value_ptr(aster2_col), ImGuiColorEditFlags_NoInputs);
 
         if (disabled)
             ImGui::EndDisabled();
