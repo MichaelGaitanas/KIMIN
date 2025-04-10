@@ -11,18 +11,18 @@ int main()
     //Load a polyhedron. We need it to generate the mascons.
     polyhedron poly;
     printf("Loading polyhedron... ");
-    poly.load_obj_file("../../obj/kleopatra4k.obj");
+    poly.load_obj_file("../../obj/rock1_4k_r4km.obj");
     printf("Done.\n\n");
     
     mascons masc;
     printf("Generating mascons... ");
-    masc.generate_from_polyhedron(poly, uvec3{51,51,51});
+    masc.generate_from_polyhedron(poly, uvec3{29,29,29});
     printf("Done.\n\n");
 
     std::filesystem::create_directory("io");
 
     char buffer[100];
-    sprintf(buffer,"io/kleopatra4k_%llu.obj",masc.get_total());
+    sprintf(buffer,"io/rock1_4k_r4km_%llu.obj",masc.get_total());
     masc.export_obj_file(buffer);
 
     dvec3 com = masc.get_com();
@@ -49,7 +49,7 @@ int main()
                                                                                             iner[1][0],iner[1][1],iner[1][2],
                                                                                             iner[2][0],iner[2][1],iner[2][2]);
     
-    sprintf(buffer,"io/kleopatra4k_%llu_fixed.obj",masc.get_total());
+    sprintf(buffer,"io/rock1_4k_r4km_%llu_fixed.obj",masc.get_total());
     masc.export_obj_file(buffer);
 
     return 0;
