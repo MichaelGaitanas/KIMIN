@@ -87,8 +87,8 @@ public:
                     dir_light_lon(0.0f),
                     dir_light_lat(45.0f),
                     shadow_tex_reso(2048),
-                    aster1_col(glm::vec3(0.6f,0.6f,0.6f)),
-                    aster2_col(glm::vec3(0.6f,0.6f,0.6f)),
+                    aster1_col(glm::vec3(1.0f,1.0f,1.0f)),
+                    aster2_col(glm::vec3(1.0f,1.0f,1.0f)),
                     fc(1.1f),
                     fl(1.2f),
                     render_aster1(true),
@@ -450,13 +450,13 @@ public:
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Text("Frame");
         ImGui::SameLine();
-        ImGui::SetCursorPosX(55.0f);
+        ImGui::SetCursorPosX(50.0f);
         ImGui::SliderScalar("##36", ImGuiDataType_U64, &current_frame, &zero_frame, &max_frame, "%llu");
 
         ImGui::Text("Rate");
         ImGui::SameLine();
-        ImGui::SetCursorPosX(55.0f);
-        ImGui::SliderInt("##37", &frame_rate, 0, 60, "%d");
+        ImGui::SetCursorPosX(50.0f);
+        ImGui::SliderInt("[Hz]##37", &frame_rate, 0, 60, "%d");
 
         if (sol.t.empty())
             ImGui::Text("Time : 0.00  [days]");
