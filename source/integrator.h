@@ -26,7 +26,7 @@ public:
     dtens J1, J2; //Inertial integrals.
     double brillouin1, brillouin2; //Brillouin radii of the 2 bodies.
 
-    bool collision; //Collision detection flag (Brillouin spheres intersection).
+    bool collision; //Collision detection flag.
 
     double t0, tmax, dt; //Integration time.
     double init_guess_time_step;
@@ -263,6 +263,7 @@ public:
         char formatted_text[128];
         
         double t = t0; //Initialize time.
+        
         //Shoot it!!!
         while (t <= tmax)
         {
@@ -274,13 +275,35 @@ public:
                                 state[13], state[14], state[15], state[16],
                                 state[17], state[18], state[19]});
 
-            //Check for sphere-sphere collision detection between the 2 asteroids.
-            if (sphere_sphere_collision(length(dvec3{state[0],state[1],state[2]}), brillouin1, brillouin2))
+            if (properties.collision_spheres)
             {
-                sprintf(formatted_text,"< Collision detected at t = %5.2lf [days]. >\n", t/86400.0);
-                console.add_text(formatted_text);
-                collision = true;
-                break;
+                //Check for sphere-sphere collision detection between the 2 asteroids.
+                if (sphere_sphere_collision(length(dvec3{state[0],state[1],state[2]}), brillouin1, brillouin2))
+                {
+                    sprintf(formatted_text,"< Collision detected at t = %5.2lf [days]. >\n", t/86400.0);
+                    console.add_text(formatted_text);
+                    collision = true;
+                    break;
+                }
+            }
+            else if (properties.collision_polyhedra)
+            {
+                if (sphere_sphere_collision(length(dvec3{state[0],state[1],state[2]}), brillouin1, brillouin2))
+                {
+                    //Check for polyhedron-polyhedron collision detection between the 2 asteroids.
+                    if (polyhedron_polyhedron_collision(properties.poly1, quat2mat(dvec4{state[6],state[7],state[8],state[9]}),     (-properties.M2/(properties.M1 + properties.M2))*dvec3{state[0],state[1],state[2]},
+                                                        properties.poly2, quat2mat(dvec4{state[13],state[14],state[15],state[16]}), ( properties.M1/(properties.M1 + properties.M2))*dvec3{state[0],state[1],state[2]} ))
+                    {
+                        sprintf(formatted_text,"< Collision detected at t = %5.2lf [days]. >\n", t/86400.0);
+                        console.add_text(formatted_text);
+                        collision = true;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                //Pass, because not collision criterion was selected...
             }
 
             //Check the abort flag (the user might want to kill the integration by pressing the 'Abort' button in the gui).

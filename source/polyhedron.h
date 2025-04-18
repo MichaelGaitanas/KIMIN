@@ -31,7 +31,7 @@ private:
     bool vol_exists;
 
     //OpenGL - related members.
-    bool gl_ready = false; //Whether or not the mesh data are uploaded to the gpu.
+    bool gl_ready; //Whether or not the mesh data are uploaded to the gpu.
     unsigned int gl_vao = 0, gl_vbo = 0; //Vertex array and vertex buffer objects.
     size_t gl_vertex_count = 0; //*triangle* vertices in the interleaved buffer.
 
@@ -42,6 +42,7 @@ public:
         norms_exist = false;
         edges_exist = false;
         vol_exists = false;
+        gl_ready = false;
         verts.clear();
         faces.clear();
         norms.clear();
@@ -253,7 +254,7 @@ public:
         return vol;
     }
 
-    dmatnx3 get_verts()
+    const dmatnx3 &get_verts() const
     {
         return verts;
     }
@@ -263,7 +264,7 @@ public:
         return norms;
     }
 
-    umatnx3 get_faces()
+    const umatnx3 &get_faces() const
     {
         return faces;
     }
@@ -989,6 +990,26 @@ public:
         //Since the vertices rotated, either we have to rotate the normals as well (with the same matrix), or just recompute them...
         norms_exist = false;
         gen_norms();
+    }
+
+    void set_scale_uniform(const double scale_factor)
+    {
+        for (size_t i = 0; i < verts.size(); ++i)
+        {
+            verts[i][0] = scale_factor*verts[i][0];
+            verts[i][1] = scale_factor*verts[i][1];
+            verts[i][2] = scale_factor*verts[i][2];
+        }
+    }
+
+    void set_scale_xyz(const dvec3 scale_factor)
+    {
+        for (size_t i = 0; i < verts.size(); ++i)
+        {
+            verts[i][0] = scale_factor[0]*verts[i][0];
+            verts[i][1] = scale_factor[1]*verts[i][1];
+            verts[i][2] = scale_factor[2]*verts[i][2];
+        }
     }
 
     //Build and upload to the GPU an interleaved (position + normal) buffer for flat shading (Lambert).

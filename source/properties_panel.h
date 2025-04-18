@@ -51,6 +51,8 @@ public:
     int frame_type_choice; //Initial choice is 0, meaning that the angular velocities are set (as inputs) in the global inertial frame. 1 means corresponds to body frames.
     dvec3 w1i, w2i, w1b, w2b; //'ω1ix', 'ω1iy', 'ω1iz', 'ω2bx', 'ω2by, 'ω2bz' double fields (nature of the frame depends on 'frame_type_choice').
 
+    bool collision_no, collision_spheres, collision_polyhedra;
+
     bool impactor_checkbox; //'Kinetic impactor' checkbox state.
     bool impactor_clicked_ok; //'OK' button in the kinetic impactor parameters window (pressed or not).
     double M_impact; //Impactor's mass.
@@ -99,6 +101,9 @@ public:
                          w2i(dvec3{0.0,0.0,0.0}),
                          w1b(dvec3{0.0,0.0,0.0}),
                          w2b(dvec3{0.0,0.0,0.0}),
+                         collision_no(false),
+                         collision_spheres(true),
+                         collision_polyhedra(false),
                          impactor_checkbox(false),
                          impactor_clicked_ok(false),
                          M_impact(0.0),
@@ -145,6 +150,9 @@ public:
                          w2i(dvec3{0.0,0.0,0.0}),
                          w1b(dvec3{0.0,0.0,0.0}),
                          w2b(dvec3{0.0,0.0,0.0}),
+                         collision_no(false),
+                         collision_spheres(true),
+                         collision_polyhedra(false),
                          impactor_checkbox(false),
                          impactor_clicked_ok(false),
                          M_impact(0.0),
@@ -218,9 +226,11 @@ public:
             if (semiaxes1[0] > 0.0 && semiaxes1[1] > 0.0 && semiaxes1[2] > 0.0 &&
                 semiaxes2[0] > 0.0 && semiaxes2[1] > 0.0 && semiaxes2[2] > 0.0)
             {
-                poly1.load_obj_file("../obj/uvsphere64x64_rad1.obj");
+                poly1.load_obj_file("../obj/asteroids/uvsphere64x64_rad1.obj");
+                poly1.set_scale_xyz(semiaxes1);
                 poly1.gen_norms();
-                poly2.load_obj_file("../obj/uvsphere64x64_rad1.obj");
+                poly2.load_obj_file("../obj/asteroids/uvsphere64x64_rad1.obj");
+                poly2.set_scale_xyz(semiaxes2);
                 poly2.gen_norms();
             }
         }
@@ -233,9 +243,9 @@ public:
             else
             {
                 console.add_timed_text("[Shape] : Loading .obj file 1... ");
-                if (poly1.is_kimin_valid_obj(("../obj/" + obj1_path).c_str()))
+                if (poly1.is_kimin_valid_obj(("../obj/asteroids/" + obj1_path).c_str()))
                 {
-                    poly1.load_obj_file(("../obj/" + obj1_path).c_str());
+                    poly1.load_obj_file(("../obj/asteroids/" + obj1_path).c_str());
                     if (!poly1.is_closed_manifold())
                         {console.add_text("< Invalid .obj file for 'Body 1' (non closed manifold). >\n"); return false;}
                     else
@@ -249,9 +259,9 @@ public:
             else
             {
                 console.add_timed_text("[Shape] : Loading .obj file 2... ");
-                if (poly2.is_kimin_valid_obj(("../obj/" + obj2_path).c_str()))
+                if (poly2.is_kimin_valid_obj(("../obj/asteroids/" + obj2_path).c_str()))
                 {
-                    poly2.load_obj_file(("../obj/" + obj2_path).c_str());
+                    poly2.load_obj_file(("../obj/asteroids/" + obj2_path).c_str());
                     if (!poly2.is_closed_manifold())
                         {console.add_text("< Invalid .obj file for 'Body 2' (non closed manifold). >\n"); return false;}
                     else
@@ -312,11 +322,15 @@ public:
                 q2 = quat2unit(q2); //This correction will be visible in the gui.
         }
 
-        //Possible error 13 : 'OK' button in the Elliposid parameters window (it must be clicked so that the parameters are taken into account).
+        //Possible error 13 : Collision shapes checkboxes (at least one must be checked).
+        if (!collision_no && !collision_spheres && !collision_polyhedra)
+            {console.add_timed_text("[Error] : At least one collision criterion must be selected.\n"); return false;}
+
+        //Possible error 14 : 'OK' button in the impactor parameters window (it must be clicked so that the parameters are taken into account).
         if (impactor_checkbox && !impactor_clicked_ok)
             {console.add_timed_text("[Error] : 'OK' button must be pressed in the 'Impactor parameters' window.\n"); return false;}
 
-        //Possible error 14 : Impactor's parameters (mass must be >= 0).
+        //Possible error 15 : Impactor's parameters (mass must be >= 0).
         if (impactor_checkbox && M_impact < 0.0)
             {console.add_timed_text("[Error] : Impactor's 'Mass' must be non negative.\n"); return false;}
 
@@ -401,8 +415,8 @@ public:
             ImGui::Dummy(ImVec2(0.0f,5.0f));
 
             //File listing logic.
-            static std::vector<std::filesystem::path> all_obj_files = list_obj_files("../obj/"); //Store all the .obj files located in the obj/ directory.
-            if (ImGui::TreeNodeEx("Available .obj files in obj/ directory :"))
+            static std::vector<std::filesystem::path> all_obj_files = list_obj_files("../obj/asteroids/"); //Store all the .obj files located in the obj/asteroids/ directory.
+            if (ImGui::TreeNodeEx("Available .obj files :"))
             {
                 for (size_t i = 0; i < all_obj_files.size(); ++i)
                 {
@@ -585,6 +599,18 @@ public:
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f,7.5f));
 
+        //Collision choice logic.
+        ImGui::Text("Collision shapes");
+        if (ImGui::Checkbox("No collision  (1/r singularity risk)", &collision_no))
+            collision_spheres = collision_polyhedra = false;
+        if (ImGui::Checkbox("Spheres", &collision_spheres))
+            collision_no = collision_polyhedra = false;
+        if (ImGui::Checkbox("Polyhedra  (slow for high-res meshes)", &collision_polyhedra))
+            collision_no = collision_spheres = false;
+
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
 
         //Kinetic impactor logic.
         ImGui::Text("Kinetic impactor");

@@ -11,6 +11,7 @@
 #include"typedef.h"
 #include"solution.h"
 #include"shader.h"
+#include"polyhedron.h"
 
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
@@ -43,12 +44,15 @@ private:
 
     glm::vec3 aster1_col, aster2_col; //Colors of the asteroids.
 
+    glm::vec3 xaxis_col, yaxis_col, zaxis_col;
+
     float fc, fl;
 
     bool render_aster1, render_aster2;
 
-    bool first_time_here;
+    bool render_axes1, render_axes2;
 
+    bool first_time_here;
 
     float light_rmax;
     glm::mat4 dir_light_projection;
@@ -58,6 +62,8 @@ private:
     solution sol, sol_reduced; //The 'sol' contains all the orbital data and is used to render the 3D scene. The 'sol_reduced' is used for the 2D plots.
 
     int win_width, win_height; //These are copies of the members 'width' and 'height' of the window class. Neede to compute the projection matrix.
+
+    polyhedron xaxis1, yaxis1, zaxis1, xaxis2, yaxis2, zaxis2;
 
 public:
     scene_panel() : plot_cart({false,false,false,false, false,false,false,false}),
@@ -89,10 +95,15 @@ public:
                     shadow_tex_reso(2048),
                     aster1_col(glm::vec3(1.0f,1.0f,1.0f)),
                     aster2_col(glm::vec3(1.0f,1.0f,1.0f)),
+                    xaxis_col(glm::vec3(1.0f,0.0f,0.0f)),
+                    yaxis_col(glm::vec3(0.0f,1.0f,0.0f)),
+                    zaxis_col(glm::vec3(0.0f,0.0f,1.0f)),
                     fc(1.1f),
                     fl(1.2f),
                     render_aster1(true),
-                    render_aster2(true)
+                    render_aster2(true),
+                    render_axes1(false),
+                    render_axes2(false)
     { }
 
     //Setup the depth framebuffer.
@@ -215,6 +226,37 @@ public:
         if (first_time_here)
         {
             setup_fbo_depth();
+
+            xaxis1.load_obj_file("../obj/axes/xaxis.obj");
+            xaxis1.set_scale_uniform(sol.integr.brillouin1);
+            xaxis1.gen_norms();
+            xaxis1.set_as_gl_mesh();
+
+            yaxis1.load_obj_file("../obj/axes/yaxis.obj");
+            yaxis1.set_scale_uniform(sol.integr.brillouin1);
+            yaxis1.gen_norms();
+            yaxis1.set_as_gl_mesh();
+
+            zaxis1.load_obj_file("../obj/axes/zaxis.obj");
+            zaxis1.set_scale_uniform(sol.integr.brillouin1);
+            zaxis1.gen_norms();
+            zaxis1.set_as_gl_mesh();
+            
+            xaxis2.load_obj_file("../obj/axes/xaxis.obj");
+            xaxis2.set_scale_uniform(sol.integr.brillouin2);
+            xaxis2.gen_norms();
+            xaxis2.set_as_gl_mesh();
+
+            yaxis2.load_obj_file("../obj/axes/yaxis.obj");
+            yaxis2.set_scale_uniform(sol.integr.brillouin2);
+            yaxis2.gen_norms();
+            yaxis2.set_as_gl_mesh();
+
+            zaxis2.load_obj_file("../obj/axes/zaxis.obj");
+            zaxis2.set_scale_uniform(sol.integr.brillouin2);
+            zaxis2.gen_norms();
+            zaxis2.set_as_gl_mesh();
+            
             first_time_here = false;
         }
         
@@ -270,19 +312,30 @@ public:
         model = glm::rotate(model, glm::radians((float)sol.yaw1[current_frame]),   glm::vec3(0.0f,0.0f,1.0f));
         model = glm::rotate(model, glm::radians((float)sol.pitch1[current_frame]), glm::vec3(0.0f,1.0f,0.0f));
         model = glm::rotate(model, glm::radians((float)sol.roll1[current_frame]),  glm::vec3(1.0f,0.0f,0.0f));
-        if (sol.integr.properties.ell_checkbox)
-            model = glm::scale(model, glm::vec3(sol.integr.properties.semiaxes1[0], sol.integr.properties.semiaxes1[1], sol.integr.properties.semiaxes1[2]));
         shad_depth.set_mat4_uniform("model", model);
-        sol.integr.properties.poly1.draw_gl_mesh();
+        if (render_aster1)
+            sol.integr.properties.poly1.draw_gl_mesh();
+        if (render_axes1)
+        {
+            xaxis1.draw_gl_mesh();
+            yaxis1.draw_gl_mesh();
+            zaxis1.draw_gl_mesh();
+        }
         model = glm::mat4(1.0f);
         model = glm::translate(model, pos2);
         model = glm::rotate(model, glm::radians((float)sol.yaw2[current_frame]),   glm::vec3(0.0f,0.0f,1.0f));
         model = glm::rotate(model, glm::radians((float)sol.pitch2[current_frame]), glm::vec3(0.0f,1.0f,0.0f));
         model = glm::rotate(model, glm::radians((float)sol.roll2[current_frame]),  glm::vec3(1.0f,0.0f,0.0f));
-        if (sol.integr.properties.ell_checkbox)
-            model = glm::scale(model, glm::vec3(sol.integr.properties.semiaxes2[0], sol.integr.properties.semiaxes2[1], sol.integr.properties.semiaxes2[2]));
         shad_depth.set_mat4_uniform("model", model);
-        sol.integr.properties.poly2.draw_gl_mesh();
+        if (render_aster2)
+            sol.integr.properties.poly2.draw_gl_mesh();
+        if (render_axes2)
+        {
+            xaxis2.draw_gl_mesh();
+            yaxis2.draw_gl_mesh();
+            zaxis2.draw_gl_mesh();
+        }
+        
 
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -297,23 +350,37 @@ public:
         model = glm::rotate(model, glm::radians((float)sol.yaw1[current_frame]),   glm::vec3(0.0f,0.0f,1.0f));
         model = glm::rotate(model, glm::radians((float)sol.pitch1[current_frame]), glm::vec3(0.0f,1.0f,0.0f));
         model = glm::rotate(model, glm::radians((float)sol.roll1[current_frame]),  glm::vec3(1.0f,0.0f,0.0f));
-        if (sol.integr.properties.ell_checkbox)
-            model = glm::scale(model, glm::vec3(sol.integr.properties.semiaxes1[0], sol.integr.properties.semiaxes1[1], sol.integr.properties.semiaxes1[2]));
         shad_dir_light_with_shadow.set_mat4_uniform("model", model);
         shad_dir_light_with_shadow.set_vec3_uniform("mesh_col", aster1_col);
         if (render_aster1)
             sol.integr.properties.poly1.draw_gl_mesh();
+        if (render_axes1)
+        {
+            shad_dir_light_with_shadow.set_vec3_uniform("mesh_col", xaxis_col);
+            xaxis1.draw_gl_mesh();
+            shad_dir_light_with_shadow.set_vec3_uniform("mesh_col", yaxis_col);
+            yaxis1.draw_gl_mesh();
+            shad_dir_light_with_shadow.set_vec3_uniform("mesh_col", zaxis_col);
+            zaxis1.draw_gl_mesh();
+        }
         model = glm::mat4(1.0f);
         model = glm::translate(model, pos2);
         model = glm::rotate(model, glm::radians((float)sol.yaw2[current_frame]),   glm::vec3(0.0f,0.0f,1.0f));
         model = glm::rotate(model, glm::radians((float)sol.pitch2[current_frame]), glm::vec3(0.0f,1.0f,0.0f));
         model = glm::rotate(model, glm::radians((float)sol.roll2[current_frame]),  glm::vec3(1.0f,0.0f,0.0f));
-        if (sol.integr.properties.ell_checkbox)
-            model = glm::scale(model, glm::vec3(sol.integr.properties.semiaxes2[0], sol.integr.properties.semiaxes2[1], sol.integr.properties.semiaxes2[2]));
         shad_dir_light_with_shadow.set_mat4_uniform("model", model);
         shad_dir_light_with_shadow.set_vec3_uniform("mesh_col", aster2_col);
         if (render_aster2)
             sol.integr.properties.poly2.draw_gl_mesh();
+        if (render_axes2)
+        {
+            shad_dir_light_with_shadow.set_vec3_uniform("mesh_col", xaxis_col);
+            xaxis2.draw_gl_mesh();
+            shad_dir_light_with_shadow.set_vec3_uniform("mesh_col", yaxis_col);
+            yaxis2.draw_gl_mesh();
+            shad_dir_light_with_shadow.set_vec3_uniform("mesh_col", zaxis_col);
+            zaxis2.draw_gl_mesh();
+        }
         glBindTexture(GL_TEXTURE_2D, 0);
 
         if (play_pause_video && current_frame < total_frames - 1)
@@ -521,29 +588,43 @@ public:
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
 
-        ImGui::Text("Visibility");
+        ImGui::Text("Visible meshes");
 
-        static bool bhahaha=true, bhohoho=true;
         ImGui::Text("Body 1");
         ImGui::SameLine();
+        ImGui::SetCursorPosX(60.0f);
         ImGui::Checkbox("##45", &render_aster1);
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(120.0f);
+        ImGui::Text("Axes 1");
+        ImGui::SameLine();
+        ImGui::Checkbox("##46", &render_axes1);
+
         ImGui::Text("Body 2");
         ImGui::SameLine();
-        ImGui::Checkbox("##46", &render_aster2);
+        ImGui::SetCursorPosX(60.0f);
+        ImGui::Checkbox("##47", &render_aster2);
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(120.0f);
+        ImGui::Text("Axes 2");
+        ImGui::SameLine();
+        ImGui::Checkbox("##48", &render_axes2);
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
 
-        ImGui::Text("Colors");
+        ImGui::Text("Body colors");
 
-        ImGui::Text("Body 1 ");
+        ImGui::Text("Body 1");
         ImGui::SameLine();
-        ImGui::ColorEdit3("##47", glm::value_ptr(aster1_col), ImGuiColorEditFlags_NoInputs);
-
-        ImGui::Text("Body 2 ");
+        ImGui::SetCursorPosX(60.0f);
+        ImGui::ColorEdit3("##49", glm::value_ptr(aster1_col), ImGuiColorEditFlags_NoInputs);
         ImGui::SameLine();
-        ImGui::ColorEdit3("##48", glm::value_ptr(aster2_col), ImGuiColorEditFlags_NoInputs);
+        ImGui::SetCursorPosX(120.0f);
+        ImGui::Text("Body 2");
+        ImGui::SameLine();
+        ImGui::ColorEdit3("##50", glm::value_ptr(aster2_col), ImGuiColorEditFlags_NoInputs);
 
         if (disabled)
             ImGui::EndDisabled();
