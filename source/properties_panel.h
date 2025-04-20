@@ -36,7 +36,7 @@ public:
 
     double M1, M2; //'M1', 'M2' double fields (referring to 'Body 1' and 'Body 2' respectively).
 
-    int integration_method_var_choice; //Initial choice is 0, meaning RKF78 constant. 1 means RKF78 adaptive and 2 means Bulirsch-Stoer.
+    int integration_method_var_choice; //Initial choice is 0, meaning RKF78 constant. 1 means RKF78 adaptive, 2 means Bulirsch-Stoer adaptive and 3 means Adams-Bashforth-Moulton constant.
     double epoch, dur, step; //'Epoch', 'Duration', 'Step' double fields.
     double target_error; //'Target error' double field.
 
@@ -281,7 +281,7 @@ public:
             {console.add_timed_text("[Error] : 'M1', 'M2' must be positive numbers.\n"); return false;}
 
         //Possible error 9 : Time parameters ('Epoch' and 'Duration' must be >= 0, 'Step' must be <= 'Duration' and 'Target error' must be > 0).
-        if (integration_method_var_choice == 0)
+        if (integration_method_var_choice == 0 || integration_method_var_choice == 3)
         {
             if (!(epoch >= 0.0 && dur > 0.0 && step <= dur && step > 0.0))
                 {console.add_timed_text("[Error] : Invalid set of 'Epoch', 'Duration', 'Step'.\n"); return false;}
@@ -347,7 +347,7 @@ public:
 
         //Properties panel "main" window.
         ImGui::SetNextWindowPos(ImVec2(0.0f, 21.0f), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f, ImGui::GetIO().DisplaySize.y - 21.0f), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(0.15f*ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y - 21.0f), ImGuiCond_FirstUseEver);
         ImGui::Begin("Properties", nullptr);
 
         //Simunlation name text field. Basically this is the name of the folder that will be created later, holding the orbit data.
@@ -370,8 +370,8 @@ public:
         {
             obj_checkbox = false; //Untick the obj checkbox in case it is ticked.
 
-            ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver); 
-            ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f, 320.0f), ImGuiCond_FirstUseEver); 
+            ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, 0.0f), ImGuiCond_FirstUseEver); 
+            ImGui::SetNextWindowSize(ImVec2(0.15f*ImGui::GetIO().DisplaySize.x, 0.4f*ImGui::GetIO().DisplaySize.y), ImGuiCond_FirstUseEver); 
             ImGui::Begin("Ellipsoid parameters", &ell_checkbox);
             
             //Ellipsoids semiaxes menu.
@@ -401,8 +401,8 @@ public:
         {
             ell_checkbox = false; //Untick the ellipsoids checkbox in case it is ticked.
 
-            ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver);
-            ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f, 320.0f), ImGuiCond_FirstUseEver); 
+            ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, 0.0f), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowSize(ImVec2(0.15f*ImGui::GetIO().DisplaySize.x, 0.4f*ImGui::GetIO().DisplaySize.y), ImGuiCond_FirstUseEver); 
             ImGui::Begin(".obj files", &obj_checkbox);
 
             //Radiobuttons logic : At least one will always be active and to this (the active one) the loaded obj file will correspond.
@@ -484,16 +484,19 @@ public:
         //Integration method (RKF78 constant, RKF78 adaptive, Bulirsch–Stoer adaptive).
         ImGui::PushItemWidth(200.0f);
             ImGui::PushID(id++);
-                static const char *integration_method_var[3] = {"RKF78 (constant)", "RKF78 (adaptive)", "Bulirsch - Stoer (adaptive)"}; //Which numerical method for integration of the ODEs.
+                static const char *integration_method_var[4] = {"RKF78 (constant)",
+                                                                "RKF78 (adaptive)",
+                                                                "Bulirsch - Stoer (adaptive)",
+                                                                "ABM5  (constant)"}; //Which numerical method for integration of the ODEs.
                 ImGui::Combo("  ", &integration_method_var_choice, integration_method_var, IM_ARRAYSIZE(integration_method_var));
             ImGui::PopID();
         ImGui::PopItemWidth();
 
         double_field("Epoch ",     100.0f, 105.0f, id, "[days]", epoch);
         double_field("Duration ",  100.0f, 105.0f, id, "[days]", dur);
-        if (integration_method_var_choice == 0)
+        if (integration_method_var_choice == 0 || integration_method_var_choice == 3)
             double_field("Step ",      100.0f, 105.0f, id, "[days]", step);
-        else //integration_method_var_choice is 1, thus render the 'Target error' input field.
+        else //integration_method_var_choice is 1 or 2, thus render the 'Target error' input field.
             double_field("Target error ", 100.0f, 105.0f, id, "[    ]", target_error);
         ImGui::Dummy(ImVec2(0.0f,7.5f));
         ImGui::Separator();
@@ -618,8 +621,8 @@ public:
             impactor_clicked_ok = false;
         if (impactor_checkbox && !impactor_clicked_ok)
         {
-            ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, ImGui::GetWindowPos().y), ImGuiCond_FirstUseEver); 
-            ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f, 320.0f), ImGuiCond_FirstUseEver); 
+            ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, 0.0f), ImGuiCond_FirstUseEver); 
+            ImGui::SetNextWindowSize(ImVec2(0.15f*ImGui::GetIO().DisplaySize.x, 0.4f*ImGui::GetIO().DisplaySize.y), ImGuiCond_FirstUseEver); 
             ImGui::Begin("Impactor parameters", &impactor_checkbox);
 
             //Impactor menu.

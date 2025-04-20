@@ -1,23 +1,33 @@
-Regarding the .obj files, present in the folder obj/asteroids/, the following rules must be satisfied, so that everything works correctly :
+Regarding the .obj files that exist in the asteroids/ directory, the following rules must be satisfied, so that an asteroid mesh model can be used in the simulation :
 
-1) The asteroid mesh must be a closed manifold geometry (closed surface). E.g. box, sphere, potato, etc... However, an open sheet is not valid.
-   A corresponding error message will appear in the KIMIN's console if the user tries to load such a shape file.
+1) The asteroid mesh must be a closed manifold geometry (closed polyhedron), e.g. box, sphere, potato, etc. However, an open sheet is not considered valid.
 
-2) It does NOT matter if the mesh is convex or not. E.g. Churyumov Gerasimenko asteroid (which is non-convex) is totally fine.
+2) It does not matter whether the mesh is convex or not. E.g. Churyumov Gerasimenko (which is non-convex) is totally fine.
 
 3) The mesh must be triangulated and the face indices in the .obj file must be ordered in a counter-clockwise manner
-   when viewed from the front (the side from which the normal points outwards). If you have generated the .obj file via a 3D
-   modeling software (e.g. Blender) or if you are using a pre-made .obj file of an asteroid from a catalog/database, then this assumption is
-   probably already satisfied, so you can just paste the .obj in the /obj/asteroids/ folder. It will appear as a choice to load from the GUI.
+   when viewed from the front (the side from which the normal points outwards). If the .obj file is generated via a 3D
+   modeling software (e.g. Blender) or if it is obtained from a catalog/database, then this assumption is probably already satisfied.
 
-4) The .obj file must contain only vertices (in the format 'v x y z') and face indices (in the format 'f i j k'). Any other content
-   like comments, names, vertex groups, etc... will be ignored. Make sure that the .obj file does NOT contain normals or UV (texture)
-   coordinates, as these will change the face indices lines format. In such a case, a corresponding error message will appear in the KIMIN's console.
+4) In terms of geometry, the .obj file must contain only vertices (in the format 'v x y z') and face indices (in the format 'f i j k').
+   Content such as comments, names, vertex groups, etc., is ignored and poses no problem. However, the .obj file must not contain additional
+   geometry apart from vertices and faces, such as normals, UVs, line elements, etc.
 
-5) Already existing .obj files are provided in the obj/asteroids/ folder as examples. Feel free to use them or add your own.
+5) Already existing .obj files are provided in the asteroids/ directory as examples for use. New meshes can be added in the asteroids/ directory
+   by simply pasting in there and they will automatically appear as available choices in the GUI.
 
-6) Be reasonable with what you are trying to simulate regarding the sizes. Although the .obj file of a red supergiant star along with a tiny cubesat are
-   valid, the corresponding detailed mutual dynamics and graphics rendering might fail regarding the accuracy, as the software is designed
-   to handle asteroid-scaled sizes and numbers.
+6) Care must be taken regarding the sizes. Although the binary system of a red supergiant star, along with a tiny cubesat are
+   valid in theory, the corresponding detailed mutual roto-translational dynamics and graphics rendering might lack accuracy, as the software is designed
+   to handle asteroid-scaled sizes.
    
-7) For the currently existing obj meshes, the vertices are assumed to be in [km].
+7) For the currently existing .obj meshes, the vertices are assumed to be in [km].
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Regarding the .obj files that exist in axes/ directory, they must not be altered.
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Regarding the .obj files that exist in the mascons/ directory, they basically correspond to mascon-filled asteroid models.
+At each .obj file, the number '_number_' denotes the number of mascons that form the body. The '_fixed' means that the body has its center
+of mass at zero (local coords) and diagonal inertia matrix. The mascon models are not encountered as a modeling method
+in KIMIN's GUI. They are only used in the tests/ for testing purposes via the API.

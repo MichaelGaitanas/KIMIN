@@ -1,6 +1,5 @@
 #version 450 core
 
-in vec3 frag_pos_world;
 in vec4 frag_pos_light;
 in vec3 normal;
 
@@ -11,7 +10,7 @@ uniform vec3 light_dir; //Direction of the light in world coordinates.
 uniform sampler2D sample_shadow; //Depth image texture, obtained by the other shader.
 
 //Algorithm to decide whether the fragment is in shadow or not.
-float get_shadow(vec3 norm, vec3 light_dir_norm)
+float get_shadow(float diffuse)
 {
     vec3 projected_coords = frag_pos_light.xyz/frag_pos_light.w; //Perspective division to transform each fragment's position (with respect to light) in NDC, i.e. in [-1, 1].
     projected_coords = 0.5f*projected_coords + vec3(0.5f); //Transformation from [-1, 1] to [0, 1]. This is required to correctly access the shadow map texture, because internally, the UVs range in [0, 1].
@@ -26,7 +25,7 @@ float get_shadow(vec3 norm, vec3 light_dir_norm)
 
     //Shadow acne fix : Balance between shadow acne (self-shadowing) and Peter-shitty-Panning.
     float min_bias = 0.0007f, amplifier = 0.007f;
-    float bias = max(amplifier*(1.0f - max(dot(norm, light_dir_norm), 0.0f)), min_bias);
+    float bias = max(amplifier*(1.0f - diffuse), min_bias);
 
     float nearest_frag_depth = texture(sample_shadow, projected_coords.xy).r; //Sample depth from the shadow map.
     if (projected_coords.z - bias > nearest_frag_depth)
@@ -40,8 +39,7 @@ void main()
     float ambient = 0.1f;
 
     //Diffuse + shadow color component.
-    vec3 norm = normalize(normal);
-    vec3 light_dir_norm = normalize(light_dir);
-    float diffuse = max(dot(norm, light_dir_norm), 0.0f);
-    frag_col = vec4(vec3(ambient + (1.0f - get_shadow(norm, light_dir_norm))*diffuse)*mesh_col, 1.0f);
+    float diffuse = max(dot(normalize(normal), light_dir), 0.0f);
+    
+    frag_col = vec4(vec3(ambient + (1.0f - get_shadow(diffuse))*diffuse)*mesh_col, 1.0f);
 }

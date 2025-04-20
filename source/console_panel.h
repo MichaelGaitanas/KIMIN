@@ -14,8 +14,6 @@
 #include<sstream>
 #include<boost/date_time.hpp>
 
-#include"typedef.h"
-
 class console_panel
 {
 private:
@@ -23,7 +21,7 @@ private:
     bool scroll_to_bottom;
     const int max_buffer_size = 60000; //Threshold for buffer size, measured in bytes (1 byte for each ASCII char and 1-4 bytes for each unicode char due to UTF-8 encoding).
 
-    //Clear the console.
+    //Actual clearance of the console.
     void cls()
     {
         buffer.clear();
@@ -38,22 +36,6 @@ private:
             buffer.append("[Console] : Automatic clearance of the console.");
             scroll_to_bottom = true;
         }
-    }
-
-    //Identify the machine's operating system.
-    str get_os()
-    {
-        #if defined(__APPLE__) || defined(__MACH__)
-            return "Mac OSX";
-        #elif defined(__linux__) || defined(__unix) || defined(__unix__)
-            return "Linux||Unix";
-        #elif defined(__FreeBSD__)
-            return "FreeBSD";
-        #elif defined(_WIN32) || defined(_WIN64)
-            return "Windows";
-        #else
-            return "Other";
-        #endif
     }
 
     str get_local_time()
@@ -86,17 +68,17 @@ public:
     //Render the console imgui window.
     void render()
     {
-        ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x/7.0f, 5.5f*ImGui::GetIO().DisplaySize.y/7.0f), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2(5.0f*ImGui::GetIO().DisplaySize.x/7.0f, 1.5f*ImGui::GetIO().DisplaySize.y/7.0f), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowPos(ImVec2(0.15f*ImGui::GetIO().DisplaySize.x, 0.8f*ImGui::GetIO().DisplaySize.y), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(0.7f*ImGui::GetIO().DisplaySize.x, 0.2f*ImGui::GetIO().DisplaySize.y), ImGuiCond_FirstUseEver);
         ImGui::Begin("Console", nullptr);
 
         //Mouse input : Clear the console.
         if (ImGui::Button("Clear", ImVec2(60.0f,25.0f)))
             cls();
         
-        //Display FPS, OS and GPU.
+        //Display GPU.
         ImGui::SameLine();
-        ImGui::Text("FPS [ %.0f ] ,  OS [ %s ] ,  GPU [ %s ] ", ImGui::GetIO().Framerate, get_os().c_str(), glGetString(GL_RENDERER));
+        ImGui::Text("GPU [ %s ] ",glGetString(GL_RENDERER));
         ImGui::Separator();
         
         ImGui::BeginChild("Scroll", ImVec2(0.0f,0.0f), true, ImGuiWindowFlags_HorizontalScrollbar);

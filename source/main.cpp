@@ -1,11 +1,11 @@
-/* This is the entry point of the KIMIN code. */
+/* Entry point of KIMIN's GUI. */
 
-//#include"logo.h"
+#include"logo.h"
 #include"window.h"
 
 int main()
 {
-    //draw_logo_for_seconds("../logo/logo.jpg", 3.0f);
+    draw_logo_for_seconds("../logo/logo.jpg", 3.0f);
 
     window win;
     win.game_loop();

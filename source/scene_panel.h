@@ -38,7 +38,7 @@ private:
     glm::vec3 cam_aim;
     float cam_rmin, cam_rmax;
 
-    float dir_light_dist, dir_light_lon, dir_light_lat; //Directional light's position in spherical coordinates.
+    float light_dist, light_lon, light_lat; //Directional light's position in spherical coordinates.
 
     int shadow_tex_reso; //Shadow image resolution.
 
@@ -55,7 +55,7 @@ private:
     bool first_time_here;
 
     float light_rmax;
-    glm::mat4 dir_light_projection;
+    glm::mat4 light_projection;
 
     unsigned int fbo_depth, tex_depth; //IDs to hold the depth fbo and the depth texture (for the shadow map).
 
@@ -86,12 +86,12 @@ public:
                     cam_lon(270.0f),
                     cam_lat(60.0f),
                     cam_fov(60.0f),
-                    cam_aim(glm::vec3(0.0f,0.0f,0.0f)),
+                    cam_aim(glm::vec3(0.0f)),
                     cam_rmin(0.0f),
                     cam_rmax(0.0f),
-                    dir_light_dist(0.0f),
-                    dir_light_lon(0.0f),
-                    dir_light_lat(45.0f),
+                    light_dist(0.0f),
+                    light_lon(0.0f),
+                    light_lat(45.0f),
                     shadow_tex_reso(2048),
                     aster1_col(glm::vec3(1.0f,1.0f,1.0f)),
                     aster2_col(glm::vec3(1.0f,1.0f,1.0f)),
@@ -149,8 +149,8 @@ public:
         cam_dist = 5.0f*(*std::max_element(sol.dist.begin(), sol.dist.end()));
 
         light_rmax = cam_rmin + cam_rmax;
-        dir_light_dist = fl*light_rmax;
-        dir_light_projection = glm::ortho(-fc*light_rmax,fc*light_rmax, -fc*light_rmax,fc*light_rmax, (fl-fc)*light_rmax, 2.0f*fc*light_rmax);
+        light_dist = fl*light_rmax;
+        light_projection = glm::ortho(-fc*light_rmax,fc*light_rmax, -fc*light_rmax,fc*light_rmax, (fl-fc)*light_rmax, 2.0f*fc*light_rmax);
 
         first_time_here = true;
     }
@@ -192,8 +192,8 @@ public:
     //This function plots the data {t,f(t)}, where t is time and f(t) is the plot_func.
     bool common_plot(const char *begin_id, const char *begin_plot_id, const char *yaxis_str, bool bool_plot_func, dvec &plot_func)
     {
-        ImGui::SetNextWindowPos( ImVec2(4.0f*ImGui::GetIO().DisplaySize.x/7.0f, 0.0f), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2(2.0f*ImGui::GetIO().DisplaySize.x/7.0f, ImGui::GetIO().DisplaySize.x/5.0f), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowPos( ImVec2(0.6f*ImGui::GetIO().DisplaySize.x, 0.0f), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(0.25f*ImGui::GetIO().DisplaySize.x, 0.4f*ImGui::GetIO().DisplaySize.y), ImGuiCond_FirstUseEver);
         ImGui::Begin(begin_id, &bool_plot_func);
         ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
         if (ImPlot::BeginPlot(begin_plot_id, plot_win_size))
@@ -260,23 +260,19 @@ public:
             first_time_here = false;
         }
         
-        //Instantiate the shader.
+        //Instantiate the shaders.
         static shader shad_depth("../shaders/vertex/trans_dir_light_mvp.vert","../shaders/fragment/nothing.frag");
         static shader shad_dir_light_with_shadow("../shaders/vertex/trans_mvpn_shadow.vert","../shaders/fragment/dir_light_ad_shadow.frag");
 
         //The user controls the light's direction from the gui, assuming spherical coords (longitude and latitude).
         //Here we convert them back to Cartesian coords and end them to the fragment shader.
-        glm::vec3 light_dir = dir_light_dist*glm::vec3(cos(glm::radians(dir_light_lon))*sin(glm::radians(dir_light_lat)),
-                                                       sin(glm::radians(dir_light_lon))*sin(glm::radians(dir_light_lat)),
-                                                       cos(glm::radians(dir_light_lat)));
-        float dir_light_up_x = 0.0f, dir_light_up_y = 0.0f, dir_light_up_z = 1.0f;
-        if (glm::abs(glm::normalize(light_dir).z) > 0.999f)
-        {
-            dir_light_up_y = 1.0f;
-            dir_light_up_z = 0.0f;
-        }
-        glm::mat4 dir_light_view = glm::lookAt(light_dir, glm::vec3(0.0f), glm::vec3(dir_light_up_x, dir_light_up_y, dir_light_up_z));
-        glm::mat4 dir_light_pv = dir_light_projection*dir_light_view; //Directional light's projection*view (total) matrix.
+        glm::vec3 light_dir = glm::normalize(glm::vec3(cos(glm::radians(light_lon))*sin(glm::radians(light_lat)),
+                                                       sin(glm::radians(light_lon))*sin(glm::radians(light_lat)),
+                                                       cos(glm::radians(light_lat))));
+        glm::vec3 light_up = (glm::abs(light_dir).z > 0.999f) ? glm::vec3(0.0f,1.0f,0.0f) : glm::vec3(0.0f,0.0f,1.0f);
+
+        glm::mat4 light_view = glm::lookAt(light_dist*light_dir, glm::vec3(0.0f), light_up);
+        glm::mat4 light_pv = light_projection*light_view; //Directional light's projection*view (total) matrix.
 
         glm::mat4 projection = glm::infinitePerspective(glm::radians(cam_fov), win_width/(float)win_height, 0.1f);
 
@@ -292,11 +288,11 @@ public:
         shad_dir_light_with_shadow.use();
         shad_dir_light_with_shadow.set_mat4_uniform("projection", projection);
         shad_dir_light_with_shadow.set_mat4_uniform("view", view);
-        shad_dir_light_with_shadow.set_mat4_uniform("dir_light_pv", dir_light_pv);
+        shad_dir_light_with_shadow.set_mat4_uniform("light_pv", light_pv);
         shad_dir_light_with_shadow.set_vec3_uniform("light_dir", light_dir);
 
         shad_depth.use();
-        shad_depth.set_mat4_uniform("dir_light_pv", dir_light_pv);
+        shad_depth.set_mat4_uniform("light_pv", light_pv);
 
         double cm1fac = -sol.integr.properties.M2/(sol.integr.properties.M1 + sol.integr.properties.M2);
         double cm2fac =  sol.integr.properties.M1/(sol.integr.properties.M1 + sol.integr.properties.M2);
@@ -565,12 +561,12 @@ public:
         ImGui::Text("Lon");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##42", &dir_light_lon, 0.0f, 360.0f);
+        ImGui::SliderFloat("[deg]##42", &light_lon, 0.0f, 360.0f);
 
         ImGui::Text("Lat");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##43", &dir_light_lat, 0.0f, 180.0f);
+        ImGui::SliderFloat("[deg]##43", &light_lat, 0.0f, 180.0f);
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Separator();
@@ -639,8 +635,8 @@ public:
         this->win_width = win_width;
         this->win_height = win_height;
 
-        ImGui::SetNextWindowPos( ImVec2(6.0f*ImGui::GetIO().DisplaySize.x/7.0f, 21.0f), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2(     ImGui::GetIO().DisplaySize.x/7.0f, ImGui::GetIO().DisplaySize.y - 21.0f), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowPos( ImVec2(0.85f*ImGui::GetIO().DisplaySize.x, 21.0f), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(0.15f*ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y - 21.0f), ImGuiCond_FirstUseEver);
         ImGui::Begin("Scene", nullptr);
         ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
         if (ImGui::CollapsingHeader("Plots 2D"))
