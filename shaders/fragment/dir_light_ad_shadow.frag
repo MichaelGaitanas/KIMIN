@@ -9,7 +9,7 @@ uniform vec3 mesh_col; //Mesh color.
 uniform vec3 light_dir; //Direction of the light in world coordinates.
 uniform sampler2D sample_shadow; //Depth image texture, obtained by the other shader.
 
-//Algorithm to decide whether the fragment is in shadow or not.
+//Decide whether or not the fragment is in shadow.
 float get_shadow(float diffuse)
 {
     vec3 projected_coords = frag_pos_light.xyz/frag_pos_light.w; //Perspective division to transform each fragment's position (with respect to light) in NDC, i.e. in [-1, 1].
