@@ -20,7 +20,7 @@ In case you do use GNU's gcc/g++ compiler, here's how you can compile and run th
 
 Windows : 
 
-'Add to path' the compiler, so you can execute commands in the cmd. Then, in cmd navigate to the KIMIN/kimin/ folder type :
+'Add to path' the compiler, so you can execute commands in the cmd. Then, in cmd navigate to the KIMIN/source/ folder type :
 
 g++ main.cpp -o main.exe (PATH_TO_KIMIN)\imgui\*.cpp -I (PATH_TO_KIMIN)\imgui -lopengl32 -lglfw3 -lglew32
 

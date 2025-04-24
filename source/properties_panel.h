@@ -226,10 +226,10 @@ public:
             if (semiaxes1[0] > 0.0 && semiaxes1[1] > 0.0 && semiaxes1[2] > 0.0 &&
                 semiaxes2[0] > 0.0 && semiaxes2[1] > 0.0 && semiaxes2[2] > 0.0)
             {
-                poly1.load_obj_file("../obj/asteroids/uvsphere64x64_rad1.obj");
+                poly1.load_obj_file("../obj/polyhedra/uvsphere64x64_R1km.obj");
                 poly1.set_scale_xyz(semiaxes1);
                 poly1.gen_norms();
-                poly2.load_obj_file("../obj/asteroids/uvsphere64x64_rad1.obj");
+                poly2.load_obj_file("../obj/polyhedra/uvsphere64x64_R1km.obj");
                 poly2.set_scale_xyz(semiaxes2);
                 poly2.gen_norms();
             }
@@ -243,9 +243,9 @@ public:
             else
             {
                 console.add_timed_text("[Shape] : Loading .obj file 1... ");
-                if (poly1.is_kimin_valid_obj(("../obj/asteroids/" + obj1_path).c_str()))
+                if (poly1.is_kimin_valid_obj(("../obj/polyhedra/" + obj1_path).c_str()))
                 {
-                    poly1.load_obj_file(("../obj/asteroids/" + obj1_path).c_str());
+                    poly1.load_obj_file(("../obj/polyhedra/" + obj1_path).c_str());
                     if (!poly1.is_closed_manifold())
                         {console.add_text("< Invalid .obj file for 'Body 1' (non closed manifold). >\n"); return false;}
                     else
@@ -259,9 +259,9 @@ public:
             else
             {
                 console.add_timed_text("[Shape] : Loading .obj file 2... ");
-                if (poly2.is_kimin_valid_obj(("../obj/asteroids/" + obj2_path).c_str()))
+                if (poly2.is_kimin_valid_obj(("../obj/polyhedra/" + obj2_path).c_str()))
                 {
-                    poly2.load_obj_file(("../obj/asteroids/" + obj2_path).c_str());
+                    poly2.load_obj_file(("../obj/polyhedra/" + obj2_path).c_str());
                     if (!poly2.is_closed_manifold())
                         {console.add_text("< Invalid .obj file for 'Body 2' (non closed manifold). >\n"); return false;}
                     else
@@ -415,7 +415,7 @@ public:
             ImGui::Dummy(ImVec2(0.0f,5.0f));
 
             //File listing logic.
-            static std::vector<std::filesystem::path> all_obj_files = list_obj_files("../obj/asteroids/"); //Store all the .obj files located in the obj/asteroids/ directory.
+            static std::vector<std::filesystem::path> all_obj_files = list_obj_files("../obj/polyhedra/"); //Store all the .obj files located in the obj/polyhedra/ directory.
             if (ImGui::TreeNodeEx("Available .obj files :"))
             {
                 for (size_t i = 0; i < all_obj_files.size(); ++i)

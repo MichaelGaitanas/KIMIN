@@ -1,4 +1,4 @@
-/* This class handles the rendering logic of the down panel (console) in the gui */
+/* This class handles the rendering logic of the down panel (console) in the gui. */
 
 #ifndef CONSOLE_PANEL_H
 #define CONSOLE_PANEL_H

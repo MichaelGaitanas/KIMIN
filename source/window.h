@@ -10,7 +10,6 @@
 
 #include"gui.h"
 
-
 class window
 {
 private:
