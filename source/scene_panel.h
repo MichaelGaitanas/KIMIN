@@ -83,7 +83,7 @@ public:
                     frame_rate(60),
                     frame_accumulator(0.0f),
                     cam_dist(0.0f),
-                    cam_lon(270.0f),
+                    cam_lon(40.0f),
                     cam_lat(60.0f),
                     cam_fov(60.0f),
                     cam_aim(glm::vec3(0.0f)),
@@ -91,7 +91,7 @@ public:
                     cam_rmax(0.0f),
                     light_dist(0.0f),
                     light_lon(0.0f),
-                    light_lat(45.0f),
+                    light_lat(90.0f),
                     shadow_tex_reso(2048),
                     aster1_col(glm::vec3(1.0f,1.0f,1.0f)),
                     aster2_col(glm::vec3(1.0f,1.0f,1.0f)),
@@ -119,7 +119,7 @@ public:
         glGenTextures(1, &tex_depth);
         glBindTexture(GL_TEXTURE_2D, tex_depth);
         //Shadow mapping is highly sensitive to depth precision, hence the 32 bits.
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, shadow_tex_reso, shadow_tex_reso, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, shadow_tex_reso, shadow_tex_reso, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);  

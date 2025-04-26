@@ -9,6 +9,7 @@
 #include<fstream>
 #include<algorithm>
 #include<vector>
+#include<string>
 
 #include<Eigen/Dense>
 
@@ -24,77 +25,106 @@ private:
     dmatnx3 norms;
     umatnx2 edges;
 
-    double vol; //Polyhedron's volume.
+    double vol; //Polyhedron's total volume.
 
-    bool norms_exist;
-    bool edges_exist;
-    bool vol_exists;
+    //Some boolean flags...
+    bool norms_exist, edges_exist, vol_exists;
 
-    //OpenGL - related members.
+    //OpenGL related members. They are used after the numerical integration ends, in order to render the 3D scene.
     bool gl_ready; //Whether or not the mesh data are uploaded to the gpu.
-    unsigned int gl_vao = 0, gl_vbo = 0; //Vertex array and vertex buffer objects.
-    size_t gl_vertex_count = 0; //*triangle* vertices in the interleaved buffer.
+    unsigned int gl_vao, gl_vbo; //Vertex array and vertex buffer objects.
+    size_t gl_vertex_count; //Triangle vertices in the interleaved buffer.
 
 public:
-    //Load the .obj file assuming it contains vertcies and faces ('v x y z' and 'f i j k').
+    polyhedron() : verts(),
+                   faces(),
+                   norms(),
+                   edges(),
+                   vol(0.0),
+                   norms_exist(false),
+                   edges_exist(false),
+                   vol_exists(false),
+                   gl_ready(false),
+                   gl_vao(0),
+                   gl_vbo(0),
+                   gl_vertex_count(0)
+    { }
+
+    const dmatnx3 &get_verts() const
+    {
+        return verts;
+    }
+
+    const umatnx3 &get_faces() const
+    {
+        return faces;
+    }
+
+    const dmatnx3 &get_norms() const
+    {
+        return norms;
+    }
+
+    const umatnx2 &get_edges() const
+    {
+        return edges;
+    }
+
+    //Load the .obj file assuming it contains only vertcies and faces ('v x y z' and 'f i j k').
     void load_obj_file(const char *path)
     {
-        norms_exist = false;
-        edges_exist = false;
-        vol_exists = false;
-        gl_ready = false;
-        verts.clear();
-        faces.clear();
-        norms.clear();
-        edges.clear();
+        //Reset the polyhedron's state first.
+        clear_gl_mesh(); //This tears down any gl* state from the previous mesh (if any).
+        *this = polyhedron{}; //This resets all members to their constructor defaults in one command.
+
+        //Now proceed to loading.
 
         std::ifstream objfile(path);
         if (!objfile.is_open())
         {
-            fprintf(stderr, "Error : '%s' could not be opened. Returning from load_obj_file().\n", path);
+            fprintf(stderr, "[Warning] : In polyhedron::load_obj_file(), '%s' could not be opened. Returning...\n", path);
             return;
         }
 
         double x,y,z; //Vertices.
         unsigned int vi1,vi2,vi3; //Faces.
 
-        str line;
+        std::string line;
         while (getline(objfile, line))
         {
             if (line[0] == 'v' && line[1] == ' ') //Then we have a vertex line.
             {
                 sscanf(line.c_str(), "v %lf %lf %lf", &x, &y, &z);
-                verts.push_back({x,y,z});
+                verts.push_back(dvec3{x,y,z});
             }
             else if (line[0] == 'f' && line[1] == ' ') //Then we have a face line.
             {
                 sscanf(line.c_str(), "f %u %u %u", &vi1,&vi2,&vi3);
-                faces.push_back({vi1-1, vi2-1, vi3-1});
+                faces.push_back(uvec3{vi1-1, vi2-1, vi3-1});
             }
         }
         objfile.close();
     }
 
-    //Export to an .obj file the current vertices and faces of the polyhedron mesh ('v x y z' and 'f i j k).
+    //Export to an .obj file the current vertices and faces of the polyhedron mesh ('v x y z' and 'f i j k').
     void export_obj_file_vf(const char *path)
     {
         FILE *fp = fopen(path,"w");
         for (size_t i = 0; i < verts.size(); ++i)
-            fprintf(fp, "v %.15lf %.15lf %.15lf\n", verts[i][0],verts[i][1],verts[i][2]);
+            fprintf(fp, "v %.15lf %.15lf %.15lf\n", verts[i][0], verts[i][1], verts[i][2]);
         for (size_t i = 0; i < faces.size(); ++i)
-            fprintf(fp, "f %u %u %u\n", faces[i][0]+1,faces[i][1]+1,faces[i][2]+1);
+            fprintf(fp, "f %u %u %u\n", faces[i][0]+1, faces[i][1]+1, faces[i][2]+1);
         fclose(fp);
     }
 
-    //Generate the polyhderon's normals.
+    //Generate the polyhderon's (flat) normals.
     void gen_norms()
     {
-        if (norms_exist)
-            return;
+        if (norms_exist) return; //Do not repeat the same shit...
 
         if (faces.empty())
         {
-            printf("Warning : faces.empty() = true. No normals are generated. Returning from gen_norms().\n");
+            fprintf(stderr, "[Warning] : In polyhedron::gen_norms(), faces.empty() = true. No normals are generated. Returning...\n");
             return;
         }
         
@@ -102,9 +132,9 @@ public:
         norms.resize(faces.size());
         for (size_t i = 0; i < faces.size(); ++i)
         {
-            dvec3 p0 = verts[faces[i][0]];
-            dvec3 p1 = verts[faces[i][1]];
-            dvec3 p2 = verts[faces[i][2]];
+            const dvec3 &p0 = verts[faces[i][0]];
+            const dvec3 &p1 = verts[faces[i][1]];
+            const dvec3 &p2 = verts[faces[i][2]];
             dvec3 perp = cross(p1-p0, p2-p1);
             double len = length(perp);
             if (len > 1e-15)
@@ -118,12 +148,11 @@ public:
     //Generate the polyhedron's (unique) edge indices.
     void gen_edges()
     {
-        if (edges_exist)
-            return;
+        if (edges_exist) return;
         
         if (faces.empty())
         {
-            printf("Warning : faces.empty() = true. No edges are generated. Returning from gen_edges().\n");
+            fprintf(stderr, "[Warning] : In polyhedron::gen_edges(), faces.empty() = true. No edges are generated. Returning...\n");
             return;
         }
 
@@ -140,47 +169,11 @@ public:
             edges[edge_index++] = {std::min(f1, f2), std::max(f1, f2)};
             edges[edge_index++] = {std::min(f2, f0), std::max(f2, f0)};
         }
-
-        //Remove any unused capacity if any...
-        edges.resize(edge_index);
-
-        //Sort the edges to prepare for duplicate removal.
-        std::sort(edges.begin(), edges.end());
-        //Now remove duplicates.
-        edges.erase(std::unique(edges.begin(), edges.end()), edges.end());
+        edges.resize(edge_index); //Remove any unused capacity if any...
+        std::sort(edges.begin(), edges.end()); //Sort the edges to prepare for duplicate removal.
+        edges.erase(std::unique(edges.begin(), edges.end()), edges.end()); //Now remove duplicates.
 
         edges_exist = true;
-    }
-
-    bool is_kimin_valid_obj(const char *path)
-    {
-        std::ifstream objfile(path);
-        if (!objfile.is_open())
-        {
-            fprintf(stderr, "Error : '%s' could not be opened. Returning from 'false' from is_kimin_valid_obj().\n", path);
-            return false;
-        }
-    
-        bool has_verts = false;
-        bool has_faces = false;
-        str line;
-        while (getline(objfile, line))
-        {
-            if (line[0] == 'v' && line[1] == ' ')
-                has_verts = true;
-            else if (line[0] == 'f' && line[1] == ' ')
-                has_faces = true;
-            else if (line[0] == 'v' && line[1] == 'n' && line[2] == ' ')
-                return false;
-            else if (line[0] == 'v' && line[1] == 't' && line[2] == ' ')
-                return false;
-        }
-        objfile.close();
-
-        if (has_verts && has_faces)
-            return true;
-
-        return false;
     }
 
     //This member function decides whether or not the polyhedron is a closed manifold, i.e. closed surface (with no boundaries).
@@ -189,7 +182,7 @@ public:
     {   
         if (faces.empty())
         {
-            printf("Warning : faces.empty() = true. Returning false.\n");
+            fprintf(stderr, "[Warning] : In polyhedron::is_closed_manifold(), faces.empty() = true. Returning false.\n");
             return false; //Because an empty mesh isn't a closed manifold.
         }
 
@@ -228,8 +221,113 @@ public:
                 return false;
             i += count;
         }
-    
     return true;
+    }
+
+    bool is_kimin_valid_obj(const char *path)
+    {
+        std::ifstream objfile(path);
+        if (!objfile.is_open())
+        {
+            fprintf(stderr, "[Warning] : In polyhedron::is_kimin_valid_obj(), '%s' could not be opened. Returning false.\n", path);
+            return false;
+        }
+    
+        bool has_verts = false, has_faces = false;
+        std::string line;
+        while (getline(objfile, line))
+        {
+            if (line[0] == 'v' && line[1] == ' ')
+                has_verts = true;
+            else if (line[0] == 'f' && line[1] == ' ')
+                has_faces = true;
+            else if (line[0] == 'v' && line[1] == 'n' && line[2] == ' ') //This means that the .obj has normals, which we reject.
+                return false;
+            else if (line[0] == 'v' && line[1] == 't' && line[2] == ' ') //This means that the .obj has UVs, which we reject.
+                return false;
+        }
+        objfile.close();
+
+        if (has_verts && has_faces)
+            return true;
+
+        return false;
+    }
+
+    //Build and upload to the GPU an interleaved (position + normal) buffer for flat shading (Lambert).
+    void set_as_gl_mesh()
+    {
+        //If the polyhedron is already ready for drawing, exit the function.
+        if (gl_ready) return;
+
+        //Safety check. You never know...
+        if (faces.empty() || verts.empty() || norms.empty())
+        {
+            fprintf(stderr, "[Warning] : In polyhedron::set_as_gl_mesh(), essential mesh data (vertices || faces || normals) are missing. Returning...\n");
+            return;
+        }
+
+        std::vector<float> interleaved_buffer;
+        interleaved_buffer.reserve(3*6*faces.size()); //3 vertices per face, 6 floats each.
+        for (size_t i = 0; i < faces.size(); ++i)
+        {
+            const dvec3 &n = norms[i];
+            for (int k = 0; k < 3; k++)
+            {
+                const dvec3 &v = verts[faces[i][k]];
+
+                interleaved_buffer.push_back((float)v[0]);
+                interleaved_buffer.push_back((float)v[1]);
+                interleaved_buffer.push_back((float)v[2]);
+
+                interleaved_buffer.push_back((float)n[0]);
+                interleaved_buffer.push_back((float)n[1]);
+                interleaved_buffer.push_back((float)n[2]);
+            }
+        }
+        gl_vertex_count = interleaved_buffer.size()/6; //Because each vertex has 6 float attributes bound.
+
+        glGenVertexArrays(1, &gl_vao);
+        glBindVertexArray(gl_vao);
+
+        glGenBuffers(1, &gl_vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, gl_vbo);
+        glBufferData(GL_ARRAY_BUFFER, interleaved_buffer.size()*sizeof(float), interleaved_buffer.data(), GL_STATIC_DRAW);
+
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)(3*sizeof(float)));
+        glEnableVertexAttribArray(1);
+
+        glBindVertexArray(0);
+
+        gl_ready = true;
+    }
+
+    //Draw the polyhedral mesh.
+    void draw_gl_mesh()
+    {
+        glBindVertexArray(gl_vao);
+        glDrawArrays(GL_TRIANGLES, 0, (GLsizei)gl_vertex_count);
+        glBindVertexArray(0);
+    }
+
+    //Cleanup GPU resources. This basically resets the OpenGL - related members back to what u see in the beginning of the class.
+    void clear_gl_mesh()
+    {
+        if (gl_vbo != 0)
+        {
+            glDeleteBuffers(1, &gl_vbo);
+            gl_vbo = 0;
+        }
+        if (gl_vao != 0)
+        {
+            glDeleteVertexArrays(1, &gl_vao);
+            gl_vao = 0;
+        }
+        gl_vertex_count = 0;
+        gl_ready = false;
     }
 
     //Calculate the polyhderon's total volume.
@@ -252,26 +350,6 @@ public:
         }
         vol_exists = true;
         return vol;
-    }
-
-    const dmatnx3 &get_verts() const
-    {
-        return verts;
-    }
-
-    dmatnx3 get_norms()
-    {
-        return norms;
-    }
-
-    const umatnx3 &get_faces() const
-    {
-        return faces;
-    }
-
-    umatnx2 get_edges()
-    {
-        return edges;
     }
 
     //Farthest vertex distance with respect to the local coordinate system.
@@ -1010,85 +1088,6 @@ public:
             verts[i][1] = scale_factor[1]*verts[i][1];
             verts[i][2] = scale_factor[2]*verts[i][2];
         }
-    }
-
-    //Build and upload to the GPU an interleaved (position + normal) buffer for flat shading (Lambert).
-    void set_as_gl_mesh()
-    {
-        //If the polyhedron is already ready for drawing, exit the function.
-        if (gl_ready)
-            return;
-
-        clear_gl_mesh();
-
-        //Safety check.
-        if (faces.empty() || verts.empty() || norms.empty())
-        {
-            printf("Warning : In set_as_gl_mesh(), essential mesh data (vertices || faces || normals) are missing. Returning.\n");
-            return;
-        }
-
-        std::vector<float> interleaved_buffer;
-        interleaved_buffer.reserve(3*6*faces.size()); //3 vertices per face, 6 floats each.
-        for (size_t i = 0; i < faces.size(); ++i)
-        {
-            const dvec3 &n = norms[i];
-            for (int k = 0; k < 3; k++)
-            {
-                const dvec3 &v = verts[faces[i][k]];
-
-                interleaved_buffer.push_back((float)v[0]);
-                interleaved_buffer.push_back((float)v[1]);
-                interleaved_buffer.push_back((float)v[2]);
-
-                interleaved_buffer.push_back((float)n[0]);
-                interleaved_buffer.push_back((float)n[1]);
-                interleaved_buffer.push_back((float)n[2]);
-            }
-        }
-        gl_vertex_count = interleaved_buffer.size()/6; //Because each vertex has 6 float attributes bound.
-
-        glGenVertexArrays(1, &gl_vao);
-        glBindVertexArray(gl_vao);
-
-        glGenBuffers(1, &gl_vbo);
-        glBindBuffer(GL_ARRAY_BUFFER, gl_vbo);
-        glBufferData(GL_ARRAY_BUFFER, interleaved_buffer.size()*sizeof(float), interleaved_buffer.data(), GL_STATIC_DRAW);
-
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)0);
-        glEnableVertexAttribArray(0);
-
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)(3*sizeof(float)));
-        glEnableVertexAttribArray(1);
-
-        glBindVertexArray(0);
-
-        gl_ready = true;
-    }
-
-    //Draw the polyhedral mesh.
-    void draw_gl_mesh()
-    {
-        glBindVertexArray(gl_vao);
-        glDrawArrays(GL_TRIANGLES, 0, (GLsizei)gl_vertex_count);
-        glBindVertexArray(0);
-    }
-
-    //Cleanup GPU resources. This basically resets the OpenGL - related members back to what u see in the beginning of the class.
-    void clear_gl_mesh()
-    {
-        if (gl_vbo != 0)
-        {
-            glDeleteBuffers(1, &gl_vbo);
-            gl_vbo = 0;
-        }
-        if (gl_vao != 0)
-        {
-            glDeleteVertexArrays(1, &gl_vao);
-            gl_vao = 0;
-        }
-        gl_vertex_count = 0;
-        gl_ready = false;
     }
 };
 

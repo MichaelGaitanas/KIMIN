@@ -1,4 +1,4 @@
-/* This class handles the rendering logic of the left panel (properties) in the gui */
+/* This class handles the rendering logic of the left panel (properties) in the gui. */
 
 #ifndef PROPERTIES_PANEL_H
 #define PROPERTIES_PANEL_H
@@ -9,8 +9,8 @@
 
 #include<filesystem>
 #include<atomic>
+#include<string>
 
-#include"typedef.h"
 #include"constant.h"
 #include"linalg.h"
 #include"conversion.h"
@@ -24,23 +24,23 @@ public:
     
     bool ell_checkbox; //'Ellipsoids' checkbox state.
     dvec3 semiaxes1, semiaxes2; //Ellipsoids 'a1', 'b1', 'c1', 'a2', 'b2', 'c2' double fields.
-    bool ell_clicked_ok; //Ellipsoids 'OK' button (pressed or not).
+    bool ell_clicked_ok; //Ellipsoids 'OK' button.
 
     bool obj_checkbox; //'.obj file' checkbox state.
     int obj1_clicked_index, obj2_clicked_index; //Index of the clicked .obj path. -1 means no path is clicked. Only one path per body can be clicked.
     bool obj1_clicked, obj2_clicked; //Decide if an obj file (from 'Body 1' or 'Body 2') is clicked.
-    str obj1_path, obj2_path; //Relative paths to the 2 .obj models.
-    bool obj_clicked_ok; //.obj 'OK' button (pressed or not).
+    std::string obj1_path, obj2_path; //Relative paths to the 2 .obj models.
+    bool obj_clicked_ok; //.obj 'OK' button.
 
     bool ord2_checkbox, ord3_checkbox, ord4_checkbox; //'Mutual potential' available options. Only one of them may be chosen (or none, but it will produce an error in the console :P).
 
     double M1, M2; //'M1', 'M2' double fields (referring to 'Body 1' and 'Body 2' respectively).
 
-    int integration_method_var_choice; //Initial choice is 0, meaning RKF78 constant. 1 means RKF78 adaptive, 2 means Bulirsch-Stoer adaptive and 3 means Adams-Bashforth-Moulton constant.
+    int integration_method_var_choice; //Initial choice is 0, meaning RKF78 constant. 1 means RKF78 adaptive, 2 means BStoer adaptive and 3 means ABM5 constant.
     double epoch, dur, step; //'Epoch', 'Duration', 'Step' double fields.
-    double target_error; //'Target error' double field.
+    double target_error; //'Target error' double field (if an adaptive method is chosen).
 
-    int cart_kep_var_choice; //Initial choice is 0, meaning that Cartesian elements are chosen as inputs. 1 means Keplerian elements.
+    int cart_kep_var_choice; //Initial choice is 0, meaning that relative Cartesian elements are chosen as inputs. 1 means mutual Keplerian elements.
     dvec6 cart; //'x', 'y', 'z', 'υx', 'υy', 'υz' double fields.
     dvec6 kep; //'a', 'e', 'i', 'Ω', 'ω', 'M' double fields.
 
@@ -48,21 +48,24 @@ public:
     dvec3 rpy1, rpy2; //'roll 1', 'pitch 1', 'yaw 1', 'roll 2', 'pitch 2', 'yaw 2' double fields.
     dvec4 q1, q2; //'q10', 'q11', 'q12', 'q13', 'q20', 'q21', 'q22', 'q23' double fields.
 
-    int frame_type_choice; //Initial choice is 0, meaning that the angular velocities are set (as inputs) in the global inertial frame. 1 means corresponds to body frames.
+    int frame_type_choice; //Initial choice is 0, meaning that the angular velocities are set (as inputs) in the global inertial frame. 1 corresponds to body frames.
     dvec3 w1i, w2i, w1b, w2b; //'ω1ix', 'ω1iy', 'ω1iz', 'ω2bx', 'ω2by, 'ω2bz' double fields (nature of the frame depends on 'frame_type_choice').
 
-    bool collision_no, collision_spheres, collision_polyhedra;
+    bool collision_no, collision_spheres, collision_polyhedra; //Which type of collision criterion to apply in the simulation.
+    //Note that in the 'collision_no' case, there WILL be a singularity when the mutual distance r between the asteroids approaches zero. The integrator will break then.
+    //'collision_spheres' causes almost zero bottleneck for the integrator performance.
+    //'collision_polyhedra' is accurate, but it is slow, as it contains a double for-loop over the triangles of the polyhedra per integration step. Do not use when high-res meshes are loaded.
 
     bool impactor_checkbox; //'Kinetic impactor' checkbox state.
-    bool impactor_clicked_ok; //'OK' button in the kinetic impactor parameters window (pressed or not).
-    double M_impact; //Impactor's mass.
+    bool impactor_clicked_ok; //'OK' button in the kinetic impactor parameters window.
+    double M_impact; //Impactor's total mass.
     dvec3 v_impact; //Impactor's velocity vector.
     double beta; //Momentum enhancement factor (β).
 
     bool run_pressed; //Whether or not the 'Run' button has been pressed.
     bool abort_pressed; //Whether or not the 'Abort' button has been pressed.
 
-    polyhedron poly1, poly2;
+    polyhedron poly1, poly2; //Polyhedra instances.
 
     /*
     properties_panel() : sim_name(""),
@@ -102,7 +105,7 @@ public:
                          w1b(dvec3{0.0,0.0,0.0}),
                          w2b(dvec3{0.0,0.0,0.0}),
                          collision_no(false),
-                         collision_spheres(true),
+                         collision_spheres(false),
                          collision_polyhedra(false),
                          impactor_checkbox(false),
                          impactor_clicked_ok(false),
@@ -110,7 +113,9 @@ public:
                          v_impact(dvec3{0.0,0.0,0.0}),
                          beta(0.0),
                          run_pressed(false),
-                         abort_pressed(false)
+                         abort_pressed(false),
+                         poly1(),
+                         poly2()
     { }
     */
 
@@ -136,7 +141,7 @@ public:
                          epoch(0.0),
                          dur(100.0),
                          step(0.005),
-                         target_error(1.0e-9),
+                         target_error(1.0e-12),
                          cart_kep_var_choice(1),
                          cart(dvec6{0.0,0.0,0.0,0.0,0.0,0.0}),
                          kep(dvec6{1.5,0.0,0.0,0.0,0.0,0.0}),
@@ -159,7 +164,9 @@ public:
                          v_impact(dvec3{0.0,0.0,0.0}),
                          beta(0.0),
                          run_pressed(false),
-                         abort_pressed(false)
+                         abort_pressed(false),
+                         poly1(),
+                         poly2()
     { }
 
     //This function receives as input a 'path' to a directory and as a result it returns a vector of paths, corresponding
@@ -169,7 +176,6 @@ public:
         std::vector<std::filesystem::path> paths;
         //for (const auto &entry : std::filesystem::recursive_directory_iterator(path)) //(Look recursively inside child directories as well.)
         for (const auto &entry : std::filesystem::directory_iterator(path))
-            //Check if the entry is a regular file and has a ".obj" extension.
             if (entry.is_regular_file() && entry.path().extension() == ".obj")
                 paths.push_back(entry.path().filename());
         return paths;
@@ -177,9 +183,8 @@ public:
 
     //This function automates common double inputs via the keyboard. It creates a rectangle, inside of which the user may enter a double.
     //'label' is a string written on the left of the rectangle. 'item_width' is the horizontal legth (space) of the rectangle. 'id' is a unique
-    //int with which the computer identifies which variable to affect (coz you may have multiple input fields). 'unit' is a string written on the right
-    //of the rectangle (for us it is always the unit of measurement of the current variable). 'variable' is the variable itself, passed by reference to
-    //InputDouble(), so it may change.
+    //int via which the computer identifies which variable to affect. 'unit' is a string written on the right of the rectangle (acting as unit of measurement).
+    //'variable' is the variable itself, passed by reference to InputDouble(), so it may change.
     void double_field(const char *label, const float item_width, const float align_width, int &id, const char *unit, double &variable)
     {
         ImGui::Text(label);
@@ -192,15 +197,13 @@ public:
         ImGui::PopItemWidth();
     }
 
-    //This member functions processes all the user inputs and checks if they are valid (assuming some rules).
-    //If not, the corresponding errors will be displayed on the console and the simulation will not run.
-    bool validate(std::atomic<float> &progress, console_panel &console)
+    //This member function processes all the user inputs and checks if they are valid, assuming some rules.
+    //If not, corresponding errors are displayed in the console and the simulation will not run, until fixed.
+    bool validate(console_panel &console)
     {   
-        progress.store(0.0f);
-        
         //Possible error 1 : Simulation name (empty, pure spaces, begin with space, illegal characters).
-        str sim_name_copy = sim_name;
-        if ( (sim_name_copy.empty()) || (sim_name_copy.find_first_not_of(' ') == str::npos) || (sim_name_copy[0] == ' ') || (sim_name_copy.find_first_of("<>:\"/\\|?*") != str::npos) )
+        std::string sim_name_copy = sim_name;
+        if ( (sim_name_copy.empty()) || (sim_name_copy.find_first_not_of(' ') == std::string::npos) || (sim_name_copy[0] == ' ') || (sim_name_copy.find_first_of("<>:\"/\\|?*") != std::string::npos) )
             {console.add_timed_text("[Error] : 'Simulation name' is invalid.\n"); return false;}
 
         //Possible error 2 : Shape model checkboxes (at least one must be checked when the 'Run' button has been pressed).
@@ -293,11 +296,10 @@ public:
         }
 
         //Possible error 10 : Relative position/velocity (mutual distance must be > 0).
-        if (cart_kep_var_choice == 0 && length(dvec3{cart[0], cart[1], cart[2]}) <= 1e-15)
+        if (cart_kep_var_choice == 0 && length(dvec3{cart[0], cart[1], cart[2]}) <= 0.0)
             {console.add_timed_text("[Error] : Invalid set of 'x', 'y', 'z' (mutual distance must be positive).\n"); return false;}
 
-        //Possible error 11 : Relative Keplerian elements ('a' must be > 0, 'e' must be in [0,1))
-        //Note : 'e' can actually become >= 1 and handled, but first we need to extend the functions cart2kep() and kep2cart() a little bit (maybe later...).
+        //Possible error 11 : Relative Keplerian elements ( 'a' must be > 0, 'e' must be in [0,1)U(1,inf) )
         if (cart_kep_var_choice == 1)
         {
             if (kep[0] <= 0.0)
@@ -322,7 +324,7 @@ public:
                 q2 = quat2unit(q2); //This correction will be visible in the gui.
         }
 
-        //Possible error 13 : Collision shapes checkboxes (at least one must be checked).
+        //Possible error 13 : Collision shapes (at least one must be checked).
         if (!collision_no && !collision_spheres && !collision_polyhedra)
             {console.add_timed_text("[Error] : At least one collision criterion must be selected.\n"); return false;}
 
@@ -350,7 +352,7 @@ public:
         ImGui::SetNextWindowSize(ImVec2(0.15f*ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y - 21.0f), ImGuiCond_FirstUseEver);
         ImGui::Begin("Properties", nullptr);
 
-        //Simunlation name text field. Basically this is the name of the folder that will be created later, holding the orbit data.
+        //Simulation name text field. Basically this is the name of the folder that will be created later, holding the orbit data.
         ImGui::Text("Simulation name");
         ImGui::PushItemWidth(200.0f);
             ImGui::InputText(" ", sim_name, IM_ARRAYSIZE(sim_name));
@@ -361,7 +363,6 @@ public:
 
         //Ellipsoid and .obj shape logic.
         ImGui::Text("Shape models");
-
 
         //Ellipsoid shape logic.
         if (ImGui::Checkbox("Ellipsoids", &ell_checkbox) && ell_checkbox)
@@ -393,7 +394,6 @@ public:
             ImGui::End();
         }
     
-
         //.obj shape logic.
         if (ImGui::Checkbox(".obj files", &obj_checkbox) && obj_checkbox)
             obj_clicked_ok = false;
@@ -476,18 +476,18 @@ public:
         ImGui::Dummy(ImVec2(0.0f,7.5f));
 
         //Integration method and time parameters.
-        ImGui::Text("Integration");
+        ImGui::Text("Numerical integration");
         ImGui::Indent();
 
-        ImGui::Text("Numerical method");
+        ImGui::Text("Method");
 
         //Integration method (RKF78 constant, RKF78 adaptive, Bulirsch–Stoer adaptive).
         ImGui::PushItemWidth(200.0f);
             ImGui::PushID(id++);
-                static const char *integration_method_var[4] = {"RKF78 (constant)",
+                static const char *integration_method_var[4] = {"RKF78 (fixed)",
                                                                 "RKF78 (adaptive)",
-                                                                "Bulirsch - Stoer (adaptive)",
-                                                                "ABM5  (constant)"}; //Which numerical method for integration of the ODEs.
+                                                                "BStoer (adaptive)",
+                                                                "ABM5  (fixed)"}; //Which numerical method for integration of the ODEs.
                 ImGui::Combo("  ", &integration_method_var_choice, integration_method_var, IM_ARRAYSIZE(integration_method_var));
             ImGui::PopID();
         ImGui::PopItemWidth();

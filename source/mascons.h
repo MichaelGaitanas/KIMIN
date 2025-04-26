@@ -3,7 +3,7 @@
 
 #include<cstdio>
 #include<cstdlib>
-#include<cstring>
+#include<string>
 #include<fstream>
 
 #include<Eigen/Dense>
@@ -32,7 +32,7 @@ public:
 
         double x,y,z; //Point mascon coordinates.
 
-        str line;
+        std::string line;
         while (getline(objfile, line))
         {
             if (line[0] == 'v' && line[1] == ' ') //Then we have a vertex line.

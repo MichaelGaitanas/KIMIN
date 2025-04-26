@@ -11,11 +11,10 @@ class top_bar_panel
 {
 public:
     bool export_is_enabled;
-    bool export_txt_clicked, export_json_clicked;
+    bool export_sol_clicked;
     
     top_bar_panel() : export_is_enabled(false),
-                      export_txt_clicked(false),
-                      export_json_clicked(false)
+                      export_sol_clicked(false)
     { }
 
     void render()
@@ -24,14 +23,8 @@ public:
         {
             if (ImGui::BeginMenu("File"))
             {
-                if (ImGui::MenuItem("Export .txt", nullptr, false, export_is_enabled))
-                {
-                    export_txt_clicked = true;
-                }
-                if (ImGui::MenuItem("Export .json", nullptr, false, export_is_enabled))
-                {
-                    export_json_clicked = true;
-                }
+                if (ImGui::MenuItem("Export solution", nullptr, false, export_is_enabled))
+                    export_sol_clicked = true;
                 ImGui::EndMenu();
             }
             ImGui::EndMainMenuBar();

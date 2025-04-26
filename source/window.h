@@ -7,6 +7,7 @@
 #include<GLFW/glfw3.h>
 
 #include<cstdio>
+#include<cstdlib>
 
 #include"gui.h"
 
@@ -30,8 +31,8 @@ private:
         }
         else
         {
-            //We print the followng for debugging purposes.
-            fprintf(stderr, "'glfwGetWindowUserPointer(ptr)' is nullptr. Exiting framebuffer_size_callback()...\n");
+            //For debugging purposes...
+            fprintf(stderr, "[Warning] : 'glfwGetWindowUserPointer(ptr)' is nullptr. No call to 'glViewport()'. Proceeding...\n");
         }
     }
 
@@ -45,11 +46,10 @@ private:
 public:
     window()
     {
-        //(Re)initialize glfw along with some different settings. Since we explicitely terminated glfw in the logo.h, all (previous) corresponding resources are freed.
-        //Now they are allocated again.
+        //(Re)initialize glfw along with some different settings. Since we explicitely terminated glfw in the logo.h, all (previous) corresponding resources are freed and now they are allocated again.
         if(!glfwInit())
         {
-            fprintf(stderr, "Error : Failed to initialize glfw (window). Exiting...\n");
+            fprintf(stderr, "[Error] : window() constructor failed to initialize glfw. Exiting...\n");
             glfwTerminate();
             exit(EXIT_FAILURE);
         }
@@ -64,25 +64,24 @@ public:
         const GLFWvidmode *mode = glfwGetVideoMode(monitor);
         width = mode->width;
         height = mode->height;
-        //That being said, when the gui launches, it is in windowed-fullscreen mode.
-        //If the rescale button is clicked, the size remains, unless the user resizes it from the corners.
+        //That being said, when the gui launches, it is in windowed-fullscreen mode.nIf the rescale button is clicked, the size remains, unless the user resizes it from the corners.
 
         wpointer = glfwCreateWindow(width, height, "KIMIN", nullptr, nullptr);
         if (wpointer == nullptr)
         {
-            fprintf(stderr, "Error : Failed to create glfw window. Exiting...\n");
+            fprintf(stderr, "[Error] : window() constructor failed to create glfw window. Exiting...\n");
             glfwTerminate();
             exit(EXIT_FAILURE);
         }
         glfwSetWindowUserPointer(wpointer, this);
         glfwMakeContextCurrent(wpointer);
-        glfwSetWindowSizeLimits(wpointer, 400,400, GLFW_DONT_CARE,GLFW_DONT_CARE);
+        glfwSetWindowSizeLimits(wpointer, 400,400, GLFW_DONT_CARE,GLFW_DONT_CARE); //Minimum window size.
         glfwSwapInterval(1);
 
         glewExperimental = GL_TRUE;
         if (glewInit() != GLEW_OK)
         {
-            fprintf(stderr, "Error : Failed to initialize glew. Exiting...\n");
+            fprintf(stderr, "[Error] : window() constructor failed to initialize glew. Exiting...\n");
             glfwDestroyWindow(wpointer);
             glfwTerminate();
             exit(EXIT_FAILURE);
@@ -99,7 +98,6 @@ public:
         glfwTerminate();
     }
 
-    //This is the app's function that runs all the time - frame by frame.
     void game_loop()
     {   
         gui ui(wpointer); //Instantiate the user interface along with some settings defined in the corresponding contructor (gui.h).
@@ -117,7 +115,6 @@ public:
             ui.console.render();
             ui.scene.render(width, height);
             ui.render();
-
             ui.poll_events();
 
             glfwSwapBuffers(wpointer);

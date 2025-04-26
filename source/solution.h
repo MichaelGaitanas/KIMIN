@@ -3,8 +3,9 @@
 
 #include<cstdio>
 #include<cmath>
+#include<cstring>
+#include<string>
 #include<atomic>
-#include<nlohmann/json.hpp>
 #include<algorithm>
 
 #include"constant.h"
@@ -12,8 +13,6 @@
 #include"linalg.h"
 #include"conversion.h"
 #include"integrator.h"
-
-using json = nlohmann::json;
 
 class solution
 {
@@ -286,31 +285,31 @@ public:
         return reduced;
     }
 
-    void export_txt_files(console_panel &console)
+    void export_files(console_panel &console)
     {
-        console.add_timed_text("[Solution] : Exporting .txt solution... ");
+        console.add_timed_text("[Solution] : Exporting solution files... ");
 
         const char *sim_name = integr.properties.sim_name;
         //Create the 'simulations' (root) directory that will store all other simulation sub-directories.
         std::filesystem::create_directory("../simulations");
-        //Create the current simulation directory 'sim_name' that will store the .txt files.
-        std::filesystem::create_directory("../simulations/" + str(sim_name));
+        //Create the current simulation directory 'sim_name' that will store the solution files.
+        std::filesystem::create_directory("../simulations/" + std::string(sim_name));
 
         //Create the txt contents
-        FILE *file_t        = fopen(("../simulations/" + str(sim_name) + "/time.txt"              ).c_str(), "w");
-        FILE *file_pos      = fopen(("../simulations/" + str(sim_name) + "/rel_pos.txt"           ).c_str(), "w");
-        FILE *file_vel      = fopen(("../simulations/" + str(sim_name) + "/rel_vel.txt"           ).c_str(), "w");
-        FILE *file_q1       = fopen(("../simulations/" + str(sim_name) + "/quaternion1.txt"       ).c_str(), "w");
-        FILE *file_w1b      = fopen(("../simulations/" + str(sim_name) + "/ang_vel_w1b.txt"       ).c_str(), "w");
-        FILE *file_q2       = fopen(("../simulations/" + str(sim_name) + "/quaternion2.txt"       ).c_str(), "w");
-        FILE *file_w2b      = fopen(("../simulations/" + str(sim_name) + "/ang_vel_w2b.txt"       ).c_str(), "w");
+        FILE *file_t        = fopen(("../simulations/" + std::string(sim_name) + "/time.txt"              ).c_str(), "w");
+        FILE *file_pos      = fopen(("../simulations/" + std::string(sim_name) + "/rel_pos.txt"           ).c_str(), "w");
+        FILE *file_vel      = fopen(("../simulations/" + std::string(sim_name) + "/rel_vel.txt"           ).c_str(), "w");
+        FILE *file_q1       = fopen(("../simulations/" + std::string(sim_name) + "/quaternion1.txt"       ).c_str(), "w");
+        FILE *file_w1b      = fopen(("../simulations/" + std::string(sim_name) + "/ang_vel_w1b.txt"       ).c_str(), "w");
+        FILE *file_q2       = fopen(("../simulations/" + std::string(sim_name) + "/quaternion2.txt"       ).c_str(), "w");
+        FILE *file_w2b      = fopen(("../simulations/" + std::string(sim_name) + "/ang_vel_w2b.txt"       ).c_str(), "w");
 
-        FILE *file_rpy1     = fopen(("../simulations/" + str(sim_name) + "/euler_rpy1.txt"        ).c_str(), "w");
-        FILE *file_w1i      = fopen(("../simulations/" + str(sim_name) + "/ang_vel_w1i.txt"       ).c_str(), "w");
-        FILE *file_rpy2     = fopen(("../simulations/" + str(sim_name) + "/euler_rpy2.txt"        ).c_str(), "w");
-        FILE *file_w2i      = fopen(("../simulations/" + str(sim_name) + "/ang_vel_w2i.txt"       ).c_str(), "w");
-        FILE *file_kep      = fopen(("../simulations/" + str(sim_name) + "/keplerian.txt"         ).c_str(), "w");
-        FILE *file_ener_mom = fopen(("../simulations/" + str(sim_name) + "/ener_mom_rel_error.txt").c_str(), "w");
+        FILE *file_rpy1     = fopen(("../simulations/" + std::string(sim_name) + "/euler_rpy1.txt"        ).c_str(), "w");
+        FILE *file_w1i      = fopen(("../simulations/" + std::string(sim_name) + "/ang_vel_w1i.txt"       ).c_str(), "w");
+        FILE *file_rpy2     = fopen(("../simulations/" + std::string(sim_name) + "/euler_rpy2.txt"        ).c_str(), "w");
+        FILE *file_w2i      = fopen(("../simulations/" + std::string(sim_name) + "/ang_vel_w2i.txt"       ).c_str(), "w");
+        FILE *file_kep      = fopen(("../simulations/" + std::string(sim_name) + "/keplerian.txt"         ).c_str(), "w");
+        FILE *file_ener_mom = fopen(("../simulations/" + std::string(sim_name) + "/ener_mom_rel_error.txt").c_str(), "w");
 
         for (size_t i = 0; i < t.size(); ++i)
         {
@@ -345,54 +344,9 @@ public:
         fclose(file_kep);
         fclose(file_ener_mom);
 
-        FILE *file_collision = fopen(("../simulations/" + str(sim_name) + "/collision.txt").c_str(),"w");
+        FILE *file_collision = fopen(("../simulations/" + std::string(sim_name) + "/collision.txt").c_str(),"w");
         fprintf(file_collision,"Collision detected : %s", integr.collision ? "Yes" : "No");
         fclose(file_collision);
-
-        console.add_text("Done.\n");
-    }
-
-    void export_json_files(console_panel &console)
-    {
-        console.add_timed_text("[Solution] : Exporting .json solution... ");
-
-        const char *sim_name = integr.properties.sim_name;
-        //Create the 'simulations' directory that will store all other simulation sub-directories.
-        std::filesystem::create_directory("../simulations");
-        //Create the current simulation directory 'sim_name' that will store the .json files.
-        std::filesystem::create_directory("../simulations/" + std::string(sim_name));
-
-        //Export vectors grouped as required.
-        auto export_group_to_json = [&](const std::string &file_name, const std::vector<std::pair<std::string, dvec>> &group) {
-            json json_data = json::array();
-            for (const auto &pair : group) {
-                json_data.push_back({ {"name", pair.first}, {"values", pair.second} });
-            }
-            std::ofstream json_file("../simulations/" + std::string(sim_name) + "/" + file_name + ".json");
-            json_file << std::setw(4) << json_data << std::endl;
-            json_file.close();
-        };
-
-        //Export each group to a JSON file.
-        export_group_to_json("time", { {"time", t} });
-        export_group_to_json("rel_pos", { {"x", x}, {"y", y}, {"z", z}, {"dist", dist} });
-        export_group_to_json("rel_vel", { {"vx", vx}, {"vy", vy}, {"vz", vz}, {"vel", vel} });
-        export_group_to_json("quaternion1", { {"q10", q10}, {"q11", q11}, {"q12", q12}, {"q13", q13} });
-        export_group_to_json("ang_vel_w1b", { {"w1bx", w1bx}, {"w1by", w1by}, {"w1bz", w1bz} });
-        export_group_to_json("quaternion2", { {"q20", q20}, {"q21", q21}, {"q22", q22}, {"q23", q23} });
-        export_group_to_json("ang_vel_w2b", { {"w2bx", w2bx}, {"w2by", w2by}, {"w2bz", w2bz} });
-        export_group_to_json("euler_rpy1", { {"roll1", roll1}, {"pitch1", pitch1}, {"yaw1", yaw1} });
-        export_group_to_json("euler_rpy2", { {"roll2", roll2}, {"pitch2", pitch2}, {"yaw2", yaw2} });
-        export_group_to_json("ang_vel_w1i", { {"w1ix", w1ix}, {"w1iy", w1iy}, {"w1iz", w1iz} });
-        export_group_to_json("ang_vel_w2i", { {"w2ix", w2ix}, {"w2iy", w2iy}, {"w2iz", w2iz} });
-        export_group_to_json("keplerian", { {"sma", sma}, {"ecc", ecc}, {"inc", inc}, {"raan", raan}, {"argper", argper}, {"manom", manom} });
-        export_group_to_json("ener_mom_rel_error", { {"energy_rel_err", ener_rel_err}, {"momentum_rel_err", mom_rel_err} });
-
-        //Write collision status to a separate JSON file.
-        json collision_data = { {"collision", integr.collision ? "Yes" : "No"} };
-        std::ofstream collision_file("../simulations/" + std::string(sim_name) + "/collision.json");
-        collision_file << std::setw(4) << collision_data << std::endl;
-        collision_file.close();
 
         console.add_text("Done.\n");
     }

@@ -12,6 +12,7 @@
 
 #include<cstdarg>
 #include<sstream>
+#include<string>
 #include<boost/date_time.hpp>
 
 class console_panel
@@ -38,7 +39,7 @@ private:
         }
     }
 
-    str get_local_time()
+    std::string get_local_time()
     {
         boost::posix_time::ptime timeloc = boost::posix_time::second_clock::local_time();
         std::ostringstream datetime;

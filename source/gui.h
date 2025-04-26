@@ -1,5 +1,5 @@
-/* This class acts as the kernel of the gui. It does not contain the commands that actually render the GUI (e.g. ImGui::Button() ...), but rather handles
-   initializations, allocates/deallocates memory for some core stuff, handles threading, etc... */
+/* This class acts as the kernel of the gui. It does not contain the commands that actually render the visible gui (e.g. ImGui::Button(), etc.), but rather handles
+   initializations, allocates/deallocates memory for some core stuff, handles threading, etc. */
 
 #ifndef GUI_H
 #define GUI_H
@@ -15,7 +15,6 @@
 #include<thread>
 #include<atomic>
 
-#include"typedef.h"
 #include"top_bar_panel.h"
 #include"properties_panel.h"
 #include"console_panel.h"
@@ -26,30 +25,39 @@
 class gui
 {
 public:
-    //The following class instances are basically what you see in the gui, once KIMIN is launched.
+    //The following members are basically what you see in the gui, once KIMIN is launched.
     top_bar_panel topbar;
     properties_panel properties;
     console_panel console;
     scene_panel scene;
 
-    //The 'solution' class contains all data regarding the simulation (user inputs, numerical integrator results, orbit, etc...).
+    //The 'solution' class contains all data regarding the simulation (user inputs, numerical integrator results, orbit, etc.).
     solution *sol;
 
-    //These variables are meant to track and control separate thread tasks, to prevent GUI freezing.
+    //These variables are meant to track and control separate thread tasks, in order to prevent the gui from 'freezing'.
     std::atomic<bool> task_is_running, task_was_aborted;
     std::atomic<float> task_progress;
 
-    //Initialize imgui, implot (along with some settings)a nd the class members.
-    gui(GLFWwindow *wpointer) : sol(nullptr),
+    //Initialize imgui, implot (along with some settings) and the class members.
+    gui(GLFWwindow *wpointer) : topbar(),
+                                properties(),
+                                console(),
+                                scene(),
+                                sol(nullptr),
                                 task_is_running(false),
                                 task_was_aborted(false),
                                 task_progress(0.0f)
     {
+        //Query the OS/GLFW for DPI scale.
+        float xscale, yscale;
+        glfwGetWindowContentScale(wpointer, &xscale, &yscale); //Typically xscale = yscale on desktop, so we just rely on xscale.
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
         ImPlot::CreateContext(); //Strictly AFTER Imgui::CreateContext();
         ImGuiIO &io = ImGui::GetIO();
         io.IniFilename = nullptr;
+        io.FontGlobalScale = xscale;
+        ImGui::GetStyle().ScaleAllSizes(xscale); //Scale padding, spacing, PushItemWidth, etc.
         io.Fonts->AddFontFromFileTTF("../fonts/RobotoRegular.ttf", 15.0f, nullptr, io.Fonts->GetGlyphRangesGreek()); //Dangerous...
         (void)io;
         ImGui::StyleColorsDark();
@@ -68,7 +76,7 @@ public:
     //Free gui resources.
     ~gui()
     {
-        delete sol; //Clean up the solution if allocated. If not (i.e. if sol is nullptr), the 'delete' operator does nothing.
+        delete sol; //Clean up the solution if allocated. If not (i.e. if sol is nullptr), then the 'delete' operator does nothing.
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplGlfw_Shutdown();
         ImPlot::DestroyContext(); //Strictly BEFORE Imgui::DestroyContext();
@@ -90,17 +98,17 @@ public:
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     }
 
-    //This function basically sums up the logic of all possible gui events.
     void poll_events()
     {
-        process_run_and_abort_buttons();
-        process_export_buttons();
+        poll_run_and_abort_buttons();
+        poll_export_buttons();
     }
 
 private:
-    //'Run' and 'Abort' buttons logic.
-    void process_run_and_abort_buttons()
+    //'Run' and 'Abort' buttons logic in the properties panel.
+    void poll_run_and_abort_buttons()
     {
+        //'Run' protocol.
         if (properties.run_pressed && !task_is_running.load())
         {
             //(Re)set the 2 flags.
@@ -109,11 +117,11 @@ private:
             
             std::thread task_thread([&]()
             {
-                if (properties.validate(task_progress, console)) //No input errors were found, so proceed with the simulation.
+                if (properties.validate(console)) //If no input errors are found, proceed with the simulation.
                 {
                     integrator *integr = new integrator(properties);
                     integr->prepare(console);
-                    task_is_running.store(true); //We assume that from this point on, the task is running because this affects the state of the 'Abort' button, which can be pressed only during the integration.
+                    task_is_running.store(true); //From this point on, we assume that the task is running because this affects the state of the 'Abort' button, which can be pressed only during the integration.
                     integr->run(task_was_aborted, task_progress, console);
                     if (!task_was_aborted.load())
                     {
@@ -143,30 +151,19 @@ private:
     //the integr->prepare(), integr->run(), etc... However, note that currently, this is not thread safe because
     //one might attempt to export a previous solution, while a new one is on the fly. I'll fix it, but for now, only
     //export when solution is completed.
-    void process_export_buttons()
+    void poll_export_buttons()
     {
         if (sol != nullptr && sol->t.size() > 0) //Ensure that a solution is available.
         {
             topbar.export_is_enabled = true;
-
-            if (topbar.export_txt_clicked)
+            if (topbar.export_sol_clicked)
             {
                 std::thread export_sol_thread([this]()
                 {
-                    sol->export_txt_files(console);
+                    sol->export_files(console);
                 });
                 export_sol_thread.detach();
-                topbar.export_txt_clicked = false; //Reset the flag after exporting the txt.
-            }
-
-            if (topbar.export_json_clicked)
-            {
-                std::thread export_sol_thread([this]()
-                {
-                    sol->export_json_files(console);
-                });
-                export_sol_thread.detach();
-                topbar.export_json_clicked = false; //Reset the flag after exporting json.
+                topbar.export_sol_clicked = false; //Reset the flag after exporting the solution.
             }
         }
         else

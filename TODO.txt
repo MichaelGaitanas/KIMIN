@@ -1,0 +1,9 @@
+- In properties_panel.h, in validate(), fix the spheres setup.
+
+- In properties_panel.h, in validate(), make faster the polyhedron functions : load_obj_file(), is_closed_manifold(), is_kimin_valid_obj().
+
+- In polyhedron.h, in make sure that is_closed_manifold() and gen_edges() don't repeat same shit.
+
+- In typedef.h, delete dtensnx3x3, or utilize it (polyhedron's gravity potential, Werner & Scheeres).
+
+- In properties_panel.h, restore the default constructor.
