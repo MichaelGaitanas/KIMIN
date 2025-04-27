@@ -135,12 +135,12 @@ public:
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    void copy_solution(const solution &full_sol)
+    //Fetch the numerical solution and assign : 1) the full version to the member 'sol' and 2) a reduced version to the member sol_reduced.
+    void copy_solution(const solution &sol)
     {
-        //Create a reduced copy for plotting (e.g., 4000 points) without modifying full_sol
-        solution plot_sol = full_sol.get_reduced_solution(4000);
-        this->sol = full_sol;
-        this->sol_reduced = plot_sol;
+        this->sol = sol;
+        this->sol_reduced = sol.get_reduced_solution(4000);
+        
         current_frame = 0; //(Re)set the whole scene to correspond at the first frame. This will automatically set the frame slider to 0
         play_pause_video = false; //Pause state.
 
@@ -228,32 +228,32 @@ public:
             setup_fbo_depth();
 
             xaxis1.load_obj_file("../obj/axes/xaxis.obj");
-            xaxis1.set_scale_uniform(sol.integr.brillouin1);
+            xaxis1.set_scale(sol.integr.brillouin1);
             xaxis1.gen_norms();
             xaxis1.set_as_gl_mesh();
 
             yaxis1.load_obj_file("../obj/axes/yaxis.obj");
-            yaxis1.set_scale_uniform(sol.integr.brillouin1);
+            yaxis1.set_scale(sol.integr.brillouin1);
             yaxis1.gen_norms();
             yaxis1.set_as_gl_mesh();
 
             zaxis1.load_obj_file("../obj/axes/zaxis.obj");
-            zaxis1.set_scale_uniform(sol.integr.brillouin1);
+            zaxis1.set_scale(sol.integr.brillouin1);
             zaxis1.gen_norms();
             zaxis1.set_as_gl_mesh();
             
             xaxis2.load_obj_file("../obj/axes/xaxis.obj");
-            xaxis2.set_scale_uniform(sol.integr.brillouin2);
+            xaxis2.set_scale(sol.integr.brillouin2);
             xaxis2.gen_norms();
             xaxis2.set_as_gl_mesh();
 
             yaxis2.load_obj_file("../obj/axes/yaxis.obj");
-            yaxis2.set_scale_uniform(sol.integr.brillouin2);
+            yaxis2.set_scale(sol.integr.brillouin2);
             yaxis2.gen_norms();
             yaxis2.set_as_gl_mesh();
 
             zaxis2.load_obj_file("../obj/axes/zaxis.obj");
-            zaxis2.set_scale_uniform(sol.integr.brillouin2);
+            zaxis2.set_scale(sol.integr.brillouin2);
             zaxis2.gen_norms();
             zaxis2.set_as_gl_mesh();
             

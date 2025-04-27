@@ -14,6 +14,6 @@ uniform mat4 light_pv; //Precomputed directional light's projection*view matrix.
 void main()
 {
     frag_pos_light = light_pv*model*vec4(pos, 1.0f); //Fragment's position with respect to the light.
-    normal = mat3(transpose(inverse(model)))*norm; //Avoiding non uniform scaling issues.
+    normal = mat3(model)*norm; //Make sure that the model matrix does not contain non-uniform glm::scale() transformations.
     gl_Position = projection*view*model*vec4(pos, 1.0f); //Final vertex position.
 }

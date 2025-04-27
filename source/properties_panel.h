@@ -56,11 +56,11 @@ public:
     //'collision_spheres' causes almost zero bottleneck for the integrator performance.
     //'collision_polyhedra' is accurate, but it is slow, as it contains a double for-loop over the triangles of the polyhedra per integration step. Do not use when high-res meshes are loaded.
 
-    bool impactor_checkbox; //'Kinetic impactor' checkbox state.
-    bool impactor_clicked_ok; //'OK' button in the kinetic impactor parameters window.
-    double M_impact; //Impactor's total mass.
-    dvec3 v_impact; //Impactor's velocity vector.
-    double beta; //Momentum enhancement factor (β).
+    bool impactors_checkbox; //'Kinetic impactors' checkbox state.
+    bool impactors_clicked_ok; //'OK' button in the kinetic impactors' parameters window.
+    double M1_impact, M2_impact; //Impactors' 1 and 2 total masses.
+    dvec3 v1_impact, v2_impact; //Impactors' 1 and 2 velocity vectors.
+    double beta1, beta2; //Momentum enhancement factors β1 and β2 (due to the assumed recoiled ejecta).
 
     bool run_pressed; //Whether or not the 'Run' button has been pressed.
     bool abort_pressed; //Whether or not the 'Abort' button has been pressed.
@@ -107,11 +107,14 @@ public:
                          collision_no(false),
                          collision_spheres(false),
                          collision_polyhedra(false),
-                         impactor_checkbox(false),
-                         impactor_clicked_ok(false),
-                         M_impact(0.0),
-                         v_impact(dvec3{0.0,0.0,0.0}),
-                         beta(0.0),
+                         impactors_checkbox(false),
+                         impactors_clicked_ok(false),
+                         M1_impact(0.0),
+                         M2_impact(0.0),
+                         v1_impact(dvec3{0.0,0.0,0.0}),
+                         v2_impact(dvec3{0.0,0.0,0.0}),
+                         beta1(0.0),
+                         beta2(0.0),
                          run_pressed(false),
                          abort_pressed(false),
                          poly1(),
@@ -158,11 +161,14 @@ public:
                          collision_no(false),
                          collision_spheres(true),
                          collision_polyhedra(false),
-                         impactor_checkbox(false),
-                         impactor_clicked_ok(false),
-                         M_impact(0.0),
-                         v_impact(dvec3{0.0,0.0,0.0}),
-                         beta(0.0),
+                         impactors_checkbox(false),
+                         impactors_clicked_ok(false),
+                         M1_impact(0.0),
+                         M2_impact(0.0),
+                         v1_impact(dvec3{0.0,0.0,0.0}),
+                         v2_impact(dvec3{0.0,0.0,0.0}),
+                         beta1(0.0),
+                         beta2(0.0),
                          run_pressed(false),
                          abort_pressed(false),
                          poly1(),
@@ -230,10 +236,11 @@ public:
                 semiaxes2[0] > 0.0 && semiaxes2[1] > 0.0 && semiaxes2[2] > 0.0)
             {
                 poly1.load_obj_file("../obj/polyhedra/uvsphere64x64_R1km.obj");
-                poly1.set_scale_xyz(semiaxes1);
+                poly2 = poly1; //Do not parse the same .obj file... But the assignment must happen BEFORE altering the poly1 mesh!
+
+                poly1.set_scale(semiaxes1);
                 poly1.gen_norms();
-                poly2.load_obj_file("../obj/polyhedra/uvsphere64x64_R1km.obj");
-                poly2.set_scale_xyz(semiaxes2);
+                poly2.set_scale(semiaxes2);
                 poly2.gen_norms();
             }
         }
@@ -328,13 +335,13 @@ public:
         if (!collision_no && !collision_spheres && !collision_polyhedra)
             {console.add_timed_text("[Error] : At least one collision criterion must be selected.\n"); return false;}
 
-        //Possible error 14 : 'OK' button in the impactor parameters window (it must be clicked so that the parameters are taken into account).
-        if (impactor_checkbox && !impactor_clicked_ok)
-            {console.add_timed_text("[Error] : 'OK' button must be pressed in the 'Impactor parameters' window.\n"); return false;}
+        //Possible error 14 : 'OK' button in the impactors' parameters window (it must be clicked so that the parameters are taken into account).
+        if (impactors_checkbox && !impactors_clicked_ok)
+            {console.add_timed_text("[Error] : 'OK' button must be pressed in the 'Impactors' parameters' window.\n"); return false;}
 
-        //Possible error 15 : Impactor's parameters (mass must be >= 0).
-        if (impactor_checkbox && M_impact < 0.0)
-            {console.add_timed_text("[Error] : Impactor's 'Mass' must be non negative.\n"); return false;}
+        //Possible error 15 : Impactors' parameters (masses must be >= 0).
+        if (impactors_checkbox && (M1_impact < 0.0 || M2_impact < 0.0))
+            {console.add_timed_text("[Error] : Both impactors' masses, 'm1' and 'm2' must be non negative.\n"); return false;}
 
         return true;
     }
@@ -405,7 +412,7 @@ public:
             ImGui::SetNextWindowSize(ImVec2(0.15f*ImGui::GetIO().DisplaySize.x, 0.4f*ImGui::GetIO().DisplaySize.y), ImGuiCond_FirstUseEver); 
             ImGui::Begin(".obj files", &obj_checkbox);
 
-            //Radiobuttons logic : At least one will always be active and to this (the active one) the loaded obj file will correspond.
+            //Radiobuttons logic : At least one will always be active and to this, (the active one) the loaded obj file will correspond.
             static int obj_refers_to_body = 1; //To which body ('Body 1' or 'Body 2') does the obj file listing refer to (via radiobutton). 'Body 1' is the default choice.
             if (ImGui::RadioButton("Body 1", obj_refers_to_body == 1))
                 obj_refers_to_body = 1;
@@ -615,32 +622,57 @@ public:
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f,7.5f));
 
-        //Kinetic impactor logic.
-        ImGui::Text("Kinetic impactor");
-        if (ImGui::Checkbox("Assume impactor at Body 2", &impactor_checkbox) && impactor_checkbox)
-            impactor_clicked_ok = false;
-        if (impactor_checkbox && !impactor_clicked_ok)
+        //Kinetic impactors logic.
+        ImGui::Text("Kinetic impactors");
+        if (ImGui::Checkbox("Assume impactors at Bodies 1 & 2", &impactors_checkbox) && impactors_checkbox)
+            impactors_clicked_ok = false;
+        if (impactors_checkbox && !impactors_clicked_ok)
         {
             ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, 0.0f), ImGuiCond_FirstUseEver); 
             ImGui::SetNextWindowSize(ImVec2(0.15f*ImGui::GetIO().DisplaySize.x, 0.4f*ImGui::GetIO().DisplaySize.y), ImGuiCond_FirstUseEver); 
-            ImGui::Begin("Impactor parameters", &impactor_checkbox);
+            ImGui::Begin("Impactors' parameters", &impactors_checkbox);
+
+            //Radiobuttons logic : At least one will always be active and to this, (the active one) the impactor's parameters shall correspond.
+            static int impactor_refers_to_body = 1;
+            if (ImGui::RadioButton("Body 1", impactor_refers_to_body == 1))
+                impactor_refers_to_body = 1;
+            ImGui::SameLine();
+            if (ImGui::RadioButton("Body 2", impactor_refers_to_body == 2))
+                impactor_refers_to_body = 2;
+            ImGui::Dummy(ImVec2(0.0f,5.0f));
 
             //Impactor menu.
-            ImGui::Text("Mass (dry + fuel)");
-            double_field("m ", 100.0f, 30.0f, id, "[kg]", M_impact);
-            ImGui::Dummy(ImVec2(0.0f,15.0f));
-            ImGui::Text("Velocity (inertial)");
-            double_field("υx ", 100.0f, 30.0f, id, "[km/sec]", v_impact[0]);
-            double_field("υy ", 100.0f, 30.0f, id, "[km/sec]", v_impact[1]);
-            double_field("υz ", 100.0f, 30.0f, id, "[km/sec]", v_impact[2]);
-            ImGui::Dummy(ImVec2(0.0f,15.0f));
-            ImGui::Text("Momentum enhancement factor (ejecta)");
-            double_field("β ", 100.0f, 30.0f, id, "[  ]", beta);
+            if (impactor_refers_to_body == 1)
+            {
+                ImGui::Text("Mass (dry + fuel)");
+                double_field("m1 ", 100.0f, 40.0f, id, "[kg]", M1_impact);
+                ImGui::Dummy(ImVec2(0.0f,15.0f));
+                ImGui::Text("Velocity (inertial)");
+                double_field("υx1 ", 100.0f, 40.0f, id, "[km/sec]", v1_impact[0]);
+                double_field("υy1 ", 100.0f, 40.0f, id, "[km/sec]", v1_impact[1]);
+                double_field("υz1 ", 100.0f, 40.0f, id, "[km/sec]", v1_impact[2]);
+                ImGui::Dummy(ImVec2(0.0f,15.0f));
+                ImGui::Text("Momentum enhancement factor (ejecta)");
+                double_field("β1 ", 100.0f, 40.0f, id, "[  ]", beta1);
+            }
+            else
+            {
+                ImGui::Text("Mass (dry + fuel)");
+                double_field("m2 ", 100.0f, 40.0f, id, "[kg]", M2_impact);
+                ImGui::Dummy(ImVec2(0.0f,15.0f));
+                ImGui::Text("Velocity (inertial)");
+                double_field("υx2 ", 100.0f, 40.0f, id, "[km/sec]", v2_impact[0]);
+                double_field("υy2 ", 100.0f, 40.0f, id, "[km/sec]", v2_impact[1]);
+                double_field("υz2 ", 100.0f, 40.0f, id, "[km/sec]", v2_impact[2]);
+                ImGui::Dummy(ImVec2(0.0f,15.0f));
+                ImGui::Text("Momentum enhancement factor (ejecta)");
+                double_field("β2 ", 100.0f, 40.0f, id, "[  ]", beta2);
+            }
             ImGui::Dummy(ImVec2(0.0f,15.0f));
 
             //Final "OK" button. This must be pressed, otherwise the impactor values will not be taken into account.
             if (ImGui::Button("OK", ImVec2(50.0f,30.0f)))
-                impactor_clicked_ok = true;
+                impactors_clicked_ok = true;
 
             ImGui::End();
         }

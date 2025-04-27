@@ -6,6 +6,7 @@
 #include<cstdio>
 #include<cstdlib>
 #include<cstring>
+#include<cmath>
 #include<fstream>
 #include<algorithm>
 #include<vector>
@@ -74,8 +75,11 @@ public:
     void load_obj_file(const char *path)
     {
         //Reset the polyhedron's state first.
-        clear_gl_mesh(); //This tears down any gl* state from the previous mesh (if any).
-        *this = polyhedron{}; //This resets all members to their constructor defaults in one command.
+        verts.clear(); faces.clear(); norms.clear(); edges.clear();
+        vol = 0.0;
+        norms_exist = edges_exist = vol_exists = false;
+        //*this = polyhedron{}; //Reset all members to their constructor defaults.
+        clear_gl_mesh(); //Tear down any gl* state from the previous mesh (if any).
 
         //Now proceed to loading.
 
@@ -88,7 +92,6 @@ public:
 
         double x,y,z; //Vertices.
         unsigned int vi1,vi2,vi3; //Faces.
-
         std::string line;
         while (getline(objfile, line))
         {
@@ -158,19 +161,20 @@ public:
 
         edges.clear();
         edges.resize(3*faces.size());
-        size_t edge_index = 0;
+        size_t j = 0;
         for (size_t i = 0; i < faces.size(); ++i)
         {
             unsigned int f0 = faces[i][0];
             unsigned int f1 = faces[i][1];
             unsigned int f2 = faces[i][2];
             //Store each edge as a sorted pair (smallest index first).
-            edges[edge_index++] = {std::min(f0, f1), std::max(f0, f1)};
-            edges[edge_index++] = {std::min(f1, f2), std::max(f1, f2)};
-            edges[edge_index++] = {std::min(f2, f0), std::max(f2, f0)};
+            edges[j++] = {std::min(f0,f1), std::max(f0,f1)};
+            edges[j++] = {std::min(f1,f2), std::max(f1,f2)};
+            edges[j++] = {std::min(f2,f0), std::max(f2,f0)};
         }
-        edges.resize(edge_index); //Remove any unused capacity if any...
+        edges.resize(j); //Remove any unused capacity if any...
         std::sort(edges.begin(), edges.end()); //Sort the edges to prepare for duplicate removal.
+        
         edges.erase(std::unique(edges.begin(), edges.end()), edges.end()); //Now remove duplicates.
 
         edges_exist = true;
@@ -188,23 +192,19 @@ public:
 
         umatnx2 local_edges;
         local_edges.resize(3*faces.size());
-        size_t edge_index = 0;
+        size_t j = 0;
         for (size_t i = 0; i < faces.size(); ++i)
         {
             unsigned int f0 = faces[i][0];
             unsigned int f1 = faces[i][1];
             unsigned int f2 = faces[i][2];
             //Store each edge as a sorted pair (smallest index first).
-            local_edges[edge_index++] = {std::min(f0, f1), std::max(f0, f1)};
-            local_edges[edge_index++] = {std::min(f1, f2), std::max(f1, f2)};
-            local_edges[edge_index++] = {std::min(f2, f0), std::max(f2, f0)};
+            local_edges[j++] = {std::min(f0,f1), std::max(f0,f1)};
+            local_edges[j++] = {std::min(f1,f2), std::max(f1,f2)};
+            local_edges[j++] = {std::min(f2,f0), std::max(f2,f0)};
         }
-
-        //Remove any unused capacity if any...
-        local_edges.resize(edge_index);
-
-        //Sort the edges lexicographically.
-        std::sort(local_edges.begin(), local_edges.end());
+        local_edges.resize(j); //Remove any unused capacity if any...
+        std::sort(local_edges.begin(), local_edges.end()); //Sort the edges lexicographically.
 
         //Now, each unique edge should appear exactly twice.
         for (size_t i = 0; i < local_edges.size(); )
@@ -268,7 +268,8 @@ public:
         }
 
         std::vector<float> interleaved_buffer;
-        interleaved_buffer.reserve(3*6*faces.size()); //3 vertices per face, 6 floats each.
+        interleaved_buffer.resize(3*6*faces.size()); //3 vertices per face, 6 floats each.
+        size_t j = 0;
         for (size_t i = 0; i < faces.size(); ++i)
         {
             const dvec3 &n = norms[i];
@@ -276,13 +277,13 @@ public:
             {
                 const dvec3 &v = verts[faces[i][k]];
 
-                interleaved_buffer.push_back((float)v[0]);
-                interleaved_buffer.push_back((float)v[1]);
-                interleaved_buffer.push_back((float)v[2]);
+                interleaved_buffer[j++] = (float)v[0];
+                interleaved_buffer[j++] = (float)v[1];
+                interleaved_buffer[j++] = (float)v[2];
 
-                interleaved_buffer.push_back((float)n[0]);
-                interleaved_buffer.push_back((float)n[1]);
-                interleaved_buffer.push_back((float)n[2]);
+                interleaved_buffer[j++] = (float)n[0];
+                interleaved_buffer[j++] = (float)n[1];
+                interleaved_buffer[j++] = (float)n[2];
             }
         }
         gl_vertex_count = interleaved_buffer.size()/6; //Because each vertex has 6 float attributes bound.
@@ -330,56 +331,36 @@ public:
         gl_ready = false;
     }
 
-    //Calculate the polyhderon's total volume.
-    double get_vol()
-    {
-        if (vol_exists)
-            return vol;
-
-        gen_norms();
-
-        vol = 0.0;
-        for (size_t i = 0; i < faces.size(); ++i)
-        {
-            dvec3 p0 = verts[faces[i][0]];
-            dvec3 p1 = verts[faces[i][1]];
-            dvec3 p2 = verts[faces[i][2]];
-            double d = p0[0]*norms[i][0] + p0[1]*norms[i][1] + p0[2]*norms[i][2]; //x*nx + y*ny + z*nz - d = 0 (plane equation).
-            double A = 0.5*length(cross(p1-p0, p2-p1));
-            vol += d*A/3.0;
-        }
-        vol_exists = true;
-        return vol;
-    }
-
     //Farthest vertex distance with respect to the local coordinate system.
     double get_farthest_vertex_distance()
     {
-        double farthest = length(verts[0]); //Assume that the farthest vertex distance is the first one.
+        //Apply comparison to the squared length, as it is a monotonic increasing function, in order to avoid calls to sqrt.
+        double farthest2 = dot(verts[0], verts[0]); //Assume that the farthest vertex distance is the first one.
         for (size_t i = 1; i < verts.size(); ++i)
         {
-            double dist = length(verts[i]);
-            if (dist > farthest)
-                farthest = dist;
+            double dist2 = dot(verts[i], verts[i]);
+            if (dist2 > farthest2)
+                farthest2 = dist2;
         }
-        return farthest;
+        return sqrt(farthest2);
     }
 
     //Nearest vertex distance with respect to the local coordinate system.
     double get_nearest_vertex_distance()
     {
-        double nearest = length(verts[0]); //Assume that the nearest vertex distance is the first one.
+        //Apply comparison to the squared length, as it is a monotonic increasing function, in order to avoid calls to sqrt.
+        double nearest2 = dot(verts[0], verts[0]); //Assume that the nearest vertex distance is the first one.
         for (size_t i = 1; i < verts.size(); ++i)
         {
-            double dist = length(verts[i]);
-            if (dist < nearest)
-                nearest = dist;
+            double dist2 = dot(verts[i], verts[i]);
+            if (dist2 < nearest2)
+                nearest2 = dist2;
         }
-        return nearest;
+        return sqrt(nearest2);
     }
 
-    //Get (xmax, ymax, zmax) of the polyhedron with respect to the local coordinate system.
-    dvec3 get_farthest_coordinates_per_axis()
+    //Get the (xmax, ymax, zmax) of the polyhedron with respect to the local coordinate system.
+    dvec3 get_farthest_coord_per_axis()
     {
         dvec3 rmax = verts[0];
         for (size_t i = 1; i < verts.size(); ++i)
@@ -391,8 +372,8 @@ public:
         return rmax;
     }
 
-    //Get (xmin, ymin, zmin) of the polyhedron with respect to the local coordinate system.
-    dvec3 get_nearest_coordinates_per_axis()
+    //Get the (xmin, ymin, zmin) of the polyhedron with respect to the local coordinate system.
+    dvec3 get_nearest_coord_per_axis()
     {
         dvec3 rmin = verts[0];
         for (size_t i = 1; i < verts.size(); ++i)
@@ -413,18 +394,17 @@ public:
         gen_norms();
 
         //Ray's destination point. It is assumed to be very far away, aiming to be outside of the polyhedron.
-        dvec3 pdest = 10000000.0*dvec3{pi, std::exp(1.0), std::sqrt(2.0)};
+        dvec3 pdest = 10000000.0*dvec3{pi, exp(1.0), sqrt(2.0)};
         
         size_t intersections = 0;
 
-        //The polyhderon is basically a collection of triangles. To find intersections between the ray and the polyhderon,
-        //we essentially loop through all the faces and check.
+        //The polyhderon is basically a collection of triangles. To find intersections between the ray and the polyhderon, we essentially loop through all the faces and check.
         for (size_t j = 0; j < faces.size(); ++j)
         {
             //Define the triangle j from the 3 vertices p0,p1,p2.
-            dvec3 p0 = verts[faces[j][0]];
-            dvec3 p1 = verts[faces[j][1]];
-            dvec3 p2 = verts[faces[j][2]];
+            const dvec3 &p0 = verts[faces[j][0]];
+            const dvec3 &p1 = verts[faces[j][1]];
+            const dvec3 &p2 = verts[faces[j][2]];
             //By solving the equation of a line and a plane, we find intersection point pj.
             double lam = ( (p0[0] - r[0])*norms[j][0] + (p0[1] - r[1])*norms[j][1] + (p0[2] - r[2])*norms[j][2] )/( (pdest[0] - r[0])*norms[j][0] + (pdest[1] - r[1])*norms[j][1] + (pdest[2] - r[2])*norms[j][2] );
             dvec3 pj = dvec3{ r[0] + lam*(pdest[0] - r[0]),
@@ -434,20 +414,20 @@ public:
             //We must check however if the ray intersects the triangle j and not the whole extended mathematical plane.
 
             //Form the following 3 triangles and calculate their area.
-            double Aj01 = 0.5*length(cross(p0-pj, p1-p0)); //pj -> p0 -> p1
-            double Aj12 = 0.5*length(cross(p1-pj, p2-p1)); //pj -> p1 -> p2
-            double Aj20 = 0.5*length(cross(p2-pj, p0-p2)); //pj -> p2 -> p0
-            double A012 = 0.5*length(cross(p1-p0, p2-p1)); //p0 -> p1 -> p2
+            double Aj01 = 0.5*length(cross(p0-pj, p1-p0));
+            double Aj12 = 0.5*length(cross(p1-pj, p2-p1));
+            double Aj20 = 0.5*length(cross(p2-pj, p0-p2));
+            double A012 = 0.5*length(cross(p1-p0, p2-p1));
 
             //If the sum of the 3 areas is equal to the area of the surface triangle, then pj sits upon the surface of the triangle.
-            if ( fabs(Aj01 + Aj12 + Aj20 - A012) <= 1e-12 && pj[0] > r[0] && pj[1] > r[1] && pj[2] > r[2] ) //I need to fix this...
+            if ( fabs(Aj01 + Aj12 + Aj20 - A012) <= 1e-12 && pj[0] > r[0] && pj[1] > r[1] && pj[2] > r[2] ) //I must to fix this...
                 ++intersections;
         }
         
         if (intersections%2 == 1)
-            return true; //Odd : (x,y,z) is inside the polyhdernon.
+            return true;
 
-        return false; //Even : (x,y,z) is outside the polyhdernon.
+        return false;
     }
 
     //Calculate the center of mass of the surface vertices of the polyhedron, assuming homogeneous mass density.
@@ -459,7 +439,28 @@ public:
         return com/verts.size();
     }
 
-    //Calculate the center of mass of the polyhedron, assuming homogeneous mass density (volume -> surface integrals via Gauss theorem).
+    //Calculate the polyhderon's total volume.
+    double get_vol()
+    {
+        if (vol_exists) return vol;
+
+        gen_norms();
+
+        vol = 0.0;
+        for (size_t i = 0; i < faces.size(); ++i)
+        {
+            const dvec3 &p0 = verts[faces[i][0]];
+            const dvec3 &p1 = verts[faces[i][1]];
+            const dvec3 &p2 = verts[faces[i][2]];
+            double d = p0[0]*norms[i][0] + p0[1]*norms[i][1] + p0[2]*norms[i][2]; //x*nx + y*ny + z*nz - d = 0 (plane equation).
+            double A = 0.5*length(cross(p1-p0, p2-p1));
+            vol += d*A/3.0;
+        }
+        vol_exists = true;
+        return vol;
+    }
+
+    //Calculate the center of mass of the polyhedron, assuming homogeneous mass density.
     dvec3 get_com()
     {
         gen_norms();
@@ -495,6 +496,7 @@ public:
             double absnx = fabs(nx);
             double absny = fabs(ny);
             double absnz = fabs(nz);
+
             int best_axis = 2; //Assume 0 -> x, 1 -> y, 2 -> z
             double best_val = absnz; 
             if (absny > best_val)
@@ -507,7 +509,6 @@ public:
                 best_axis = 0;
                 best_val = absnx;
             }
-            
 
             if (best_axis == 2) //Division by nz.
             {
@@ -534,12 +535,13 @@ public:
                     com[2] += coeffnx*(3.0*z1 + z21 + z31)/6.0;
             }
         }
-
         return com/(4.0*get_vol());
     }
 
-    //Calculate the inertia matrix of the polyhedron, assuming homogeneous mass density (volume -> surface integrals via Gauss theorem).
-    dmat3 get_inertia(const double M, bool inertial_integrals = false)
+    //This member function calculates all the inertial integrals of order 2 of the polyhedron, assuming homogeneous mass density.
+    //If only_inertial_integrals = false, then the function utilizes the inertial integrals to compute the inertia matrix. Else, only the
+    //DIAGONAL inertial integrals are returned.
+    dmat3 get_inertia(const double M, bool only_inertial_integrals = false)
     {
         gen_norms();
 
@@ -574,6 +576,7 @@ public:
             double absnx = fabs(nx);
             double absny = fabs(ny);
             double absnz = fabs(nz);
+
             int best_axis = 2; //Assume 0 -> x, 1 -> y, 2 -> z
             double best_val = absnz; 
             if (absny > best_val)
@@ -630,16 +633,18 @@ public:
         Jxz *= ord2_coeff;
         Jyz *= ord2_coeff;
 
-        if (inertial_integrals)
+        if (only_inertial_integrals)
             return {{{Jxx,  0.0,  0.0},
                      {0.0,  Jyy,  0.0},
                      {0.0,  0.0,  Jzz}}};
 
-        return {{{Jyy + Jzz,   -Jxy,        -Jxz   },
-                 {  -Jxy,    Jxx + Jzz,     -Jyz   },
-                 {  -Jxz,      -Jyz,      Jxx + Jyy}}};
+        return {{{Jyy + Jzz,    -Jxy,       -Jxz   },
+                 {  -Jxy,     Jxx + Jzz,    -Jyz   },
+                 {  -Jxz,       -Jyz,     Jxx + Jyy}}};
     }
 
+    //This function returns the polyhedron's diagonal inertial integrals of order 2, assuming homogeneous mass density. Though this can
+    //be accomplished via get_inertia(M, true), we just wrap it in an alias name function.
     dtens get_inertial_integrals_ord2(const double M)
     {
         const int ord = 2;
@@ -687,6 +692,7 @@ public:
             double absnx = fabs(nx);
             double absny = fabs(ny);
             double absnz = fabs(nz);
+
             int best_axis = 2; //Assume 0 -> x, 1 -> y, 2 -> z
             double best_val = absnz; 
             if (absny > best_val)
@@ -816,6 +822,7 @@ public:
             double absnx = fabs(nx);
             double absny = fabs(ny);
             double absnz = fabs(nz);
+
             int best_axis = 2; //Assume 0 -> x, 1 -> y, 2 -> z
             double best_val = absnz; 
             if (absny > best_val)
@@ -980,11 +987,11 @@ public:
 
     //This function rotates all the surface vertices, such that the resulted inertia matrix becomes diagonal. The rotation happens via left-multiplication of all
     //the vertices with a rotation matrix, which is basically the eigenvectors of the inertia matrix. Again homogeneous mass density is assumed.
-    void set_inertia_diagonal(const double M)
+    void set_inertia_diagonal()
     {
-        dmat3 I = get_inertia(M);
+        dmat3 I = get_inertia(1.0); //Since homogeneous mass density is assumed, the true total mass of the polyhedron, plays no role in the diagonalization protocol. Hence pass whatever u want.
 
-        //Convert the dmat3 datatype to Eigen's.
+        //Convert our dmat3 datatype to Eigen's.
         Eigen::Matrix3d eigen_I;
         for (size_t row = 0; row < 3; ++row)
             for (size_t col = 0; col < 3; ++col)
@@ -992,18 +999,15 @@ public:
 
         //Solve the eigensystem (3x3, real and symmetric matrix).
         Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver(eigen_I);
-        if (solver.info() != Eigen::Success)
+        if (solver.info() != Eigen::Success) //This must never happen, due to the algebraic nature of the inertia matrix, but let's add a check...
         {
-            fprintf(stderr, "Error : Inertia eigenvalue decomposition failed. Exiting...\n");
-            exit(EXIT_FAILURE);
+            fprintf(stderr, "[Warning] : In polyhedron::set_inertia_diagonal(), the inertia eigenvalue decomposition failed. Returning...\n");
+            return;
         }
         Eigen::Vector3d eigenvalues = solver.eigenvalues(); //By default, Eigen sorts them in ascending order : eigenvalues[0] <= eigenvalues[1] <= eigenvalues[2]
         Eigen::Matrix3d eigenvectors = solver.eigenvectors();
 
-        //Extract the diagonal elements.
-        double Ixx = I[0][0];
-        double Iyy = I[1][1];
-        double Izz = I[2][2];
+        double Ixx = I[0][0], Iyy = I[1][1], Izz = I[2][2];
         //Reorder the eigenvalues appropriately.
         uvec3 indices; //Order by which the eigenvalues will be sorted (and thus order of the eigenvectors in the final rotation matrix).
         if (Ixx < Iyy && Iyy < Izz) //Case : Ixx < Iyy < Izz
@@ -1019,7 +1023,7 @@ public:
         else if (Izz < Ixx && Ixx < Iyy) //Case : Izz < Ixx < Iyy
             indices = uvec3{1,2,0};
         else //This implies that some sort of equality was found between Ixx,Iyy,Izz, but this is not expected, as we are dealing with double precision.
-            indices = uvec3{0,1,2}; //Stick to the default by Eigen. I might fix it later...
+            indices = uvec3{0,1,2}; //Stick to the default by Eigen. I will fix it later...
 
         Eigen::Vector3d reordered_eigenvalues;
         Eigen::Matrix3d reordered_eigenvectors;
@@ -1055,7 +1059,7 @@ public:
 
         eigen_rot_mat.transposeInPlace();
 
-        //Now convert the Eigen variable eigen_rot_mat back to our dmat3 (fin_rot_mat).
+        //Now convert the Eigen variable 'eigen_rot_mat' back to our dmat3.
         dmat3 fin_rot_mat;
         for (size_t row = 0; row < 3; ++row)
             for (size_t col = 0; col < 3; ++col)
@@ -1070,23 +1074,28 @@ public:
         gen_norms();
     }
 
-    void set_scale_uniform(const double scale_factor)
+    //Uniform scaling (overloaded).
+    void set_scale(const double scale_factor)
     {
-        for (size_t i = 0; i < verts.size(); ++i)
+        for (dvec3 &v : verts)
         {
-            verts[i][0] = scale_factor*verts[i][0];
-            verts[i][1] = scale_factor*verts[i][1];
-            verts[i][2] = scale_factor*verts[i][2];
+            v[0] *= scale_factor;
+            v[1] *= scale_factor;
+            v[2] *= scale_factor;
         }
     }
 
-    void set_scale_xyz(const dvec3 scale_factor)
+    //Non-uniform scaling (overloaded).
+    void set_scale(const dvec3 &scale_factor)
     {
-        for (size_t i = 0; i < verts.size(); ++i)
+        const double sx = scale_factor[0];
+        const double sy = scale_factor[1];
+        const double sz = scale_factor[2];
+        for (dvec3 &v : verts)
         {
-            verts[i][0] = scale_factor[0]*verts[i][0];
-            verts[i][1] = scale_factor[1]*verts[i][1];
-            verts[i][2] = scale_factor[2]*verts[i][2];
+            v[0] *= sx;
+            v[1] *= sy;
+            v[2] *= sz;
         }
     }
 };

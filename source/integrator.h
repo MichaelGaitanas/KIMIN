@@ -1,8 +1,9 @@
+/* This class handles the numerical integration of the F2BP. */
+
 #ifndef INTEGRATOR_H
 #define INTEGRATOR_H
 
 #include<atomic>
-#include<memory>
 #include<boost/numeric/odeint.hpp>
 
 #include"constant.h"
@@ -19,7 +20,7 @@
 class integrator
 {
 public:
-    properties_panel properties; //The user's choice of inputs in the gui.
+    properties_panel properties; //A copy of the user's choice of inputs in the gui.
 
     double m; //Reduced binary mass ( m = M1*M2/(M1 + M2) ).
     dmat3 I1, I2; //Moments of inetia.
@@ -28,19 +29,17 @@ public:
 
     bool collision; //Collision detection flag.
 
-    double t0, tmax, dt; //Integration time.
-    double init_guess_time_step;
+    double t0, tmax, dt, init_guess_time_step; //Integration time.
 
     dmat orbit; //This is the solution matrix of the differential equations that will be propagated (time + state vector).
 
-    integrator() { }
+    integrator() { } //This is needed in the solution class.
 
-    //Copy properties.
-    integrator(const properties_panel &properties)
+    integrator(const properties_panel &properties) //And this is needed in the gui class (pure copying).
     {
         this->properties = properties;
         //Note : In the following member functions, whatever change is made upon the 'properties' variable, has nothing to do with the gui's displayed properties.
-        //We operate only on this class' member 'properties', which is only a copy.
+        //We operate only on this class' member 'properties', which is a deep copy.
     }
 
 private:
@@ -193,11 +192,11 @@ public:
         else //.obj file
         {
             properties.poly1.set_com_zero();
-            properties.poly1.set_inertia_diagonal(properties.M1);
+            properties.poly1.set_inertia_diagonal();
             brillouin1 = properties.poly1.get_farthest_vertex_distance();
             
             properties.poly2.set_com_zero();
-            properties.poly2.set_inertia_diagonal(properties.M2);
+            properties.poly2.set_inertia_diagonal();
             brillouin2 = properties.poly2.get_farthest_vertex_distance();
 
             I1 = properties.poly1.get_inertia(properties.M1);
@@ -219,14 +218,14 @@ public:
             }
         }
 
-        //Preparation 5 : If the user assumed a kinetic impactor, then (based on theory) we apply a momentum (velocity)
-        //enhancement (or reduction, depending on the sign of beta and the direction of v_impact[]) to the secondary body. 
-        if (properties.impactor_checkbox)
+        //Preparation 5 : If the user assumed kinetic impactors, then, we apply a velocity
+        //enhancement (or reduction, depending on the sign of betas and the direction of v1_impact[] and v2_impact[]) to the bodies. 
+        if (properties.impactors_checkbox)
         {
             //This in turn affects the mutual velocity, which is updated as :
-            properties.cart[3] += properties.beta*properties.M_impact*properties.v_impact[0]/properties.M2;
-            properties.cart[4] += properties.beta*properties.M_impact*properties.v_impact[1]/properties.M2;
-            properties.cart[5] += properties.beta*properties.M_impact*properties.v_impact[2]/properties.M2;
+            properties.cart[3] += properties.beta2*properties.M2_impact*properties.v2_impact[0]/properties.M2 - properties.beta1*properties.M1_impact*properties.v1_impact[0]/properties.M1;
+            properties.cart[4] += properties.beta2*properties.M2_impact*properties.v2_impact[1]/properties.M2 - properties.beta1*properties.M1_impact*properties.v1_impact[1]/properties.M1;
+            properties.cart[5] += properties.beta2*properties.M2_impact*properties.v2_impact[2]/properties.M2 - properties.beta1*properties.M1_impact*properties.v1_impact[2]/properties.M1;
         }
         
         //Preparation 6 : Convert the time in [sec]
@@ -263,7 +262,7 @@ public:
         boost::numeric::odeint::bulirsch_stoer<boost::array<double, 20>> bstoer_adaptive(properties.target_error, properties.target_error);
         boost::numeric::odeint::adams_bashforth_moulton<5, boost::array<double, 20>> abm_const;
 
-        if (properties.integration_method_var_choice == 3) // Seed ABM only if requested.
+        if (properties.integration_method_var_choice == 3) //Seed ABM only if requested.
             abm_const.initialize(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, dt);
         
         char formatted_text[128];
@@ -271,7 +270,7 @@ public:
         //Shoot it!!!
         while (t <= tmax)
         {
-            //Append the current state into the final 'orbit' matrix.
+            //Append the current state into the final 'orbit' matrix. No matter what, at least the initial condition is gonna be taken into account (provided that the user input properties are correct).
             orbit.push_back({t, state[0],  state[1],  state[2],
                                 state[3],  state[4],  state[5],
                                 state[6],  state[7],  state[8],  state[9],
@@ -279,9 +278,8 @@ public:
                                 state[13], state[14], state[15], state[16],
                                 state[17], state[18], state[19]});
 
-            if (properties.collision_spheres)
+            if (properties.collision_spheres) //Check for sphere-sphere collision detection between the 2 asteroids.
             {
-                //Check for sphere-sphere collision detection between the 2 asteroids.
                 if (sphere_sphere_collision(length(dvec3{state[0],state[1],state[2]}), brillouin1, brillouin2))
                 {
                     sprintf(formatted_text,"< Collision detected at t = %5.2lf [days]. >\n", t/86400.0);
@@ -290,13 +288,17 @@ public:
                     break;
                 }
             }
-            else if (properties.collision_polyhedra)
+            else if (properties.collision_polyhedra) //Check for polyhedron-polyhedron collision detection between the 2 asteroids, but only after the sphere-sphere collision is true.
             {
                 if (sphere_sphere_collision(length(dvec3{state[0],state[1],state[2]}), brillouin1, brillouin2))
                 {
-                    //Check for polyhedron-polyhedron collision detection between the 2 asteroids.
-                    if (polyhedron_polyhedron_collision(properties.poly1, quat2mat(dvec4{state[6],state[7],state[8],state[9]}),     (-properties.M2/(properties.M1 + properties.M2))*dvec3{state[0],state[1],state[2]},
-                                                        properties.poly2, quat2mat(dvec4{state[13],state[14],state[15],state[16]}), ( properties.M1/(properties.M1 + properties.M2))*dvec3{state[0],state[1],state[2]} ))
+                    //Now apply the polyhedron-polyhedron test.
+                    const dmat3 A1 = quat2mat(dvec4{state[6],state[7],state[8],state[9]});
+                    const dmat3 A2 = quat2mat(dvec4{state[13],state[14],state[15],state[16]});
+                    const double coeff_M1 = -properties.M2/(properties.M1 + properties.M2);
+                    const double coeff_M2 =  properties.M1/(properties.M1 + properties.M2);
+                    const dvec3 r = dvec3{state[0],state[1],state[2]};
+                    if (polyhedron_polyhedron_collision(properties.poly1, A1, coeff_M1*r, properties.poly2, A2, coeff_M2*r ))
                     {
                         sprintf(formatted_text,"< Collision detected at t = %5.2lf [days]. >\n", t/86400.0);
                         console.add_text(formatted_text);
@@ -304,10 +306,6 @@ public:
                         break;
                     }
                 }
-            }
-            else
-            {
-                //Pass, because not collision criterion was selected...
             }
 
             //Check the abort flag (the user might want to kill the integration by pressing the 'Abort' button in the gui).

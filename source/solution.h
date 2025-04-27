@@ -20,9 +20,7 @@ public:
     integrator integr;
 
     //The following members are exactly the same (copies) with what the integrator evaluated, but stored in 1-D vectors (from t to w2bz).
-
     dvec t;
-
     dvec x, y, z;
     dvec vx, vy, vz;
     dvec q10, q11, q12, q13;
@@ -31,7 +29,6 @@ public:
     dvec w2bx, w2by, w2bz;
 
     //The following members were NOT directly evaluated by the integrator. Instead, we use what the integrator evaluated to evaluate the following.
-
     dvec dist, vel;
     dvec roll1, pitch1, yaw1; 
     dvec roll2, pitch2, yaw2;
@@ -40,14 +37,14 @@ public:
     dvec sma, ecc, inc, raan, argper, manom;
     dvec ener_rel_err, mom_rel_err;
 
-    solution() { }
+    solution() { } //This is needed in the scene_panel class.
 
-    //Copy integrator.
-    solution(const integrator &integr)
+    solution(const integrator &integr) //And this is needed in the gui class (deep copy of the integrator).
     {
         this->integr = integr;
     }
 
+    //This function fills with orbital data all the vector members.
     void construct(console_panel &console)
     {
         console.add_timed_text("[Solution] : Constructing solution... ");
@@ -58,60 +55,20 @@ public:
         
         t.resize(N);
         
-        x.resize(N);
-        y.resize(N);
-        z.resize(N);
+        x.resize(N);    y.resize(N);    z.resize(N);
+        vx.resize(N);   vy.resize(N);   vz.resize(N);
+        q10.resize(N);  q11.resize(N);  q12.resize(N);  q13.resize(N);
+        w1bx.resize(N); w1by.resize(N); w1bz.resize(N);
+        q20.resize(N);  q21.resize(N);  q22.resize(N);  q23.resize(N);
+        w2bx.resize(N); w2by.resize(N); w2bz.resize(N);
 
-        vx.resize(N);
-        vy.resize(N);
-        vz.resize(N);
-
-        q10.resize(N);
-        q11.resize(N);
-        q12.resize(N);
-        q13.resize(N);
-
-        w1bx.resize(N);
-        w1by.resize(N);
-        w1bz.resize(N);
-
-        q20.resize(N);
-        q21.resize(N);
-        q22.resize(N);
-        q23.resize(N);
-
-        w2bx.resize(N);
-        w2by.resize(N);
-        w2bz.resize(N);
-
-        dist.resize(N);
-        vel.resize(N);
-
-        roll1.resize(N);
-        pitch1.resize(N);
-        yaw1.resize(N);
-
-        roll2.resize(N);
-        pitch2.resize(N);
-        yaw2.resize(N);
-
-        w1ix.resize(N);
-        w1iy.resize(N);
-        w1iz.resize(N);
-
-        w2ix.resize(N);
-        w2iy.resize(N);
-        w2iz.resize(N);
-
-        sma.resize(N);
-        ecc.resize(N);
-        inc.resize(N);
-        raan.resize(N);
-        argper.resize(N);
-        manom.resize(N);
-
-        ener_rel_err.resize(N);
-        mom_rel_err.resize(N);
+        dist.resize(N);  vel.resize(N);
+        roll1.resize(N); pitch1.resize(N); yaw1.resize(N);
+        roll2.resize(N); pitch2.resize(N); yaw2.resize(N);
+        w1ix.resize(N);  w1iy.resize(N);   w1iz.resize(N);
+        w2ix.resize(N);  w2iy.resize(N);   w2iz.resize(N);
+        sma.resize(N);   ecc.resize(N); inc.resize(N);  raan.resize(N); argper.resize(N); manom.resize(N);
+        ener_rel_err.resize(N); mom_rel_err.resize(N);
 
         for (size_t i = 0; i < N; ++i)
         {
@@ -145,13 +102,6 @@ public:
             
             //Momentum magnitude. Note : All 3 components of the momentum vector are conserved in time. We just choose to store and plot the magnitude only.
             double momentum = length( integr.m*cross(r,v) + dot(A1, dot(integr.I1, w1b)) + dot(A2, dot(integr.I2, w2b)) );
-            
-            //This is meant to compute the corresponding relative errors. See below.
-            if (i == 0)
-            {
-                energy_at_t0 = energy;
-                momentum_at_t0 = momentum;
-            }
 
             t[i] = integr.orbit[i][0]/86400.0;
 
@@ -207,10 +157,26 @@ public:
             argper[i] = kep[4]*180.0/pi;
             manom[i]  = kep[5]*180.0/pi;
 
-            ener_rel_err[i] = fabs((energy - energy_at_t0)/energy_at_t0); //0 at t = 0.
-            mom_rel_err[i]  = fabs((momentum - momentum_at_t0)/momentum_at_t0); //0 at t = 0.
+            if (i == 0)
+            {
+                energy_at_t0 = energy;
+                momentum_at_t0 = momentum;
+                ener_rel_err[0] = 0.0;
+                mom_rel_err[0]  = 0.0;
+            }
+            else
+            {
+                if (fabs(energy_at_t0) > 1e-16)
+                    ener_rel_err[i] = fabs((energy - energy_at_t0)/energy_at_t0);
+                else //Fallback to absolute error to avoid division by zero.
+                    ener_rel_err[i] = fabs(energy - energy_at_t0);
+            
+                if (fabs(momentum_at_t0) > 1e-16)
+                    mom_rel_err[i] = fabs((momentum - momentum_at_t0)/momentum_at_t0);
+                else //The same...
+                    mom_rel_err[i] = fabs(momentum - momentum_at_t0);
+            }
         }
-
         console.add_text("Done.\n");
     }
 
@@ -226,13 +192,13 @@ public:
         vec = std::move(reduced); //Fast copy.
     }
 
-    void reduce_to(const size_t final_size)
+    void reduce(const size_t final_size)
     {
         //If final_size is zero or larger than the current size, there's nothing to reduce.
         if (final_size == 0 || t.size() <= final_size)
             return;
 
-        //Reduce each vector from t to mom_rel_err.
+        //Reduce all solution member vectors.
         reduce_vector(t, final_size);
         reduce_vector(x, final_size);
         reduce_vector(y, final_size);
@@ -278,11 +244,12 @@ public:
         reduce_vector(mom_rel_err, final_size);
     }
 
+    //Create and return a reduced (downsample) version of the solution.
     solution get_reduced_solution(const size_t final_size) const
     {
-        solution reduced = *this; // copy full solution
-        reduced.reduce_to(final_size); // reduce all vectors in the copy
-        return reduced;
+        solution sol_copy = *this; //Copy the already existing solution.
+        sol_copy.reduce(final_size); //Reduce all vectors in the copy.
+        return sol_copy;
     }
 
     void export_files(console_panel &console)

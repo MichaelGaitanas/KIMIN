@@ -898,7 +898,7 @@ dvec3 mut_torque_integrals_ord4(const dvec3 &r,                  const dtens &J1
 dvec3 mut_torque_masc(const dvec3 &r, const double M1, const dmatnx3 &masc1, const dmat3 &A1,
                                       const double M2, const dmatnx3 &masc2, const dmat3 &A2)
 {
-    dvec3 sum  = {0.0,0.0,0.0};
+    dvec3 sum = {0.0,0.0,0.0};
     for (size_t i = 0; i < masc1.size(); ++i)
     {
         dvec3 a1i = dot(A1, masc1[i]);
