@@ -248,8 +248,8 @@ public:
 
         //Get (xmax, ymax, zmax) and (xmin, ymin, zmin) of the polyhedron vertices to establish the cuboid.
         //Then, scale it, so that the polyhedron is 'conveniently' contained.
-        dvec3 rmax = 1.1*poly.get_farthest_coordinates_per_axis();
-        dvec3 rmin = 1.1*poly.get_nearest_coordinates_per_axis();
+        dvec3 rmax = 1.1*poly.get_farthest_coord_per_axis();
+        dvec3 rmin = 1.1*poly.get_nearest_coord_per_axis();
 
         double xmax = rmax[0];
         double ymax = rmax[1];

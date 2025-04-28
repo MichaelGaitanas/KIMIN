@@ -11,7 +11,7 @@ int main()
     //Load a polyhedron. We need it to generate the mascons.
     polyhedron poly;
     printf("Loading polyhedron... ");
-    poly.load_obj_file("../../obj/rockpaper.obj");
+    poly.load_obj_file("../../obj/polyhedra/bennu196k_R03km.obj");
     printf("Done.\n\n");
     
     mascons masc;
@@ -22,7 +22,7 @@ int main()
     std::filesystem::create_directory("io");
 
     char buffer[100];
-    sprintf(buffer,"io/rockpaper_%llu.obj",masc.get_total());
+    sprintf(buffer,"io/bennu196k_R03km_%llu.obj",masc.get_total());
     masc.export_obj_file(buffer);
 
     dvec3 com = masc.get_com();
@@ -34,7 +34,7 @@ int main()
     printf("Final com : \n");
     printf("[ %.15e  %.15e  %.15e ]\n\n", com[0],com[1],com[2]);
 
-    double M = 123456.0; //Total mass of the mascons distro.
+    double M = 1.0; //Total mass of the mascons distro.
     
     dmat3 iner = masc.get_inertia(M);
     printf("Initial inertia : \n");
@@ -49,7 +49,7 @@ int main()
                                                                                             iner[1][0],iner[1][1],iner[1][2],
                                                                                             iner[2][0],iner[2][1],iner[2][2]);
     
-    sprintf(buffer,"io/rockpaper_%llu_fixed.obj",masc.get_total());
+    sprintf(buffer,"io/bennu196k_R03km_%llu_fixed.obj",masc.get_total());
     masc.export_obj_file(buffer);
 
     return 0;
