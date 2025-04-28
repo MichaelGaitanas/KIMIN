@@ -989,7 +989,7 @@ public:
     //the vertices with a rotation matrix, which is basically the eigenvectors of the inertia matrix. Again homogeneous mass density is assumed.
     void set_inertia_diagonal()
     {
-        dmat3 I = get_inertia(1.0); //Since homogeneous mass density is assumed, the true total mass of the polyhedron, plays no role in the diagonalization protocol. Hence pass whatever u want.
+        dmat3 I = get_inertia(1.0); //Since homogeneous mass density is assumed, the true total mass of the polyhedron, plays no role in the following diagonalization protocol. Hence pass whatever u want.
 
         //Convert our dmat3 datatype to Eigen's.
         Eigen::Matrix3d eigen_I;

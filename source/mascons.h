@@ -2,6 +2,7 @@
 #define MASCONS_H
 
 #include<cstdio>
+#include<cmath>
 #include<cstdlib>
 #include<string>
 #include<fstream>
@@ -18,20 +19,32 @@ private:
     dmatnx3 points;
 
 public:
+    mascons() : points() { } //Tiny constructor.
+
+    const dmatnx3 &get_points() const
+    {
+        return points;
+    }
+
+    size_t get_total() const
+    {
+        return points.size();
+    }
+
     //Load the vertices ('v x y z') from an .obj file (assuming them to be point mascons).
     void load_obj_file(const char *path)
     {
+        //Reset the state
         points.clear();
 
         std::ifstream objfile(path);
         if (!objfile.is_open())
         {
-            fprintf(stderr, "Error : '%s' could not be opened. Exiting...\n", path);
-            exit(EXIT_FAILURE);
+            fprintf(stderr, "[Warning] : In mascons::load_obj_file(), '%s' could not be opened. Returning...\n", path);
+            return;
         }
 
-        double x,y,z; //Point mascon coordinates.
-
+        double x,y,z; //Mascon coordinates.
         std::string line;
         while (getline(objfile, line))
         {
@@ -53,49 +66,30 @@ public:
         fclose(fp);
     }
 
-    //Display to the terminal the coordinates of the mascons.
-    void print_points()
-    {
-        for (size_t i = 0; i < points.size(); ++i)
-            printf("[ %.15lf   %.15lf   %.15lf ]\n", points[i][0],points[i][1],points[i][2]);
-    }
-
-    //Retrieve the current mascons distro.
-    dmatnx3 get_points()
-    {
-        return points;
-    }
-
-    //Get the total number of the current mascons.
-    size_t get_total()
-    {
-        return points.size();
-    }
-
     //Farthest point mascon distance with respect to the local coordinate system.
     double get_farthest_point_distance()
     {
-        double farthest = length(points[0]); //Assume that the farthest point distance corresponds to the first mascon.
+        double farthest2 = dot(points[0], points[0]);
         for (size_t i = 1; i < points.size(); ++i)
         {
-            double dist = length(points[i]);
-            if (dist > farthest)
-                farthest = dist;
+            double dist2 = dot(points[i], points[i]);
+            if (dist2 > farthest2)
+                farthest2 = dist2;
         }
-        return farthest;
+        return sqrt(farthest2);
     }
 
     //Nearest point mascon distance with respect to the local coordinate system.
     double get_nearest_point_distance()
     {
-        double nearest = length(points[0]); //Assume that the nearest point distance corresponds to the first mascon.
+        double nearest2 = dot(points[0], points[0]);
         for (size_t i = 1; i < points.size(); ++i)
         {
-            double dist = length(points[i]);
-            if (dist < nearest)
-                nearest = dist;
+            double dist2 = dot(points[i], points[i]);
+            if (dist2 < nearest2)
+                nearest2 = dist2;
         }
-        return nearest;
+        return sqrt(nearest2);
     }
 
     //Calculate the center of mass of the mascons distribution, assuming homogeneous mass density.
@@ -151,9 +145,9 @@ public:
 
     //This function rotates all the mascon points, such that the resulted inertia matrix becomes diagonal. The rotation happens via left-multiplication of all
     //the points (vectors) with a rotation matrix, which is basically the eigenvectors of the inertia matrix. Again homogeneous mass density is assumed.
-    void set_inertia_diagonal(const double M)
+    void set_inertia_diagonal()
     {
-        dmat3 I = get_inertia(M);
+        dmat3 I = get_inertia(1.0); //Since homogeneous mass density is assumed, the true total mass of the polyhedron, plays no role in the following diagonalization protocol. Hence pass whatever u want.
 
         //Convert the dmat3 datatype to Eigen's.
         Eigen::Matrix3d eigen_I;

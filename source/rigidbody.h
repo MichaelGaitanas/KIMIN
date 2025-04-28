@@ -141,7 +141,7 @@ bool triangle_triangle_collision(const dvec3 &vtx0, const dvec3 &vtx1, const dve
         }
     }
 
-    //Final sup/inf check.
+    //Final supremum/infimum check.
     double t_min = *std::max_element(lowers.begin(), lowers.end());
     double t_max = uppers.empty()? std::numeric_limits<double>::infinity() : *std::min_element(uppers.begin(), uppers.end());
 
