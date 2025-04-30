@@ -1,6 +1,6 @@
 Regarding the .obj files that exist in the polyhedra/ directory, the following rules must be satisfied, so that a mesh model can be used in the simulation :
 
-1) The mesh must be a closed manifold geometry (closed polyhedron), e.g. box, sphere, potato, etc. However, an open sheet is not considered valid.
+1) The mesh must be a closed manifold geometry (closed polyhedron), e.g. box, sphere, torus knot, potato, etc. However, an open sheet is not considered valid.
 
 2) It does not matter whether or not the mesh is convex. E.g. comet Churyumov Gerasimenko (which is non-convex) is totally fine.
 
