@@ -21,6 +21,7 @@ class integrator
 {
 public:
     properties_panel properties; //A copy of the user's choice of inputs in the gui.
+    bool maneuver1_applied, maneuver2_applied; //Whether or each beta-kick (equivalent maneuver) has been applied to the corresponding asteroid.
 
     double m; //Reduced binary mass ( m = M1*M2/(M1 + M2) ).
     dmat3 I1, I2; //Moments of inetia.
@@ -39,7 +40,9 @@ public:
     {
         this->properties = properties;
         //Note : In the following member functions, whatever change is made upon the 'properties' variable, has nothing to do with the gui's displayed properties.
-        //We operate only on this class' member 'properties', which is a deep copy.
+        //We operate only on THIS class' member 'properties', which is a deep copy of the gui's input.
+
+        maneuver1_applied = maneuver2_applied = false;
     }
 
 private:
@@ -217,24 +220,35 @@ public:
                 J2 = properties.poly2.get_inertial_integrals_ord4(properties.M2);
             }
         }
-
-        //Preparation 5 : If the user assumed kinetic impactors, then, we apply a velocity
-        //enhancement (or reduction, depending on the sign of betas and the direction of v1_impact[] and v2_impact[]) to the bodies. 
-        if (properties.impactors_checkbox)
-        {
-            //This in turn affects the mutual velocity, which is updated as :
-            properties.cart[3] += properties.beta2*properties.M2_impact*properties.v2_impact[0]/properties.M2 - properties.beta1*properties.M1_impact*properties.v1_impact[0]/properties.M1;
-            properties.cart[4] += properties.beta2*properties.M2_impact*properties.v2_impact[1]/properties.M2 - properties.beta1*properties.M1_impact*properties.v1_impact[1]/properties.M1;
-            properties.cart[5] += properties.beta2*properties.M2_impact*properties.v2_impact[2]/properties.M2 - properties.beta1*properties.M1_impact*properties.v1_impact[2]/properties.M1;
-        }
         
-        //Preparation 6 : Convert the time in [sec]
+        //Preparation 5 : Convert the time in [sec]
         t0 = properties.epoch*86400.0; //[sec]
         tmax = t0 + properties.dur*86400.0; //[sec]
         if (properties.integration_method_var_choice == 0 || properties.integration_method_var_choice == 3)
             dt = properties.step*86400.0; //[sec]
         else
             init_guess_time_step = 1.0; //[sec]
+
+        //Preparation 6 : Convert impact times in [sec]. Then, apply maneuvers BEFORE the while integration loop, only if the impact times are chose to be at t = t0.
+        if (properties.impactors_checkbox)
+        {
+            properties.t1_impact *= 86400.0;
+            properties.t2_impact *= 86400.0;
+            if (fabs(t0 - properties.t1_impact) < 1e-15)
+            {
+                properties.cart[3] -= properties.beta1*properties.M1_impact*properties.v1_impact[0]/properties.M1;
+                properties.cart[4] -= properties.beta1*properties.M1_impact*properties.v1_impact[1]/properties.M1;
+                properties.cart[5] -= properties.beta1*properties.M1_impact*properties.v1_impact[2]/properties.M1;
+                maneuver1_applied = true;
+            }
+            if (fabs(t0 - properties.t2_impact) < 1e-15)
+            {
+                properties.cart[3] += properties.beta2*properties.M2_impact*properties.v2_impact[0]/properties.M2;
+                properties.cart[4] += properties.beta2*properties.M2_impact*properties.v2_impact[1]/properties.M2;
+                properties.cart[5] += properties.beta2*properties.M2_impact*properties.v2_impact[2]/properties.M2;
+                maneuver2_applied = true;
+            }
+        }
 
         collision = false; //Assuming no collision when the simulation starts.
         orbit.clear();
@@ -277,6 +291,24 @@ public:
                                 state[10], state[11], state[12],
                                 state[13], state[14], state[15], state[16],
                                 state[17], state[18], state[19]});
+
+            if (properties.impactors_checkbox)
+            {
+                if (!maneuver1_applied && t >= properties.t1_impact)
+                {
+                    state[3] -= properties.beta1*properties.M1_impact*properties.v1_impact[0]/properties.M1;
+                    state[4] -= properties.beta1*properties.M1_impact*properties.v1_impact[1]/properties.M1;
+                    state[5] -= properties.beta1*properties.M1_impact*properties.v1_impact[2]/properties.M1;
+                    maneuver1_applied = true;
+                }
+                if (!maneuver2_applied && t >= properties.t2_impact)
+                {
+                    state[3] += properties.beta2*properties.M2_impact*properties.v2_impact[0]/properties.M2;
+                    state[4] += properties.beta2*properties.M2_impact*properties.v2_impact[1]/properties.M2;
+                    state[5] += properties.beta2*properties.M2_impact*properties.v2_impact[2]/properties.M2;
+                    maneuver2_applied = true;
+                }
+            }
 
             if (properties.collision_spheres) //Check for sphere-sphere collision detection between the 2 asteroids.
             {
@@ -331,7 +363,6 @@ public:
                 abm_const.do_step(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, dt);
                 t += dt;
             }
-
             //Note : Boost's do_step() does NOT update internally t, hence we have to do it ourselves. But try_step() DOES update internally t, hence we do not touch it in this case.
 
             //Update the progressbar value in [0,1].

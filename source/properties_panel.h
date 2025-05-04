@@ -61,6 +61,7 @@ public:
     double M1_impact, M2_impact; //Impactors' 1 and 2 total masses.
     dvec3 v1_impact, v2_impact; //Impactors' 1 and 2 velocity vectors.
     double beta1, beta2; //Momentum enhancement factors β1 and β2 (due to the assumed recoiled ejecta).
+    double t1_impact, t2_impact; //Times of impacts.
 
     bool run_pressed; //Whether or not the 'Run' button has been pressed.
     bool abort_pressed; //Whether or not the 'Abort' button has been pressed.
@@ -115,6 +116,8 @@ public:
                          v2_impact(dvec3{0.0,0.0,0.0}),
                          beta1(0.0),
                          beta2(0.0),
+                         t1_impact(0.0),
+                         t2_impact(0.0),
                          run_pressed(false),
                          abort_pressed(false),
                          poly1(),
@@ -169,6 +172,8 @@ public:
                          v2_impact(dvec3{0.0,0.0,0.0}),
                          beta1(0.0),
                          beta2(0.0),
+                         t1_impact(0.0),
+                         t2_impact(0.0),
                          run_pressed(false),
                          abort_pressed(false),
                          poly1(),
@@ -342,6 +347,10 @@ public:
         //Possible error 15 : Impactors' parameters (masses must be >= 0).
         if (impactors_checkbox && (M1_impact < 0.0 || M2_impact < 0.0))
             {console.add_timed_text("[Error] : Both impactors' masses, 'm1' and 'm2' must be non negative.\n"); return false;}
+
+        //Possible error 16 : Times of impacts must range in the simulated time range, i.e. in [Epoch, Epoch + Duration]
+        if (impactors_checkbox && (t1_impact < epoch || t1_impact > epoch + dur || t2_impact < epoch || t2_impact > epoch + dur))
+            {console.add_timed_text("[Error] : Impact times must range in [Epoch,  Epoch + Duration].\n"); return false;}
 
         return true;
     }
@@ -654,6 +663,9 @@ public:
                 ImGui::Dummy(ImVec2(0.0f,15.0f));
                 ImGui::Text("Momentum enhancement factor (ejecta)");
                 double_field("β1 ", 100.0f, 40.0f, id, "[  ]", beta1);
+                ImGui::Dummy(ImVec2(0.0f,15.0f));
+                ImGui::Text("Impact epoch");
+                double_field("t1 ", 100.0f, 40.0f, id, "[days]", t1_impact);
             }
             else
             {
@@ -667,6 +679,9 @@ public:
                 ImGui::Dummy(ImVec2(0.0f,15.0f));
                 ImGui::Text("Momentum enhancement factor (ejecta)");
                 double_field("β2 ", 100.0f, 40.0f, id, "[  ]", beta2);
+                ImGui::Dummy(ImVec2(0.0f,15.0f));
+                ImGui::Text("Impact epoch");
+                double_field("t2 ", 100.0f, 40.0f, id, "[days]", t2_impact);
             }
             ImGui::Dummy(ImVec2(0.0f,15.0f));
 
