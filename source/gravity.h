@@ -355,8 +355,8 @@ dvec3 mut_force_integrals_ord2(const dvec3 &r, const double M1, const dtens &J1,
     //V1 = 0 (by default)
 
     //order 2
-    double V2 = -(G*M2/(2.0*d*d*d))*( (1.0 - 3.0*l1*l1)*I1x + (1.0 - 3.0*m1*m1)*I1y + (1.0 - 3.0*n1*n1)*I1z ) +
-                -(G*M1/(2.0*d*d*d))*( (1.0 - 3.0*l2*l2)*I2x + (1.0 - 3.0*m2*m2)*I2y + (1.0 - 3.0*n2*n2)*I2z );
+    double V2 = -(G*M2/(2*d*d*d))*( (1 - 3*l1*l1)*I1x + (1 - 3*m1*m1)*I1y + (1 - 3*n1*n1)*I1z ) +
+                -(G*M1/(2*d*d*d))*( (1 - 3*l2*l2)*I2x + (1 - 3*m2*m2)*I2y + (1 - 3*n2*n2)*I2z );
 
     double dV_dd = -V0/d - 3*V2/d;
     dvec3 dd_dr = ru;
