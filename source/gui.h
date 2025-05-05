@@ -101,7 +101,7 @@ public:
     void poll_events()
     {
         poll_run_and_abort_buttons();
-        poll_export_buttons();
+        poll_topbar_buttons();
     }
 
 private:
@@ -151,7 +151,7 @@ private:
     //the integr->prepare(), integr->run(), etc... However, note that currently, this is not thread safe because
     //one might attempt to export a previous solution, while a new one is on the fly. I'll fix it, but for now, only
     //export when solution is completed.
-    void poll_export_buttons()
+    void poll_topbar_buttons()
     {
         if (sol != nullptr && sol->t.size() > 0) //Ensure that a solution is available.
         {

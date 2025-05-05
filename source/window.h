@@ -14,6 +14,7 @@
 class window
 {
 private:
+    bool confirm_exit;
     GLFWwindow *wpointer;
     int width, height;
     
@@ -30,21 +31,23 @@ private:
             glViewport(0,0, w,h);
         }
         else
-        {
-            //For debugging purposes...
-            fprintf(stderr, "[Warning] : 'glfwGetWindowUserPointer(ptr)' is nullptr. No call to 'glViewport()'. Proceeding...\n");
-        }
+            fprintf(stderr, "[Warning] : In window::framebuffer_size_callback(), 'glfwGetWindowUserPointer(ptr)' returned nullptr. No call to 'glViewport()'. Proceeding...\n");
     }
 
-    static void key_callback(GLFWwindow *win, int key, int /*scancode*/, int action, int /*mods*/)
+    static void key_callback(GLFWwindow *ptr, int key, int /*scancode*/, int action, int /*mods*/)
     {
-        //Terminate KIMIN in case the 'Esc' key is pressed.
-        if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-            glfwSetWindowShouldClose(win, GL_TRUE);
+        window *instance = static_cast<window*>(glfwGetWindowUserPointer(ptr));
+        if (instance != nullptr)
+        {
+            if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+                instance->confirm_exit = !(instance->confirm_exit);
+        }
+        else
+            fprintf(stderr, "[Warning] : In window::key_callback(), 'glfwGetWindowUserPointer(ptr)' returned nullptr. Unable to trigger the 'confirm_exit' logic. Proceeding...\n");
     }
 
 public:
-    window()
+    window() : confirm_exit(false)
     {
         //(Re)initialize glfw along with some different settings. Since we explicitely terminated glfw in the logo.h, all (previous) corresponding resources are freed and now they are allocated again.
         if(!glfwInit())
@@ -110,7 +113,7 @@ public:
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             ui.begin();
-            ui.topbar.render();
+            ui.topbar.render(wpointer, confirm_exit);
             ui.properties.render(ui.task_is_running.load(), ui.task_was_aborted.load(), ui.task_progress.load());
             ui.console.render();
             ui.scene.render(width, height);

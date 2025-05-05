@@ -5,7 +5,7 @@
 
 int main()
 {
-    render_logo_for_seconds("../logo/logo.jpg", 2.0f);
+    render_logo_for_seconds("../logo/logo.jpg", 3.0f);
 
     window win;
     win.game_loop();
