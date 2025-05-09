@@ -1,5 +1,0 @@
-- In typedef.h, delete dtensnx3x3, or utilize it (polyhedron's gravity potential, Werner & Scheeres).
-
-- In properties_panel.h, restore the default constructor.
-
-- Add comment explanation ontop of all .h files.
