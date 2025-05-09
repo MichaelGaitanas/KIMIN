@@ -102,7 +102,7 @@ int main()
     //Time parameters.
     double t, t0 = 0.0; //[sec]
     double tmax = 30*86400.0; //[sec]
-    double dt_guess = 1.0; //[sec]
+    double dt = 0.001*86400.0; //[sec]
 
     dvec3 r   = {1.19, 0.0, 0.0}; //[km]
     dvec3 v   = {0.0, 0.00017, 0.0}; //[km/sec]
@@ -125,7 +125,7 @@ int main()
                                        w1b[0],  w1b[1],  w1b[2],
                                         q2[0],   q2[1],   q2[2], q2[3],
                                        w2b[0],  w2b[1],  w2b[2] };
-    auto method = boost::numeric::odeint::make_controlled(1e-15, 1e-15, boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 20>>());
+    boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 20>> rkf78_const;
     
     dmat orbit; //Output matrix, containing the state in time.
 
@@ -162,7 +162,8 @@ int main()
             break;
         }
         //Update state.
-        method.try_step(odes, state, t, dt_guess);
+        rkf78_const.do_step(odes, state, t, dt);
+        t+=dt;
     }
     
     //Write 'orbit' data into files.
