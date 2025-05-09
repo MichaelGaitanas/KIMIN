@@ -375,7 +375,7 @@ public:
 
             //File listing logic.
             static std::vector<std::filesystem::path> all_obj_files = list_obj_files("../obj/polyhedra/"); //Store all the .obj files located in the obj/polyhedra/ directory.
-            if (ImGui::TreeNodeEx("Available .obj files :"))
+            if (ImGui::TreeNodeEx("Available .obj files", ImGuiTreeNodeFlags_Framed))
             {
                 for (size_t i = 0; i < all_obj_files.size(); ++i)
                 {

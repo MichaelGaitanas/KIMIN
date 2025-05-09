@@ -29,7 +29,7 @@ public:
     dvec w2bx, w2by, w2bz;
 
     //The following members were NOT directly evaluated by the integrator. Instead, we use what the integrator evaluated to evaluate the following.
-    dvec dist, vel;
+    dvec dist, vel; //Both are scalars. They are the corresponding magnitudes of (x,y,z) and (vx,vy,vz).
     dvec roll1, pitch1, yaw1; 
     dvec roll2, pitch2, yaw2;
     dvec w1ix, w1iy, w1iz;

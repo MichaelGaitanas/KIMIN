@@ -412,76 +412,89 @@ public:
     //Draw the 2D plot buttons in the gui.
     void render_plot_buttons()
     {
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
+        ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f);
+        if (ImGui::TreeNodeEx("Mutual", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            ImGui::Dummy(ImVec2(0.0f,7.5f));
+            ImGui::Text("Position");
+            plot_cart[0] = common_onoff_button("x##1", ImVec2(50.0f, 20.0f), plot_cart[0]); ImGui::SameLine();
+            plot_cart[1] = common_onoff_button("y##2", ImVec2(50.0f, 20.0f), plot_cart[1]); ImGui::SameLine();
+            plot_cart[2] = common_onoff_button("z##3", ImVec2(50.0f, 20.0f), plot_cart[2]); ImGui::SameLine();
+            plot_cart[3] = common_onoff_button("r##4", ImVec2(50.0f, 20.0f), plot_cart[3]);
+            ImGui::Dummy(ImVec2(0.0f,7.5f));
 
-        ImGui::Text("Position (relative)");
-        plot_cart[0] = common_onoff_button("x##1", ImVec2(50.0f, 20.0f), plot_cart[0]); ImGui::SameLine();
-        plot_cart[1] = common_onoff_button("y##2", ImVec2(50.0f, 20.0f), plot_cart[1]); ImGui::SameLine();
-        plot_cart[2] = common_onoff_button("z##3", ImVec2(50.0f, 20.0f), plot_cart[2]); ImGui::SameLine();
-        plot_cart[3] = common_onoff_button("r##4", ImVec2(50.0f, 20.0f), plot_cart[3]);
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
+            ImGui::Text("Velocity");
+            plot_cart[4] = common_onoff_button("υx##5", ImVec2(50.0f, 20.0f), plot_cart[4]); ImGui::SameLine();
+            plot_cart[5] = common_onoff_button("υy##6", ImVec2(50.0f, 20.0f), plot_cart[5]); ImGui::SameLine();
+            plot_cart[6] = common_onoff_button("υz##7", ImVec2(50.0f, 20.0f), plot_cart[6]); ImGui::SameLine();
+            plot_cart[7] = common_onoff_button("υ##8" , ImVec2(50.0f, 20.0f), plot_cart[7]);
+            ImGui::Dummy(ImVec2(0.0f,7.5f));
 
-        ImGui::Text("Velocity (relative)");
-        plot_cart[4] = common_onoff_button("υx##5", ImVec2(50.0f, 20.0f), plot_cart[4]); ImGui::SameLine();
-        plot_cart[5] = common_onoff_button("υy##6", ImVec2(50.0f, 20.0f), plot_cart[5]); ImGui::SameLine();
-        plot_cart[6] = common_onoff_button("υz##7", ImVec2(50.0f, 20.0f), plot_cart[6]); ImGui::SameLine();
-        plot_cart[7] = common_onoff_button("υ##8" , ImVec2(50.0f, 20.0f), plot_cart[7]);
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
+            ImGui::Text("Keplerian elements");
+            plot_kep[0] = common_onoff_button("a##9",  ImVec2(35.0f, 20.0f), plot_kep[0]); ImGui::SameLine();
+            plot_kep[1] = common_onoff_button("e##10", ImVec2(35.0f, 20.0f), plot_kep[1]); ImGui::SameLine();
+            plot_kep[2] = common_onoff_button("i##11", ImVec2(35.0f, 20.0f), plot_kep[2]); ImGui::SameLine();
+            plot_kep[3] = common_onoff_button("Ω##12", ImVec2(35.0f, 20.0f), plot_kep[3]); ImGui::SameLine();
+            plot_kep[4] = common_onoff_button("ω##13", ImVec2(35.0f, 20.0f), plot_kep[4]); ImGui::SameLine();
+            plot_kep[5] = common_onoff_button("M##14", ImVec2(35.0f, 20.0f), plot_kep[5]);
+            ImGui::Dummy(ImVec2(0.0f,7.5f));
 
-        ImGui::Text("Keplerian elements (relative)");
-        plot_kep[0] = common_onoff_button("a##9", ImVec2(35.0f, 20.0f), plot_kep[0]); ImGui::SameLine();
-        plot_kep[1] = common_onoff_button("e##10", ImVec2(35.0f, 20.0f), plot_kep[1]); ImGui::SameLine();
-        plot_kep[2] = common_onoff_button("i##11", ImVec2(35.0f, 20.0f), plot_kep[2]); ImGui::SameLine();
-        plot_kep[3] = common_onoff_button("Ω##12", ImVec2(35.0f, 20.0f), plot_kep[3]); ImGui::SameLine();
-        plot_kep[4] = common_onoff_button("ω##13", ImVec2(35.0f, 20.0f), plot_kep[4]); ImGui::SameLine();
-        plot_kep[5] = common_onoff_button("M##14", ImVec2(35.0f, 20.0f), plot_kep[5]);
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
+            ImGui::Text("Energy and momentum errors");
+            plot_ener_mom_rel_err[0] = common_onoff_button("energy##15",   ImVec2(80.0f, 25.0f), plot_ener_mom_rel_err[0]); ImGui::SameLine();
+            plot_ener_mom_rel_err[1] = common_onoff_button("momentum##16", ImVec2(80.0f, 25.0f), plot_ener_mom_rel_err[1]);
+            ImGui::Dummy(ImVec2(0.0f,7.5f));
 
-        ImGui::Text("Euler angles (XYZ)");
-        plot_rpy1[0] = common_onoff_button("roll 1##15",  ImVec2(50.0f, 20.0f), plot_rpy1[0]); ImGui::SameLine();
-        plot_rpy1[1] = common_onoff_button("pitch 1##16", ImVec2(50.0f, 20.0f), plot_rpy1[1]); ImGui::SameLine();
-        plot_rpy1[2] = common_onoff_button("yaw 1##17",   ImVec2(50.0f, 20.0f), plot_rpy1[2]);
-        plot_rpy2[0] = common_onoff_button("roll 2##18",  ImVec2(50.0f, 20.0f), plot_rpy2[0]); ImGui::SameLine();
-        plot_rpy2[1] = common_onoff_button("pitch 2##19", ImVec2(50.0f, 20.0f), plot_rpy2[1]); ImGui::SameLine();
-        plot_rpy2[2] = common_onoff_button("yaw 2##20",   ImVec2(50.0f, 20.0f), plot_rpy2[2]);
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
+            ImGui::TreePop();
+        }
 
-        ImGui::Text("Body 1 angular velocity (inertial/body)");
-        plot_w1i[0] = common_onoff_button("ω1ix##21", ImVec2(50.0f, 20.0f), plot_w1i[0]); ImGui::SameLine();
-        plot_w1i[1] = common_onoff_button("ω1iy##22", ImVec2(50.0f, 20.0f), plot_w1i[1]); ImGui::SameLine();
-        plot_w1i[2] = common_onoff_button("ω1iz##23", ImVec2(50.0f, 20.0f), plot_w1i[2]);
-        plot_w1b[0] = common_onoff_button("ω1bx##24", ImVec2(50.0f, 20.0f), plot_w1b[0]); ImGui::SameLine();
-        plot_w1b[1] = common_onoff_button("ω1by##25", ImVec2(50.0f, 20.0f), plot_w1b[1]); ImGui::SameLine();
-        plot_w1b[2] = common_onoff_button("ω1bz##26", ImVec2(50.0f, 20.0f), plot_w1b[2]);
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
+        if (ImGui::TreeNodeEx("Body 1", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            ImGui::Dummy(ImVec2(0.0f,7.5f));
+            ImGui::Text("Euler angles (XYZ)");
+            plot_rpy1[0] = common_onoff_button("roll##17",  ImVec2(50.0f, 20.0f), plot_rpy1[0]); ImGui::SameLine();
+            plot_rpy1[1] = common_onoff_button("pitch##18", ImVec2(50.0f, 20.0f), plot_rpy1[1]); ImGui::SameLine();
+            plot_rpy1[2] = common_onoff_button("yaw##19",   ImVec2(50.0f, 20.0f), plot_rpy1[2]);
+            ImGui::Dummy(ImVec2(0.0f,7.5f));
 
-        ImGui::Text("Body 2 angular velocity (inertial/body)");
-        plot_w2i[0] = common_onoff_button("ω2ix##27", ImVec2(50.0f, 20.0f), plot_w2i[0]); ImGui::SameLine();
-        plot_w2i[1] = common_onoff_button("ω2iy##28", ImVec2(50.0f, 20.0f), plot_w2i[1]); ImGui::SameLine();
-        plot_w2i[2] = common_onoff_button("ω2iz##29", ImVec2(50.0f, 20.0f), plot_w2i[2]);
-        plot_w2b[0] = common_onoff_button("ω2bx##30", ImVec2(50.0f, 20.0f), plot_w2b[0]); ImGui::SameLine();
-        plot_w2b[1] = common_onoff_button("ω2by##31", ImVec2(50.0f, 20.0f), plot_w2b[1]); ImGui::SameLine();
-        plot_w2b[2] = common_onoff_button("ω2bz##32", ImVec2(50.0f, 20.0f), plot_w2b[2]);
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
+            ImGui::Text("Angular velocity (inertial frame)");
+            plot_w1i[0] = common_onoff_button("ωx##20", ImVec2(50.0f, 20.0f), plot_w1i[0]); ImGui::SameLine();
+            plot_w1i[1] = common_onoff_button("ωy##21", ImVec2(50.0f, 20.0f), plot_w1i[1]); ImGui::SameLine();
+            plot_w1i[2] = common_onoff_button("ωz##22", ImVec2(50.0f, 20.0f), plot_w1i[2]);
+            ImGui::Dummy(ImVec2(0.0f,7.5f));
+            
+            ImGui::Text("Angular velocity (body frame)");
+            plot_w1b[0] = common_onoff_button("ω1##23", ImVec2(50.0f, 20.0f), plot_w1b[0]); ImGui::SameLine();
+            plot_w1b[1] = common_onoff_button("ω2##24", ImVec2(50.0f, 20.0f), plot_w1b[1]); ImGui::SameLine();
+            plot_w1b[2] = common_onoff_button("ω3##25", ImVec2(50.0f, 20.0f), plot_w1b[2]);
+            ImGui::Dummy(ImVec2(0.0f,7.5f));
 
-        ImGui::Text("Integrals of motion errors");
-        plot_ener_mom_rel_err[0] = common_onoff_button("Energy##33",   ImVec2(80.0f, 25.0f), plot_ener_mom_rel_err[0]); ImGui::SameLine();
-        plot_ener_mom_rel_err[1] = common_onoff_button("Momentum##34", ImVec2(80.0f, 25.0f), plot_ener_mom_rel_err[1]);
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
+            ImGui::TreePop();
+        }
+
+        if (ImGui::TreeNodeEx("Body 2", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            ImGui::Dummy(ImVec2(0.0f,7.5f));
+            ImGui::Text("Euler angles (XYZ)");
+            plot_rpy2[0] = common_onoff_button("roll##26",  ImVec2(50.0f, 20.0f), plot_rpy2[0]); ImGui::SameLine();
+            plot_rpy2[1] = common_onoff_button("pitch##27", ImVec2(50.0f, 20.0f), plot_rpy2[1]); ImGui::SameLine();
+            plot_rpy2[2] = common_onoff_button("yaw##28",   ImVec2(50.0f, 20.0f), plot_rpy2[2]);
+            ImGui::Dummy(ImVec2(0.0f,7.5f));
+
+            ImGui::Text("Angular velocity (inertial frame)");
+            plot_w2i[0] = common_onoff_button("ωx##29", ImVec2(50.0f, 20.0f), plot_w2i[0]); ImGui::SameLine();
+            plot_w2i[1] = common_onoff_button("ωy##30", ImVec2(50.0f, 20.0f), plot_w2i[1]); ImGui::SameLine();
+            plot_w2i[2] = common_onoff_button("ωz##31", ImVec2(50.0f, 20.0f), plot_w2i[2]);
+            ImGui::Dummy(ImVec2(0.0f,7.5f));
+            
+            ImGui::Text("Angular velocity (body frame)");
+            plot_w2b[0] = common_onoff_button("ω1##32", ImVec2(50.0f, 20.0f), plot_w2b[0]); ImGui::SameLine();
+            plot_w2b[1] = common_onoff_button("ω2##33", ImVec2(50.0f, 20.0f), plot_w2b[1]); ImGui::SameLine();
+            plot_w2b[2] = common_onoff_button("ω3##34", ImVec2(50.0f, 20.0f), plot_w2b[2]);
+            ImGui::Dummy(ImVec2(0.0f,7.5f));
+
+            ImGui::TreePop();
+        }
+        ImGui::PopStyleVar();
     }
 
     void render_scene_buttons()
