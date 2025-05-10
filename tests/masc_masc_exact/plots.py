@@ -5,15 +5,15 @@ import os
 if not os.path.isdir('plots/'):
     os.mkdir('plots/')
 
-t = np.loadtxt('io/time.txt')/86400.0 #[days]
-rv = np.loadtxt('io/pos_vel.txt') #[km]
-rpy1 = np.loadtxt('io/roll_pitch_yaw_1.txt')*180/np.pi #[deg]
-w1b = np.loadtxt('io/w1_body.txt') #[rad/sec]
-w1i = np.loadtxt('io/w1_inertial.txt') #[rad/sec]
-rpy2 = np.loadtxt('io/roll_pitch_yaw_2.txt')*180/np.pi #[deg]
-w2b = np.loadtxt('io/w2_body.txt') #[rad/sec]
-w2i = np.loadtxt('io/w2_inertial.txt') #[rad/sec]
-ener_mom = np.loadtxt('io/energy_momentum.txt') #E [kg*km^2/sec^2] and L [kg*km^2/sec]
+t = np.loadtxt('io/time_parallel.txt')/86400.0 #[days]
+rv = np.loadtxt('io/pos_vel_parallel.txt') #[km]
+rpy1 = np.loadtxt('io/roll_pitch_yaw_1_parallel.txt')*180/np.pi #[deg]
+w1b = np.loadtxt('io/w1_body_parallel.txt') #[rad/sec]
+w1i = np.loadtxt('io/w1_inertial_parallel.txt') #[rad/sec]
+rpy2 = np.loadtxt('io/roll_pitch_yaw_2_parallel.txt')*180/np.pi #[deg]
+w2b = np.loadtxt('io/w2_body_parallel.txt') #[rad/sec]
+w2i = np.loadtxt('io/w2_inertial_parallel.txt') #[rad/sec]
+ener_mom = np.loadtxt('io/energy_momentum_parallel.txt') #E [kg*km^2/sec^2] and L [kg*km^2/sec]
 
 E = ener_mom[:,0]
 dE = np.abs((E - E[0])/E[0])

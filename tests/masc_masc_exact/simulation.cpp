@@ -94,22 +94,22 @@ int main()
     polyhedron poly1,poly2;
     
     printf("Generating mascons 1... ");
-    poly1.load_obj_file("../../obj/didymain2019.obj");
+    poly1.load_obj_file("../../obj/polyhedra/didymain2019_R04km.obj");
     masc1.generate_from_polyhedron(poly1, uvec3{20,20,20});
     masc1.export_obj_file("io/masc1.obj");
     masc1.set_com_zero();
-    masc1.set_inertia_diagonal(M1);
+    masc1.set_inertia_diagonal();
     masc1.export_obj_file("io/masc1_fixed.obj");
     I1 = masc1.get_inertia(M1);
     double brillouin_radius1 = masc1.get_farthest_point_distance();
     printf("Done.\n");
 
     printf("Generating mascons 2... ");
-    poly2.load_obj_file("../../obj/dimorphos_ellipsoid.obj");
+    poly2.load_obj_file("../../obj/polyhedra/dimorphos_ellipsoid_R01km.obj");
     masc2.generate_from_polyhedron(poly2, uvec3{20,20,20});
     masc2.export_obj_file("io/masc2.obj");
     masc2.set_com_zero();
-    masc2.set_inertia_diagonal(M2);
+    masc2.set_inertia_diagonal();
     masc2.export_obj_file("io/masc2_fixed.obj");
     I2 = masc2.get_inertia(M2);    
     double brillouin_radius2 = masc2.get_farthest_point_distance();
@@ -117,10 +117,10 @@ int main()
 
     //Time parameters.
     double t, t0 = 0.0; //[sec]
-    double tmax = 30*86400.0; //[sec]
+    double tmax = 1*86400.0; //[sec]
     double dt_guess = 1.0; //[sec]
 
-    dvec3 r   = {1.19, 0.0, 0.0}; //[km]
+    dvec3 r   = {1.19, 0.0, 1.0}; //[km]
     dvec3 v   = {0.0, 0.00017421523858789, 0.0}; //[km/sec]
     dvec4 q1  = {1.0, 0.0, 0.0, 0.0}; //[ ]
     dvec3 w1i = {0.0, 0.0, 0.000772269580528465}; //[rad/sec]

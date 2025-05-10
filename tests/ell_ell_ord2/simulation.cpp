@@ -246,7 +246,7 @@ int main()
     fclose(file_EL);
 
     FILE *fpsteps = fopen("io/steps.txt","w");
-    fprintf(fpsteps,"%u\n", orbit.size());
+    fprintf(fpsteps,"%llu\n", orbit.size());
     fclose(fpsteps);
 
     FILE *fpcollision = fopen("io/collision.txt","w");

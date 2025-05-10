@@ -3,6 +3,10 @@
 
 #include<cmath>
 
+#ifdef USE_OPENMP
+    #include<omp.h>
+#endif
+
 #include"constant.h"
 #include"typedef.h"
 #include"linalg.h"
@@ -286,18 +290,36 @@ double mut_pot_integrals_ord4(const dvec3 &r, const double M1, const dtens &J1, 
 double mut_pot_masc(const dvec3 &r, const double M1, const dmatnx3 &masc1, const dmat3 &A1,
                                     const double M2, const dmatnx3 &masc2, const dmat3 &A2)
 {
+    #ifdef _OPENMP
+        int total = omp_get_max_threads();
+        int half  = (total > 1 ? total/2 : 1);
+    #else
+        constexpr int half = 1;
+    #endif
+    (void)half;
+
+    size_t i,j, N1 = masc1.size(), N2 = masc2.size();
     double sum = 0.0;
-    for (size_t i = 0; i < masc1.size(); ++i)
+    #ifdef _OPENMP
+        #pragma omp parallel for default(none)\
+                                 shared(r, M1,masc1,A1, M2,masc2,A2)\
+                                 private(i,j)\
+                                 firstprivate(N1,N2)\
+                                 schedule(static)\
+                                 num_threads(half)\
+                                 reduction(+:sum)
+    #endif
+    for (i = 0; i < N1; ++i)
     {
         dvec3 a1i = dot(A1, masc1[i]);
-        for (size_t j = 0; j < masc2.size(); ++j)
+        for (j = 0; j < N2; ++j)
         {
             dvec3 a2j = dot(A2, masc2[j]);
             dvec3 dij = r + a2j - a1i;
             sum += 1.0/length(dij);
         }
     }
-    return -G*M1*M2*sum/(masc1.size()*masc2.size());
+    return -G*M1*M2*sum/((double)N1*N2);
 }
 
 /* End of gravity potential expressions. */
@@ -671,19 +693,40 @@ dvec3 mut_force_integrals_ord4(const dvec3 &r, const double M1, const dtens &J1,
 dvec3 mut_force_masc(const dvec3 &r, const double M1, const dmatnx3 &masc1, const dmat3 &A1,
                                      const double M2, const dmatnx3 &masc2, const dmat3 &A2)
 {
-    dvec3 sum = {0.0,0.0,0.0};
-    for (size_t i = 0; i < masc1.size(); ++i)
+    #ifdef _OPENMP
+        int total = omp_get_max_threads();
+        int half  = (total > 1 ? total/2 : 1);
+    #else
+        constexpr int half = 1;
+    #endif
+    (void)half;
+
+    size_t i,j, N1 = masc1.size(), N2 = masc2.size();
+    double sumx = 0.0, sumy = 0.0, sumz = 0.0;
+    #ifdef _OPENMP
+        #pragma omp parallel for default(none)\
+                                 shared(r, M1,masc1,A1, M2,masc2,A2)\
+                                 private(i,j)\
+                                 firstprivate(N1,N2)\
+                                 schedule(static)\
+                                 num_threads(half)\
+                                 reduction(+:sumx,sumy,sumz)
+    #endif
+    for (i = 0; i < N1; ++i)
     {
         dvec3 a1i = dot(A1, masc1[i]);
-        for (size_t j = 0; j < masc2.size(); ++j)
+        for (j = 0; j < N2; ++j)
         {
             dvec3 a2j = dot(A2, masc2[j]);
             dvec3 dij = r + a2j - a1i;
             double len = length(dij);
-            sum = sum + dij/(len*len*len);
+            double invlen3 = 1.0/(len*len*len);
+            sumx += dij[0]*invlen3;
+            sumy += dij[1]*invlen3;
+            sumz += dij[2]*invlen3;
         }
     }
-    return -G*M1*M2*sum/(masc1.size()*masc2.size());
+    return -G*M1*M2*dvec3{sumx,sumy,sumz}/((double)N1*N2);
 }
 
 /* End of gravity force expressions. */
@@ -898,19 +941,41 @@ dvec3 mut_torque_integrals_ord4(const dvec3 &r,                  const dtens &J1
 dvec3 mut_torque_masc(const dvec3 &r, const double M1, const dmatnx3 &masc1, const dmat3 &A1,
                                       const double M2, const dmatnx3 &masc2, const dmat3 &A2)
 {
-    dvec3 sum = {0.0,0.0,0.0};
-    for (size_t i = 0; i < masc1.size(); ++i)
+    #ifdef _OPENMP
+        int total = omp_get_max_threads();
+        int half  = (total > 1 ? total/2 : 1);
+    #else
+        constexpr int half = 1;
+    #endif
+    (void)half;
+
+    size_t i,j, N1 = masc1.size(), N2 = masc2.size();
+    double sumx = 0.0, sumy = 0.0, sumz = 0.0;
+    #ifdef _OPENMP
+        #pragma omp parallel for default(none)\
+                                 shared(r, M1,masc1,A1, M2,masc2,A2)\
+                                 private(i,j)\
+                                 firstprivate(N1,N2)\
+                                 schedule(static)\
+                                 num_threads(half)\
+                                 reduction(+:sumx,sumy,sumz)
+    #endif
+    for (i = 0; i < N1; ++i)
     {
         dvec3 a1i = dot(A1, masc1[i]);
-        for (size_t j = 0; j < masc2.size(); ++j)
+        for (j = 0; j < N2; ++j)
         {
             dvec3 a2j = dot(A2, masc2[j]);
             dvec3 dij = r + a2j - a1i;
             double len = length(dij);
-            sum = sum + cross(a1i,dij)/(len*len*len);
+            double invlen3 = 1.0/(len*len*len);
+            dvec3 cp = cross(a1i,dij);
+            sumx += cp[0]*invlen3;
+            sumy += cp[1]*invlen3;
+            sumz += cp[2]*invlen3;
         }
     }
-    return G*M1*M2*sum/(masc1.size()*masc2.size());
+    return G*M1*M2*dvec3{sumx,sumy,sumz}/((double)N1*N2);
 }
 
 /* End of gravity torque expressions. */
