@@ -85,8 +85,8 @@ void odes(const boost::array<double, 20> &state, boost::array<double, 20> &dstat
 
 int main()
 {
-    M1 = 5.320591856403073e11; //[kg]
-    M2 = 4.940814359692687e9; //[kg]
+    M1 = 5.32e11; //[kg]
+    M2 = 4.94e9; //[kg]
     m = M1*M2/(M1 + M2);
 
     std::filesystem::create_directory("io");
@@ -95,7 +95,7 @@ int main()
     
     printf("Generating mascons 1... ");
     poly1.load_obj_file("../../obj/polyhedra/didymain2019_R04km.obj");
-    masc1.generate_from_polyhedron(poly1, uvec3{20,20,20});
+    masc1.generate_from_polyhedron(poly1, uvec3{10,10,10});
     masc1.export_obj_file("io/masc1.obj");
     masc1.set_com_zero();
     masc1.set_inertia_diagonal();
@@ -106,7 +106,7 @@ int main()
 
     printf("Generating mascons 2... ");
     poly2.load_obj_file("../../obj/polyhedra/dimorphos_ellipsoid_R01km.obj");
-    masc2.generate_from_polyhedron(poly2, uvec3{20,20,20});
+    masc2.generate_from_polyhedron(poly2, uvec3{10,10,10});
     masc2.export_obj_file("io/masc2.obj");
     masc2.set_com_zero();
     masc2.set_inertia_diagonal();
@@ -117,15 +117,15 @@ int main()
 
     //Time parameters.
     double t, t0 = 0.0; //[sec]
-    double tmax = 1*86400.0; //[sec]
+    double tmax = 1.0*86400.0; //[sec]
     double dt_guess = 1.0; //[sec]
 
-    dvec3 r   = {1.19, 0.0, 1.0}; //[km]
-    dvec3 v   = {0.0, 0.00017421523858789, 0.0}; //[km/sec]
+    dvec3 r   = {1.19, 0.0, 0.0}; //[km]
+    dvec3 v   = {0.0, 0.00017, 0.0}; //[km/sec]
     dvec4 q1  = {1.0, 0.0, 0.0, 0.0}; //[ ]
-    dvec3 w1i = {0.0, 0.0, 0.000772269580528465}; //[rad/sec]
+    dvec3 w1i = {0.0, 0.0, 0.00077}; //[rad/sec]
     dvec4 q2  = {1.0, 0.0, 0.0, 0.0}; // [ ]
-    dvec3 w2i = {0.0, 0.0, 0.000146399360157891}; //[rad/sec]
+    dvec3 w2i = {0.0, 0.0, 0.00014}; //[rad/sec]
 
     q1 = quat2unit(q1);
     q2 = quat2unit(q2);
@@ -141,7 +141,7 @@ int main()
                                        w1b[0],  w1b[1],  w1b[2],
                                         q2[0],   q2[1],   q2[2], q2[3],
                                        w2b[0],  w2b[1],  w2b[2] };
-    auto method = boost::numeric::odeint::make_controlled(1.0e-15, 1.0e-15, boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 20>>());
+    auto method = boost::numeric::odeint::make_controlled(1e-15, 1e-15, boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 20>>());
     
     dmat orbit; //Output matrix, containing the state in time.
 
@@ -154,27 +154,12 @@ int main()
         fflush(stdout);
     
         //Append the current state in the solution matrix.
-        orbit.push_back({t,
-                   state[0],
-                   state[1],
-                   state[2],
-                   state[3],
-                   state[4],
-                   state[5],
-                   state[6],
-                   state[7],
-                   state[8],
-                   state[9],
-                   state[10],
-                   state[11],
-                   state[12],
-                   state[13],
-                   state[14],
-                   state[15],
-                   state[16],
-                   state[17],
-                   state[18],
-                   state[19]});
+        orbit.push_back({t, state[0],  state[1],  state[2],
+                            state[3],  state[4],  state[5],
+                            state[6],  state[7],  state[8],  state[9],
+                            state[10], state[11], state[12],
+                            state[13], state[14], state[15], state[16],
+                            state[17], state[18], state[19]});
 
         //Check for sphere-sphere collision (event detection).
         if (sphere_sphere_collision(length(dvec3{state[0],state[1],state[2]}), brillouin_radius1, brillouin_radius2))
@@ -187,17 +172,19 @@ int main()
     }
     
     //Write 'orbit' data into files.
-    FILE *fpt = fopen("io/time.txt","w");
-    FILE *fprv = fopen("io/pos_vel.txt","w");
-    FILE *fpq1 = fopen("io/q1.txt","w");
-    FILE *fpw1i = fopen("io/w1_inertial.txt","w");
-    FILE *fpw1b = fopen("io/w1_body.txt","w");
-    FILE *fprpy1 = fopen("io/roll_pitch_yaw_1.txt","w");
-    FILE *fpq2 = fopen("io/q2.txt","w");
-    FILE *fpw2i = fopen("io/w2_inertial.txt","w");
-    FILE *fpw2b = fopen("io/w2_body.txt","w");
-    FILE *fprpy2 = fopen("io/roll_pitch_yaw_2.txt","w");
-    FILE *fpEL = fopen("io/energy_momentum.txt","w");
+    FILE *file_t      = fopen("io/time.txt","w");
+    FILE *file_pos    = fopen("io/rel_pos.txt","w");
+    FILE *file_vel    = fopen("io/rel_vel.txt","w");
+    FILE *file_q1     = fopen("io/quaternion1.txt","w");
+    FILE *file_w1b    = fopen("io/ang_vel_w1b.txt","w");
+    FILE *file_q2     = fopen("io/quaternion2.txt","w");
+    FILE *file_w2b    = fopen("io/ang_vel_w2b.txt","w");
+    FILE *file_rpy1   = fopen("io/euler_rpy1.txt","w");
+    FILE *file_w1i    = fopen("io/ang_vel_w1i.txt","w");
+    FILE *file_rpy2   = fopen("io/euler_rpy2.txt","w");
+    FILE *file_w2i    = fopen("io/ang_vel_w2i.txt","w");
+    FILE *file_EL_err = fopen("io/ener_mom_rel_error.txt","w");
+    FILE *fpEL_val    = fopen("io/ener_mom_vals.txt","w");
     for (size_t i = 0; i < orbit.size(); ++i)
     {
         dvec3 r = {orbit[i][1], orbit[i][2], orbit[i][3]};
@@ -216,37 +203,59 @@ int main()
         double energy = 0.5*m*dot(v,v) + 0.5*dot( dot(w1b,I1), w1b) + 0.5*dot( dot(w2b,I2), w2b) + mut_pot_masc(r, M1,masc1.get_points(),A1, M2,masc2.get_points(),A2);
         dvec3 momentum = m*cross(r,v) + dot(A1, dot(I1,w1b)) + dot(A2, dot(I2,w2b));
 
-        fprintf(fpt,"%.16lf\n", orbit[i][0]);
-        fprintf(fprv,"%.16lf %.16lf %.16lf %.16lf %.16lf %.16lf\n",r[0],r[1],r[2], v[0],v[1],v[2]);
-        fprintf(fpq1,"%.16lf %.16lf %.16lf %.16lf\n",q1[0],q1[1],q1[2],q1[3]);
-        fprintf(fprpy1,"%.16lf %.16lf %.16lf\n",rpy1[0],rpy1[1],rpy1[2]);
-        fprintf(fpw1b,"%.16lf %.16lf %.16lf\n",w1b[0],w1b[1],w1b[2]);
-        fprintf(fpw1i,"%.16lf %.16lf %.16lf\n",w1i[0],w1i[1],w1i[2]);
-        fprintf(fpq2,"%.16lf %.16lf %.16lf %.16lf\n",q2[0],q2[1],q2[2],q2[3]);
-        fprintf(fprpy2,"%.16lf %.16lf %.16lf\n",rpy2[0],rpy2[1],rpy2[2]);
-        fprintf(fpw2b,"%.16lf %.16lf %.16lf\n",w2b[0],w2b[1],w2b[2]);
-        fprintf(fpw2i,"%.16lf %.16lf %.16lf\n",w2i[0],w2i[1],w2i[2]); 
-        fprintf(fpEL,"%.16lf %.16lf %.16lf %.16lf\n", energy, momentum[0],momentum[1],momentum[2]);
+        double energy_at_t0, momentum_at_t0;
+        double ener_rel_err, mom_rel_err;
+        if (i == 0)
+        {
+            energy_at_t0 = energy;
+            momentum_at_t0 = momentum;
+            ener_rel_err = 0.0;
+            mom_rel_err  = 0.0;
+        }
+        else
+        {
+            if (fabs(energy_at_t0) > 1e-16)
+                ener_rel_err = fabs((energy - energy_at_t0)/energy_at_t0);
+            else //Fallback to absolute error to avoid division by zero.
+                ener_rel_err = fabs(energy - energy_at_t0);
+        
+            if (fabs(momentum_at_t0) > 1e-16)
+                mom_rel_err = fabs((momentum - momentum_at_t0)/momentum_at_t0);
+            else //The same...
+                mom_rel_err = fabs(momentum - momentum_at_t0);
+        }
+
+        fprintf(file_t,"%.16lf\n", orbit[i][0]/86400.0);
+        fprintf(file_pos,"%.16lf %.16lf %.16lf %.16lf\n",r[0],r[1],r[2], length(r));
+        fprintf(file_vel,"%.16lf %.16lf %.16lf %.16lf\n",v[0],v[1],v[2], length(v));
+        fprintf(file_q1,"%.16lf %.16lf %.16lf %.16lf\n",q1[0],q1[1],q1[2],q1[3]);
+        fprintf(file_w1b,"%.16lf %.16lf %.16lf\n",w1b[0],w1b[1],w1b[2]);
+        fprintf(file_q2,"%.16lf %.16lf %.16lf %.16lf\n",q2[0],q2[1],q2[2],q2[3]);
+        fprintf(file_w2b,"%.16lf %.16lf %.16lf\n",w2b[0],w2b[1],w2b[2]);
+
+        fprintf(file_rpy1,"%.16lf %.16lf %.16lf\n",rpy1[0],rpy1[1],rpy1[2]);
+        fprintf(file_w1i,"%.16lf %.16lf %.16lf\n",w1i[0],w1i[1],w1i[2]);
+        fprintf(file_rpy2,"%.16lf %.16lf %.16lf\n",rpy2[0],rpy2[1],rpy2[2]);
+        fprintf(file_w2i,"%.16lf %.16lf %.16lf\n",w2i[0],w2i[1],w2i[2]); 
+        fprintf(file_EL_err,"%.16lf %.16lf\n", ener_rel_err, mom_rel_err);
+        fprintf(fpEL_val,"%.16lf %.16lf %.16lf %.16lf %.16lf\n", energy, momentum[0],momentum[1],momentum[2], length(momentum));
     }
-    fclose(fpt);
-    fclose(fprv);
-    fclose(fpq1);
-    fclose(fprpy1);
-    fclose(fpw1b);
-    fclose(fpw1i);
-    fclose(fpq2);
-    fclose(fprpy2);
-    fclose(fpw2b);
-    fclose(fpw2i);
-    fclose(fpEL);
+    fclose(file_t);
+    fclose(file_pos);
+    fclose(file_q1);
+    fclose(file_rpy1);
+    fclose(file_w1b);
+    fclose(file_w1i);
+    fclose(file_q2);
+    fclose(file_rpy2);
+    fclose(file_w2b);
+    fclose(file_w2i);
+    fclose(file_EL_err);
+    fclose(fpEL_val);
 
-    FILE *fpsteps = fopen("io/steps.txt","w");
-    fprintf(fpsteps,"%u\n", orbit.size());
-    fclose(fpsteps);
-
-    FILE *fpcollision = fopen("io/collision.txt","w");
-    fprintf(fpcollision, "Collision detected : %s", collision ? "Yes" : "No");
-    fclose(fpcollision);
+    FILE *file_collision = fopen("io/collision.txt","w");
+    fprintf(file_collision, "Collision detected : %s", collision ? "Yes" : "No");
+    fclose(file_collision);
 
     printf("\nDone.\n");
 
