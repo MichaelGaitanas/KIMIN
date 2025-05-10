@@ -1,3 +1,5 @@
+/* This header provides a collection of standalone functions for converting between common mathematical and physical quantities. */
+
 #ifndef CONVERSION_H
 #define CONVERSION_H
 
@@ -24,7 +26,7 @@ dvec3 quat2ang(const dvec4 &q)
     double coeff = 2.0*(q[0]*q[2] - q[1]*q[3]);
     if (coeff > 1.0)
         coeff = 1.0;
-    if (coeff < -1.0)
+    else if (coeff < -1.0)
         coeff = -1.0;
     double pitch = asin(coeff);
 
