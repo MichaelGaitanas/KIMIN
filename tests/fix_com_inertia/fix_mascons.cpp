@@ -11,18 +11,18 @@ int main()
     //Load a polyhedron. We need it to generate the mascons.
     polyhedron poly;
     printf("Loading polyhedron... ");
-    poly.load_obj_file("../../obj/polyhedra/bennu196k_R03km.obj");
-    printf("Done.\n\n");
+    poly.load_obj_file("../../obj/polyhedra/dimorphos_ellipsoid_R01km.obj");
+    printf("Done.\n");
     
     mascons masc;
     printf("Generating mascons... ");
-    masc.generate_from_polyhedron(poly, uvec3{22,22,22});
+    masc.generate_from_polyhedron(poly, uvec3{15,15,15});
     printf("Done.\n\n");
 
     std::filesystem::create_directory("io");
 
     char buffer[100];
-    sprintf(buffer,"io/bennu196k_R03km_%llu.obj",masc.get_total());
+    sprintf(buffer,"io/dimorphos_ellipsoid_R01km_%llu.obj",masc.get_total());
     masc.export_obj_file(buffer);
 
     dvec3 com = masc.get_com();
@@ -42,14 +42,14 @@ int main()
                                                                                             iner[1][0],iner[1][1],iner[1][2],
                                                                                             iner[2][0],iner[2][1],iner[2][2]);
     
-    masc.set_inertia_diagonal(M);
+    masc.set_inertia_diagonal();
     iner = masc.get_inertia(M);
     printf("Final inertia : \n");
     printf("[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n[ %.15e  %.15e  %.15e ]\n\n", iner[0][0],iner[0][1],iner[0][2],
                                                                                             iner[1][0],iner[1][1],iner[1][2],
                                                                                             iner[2][0],iner[2][1],iner[2][2]);
     
-    sprintf(buffer,"io/bennu196k_R03km_%llu_fixed.obj",masc.get_total());
+    sprintf(buffer,"io/dimorphos_ellipsoid_R01km_%llu_fixed.obj",masc.get_total());
     masc.export_obj_file(buffer);
 
     return 0;

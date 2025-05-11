@@ -29,7 +29,7 @@ int main()
     printf("i  = %.15lf\n", kep[2]*180.0/pi);
     printf("Om = %.15lf\n", kep[3]*180.0/pi);
     printf("w  = %.15lf\n", kep[4]*180.0/pi);
-    printf("M  = %.15lf\n", kep[5]*180.0/pi);
+    printf("M  = %.15lf\n\n", kep[5]*180.0/pi);
 
     return 0;
 }

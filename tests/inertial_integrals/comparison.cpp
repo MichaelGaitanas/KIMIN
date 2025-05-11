@@ -10,23 +10,21 @@
 int main()
 {
     mascons masc;
-    masc.load_obj_file("../../obj/mascons/patroclus_ellipsoid_48723_fixed.obj");
+    masc.load_obj_file("../../obj/mascons/didymain2019_R04km_1661_fixed.obj");
 
     polyhedron poly;
-    poly.load_obj_file("../../obj/patroclus_ellipsoid.obj");
+    poly.load_obj_file("../../obj/polyhedra/didymain2019_R04km.obj");
 
     double M = 123456.0;
-    int ord = 3;
+    int ord = 2;
 
-
-    dtens Jell = ell_integrals(M, dvec3{63.5, 58.5, 49.0}, ord);
     dtens Jmasc = masc.get_inertial_integrals(M,ord);
-    dtens Jpoly = poly.get_inertial_integrals_ord3(M); //Don't forget the order!
+    dtens Jpoly = poly.get_inertial_integrals_ord2(M);
 
-    for (size_t i = 0; i < Jell.size(); ++i)
-        for (size_t j = 0; j < Jell[i].size(); ++j)
-            for (size_t k = 0; k < Jell[i][j].size(); ++k)
-                printf("J[%llu][%llu][%llu] :  %.10e,  %.10e,  %.10e\n",i,j,k, Jell[i][j][k], Jpoly[i][j][k], Jmasc[i][j][k]);
+    for (size_t i = 0; i < Jmasc.size(); ++i)
+        for (size_t j = 0; j < Jmasc[i].size(); ++j)
+            for (size_t k = 0; k < Jmasc[i][j].size(); ++k)
+                printf("J[%llu][%llu][%llu] :  %.10e,  %.10e\n",i,j,k, Jpoly[i][j][k], Jmasc[i][j][k]);
 
     return 0;
 }

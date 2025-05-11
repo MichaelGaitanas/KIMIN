@@ -1,6 +1,7 @@
 import math as ma
 import numpy as np
 
+#MINE
 #Load an .obj file, exclusively with the format 'v x y z' (mascons).
 def loadobjv(path):
     xyz = []
@@ -13,6 +14,7 @@ def loadobjv(path):
     
     return np.asarray(xyz)
 
+#MINE
 #Load an .obj file, exclusively with the format 'v x y z' and 'f i j k' (polyhedron, no normals).
 def loadobjvf(path):
     xyz = []
@@ -29,6 +31,7 @@ def loadobjvf(path):
     
     return np.array(xyz, dtype=np.float64), np.array(ijk, dtype=np.int64) - 1
 
+#MINE
 #Generate the (non normalized) inertial integrals tensor of order 'ord', of a mascons distribution 'masc', of total mass 'M' with constant density.
 def masc_integrals(M,masc,ord):
     m = M/len(masc) #Mass of each mascon.
@@ -40,9 +43,9 @@ def masc_integrals(M,masc,ord):
                     J[i,j,k] = m*np.sum((masc[:,0]**i)*(masc[:,1]**j)*(masc[:,2]**k)) #m*(x[n]^i)*(y[n]^j)*(z[n]^k), where n is the mascon's enumeration.
     return J
 
-#Computes the total volume of a polyhedron assuming that the latter is a bunch of
-#attached tetrahedra with common vertex at the O(0,0,0). The total volume then, is the sum of
-#the individual tetrahedra volumes.
+#MINE
+#Computes the total volume of a polyhedron assuming that the latter is a bunch of attached tetrahedra with common
+#vertex at the O(0,0,0). The total volume then, is the sum of the individual tetrahedra volumes.
 def poly_vol_tet(verts,faces):
     vol = 0.0
     for f in faces:
@@ -95,12 +98,12 @@ def poly_integrals(rho,verts,faces,ord):
 					J[l,m,n] += rho*Ta*tet_sums(l,m,n,x1[0],x2[0],x3[0],x1[1],x2[1],x3[1],x1[2],x2[2],x3[2])
 	return J
 
-masc = loadobjv('../../obj/mascons/patroclus_ellipsoid_48723_fixed.obj') #masc -> ([km],[km],[km])
+masc = loadobjv('../../obj/mascons/didymain2019_R04km_1661_fixed.obj') #masc -> ([km],[km],[km])
 
-verts, faces = loadobjvf('../../obj/patroclus_ellipsoid.obj') #verts -> ([km],[km],[km])
+verts, faces = loadobjvf('../../obj/polyhedra/didymain2019_R04km.obj') #verts -> ([km],[km],[km])
 
 M = 123456.0 #Total mass of the body [kg].
-ord = 3 #Order of the inertial integrals expansion.
+ord = 2 #Order of the inertial integrals expansion.
 
 Jmasc = masc_integrals(M,masc,ord)
 Jpoly = poly_integrals(M/poly_vol_tet(verts,faces), verts, faces, ord)

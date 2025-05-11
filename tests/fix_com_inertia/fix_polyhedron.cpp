@@ -39,7 +39,7 @@ int main()
                                                                                             iner[1][0],iner[1][1],iner[1][2],
                                                                                             iner[2][0],iner[2][1],iner[2][2]);
     
-    poly.export_obj_file_vf("io/bennu196k_R03km_poly_fixed.obj");
+    poly.export_obj_file_vf("io/bennu196k_R03km_fixed.obj");
 
     return 0;
 }
