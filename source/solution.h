@@ -278,6 +278,7 @@ public:
         FILE *file_kep      = fopen(("../simulations/" + std::string(sim_name) + "/keplerian.txt"         ).c_str(), "w");
         FILE *file_ener_mom = fopen(("../simulations/" + std::string(sim_name) + "/ener_mom_rel_error.txt").c_str(), "w");
 
+        //Export the solution vectors.
         for (size_t i = 0; i < t.size(); ++i)
         {
             fprintf(file_t,        "%.16lf\n", t[i]);
@@ -311,9 +312,156 @@ public:
         fclose(file_kep);
         fclose(file_ener_mom);
 
+        //Export the collision status.
         FILE *file_collision = fopen(("../simulations/" + std::string(sim_name) + "/collision.txt").c_str(),"w");
         fprintf(file_collision,"Collision detected : %s", integr.collision ? "Yes" : "No");
         fclose(file_collision);
+
+        //Export the input properties.
+        FILE *file_properties = fopen(("../simulations/" + std::string(sim_name) + "/properties.txt").c_str(),"w");
+        
+        fprintf(file_properties,"Simulation name := %s\n\n", sim_name);
+        
+        if (integr.properties.ell_checkbox)
+        {
+            fprintf(file_properties,"Shape models := Ellipsoids\n");
+            fprintf(file_properties,"a1 := %.15g\n",  integr.properties.semiaxes1[0]);
+            fprintf(file_properties,"b1 := %.15g\n",  integr.properties.semiaxes1[1]);
+            fprintf(file_properties,"c1 := %.15g\n",  integr.properties.semiaxes1[2]);
+            fprintf(file_properties,"a2 := %.15g\n",  integr.properties.semiaxes2[0]);
+            fprintf(file_properties,"b2 := %.15g\n",  integr.properties.semiaxes2[1]);
+            fprintf(file_properties,"c2 := %.15g\n\n",integr.properties.semiaxes2[2]);
+        }
+        else
+        {
+            fprintf(file_properties,"Shape models := .obj files\n");
+            fprintf(file_properties,"file 1 := %s\n",  integr.properties.obj1_path.c_str());
+            fprintf(file_properties,"file 2 := %s\n\n",integr.properties.obj2_path.c_str());
+        }
+
+        if (integr.properties.ord2_checkbox)
+            fprintf(file_properties,"Mutual potential order := 2\n\n");
+        else if (integr.properties.ord3_checkbox)
+            fprintf(file_properties,"Mutual potential order := 3\n\n");
+        else
+            fprintf(file_properties,"Mutual potential order := 4\n\n");
+
+        fprintf(file_properties,"M1 := %.15g\n",  integr.properties.M1);
+        fprintf(file_properties,"M2 := %.15g\n\n",integr.properties.M2);
+
+        if (integr.properties.integration_method_var_choice == 0)
+        {
+            fprintf(file_properties,"Numerical method := RKF78 (fixed)\n");
+            fprintf(file_properties,"Epoch := %.15g\n",integr.properties.epoch);
+            fprintf(file_properties,"Duration := %.15g\n",integr.properties.dur);
+            fprintf(file_properties,"Step := %.15g\n\n",integr.properties.step);
+        }
+        else if (integr.properties.integration_method_var_choice == 1)
+        {
+            fprintf(file_properties,"Numerical method := RKF78 (adaptive)\n");
+            fprintf(file_properties,"Epoch := %.15g\n",integr.properties.epoch);
+            fprintf(file_properties,"Duration := %.15g\n",integr.properties.dur);
+            fprintf(file_properties,"Target error := %.15g\n\n",integr.properties.target_error);
+        }
+        else if (integr.properties.integration_method_var_choice == 2)
+        {
+            fprintf(file_properties,"Numerical method := BStoer (adaptive)\n");
+            fprintf(file_properties,"Epoch := %.15g\n",integr.properties.epoch);
+            fprintf(file_properties,"Duration := %.15g\n",integr.properties.dur);
+            fprintf(file_properties,"Target error := %.15g\n\n",integr.properties.target_error);
+        }
+        else //3
+        {
+            fprintf(file_properties,"Numerical method := ABM5 (fixed)\n");
+            fprintf(file_properties,"Epoch := %.15g\n",integr.properties.epoch);
+            fprintf(file_properties,"Duration := %.15g\n",integr.properties.dur);
+            fprintf(file_properties,"Step := %.15g\n\n",integr.properties.step);
+        }
+
+        if (integr.properties.cart_kep_var_choice == 0) //Cartesian
+        {
+            fprintf(file_properties,"x  := %.15g\n",   integr.properties.cart[0]);
+            fprintf(file_properties,"y  := %.15g\n",   integr.properties.cart[1]);
+            fprintf(file_properties,"z  := %.15g\n",   integr.properties.cart[2]);
+            fprintf(file_properties,"vx := %.15g\n",   integr.properties.cart[3]);
+            fprintf(file_properties,"vy := %.15g\n",   integr.properties.cart[4]);
+            fprintf(file_properties,"vz := %.15g\n\n", integr.properties.cart[5]);
+        }
+        else //Keplerian
+        {
+            fprintf(file_properties,"a  := %.15g\n",   integr.properties.kep[0]);
+            fprintf(file_properties,"e  := %.15g\n",   integr.properties.kep[1]);
+            fprintf(file_properties,"i  := %.15g\n",   integr.properties.kep[2]);
+            fprintf(file_properties,"Om := %.15g\n",   integr.properties.kep[3]);
+            fprintf(file_properties,"w  := %.15g\n",   integr.properties.kep[4]);
+            fprintf(file_properties,"M  := %.15g\n\n", integr.properties.kep[5]);
+        }
+
+        if (integr.properties.orient_var_choice == 0) //Euler angles
+        {
+            fprintf(file_properties,"roll 1  := %.15g\n",   integr.properties.rpy1[0]);
+            fprintf(file_properties,"pitch 1 := %.15g\n",   integr.properties.rpy1[1]);
+            fprintf(file_properties,"yaw 1   := %.15g\n",   integr.properties.rpy1[2]);
+            fprintf(file_properties,"roll 2  := %.15g\n",   integr.properties.rpy2[0]);
+            fprintf(file_properties,"pitch 2 := %.15g\n",   integr.properties.rpy2[1]);
+            fprintf(file_properties,"yaw 2   := %.15g\n\n", integr.properties.rpy2[2]);
+        }
+        else //Quaternions
+        {
+            fprintf(file_properties,"q10 := %.15g\n", integr.properties.q1[0]);
+            fprintf(file_properties,"q11 := %.15g\n", integr.properties.q1[1]);
+            fprintf(file_properties,"q12 := %.15g\n", integr.properties.q1[2]);
+            fprintf(file_properties,"q13 := %.15g\n", integr.properties.q1[3]);
+            fprintf(file_properties,"q20 := %.15g\n", integr.properties.q2[0]);
+            fprintf(file_properties,"q21 := %.15g\n", integr.properties.q2[1]);
+            fprintf(file_properties,"q22 := %.15g\n", integr.properties.q2[2]);
+            fprintf(file_properties,"q23 := %.15g\n", integr.properties.q2[3]);
+        }
+
+        if (integr.properties.frame_type_choice == 0) //Inertial frame angular velocities.
+        {
+            fprintf(file_properties,"w1ix := %.15g\n",   integr.properties.w1i[0]);
+            fprintf(file_properties,"w1iy := %.15g\n",   integr.properties.w1i[1]);
+            fprintf(file_properties,"w1iz := %.15g\n",   integr.properties.w1i[2]);
+            fprintf(file_properties,"w2ix := %.15g\n",   integr.properties.w2i[0]);
+            fprintf(file_properties,"w2iy := %.15g\n",   integr.properties.w2i[1]);
+            fprintf(file_properties,"w2iz := %.15g\n\n", integr.properties.w2i[2]);
+        }
+        else //Body frame angular velocities.
+        {
+            fprintf(file_properties,"w1bx := %.15g\n",   integr.properties.w1b[0]);
+            fprintf(file_properties,"w1by := %.15g\n",   integr.properties.w1b[1]);
+            fprintf(file_properties,"w1bz := %.15g\n",   integr.properties.w1b[2]);
+            fprintf(file_properties,"w2bx := %.15g\n",   integr.properties.w2b[0]);
+            fprintf(file_properties,"w2by := %.15g\n",   integr.properties.w2b[1]);
+            fprintf(file_properties,"w2bz := %.15g\n\n", integr.properties.w2b[2]);
+        }
+
+        if (integr.properties.collision_no)
+            fprintf(file_properties,"Collision shapes := No collision\n\n");
+        else if (integr.properties.collision_spheres)
+            fprintf(file_properties,"Collision shapes := Spheres\n\n");
+        else
+            fprintf(file_properties,"Collision shapes := Polyhedra\n\n");
+
+        if (integr.properties.impactors_checkbox)
+        {
+            fprintf(file_properties,"m1    := %.15lf\n",integr.properties.M1_impact);
+            fprintf(file_properties,"vx1   := %.15lf\n",integr.properties.v1_impact[0]);
+            fprintf(file_properties,"vy1   := %.15lf\n",integr.properties.v1_impact[1]);
+            fprintf(file_properties,"vz1   := %.15lf\n",integr.properties.v1_impact[2]);
+            fprintf(file_properties,"beta1 := %.15lf\n",integr.properties.beta1);
+            fprintf(file_properties,"t1    := %.15lf\n",integr.properties.t1_impact);
+
+            fprintf(file_properties,"m2    := %.15lf\n",integr.properties.M2_impact);
+            fprintf(file_properties,"vx2   := %.15lf\n",integr.properties.v2_impact[0]);
+            fprintf(file_properties,"vy2   := %.15lf\n",integr.properties.v2_impact[1]);
+            fprintf(file_properties,"vz2   := %.15lf\n",integr.properties.v2_impact[2]);
+            fprintf(file_properties,"beta2 := %.15lf\n",integr.properties.beta2);
+            fprintf(file_properties,"t2    := %.15lf\n",integr.properties.t2_impact);
+        }
+
+        fclose(file_properties);
 
         console.add_text("Done.\n");
     }
