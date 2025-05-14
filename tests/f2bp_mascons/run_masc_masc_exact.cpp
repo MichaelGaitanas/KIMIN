@@ -34,9 +34,11 @@ void odes(const boost::array<double, 20> &state, boost::array<double, 20> &dstat
     dmat3 A1 = quat2mat(q1);
     dmat3 A2 = quat2mat(q2);
 
-    dvec3 force = mut_force_masc(r, M1,masc1.get_points(),A1, M2,masc2.get_points(),A2);
+    dvec6 force_and_tau1i = mut_force_tau1i_masc(r, M1,masc1.get_points(),A1, M2,masc2.get_points(),A2);
 
-    dvec3 tau1i = mut_torque_masc(r, M1,masc1.get_points(),A1, M2,masc2.get_points(),A2);
+    dvec3 force = {force_and_tau1i[0], force_and_tau1i[1], force_and_tau1i[2]};
+
+    dvec3 tau1i = {force_and_tau1i[3], force_and_tau1i[4], force_and_tau1i[5]};
     dvec3 tau2i = -tau1i - cross(r,force);
 
     dvec3 tau1b = iner2body(tau1i,A1);

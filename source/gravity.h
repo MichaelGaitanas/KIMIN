@@ -114,7 +114,7 @@ double mut_pot_integrals_ord3(const dvec3 &r, const double M1, const dtens &J1, 
     //Order 0 (Keplerian).
     double V0 = -G*M1*M2/d;
 
-    //Order 1
+    //Order 1.
     //V1 = 0 (by default).
 
     //Order 2.
@@ -291,33 +291,23 @@ double mut_pot_masc(const dvec3 &r, const double M1, const dmatnx3 &masc1, const
                                     const double M2, const dmatnx3 &masc2, const dmat3 &A2)
 {
     #ifdef _OPENMP
-        int total = omp_get_max_threads();
-        int half  = (total > 1 ? total/2 : 1);
+        int total_threads = omp_get_max_threads();
+        int half_threads  = (total_threads > 1 ? total_threads/2 : 1);
     #else
-        constexpr int half = 1;
+        constexpr int half_threads = 1;
     #endif
-    (void)half;
+    (void)half_threads;
 
     size_t i,j, N1 = masc1.size(), N2 = masc2.size();
     double sum = 0.0;
-    #ifdef _OPENMP
-        #pragma omp parallel for default(none)\
-                                 shared(r, M1,masc1,A1, M2,masc2,A2)\
-                                 private(i,j)\
-                                 firstprivate(N1,N2)\
-                                 schedule(static)\
-                                 num_threads(half)\
-                                 reduction(+:sum)
-    #endif
+    #pragma omp parallel for reduction(+:sum)\
+                             schedule(dynamic)\
+                             num_threads(half_threads)
     for (i = 0; i < N1; ++i)
     {
         dvec3 a1i = dot(A1, masc1[i]);
         for (j = 0; j < N2; ++j)
-        {
-            dvec3 a2j = dot(A2, masc2[j]);
-            dvec3 dij = r + a2j - a1i;
-            sum += 1.0/length(dij);
-        }
+            sum += 1.0/length(r + dot(A2, masc2[j]) - a1i);
     }
     return -G*M1*M2*sum/((double)N1*N2);
 }
@@ -689,44 +679,42 @@ dvec3 mut_force_integrals_ord4(const dvec3 &r, const double M1, const dtens &J1,
                            dV_dl2*dl2_dr + dV_dm2*dm2_dr + dV_dn2*dn2_dr);
 }
 
-//Mutual force of 2 rigid bodies, assuming mascon distributions with constant densities.
-dvec3 mut_force_masc(const dvec3 &r, const double M1, const dmatnx3 &masc1, const dmat3 &A1,
-                                     const double M2, const dmatnx3 &masc2, const dmat3 &A2)
+//Mutual force of 2 rigid bodies AND the torque felt by the primary, assuming mascon distributions with constant densities.
+dvec6 mut_force_tau1i_masc(const dvec3 &r, const double M1, const dmatnx3 &masc1, const dmat3 &A1,
+                                           const double M2, const dmatnx3 &masc2, const dmat3 &A2)
 {
     #ifdef _OPENMP
-        int total = omp_get_max_threads();
-        int half  = (total > 1 ? total/2 : 1);
+        int total_threads = omp_get_max_threads();
+        int half_threads  = (total_threads > 1 ? total_threads/2 : 1);
     #else
-        constexpr int half = 1;
+        constexpr int half_threads = 1;
     #endif
-    (void)half;
+    (void)half_threads;
 
     size_t i,j, N1 = masc1.size(), N2 = masc2.size();
-    double sumx = 0.0, sumy = 0.0, sumz = 0.0;
-    #ifdef _OPENMP
-        #pragma omp parallel for default(none)\
-                                 shared(r, M1,masc1,A1, M2,masc2,A2)\
-                                 private(i,j)\
-                                 firstprivate(N1,N2)\
-                                 schedule(static)\
-                                 num_threads(half)\
-                                 reduction(+:sumx,sumy,sumz)
-    #endif
+    double sumfx = 0.0, sumfy = 0.0, sumfz = 0.0, sumtx = 0.0, sumty = 0.0, sumtz = 0.0;
+    #pragma omp parallel for reduction(+:sumfx,sumfy,sumfz,sumtx,sumty,sumtz)\
+                             schedule(dynamic)\
+                             num_threads(half_threads)
     for (i = 0; i < N1; ++i)
     {
         dvec3 a1i = dot(A1, masc1[i]);
         for (j = 0; j < N2; ++j)
         {
-            dvec3 a2j = dot(A2, masc2[j]);
-            dvec3 dij = r + a2j - a1i;
+            dvec3 dij = r + dot(A2, masc2[j]) - a1i;
+            dvec3 cp = cross(a1i,dij);
             double len = length(dij);
             double invlen3 = 1.0/(len*len*len);
-            sumx += dij[0]*invlen3;
-            sumy += dij[1]*invlen3;
-            sumz += dij[2]*invlen3;
+            sumfx += dij[0]*invlen3;
+            sumfy += dij[1]*invlen3;
+            sumfz += dij[2]*invlen3;
+            sumtx += cp[0]*invlen3;
+            sumty += cp[1]*invlen3;
+            sumtz += cp[2]*invlen3;
         }
     }
-    return -G*M1*M2*dvec3{sumx,sumy,sumz}/((double)N1*N2);
+    const double coeff = G*M1*M2/((double)N1*N2);
+    return {-coeff*sumfx,-coeff*sumfy,-coeff*sumfz, coeff*sumtx,coeff*sumty,coeff*sumtz};
 }
 
 /* End of gravity force expressions. */
@@ -935,47 +923,6 @@ dvec3 mut_torque_integrals_ord4(const dvec3 &r,                  const dtens &J1
 
     //tau1
     return -cross(a1, dV_da1) - cross(a2, dV_da2) - cross(a3, dV_da3);
-}
-
-//Mutual gravity torque of 2 rigid bodies, assuming mascon distributions with constant densities.
-dvec3 mut_torque_masc(const dvec3 &r, const double M1, const dmatnx3 &masc1, const dmat3 &A1,
-                                      const double M2, const dmatnx3 &masc2, const dmat3 &A2)
-{
-    #ifdef _OPENMP
-        int total = omp_get_max_threads();
-        int half  = (total > 1 ? total/2 : 1);
-    #else
-        constexpr int half = 1;
-    #endif
-    (void)half;
-
-    size_t i,j, N1 = masc1.size(), N2 = masc2.size();
-    double sumx = 0.0, sumy = 0.0, sumz = 0.0;
-    #ifdef _OPENMP
-        #pragma omp parallel for default(none)\
-                                 shared(r, M1,masc1,A1, M2,masc2,A2)\
-                                 private(i,j)\
-                                 firstprivate(N1,N2)\
-                                 schedule(static)\
-                                 num_threads(half)\
-                                 reduction(+:sumx,sumy,sumz)
-    #endif
-    for (i = 0; i < N1; ++i)
-    {
-        dvec3 a1i = dot(A1, masc1[i]);
-        for (j = 0; j < N2; ++j)
-        {
-            dvec3 a2j = dot(A2, masc2[j]);
-            dvec3 dij = r + a2j - a1i;
-            double len = length(dij);
-            double invlen3 = 1.0/(len*len*len);
-            dvec3 cp = cross(a1i,dij);
-            sumx += cp[0]*invlen3;
-            sumy += cp[1]*invlen3;
-            sumz += cp[2]*invlen3;
-        }
-    }
-    return G*M1*M2*dvec3{sumx,sumy,sumz}/((double)N1*N2);
 }
 
 /* End of gravity torque expressions. */
