@@ -68,23 +68,17 @@ private:
         dmat3 A2 = quat2mat(q2);
 
         //Calculate the force and the torques in the inertial frame, depending on the user's choice of the mutual potential order.
-        dvec3 force, tau1i;
+        dvec6 force_and_tau1i;
         if (properties.ord2_checkbox)
-        {
-            force = mut_force_integrals_ord2(r, properties.M1,J1,A1, properties.M2,J2,A2);
-            tau1i = mut_torque_integrals_ord2(r, J1,A1, properties.M2);
-        }
+            force_and_tau1i = mut_force_tau1i_integrals_ord2(r, properties.M1,J1,A1, properties.M2,J2,A2);
         else if (properties.ord3_checkbox)
-        {
-            force = mut_force_integrals_ord3(r, properties.M1,J1,A1, properties.M2,J2,A2);
-            tau1i = mut_torque_integrals_ord3(r, J1,A1, properties.M2);
-        } 
+            force_and_tau1i = mut_force_tau1i_integrals_ord3(r, properties.M1,J1,A1, properties.M2,J2,A2);
         else //Only 'ord4_checkbox' remains...
-        {
-            force = mut_force_integrals_ord4(r, properties.M1,J1,A1, properties.M2,J2,A2);
-            tau1i = mut_torque_integrals_ord4(r,              J1,A1, properties.M2,J2,A2);
-        }
+            force_and_tau1i = mut_force_tau1i_integrals_ord4(r, properties.M1,J1,A1, properties.M2,J2,A2);
+        
+        dvec3 force = {force_and_tau1i[0], force_and_tau1i[1], force_and_tau1i[2]};
 
+        dvec3 tau1i = {force_and_tau1i[3], force_and_tau1i[4], force_and_tau1i[5]};
         dvec3 tau2i = -tau1i - cross(r,force);
 
         //Convert the torques into the corresponding body frames because Euler's ODEs are written in the body frames.
