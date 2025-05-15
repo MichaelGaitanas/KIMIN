@@ -11,11 +11,11 @@ mme_rpy1 = np.loadtxt('io/mme_euler_rpy1.txt') #[deg]
 mme_rpy2 = np.loadtxt('io/mme_euler_rpy2.txt') #[deg]
 mme_ener_mom_rel_err = np.loadtxt('io/mme_ener_mom_rel_error.txt') #dE/E0 [ ] and dL/L0 [ ]
 
-mme_x = mme_pos[:,0]
-mme_y = mme_pos[:,1]
-mme_yaw2 = mme_rpy2[:,2]
-mme_theta = (np.degrees(np.arctan2(mme_y, mme_x)) + 180)%360 - 180
-mme_relyaw2 = mme_yaw2 - mme_theta
+#mme_x = mme_pos[:,0]
+#mme_y = mme_pos[:,1]
+#mme_yaw2 = mme_rpy2[:,2]
+#mme_theta = (np.degrees(np.arctan2(mme_y, mme_x)) + 180)%360 - 180
+#mme_relyaw2 = mme_yaw2 - mme_theta
 
 mmo2_t = np.loadtxt('io/mmo2_time.txt') #[days]
 mmo2_pos = np.loadtxt('io/mmo2_rel_pos.txt') #[km]
@@ -129,13 +129,13 @@ plt.plot(mme_t, mme_rpy2[:,2], label = 'Mascons')
 plt.legend(loc = 'best')
 plt.savefig('plots/yaw2.png')
 
-plt.figure()
-plt.xlabel('t [days]')
-plt.ylabel('relyaw2 [deg]')
-plt.gcf().subplots_adjust(left = 0.2)
-plt.plot(mme_t, mme_relyaw2, label = 'Mascons')
-plt.legend(loc = 'best')
-plt.savefig('plots/relyaw2.png')
+#plt.figure()
+#plt.xlabel('t [days]')
+#plt.ylabel('relyaw2 [deg]')
+#plt.gcf().subplots_adjust(left = 0.2)
+#plt.plot(mme_t, mme_relyaw2, label = 'Mascons')
+#plt.legend(loc = 'best')
+#plt.savefig('plots/relyaw2.png')
 
 ################################################################################
 

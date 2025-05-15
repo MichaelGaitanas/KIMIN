@@ -1,24 +1,92 @@
 #include<cstdio>
+#include<cstdlib>
 #include<cmath>
 #include<filesystem>
-#include<limits>
 #include<boost/numeric/odeint.hpp>
 
 #include"../../source/constant.h"
 #include"../../source/typedef.h"
 #include"../../source/linalg.h"
+#include"../../source/file.h"
 #include"../../source/conversion.h"
 #include"../../source/rigidbody.h"
 #include"../../source/gravity.h"
 #include"../../source/mascons.h"
 #include"../../source/polyhedron.h"
 
-double M1,M2,m; //m = M1*M2/(M1+M2)
-mascons masc1, masc2; //Mascons point clouds.
-dmat3 I1,I2; //Moments of inertia.
+//Simulation parameters that enter in Boost's odes() function.
+struct params
+{
+    double M1,M2,m; //m = M1*M2/(M1+M2)
+    mascons masc1, masc2; //Mascons point clouds.
+    dmat3 I1,I2; //Moments of inertia.
+};
+params pars;
+
+//Simulation inputs (same order as in inputs_common.txt).
+struct inputs
+{
+    double M1,M2; //Will be assigned to par.M1, par.M2
+    char filename1[256], filename2[256];
+    uvec3 reso1, reso2;
+    double t0, tmax, atol, rtol;
+    double x,y,z;
+    double vx,vy,vz;
+    double q10,q11,q12,q13;
+    double q20,q21,q22,q23;
+    double w1x,w1y,w1z;
+    double w2x,w2y,w2z;
+
+    void read()
+    {
+        FILE *fpins = fopen("inputs_common.txt","r");
+        if (!fpins)
+        {
+            fprintf(stderr, "Error : File 'inputs_common.txt' was not found. Exiting...\n");
+            exit(EXIT_FAILURE);
+        }
+        //Read one value at a time, after finding the ':=' operator (and with the same order as in the inputs_common.txt).
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &M1);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &M2);
+        if (find_assignment_operator(fpins)) fscanf(fpins, " \"%[^\"]\"", filename1);
+        if (find_assignment_operator(fpins)) fscanf(fpins, " \"%[^\"]\"", filename2);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%u", &reso1[0]);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%u", &reso1[1]);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%u", &reso1[2]);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%u", &reso2[0]);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%u", &reso2[1]);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%u", &reso2[2]);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &t0);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &tmax);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &atol);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &rtol);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &x);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &y);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &z);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &vx);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &vy);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &vz);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &q10);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &q11);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &q12);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &q13);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &q20);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &q21);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &q22);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &q23);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &w1x);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &w1y);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &w1z);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &w2x);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &w2y);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &w2z);
+        fclose(fpins);
+    }
+};
+inputs ins;
 
 //Build the rhs of the odes.
-void odes(const boost::array<double, 20> &state, boost::array<double, 20> &dstate, double t)
+void odes(const boost::array<double, 20> &state, boost::array<double, 20> &dstate, double /*t*/)
 {
     //Extract the state into variables for readability.
     dvec3 r  =  { state[0],  state[1],  state[2] };
@@ -34,7 +102,8 @@ void odes(const boost::array<double, 20> &state, boost::array<double, 20> &dstat
     dmat3 A1 = quat2mat(q1);
     dmat3 A2 = quat2mat(q2);
 
-    dvec6 force_and_tau1i = mut_force_tau1i_masc(r, M1,masc1.get_points(),A1, M2,masc2.get_points(),A2);
+    dvec6 force_and_tau1i = mut_force_tau1i_masc(r, pars.M1,pars.masc1.get_points(),A1,
+                                                    pars.M2,pars.masc2.get_points(),A2);
 
     dvec3 force = {force_and_tau1i[0], force_and_tau1i[1], force_and_tau1i[2]};
 
@@ -45,10 +114,10 @@ void odes(const boost::array<double, 20> &state, boost::array<double, 20> &dstat
     dvec3 tau2b = iner2body(tau2i,A2);
 
     dvec4 dq1 = quat_rhs(q1,w1b);
-    dvec3 dw1b = euler_rhs(w1b,I1,tau1b);
+    dvec3 dw1b = euler_rhs(w1b,pars.I1,tau1b);
 
     dvec4 dq2 = quat_rhs(q2,w2b);
-    dvec3 dw2b = euler_rhs(w2b,I2,tau2b);
+    dvec3 dw2b = euler_rhs(w2b,pars.I2,tau2b);
 
     //Relative position rhs (x,y,z).
     dstate[0] = v[0];
@@ -56,9 +125,9 @@ void odes(const boost::array<double, 20> &state, boost::array<double, 20> &dstat
     dstate[2] = v[2];
 
     //Relative velocity rhs (vx,vy,vz).
-    dstate[3] = force[0]/m;
-    dstate[4] = force[1]/m;
-    dstate[5] = force[2]/m;
+    dstate[3] = force[0]/pars.m;
+    dstate[4] = force[1]/pars.m;
+    dstate[5] = force[2]/pars.m;
 
     //Quaternion rhs of rigid body 1 (q10,q11,q12,q13).
     dstate[6] = dq1[0];
@@ -85,47 +154,48 @@ void odes(const boost::array<double, 20> &state, boost::array<double, 20> &dstat
 
 int main()
 {
-    M1 = 5.32e11; //[kg]
-    M2 = 4.94e9; //[kg]
-    m = M1*M2/(M1 + M2);
-
     std::filesystem::create_directory("io");
+
+    ins.read();
+    pars.M1 = ins.M1;
+    pars.M2 = ins.M2;
+    pars.m = pars.M1*pars.M2/(pars.M1 + pars.M2);
 
     polyhedron poly1,poly2;
     
     printf("Generating mascons 1... ");
-    poly1.load_obj_file("../../obj/polyhedra/didymain2019_R04km.obj");
-    masc1.generate_from_polyhedron(poly1, uvec3{12,12,12});
-    masc1.export_obj_file("io/masc1.obj");
-    masc1.set_com_zero();
-    masc1.set_inertia_diagonal();
-    masc1.export_obj_file("io/masc1_fixed.obj");
-    I1 = masc1.get_inertia(M1);
-    double brillouin_radius1 = masc1.get_farthest_point_distance();
+    poly1.load_obj_file(ins.filename1);
+    pars.masc1.generate_from_polyhedron(poly1, uvec3{ins.reso1[0],ins.reso1[1],ins.reso1[2]});
+    pars.masc1.export_obj_file("io/masc1.obj");
+    pars.masc1.set_com_zero();
+    pars.masc1.set_inertia_diagonal();
+    pars.masc1.export_obj_file("io/masc1_fixed.obj");
+    pars.I1 = pars.masc1.get_inertia(pars.M1);
+    double brillouin_radius1 = pars.masc1.get_farthest_point_distance();
     printf("Done.\n");
 
     printf("Generating mascons 2... ");
-    poly2.load_obj_file("../../obj/polyhedra/dimorphos_ellipsoid_R01km.obj");
-    masc2.generate_from_polyhedron(poly2, uvec3{12,12,12});
-    masc2.export_obj_file("io/masc2.obj");
-    masc2.set_com_zero();
-    masc2.set_inertia_diagonal();
-    masc2.export_obj_file("io/masc2_fixed.obj");
-    I2 = masc2.get_inertia(M2);    
-    double brillouin_radius2 = masc2.get_farthest_point_distance();
+    poly2.load_obj_file(ins.filename2);
+    pars.masc2.generate_from_polyhedron(poly2, uvec3{ins.reso2[0],ins.reso2[1],ins.reso2[2]});
+    pars.masc2.export_obj_file("io/masc2.obj");
+    pars.masc2.set_com_zero();
+    pars.masc2.set_inertia_diagonal();
+    pars.masc2.export_obj_file("io/masc2_fixed.obj");
+    pars.I2 = pars.masc2.get_inertia(pars.M2);    
+    double brillouin_radius2 = pars.masc2.get_farthest_point_distance();
     printf("Done.\n");
 
     //Time parameters.
-    double t, t0 = 0.0; //[sec]
-    double tmax = 20.0*86400.0; //[sec]
-    double dt_guess = 1.0; //[sec]
+    double t, t0 = ins.t0;  //[sec]
+    double tmax = ins.tmax; //[sec]
+    double dt_guess = 1.0;  //[sec]
 
-    dvec3 r   = {1.18, 0.0, 0.0}; //[km]
-    dvec3 v   = {0.0, 0.000174, 0.0}; //[km/sec]
-    dvec4 q1  = {1.0, 0.0, 0.0, 0.0}; //[ ]
-    dvec3 w1i = {0.0, 0.0, 0.00077}; //[rad/sec]
-    dvec4 q2  = {1.0, 0.0, 0.0, 0.0}; // [ ]
-    dvec3 w2i = {0.0, 0.0, 0.00014}; //[rad/sec]
+    dvec3 r   = {ins.x,   ins.y,   ins.z};             //[km]
+    dvec3 v   = {ins.vx,  ins.vy,  ins.vz};            //[km/sec]
+    dvec4 q1  = {ins.q10, ins.q11, ins.q12, ins.q13};  //[ ]
+    dvec3 w1i = {ins.w1x, ins.w1y, ins.w1z};           //[rad/sec]
+    dvec4 q2  = {ins.q20, ins.q21, ins.q22, ins.q23};  //[ ]
+    dvec3 w2i = {ins.w2x, ins.w2y, ins.w2z};           //[rad/sec]
 
     q1 = quat2unit(q1);
     q2 = quat2unit(q2);
@@ -141,7 +211,7 @@ int main()
                                        w1b[0],  w1b[1],  w1b[2],
                                         q2[0],   q2[1],   q2[2], q2[3],
                                        w2b[0],  w2b[1],  w2b[2] };
-    auto method = boost::numeric::odeint::make_controlled(1e-15, 1e-15, boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 20>>());
+    auto method = boost::numeric::odeint::make_controlled(ins.atol, ins.rtol, boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 20>>());
     
     dmat orbit; //Output matrix, containing the state in time.
 
@@ -199,8 +269,8 @@ int main()
         dvec3 w2i = body2iner(w2b,A2);
         dvec3 rpy1 = quat2ang(q1)*180.0/pi;
         dvec3 rpy2 = quat2ang(q2)*180.0/pi;
-        double energy = 0.5*m*dot(v,v) + 0.5*dot( dot(w1b,I1), w1b) + 0.5*dot( dot(w2b,I2), w2b) + mut_pot_masc(r, M1,masc1.get_points(),A1, M2,masc2.get_points(),A2);
-        double momentum = length(m*cross(r,v) + dot(A1, dot(I1,w1b)) + dot(A2, dot(I2,w2b)));
+        double energy = 0.5*pars.m*dot(v,v) + 0.5*dot( dot(w1b,pars.I1), w1b) + 0.5*dot( dot(w2b,pars.I2), w2b) + mut_pot_masc(r, pars.M1,pars.masc1.get_points(),A1, pars.M2,pars.masc2.get_points(),A2);
+        double momentum = length(pars.m*cross(r,v) + dot(A1, dot(pars.I1,w1b)) + dot(A2, dot(pars.I2,w2b)));
 
         if (i == 0)
         {
@@ -256,6 +326,8 @@ int main()
     fprintf(file_collision, "Collision detected : %s", collision ? "Yes" : "No");
     fclose(file_collision);
 
+    printf("\rProgress: 100%%  ");
+    fflush(stdout);
     printf("\nDone.\n");
 
     return 0;
