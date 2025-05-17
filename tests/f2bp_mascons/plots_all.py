@@ -140,7 +140,7 @@ plt.savefig('plots/yaw2.png')
 ################################################################################
 
 plt.figure()
-plt.xlabel('t [sec]')
+plt.xlabel('t [days]')
 plt.ylabel('dE/E0')
 plt.gcf().subplots_adjust(left = 0.2)
 plt.plot(mmo2_t, mmo2_ener_mom_rel_err[:,0], label = 'Order 2')
@@ -151,7 +151,7 @@ plt.legend(loc = 'best')
 plt.savefig('plots/dener.png')
 
 plt.figure()
-plt.xlabel('t [sec]')
+plt.xlabel('t [days]')
 plt.ylabel('dL/L0')
 plt.gcf().subplots_adjust(left = 0.2)
 plt.plot(mmo2_t, mmo2_ener_mom_rel_err[:,1], label = 'Order 2')
