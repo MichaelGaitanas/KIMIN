@@ -1,0 +1,46 @@
+Simulation name := sim1
+
+Shape models := Ellipsoids
+a1 := 5
+b1 := 4
+c1 := 3
+a2 := 5
+b2 := 4
+c2 := 3
+
+Mutual potential order := 3
+
+M1 := 100000000000000
+M2 := 100000000
+
+Numerical method := RKF78 (fixed)
+Epoch := 21
+Duration := 100
+Step := 0.005
+
+Relative position and velocity := Keplerian
+a  := 14
+e  := 0
+i  := 0
+Om := 0
+w  := 0
+M  := 0
+
+Orientations := Euler angles (XYZ)
+roll 1  := 0
+pitch 1 := 78
+yaw 1   := 0
+roll 2  := 0
+pitch 2 := 0
+yaw 2   := 0
+
+Angular velocities := At inertial frame
+w1ix := 0
+w1iy := 0
+w1iz := 0
+w2ix := 0
+w2iy := 0
+w2iz := 0
+
+Collision shapes := Spheres
+

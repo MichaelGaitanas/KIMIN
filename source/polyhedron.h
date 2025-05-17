@@ -28,7 +28,7 @@ private:
 
     double vol; //Polyhedron's total volume.
 
-    //Some boolean flags...
+    //Boolean flags that track the state of the instance.
     bool norms_exist, edges_exist, vol_exists;
 
     //OpenGL related members. They are used after the numerical integration ends, in order to render the 3D scene.

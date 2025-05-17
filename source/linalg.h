@@ -225,18 +225,13 @@ void swap(double &a, double &b)
     double temp = a;
     a = b;
     b = temp;
-    return;
 }
 
 //Root of the linear equation a*x + b = 0, where a,b are reals.
 dcomplex solve_linear(const double a, const double b)
 {
     if (fabs(a) <= 1e-15)
-    {
-        //nan + i*0.0
-        return dcomplex(std::numeric_limits<double>::quiet_NaN(), 0.0);
-    }
-
+        return dcomplex(std::numeric_limits<double>::quiet_NaN(), 0.0); //nan + i*0.0
     return dcomplex(-b/a, 0.0);
 }
 
@@ -244,9 +239,7 @@ dcomplex solve_linear(const double a, const double b)
 dcomplexvec solve_quadratic(const double a, const double b, const double c)
 {
     if (fabs(a) <= 1e-15)
-    {
         return dcomplexvec({solve_linear(b,c)});
-    }
 
     double D = b*b - 4.0*a*c;
     dcomplex x1 = (-b + sqrt(dcomplex(D)))/(2.0*a);
@@ -262,9 +255,7 @@ dcomplexvec solve_cubic(const double a, const double b, const double c, const do
     {
         dcomplexvec sol = solve_quadratic(b,c,d);
         if (sol.size() == 2)
-        {
             return dcomplexvec({sol[0], sol[1]});
-        }
         return dcomplexvec({sol[0]});
     }    
 
@@ -276,9 +267,7 @@ dcomplexvec solve_cubic(const double a, const double b, const double c, const do
     {
         C = pow( (D1 - sqrt(dcomplex(D1*D1 - 4.0*D0*D0*D0)))/2.0 , 1.0/3.0);
         if ( fabs(C.real()) <= 1e-15 && fabs(C.imag()) <= 1e-15 )
-        {
-            return dcomplexvec({-b/(3.0*a), -b/(3.0*a), -b/(3.0*a)}); //triple solution
-        }
+            return dcomplexvec({-b/(3.0*a), -b/(3.0*a), -b/(3.0*a)}); //Triple solution.
     }
 
     dcomplex im = dcomplex(0.0, 1.0); //imaginary unit 'i'
@@ -298,13 +287,9 @@ dcomplexvec solve_quartic(const double a, const double b, const double c, const 
     {
         dcomplexvec sol = solve_cubic(b,c,d,e);
         if (sol.size() == 3)
-        {
             return dcomplexvec({sol[0], sol[1], sol[2]});
-        }
         if (sol.size() == 2)
-        {
             return dcomplexvec({sol[0], sol[1]});
-        }
         return dcomplexvec({sol[0]});
     }
 
@@ -328,13 +313,9 @@ dcomplexvec solve_quartic(const double a, const double b, const double c, const 
 
     dcomplex Y;
     if (fabs(U.real()) <= 1e-15 && fabs(U.imag()) <= 1e-15)
-    {
         Y = -5.0*A/6.0 - pow(Q, 1.0/3.0);
-    }
     else
-    {
         Y = -5.0*A/6.0 + U - P/(3.0*U);
-    }
 
     dcomplex W = sqrt(A + 2.0*Y);
 

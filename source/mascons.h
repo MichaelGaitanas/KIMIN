@@ -19,7 +19,7 @@ private:
     dmatnx3 points;
 
 public:
-    mascons() : points() { } //Tiny constructor.
+    mascons() : points() { } //Constructor.
 
     const dmatnx3 &get_points() const
     {
