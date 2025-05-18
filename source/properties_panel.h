@@ -17,11 +17,12 @@
 #include"conversion.h"
 #include"polyhedron.h"
 #include"console_panel.h"
+#include"file.h"
 
 class properties_panel
 {
 public:
-    char sim_name[51]; //'Simulation name' text field. 50 characters available (plus the '\0' terminating character).
+    char sim_name[128]; //'Simulation name' text field. 127 characters available (plus the mandatory '\0' terminating character).
     
     bool ell_checkbox; //'Ellipsoids' checkbox state.
     dvec3 semiaxes1, semiaxes2; //Ellipsoids 'a1', 'b1', 'c1', 'a2', 'b2', 'c2' double fields.
@@ -124,12 +125,24 @@ public:
                          poly2()
     { }
 
+    void import_file(const char *path, console_panel &console)
+    {
+        FILE *fp = fopen(path,"r");
+        if (!fp) //This should never happen, since it is already verified by the top_bar_panel that the file exists, otherwise it would not appear as an available choice in the gui.
+        {
+            console.add_timed_text("[Error] : The selected properties file could not be opened.\n");
+            return;
+        }
+        if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", sim_name);
+        fclose(fp);
+        console.add_timed_text("File was read.\n");
+    }
+
     //This function receives as input a 'path' to a directory and as a result it returns a vector of paths, corresponding
     //to all the .obj files found inside 'path'.
     std::vector<std::filesystem::path> list_obj_files(const char *path)
     {
         std::vector<std::filesystem::path> paths;
-        //for (const auto &entry : std::filesystem::recursive_directory_iterator(path)) //(Look recursively inside child directories as well.)
         for (const auto &entry : std::filesystem::directory_iterator(path))
             if (entry.is_regular_file() && entry.path().extension() == ".obj")
                 paths.push_back(entry.path().filename());

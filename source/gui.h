@@ -100,13 +100,13 @@ public:
 
     void poll_events()
     {
-        poll_run_and_abort_buttons();
-        poll_topbar_buttons();
+        poll_properties_events();
+        poll_topbar_events();
     }
 
 private:
     //'Run' and 'Abort' buttons logic in the properties panel.
-    void poll_run_and_abort_buttons()
+    void poll_properties_events()
     {
         //'Run' protocol.
         if (properties.run_pressed && !task_is_running.load())
@@ -151,7 +151,7 @@ private:
     //the integr->prepare(), integr->run(), etc... However, note that currently, this is not thread safe because
     //one might attempt to export a previous solution, while a new one is on the fly. I'll fix it, but for now, only
     //export when solution is completed.
-    void poll_topbar_buttons()
+    void poll_topbar_events()
     {
         if (sol != nullptr && sol->t.size() > 0) //Ensure that a solution is available.
         {
@@ -168,6 +168,12 @@ private:
         }
         else
             topbar.export_is_enabled = false;
+
+        if (!topbar.properties_path.empty() && !topbar.import_props_clicked && topbar.doit)
+        {
+            properties.import_file(topbar.properties_path.c_str(), console);
+            topbar.doit = false;
+        }
     }
 };
 

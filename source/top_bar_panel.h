@@ -13,14 +13,17 @@
 class top_bar_panel
 {
 public:
-    bool export_is_enabled;
-    bool export_sol_clicked;
-    bool import_props_clicked;
+    bool export_is_enabled, export_sol_clicked;
+    bool import_props_clicked, doit;
+    std::string properties_path;
     std::vector<std::filesystem::path> properties_list;
     
     top_bar_panel() : export_is_enabled(false),
                       export_sol_clicked(false),
-                      import_props_clicked(false)
+                      import_props_clicked(false),
+                      doit(false),
+                      properties_path(""),
+                      properties_list{}
     { }
 
     void render(GLFWwindow *wpointer, bool &confirm_exit)
@@ -51,14 +54,19 @@ public:
                 for (size_t i = 0; i < properties_list.size(); ++i)
                 {
                     const auto &p = properties_list[i];
-                    std::string label = p.parent_path().filename().string() + "/" + p.filename().string();
-                    if (ImGui::Selectable(label.c_str()))
-                    {
-                        //load_properties_from_file(selected_import);
-                        import_props_clicked = false;
-                    }
+                    std::string display = p.parent_path().filename().string() + "/" + p.filename().string();
+                    if (ImGui::Selectable(display.c_str()))
+                        properties_path = p.string();
                 }
                 ImGui::TreePop();
+            }
+            ImGui::Dummy(ImVec2(0.0f,15.0f));
+
+            //Final "Import file" button. This must be pressed, otherwise the properties pannel will not be updated.
+            if (ImGui::Button("Import file", ImVec2(70.0f,30.0f)))
+            {
+                import_props_clicked = false;
+                doit = true;   
             }
             ImGui::End();
         }
@@ -95,17 +103,13 @@ private:
         //First scan all simulations/ child directories.
         std::filesystem::path simsdir = "../simulations";
         if (std::filesystem::exists(simsdir) && std::filesystem::is_directory(simsdir))
-        {
             for (auto &entry : std::filesystem::directory_iterator(simsdir))
-            {
                 if (entry.is_directory())
                 {
                     std::filesystem::path p = entry.path()/"properties.txt";
                     if (std::filesystem::exists(p) && std::filesystem::is_regular_file(p))
                         paths.push_back(p);
                 }
-            }
-        }
 
         //Then scan the properties/ directory.
         std::filesystem::path propsdir = "../properties";
