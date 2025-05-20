@@ -100,8 +100,8 @@ public:
 
     void poll_events()
     {
-        poll_properties_events();
         poll_topbar_events();
+        poll_properties_events();
     }
 
 private:
@@ -153,7 +153,15 @@ private:
     //export when solution is completed.
     void poll_topbar_events()
     {
-        if (sol != nullptr && sol->t.size() > 0) //Ensure that a solution is available.
+        //Event 1 : What happens after choosing to import a properties file :
+        if (topbar.import_props_confirm && !topbar.properties_path.empty())
+        {
+            properties.import_file(topbar.properties_path.c_str(), console);
+            topbar.import_props_confirm = false;
+        }
+
+        //Event 2 : What happens after choosing to a simulation solution :
+        if (sol != nullptr && sol->t.size() > 0)
         {
             topbar.export_is_enabled = true;
             if (topbar.export_sol_clicked)
@@ -168,12 +176,6 @@ private:
         }
         else
             topbar.export_is_enabled = false;
-
-        if (!topbar.properties_path.empty() && !topbar.import_props_clicked && topbar.doit)
-        {
-            properties.import_file(topbar.properties_path.c_str(), console);
-            topbar.doit = false;
-        }
     }
 };
 

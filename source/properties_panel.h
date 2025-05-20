@@ -10,6 +10,7 @@
 #include<vector>
 #include<filesystem>
 #include<atomic>
+#include<cstring>
 #include<string>
 
 #include"constant.h"
@@ -128,14 +129,139 @@ public:
     void import_file(const char *path, console_panel &console)
     {
         FILE *fp = fopen(path,"r");
-        if (!fp) //This should never happen, since it is already verified by the top_bar_panel that the file exists, otherwise it would not appear as an available choice in the gui.
+        if (!fp) //Safety check, though this should never happen. It is already verified by the top_bar_panel that the file exists, otherwise it would not appear as an available choice in the gui.
         {
             console.add_timed_text("[Error] : The selected properties file could not be opened.\n");
             return;
         }
+
         if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", sim_name);
+        char buffer[128];
+        if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", buffer);
+        if (strcmp(buffer, "Ellipsoids") == 0)
+        {
+            for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&semiaxes1[i]);
+            for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&semiaxes2[i]);
+            ell_checkbox = ell_clicked_ok = true;
+            obj_checkbox = obj_clicked_ok = false;
+        }
+        else //".obj files"
+        {
+            if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", obj1_path);
+            if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", obj2_path);
+            ell_checkbox = ell_clicked_ok = false;
+            obj_checkbox = obj_clicked_ok = true;
+        }
+        int Vord;
+        if (find_assignment_operator(fp)) fscanf(fp, "%d",&Vord);
+        if (Vord <= 2)
+        {
+            ord2_checkbox = true; ord3_checkbox = false; ord4_checkbox = false;
+        }
+        else if (Vord == 3)
+        {
+            ord2_checkbox = false; ord3_checkbox = true; ord4_checkbox = false;
+        }
+        else
+        {
+            ord2_checkbox = false; ord3_checkbox = false; ord4_checkbox = true;
+        }
+        if (find_assignment_operator(fp)) fscanf(fp, "%lf",&M1);
+        if (find_assignment_operator(fp)) fscanf(fp, "%lf",&M2);
+        if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", buffer);
+        if (strcmp(buffer, "RKF78 (fixed)") == 0)
+        {
+            integration_method_var_choice = 0;
+            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&epoch);
+            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&dur);
+            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&step);
+        }
+        else if (strcmp(buffer, "RKF78 (adaptive)") == 0)
+        {
+            integration_method_var_choice = 1;
+            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&epoch);
+            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&dur);
+            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&target_error);
+        }
+        else if (strcmp(buffer, "BStoer (adaptive)") == 0)
+        {
+            integration_method_var_choice = 2;
+            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&epoch);
+            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&dur);
+            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&target_error);
+        }
+        else //ABM5 (fixed).
+        {
+            integration_method_var_choice = 3;
+            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&epoch);
+            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&dur);
+            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&step);
+        }
+        if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", buffer);
+        if (strcmp(buffer, "Cartesian") == 0)
+        {
+            cart_kep_var_choice = 0;
+            for (int i = 0; i < 6; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&cart[i]);
+        }
+        else //Keplerian.
+        {
+            cart_kep_var_choice = 1;
+            for (int i = 0; i < 6; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&kep[i]);
+        }
+        if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", buffer);
+        if (strcmp(buffer, "Euler angles") == 0)
+        {
+            orient_var_choice = 0;
+            for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&rpy1[i]);
+            for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&rpy2[i]);
+        }
+        else //Quaternions.
+        {
+            orient_var_choice = 1;
+            for (int i = 0; i < 4; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&q1[i]);
+            for (int i = 0; i < 4; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&q2[i]);
+        }
+        if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", buffer);
+        if (strcmp(buffer, "At inertial frame") == 0)
+        {
+            frame_type_choice = 0;
+            for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&w1i[i]);
+            for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&w2i[i]);
+        }
+        else //Body frames.
+        {
+            frame_type_choice = 1;
+            for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&w1b[i]);
+            for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&w2b[i]);
+        }
+        if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", buffer);
+        if (strcmp(buffer, "No collision") == 0)
+        {
+            collision_no = true; collision_spheres = false; collision_polyhedra = false;
+        }
+        else if (strcmp(buffer, "Spheres") == 0)
+        {
+            collision_no = false; collision_spheres = true; collision_polyhedra = false;
+        }
+        else //Polyhedra.
+        {
+            collision_no = false; collision_spheres = false; collision_polyhedra = true;
+        }
+        if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", buffer);
+        if (strcmp(buffer, "Yes") == 0)
+        {
+            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&M1_impact);
+            for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&v1_impact[i]);
+            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&beta1);
+            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&t1_impact);
+
+            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&M2_impact);
+            for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&v2_impact[i]);
+            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&beta2);
+            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&t2_impact);
+        }
+
         fclose(fp);
-        console.add_timed_text("File was read.\n");
     }
 
     //This function receives as input a 'path' to a directory and as a result it returns a vector of paths, corresponding
@@ -460,7 +586,7 @@ public:
                 static const char *integration_method_var[4] = {"RKF78 (fixed)",
                                                                 "RKF78 (adaptive)",
                                                                 "BStoer (adaptive)",
-                                                                "ABM5  (fixed)"}; //Which numerical method for integration of the ODEs.
+                                                                "ABM5  (fixed)"};
                 ImGui::Combo("  ", &integration_method_var_choice, integration_method_var, IM_ARRAYSIZE(integration_method_var));
             ImGui::PopID();
         ImGui::PopItemWidth();
@@ -682,7 +808,6 @@ public:
             ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.0f,0.7f,0.0f, 1.0f)); //Green.
         ImGui::ProgressBar(task_progress.load(), ImVec2(150.0f,20.0f));
         ImGui::PopStyleColor();
-
         ImGui::Dummy(ImVec2(0.0f,700.0f)); //Some extra y-space in order to be able to scroll down along properties panel.
 
         ImGui::End();

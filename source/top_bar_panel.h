@@ -13,17 +13,17 @@
 class top_bar_panel
 {
 public:
-    bool export_is_enabled, export_sol_clicked;
-    bool import_props_clicked, doit;
+    bool import_props_clicked, import_props_confirm;
     std::string properties_path;
     std::vector<std::filesystem::path> properties_list;
+    bool export_is_enabled, export_sol_clicked;
     
-    top_bar_panel() : export_is_enabled(false),
-                      export_sol_clicked(false),
-                      import_props_clicked(false),
-                      doit(false),
+    top_bar_panel() : import_props_clicked(false),
+                      import_props_confirm(false),
                       properties_path(""),
-                      properties_list{}
+                      properties_list{},
+                      export_is_enabled(false),
+                      export_sol_clicked(false)
     { }
 
     void render(GLFWwindow *wpointer, bool &confirm_exit)
@@ -32,13 +32,13 @@ public:
         {
             if (ImGui::BeginMenu("File"))
             {
-                if (ImGui::MenuItem("Export solution", nullptr, false, export_is_enabled))
-                    export_sol_clicked = true;
                 if (ImGui::MenuItem("Import properties"))
                 {
                     import_props_clicked = true;
-                    properties_list = list_properties_files(); //Scan only once right after the click to 'Import properties'.
+                    properties_list = list_properties_files(); //List the files (once) right after the click to 'Import properties'. Remember, this will work even if u paste a new file while the app is running.
                 }
+                if (ImGui::MenuItem("Export solution", nullptr, false, export_is_enabled))
+                    export_sol_clicked = true;
                 ImGui::EndMenu();
             }
             ImGui::EndMainMenuBar();
@@ -65,8 +65,8 @@ public:
             //Final "Import file" button. This must be pressed, otherwise the properties pannel will not be updated.
             if (ImGui::Button("Import file", ImVec2(70.0f,30.0f)))
             {
-                import_props_clicked = false;
-                doit = true;   
+                import_props_clicked = false; //This will close the window (encapsulated).
+                import_props_confirm = true;  //And this is will communicate with gui::poll_topbar_events(), which then will communicate with properties::import_file().
             }
             ImGui::End();
         }
