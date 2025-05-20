@@ -1,0 +1,42 @@
+Simulation name := "KleopatraAndCube"
+
+Shape models := ".obj files"
+file 1 := "kleopatra4k_R114km.obj"
+file 2 := "cube2x2x2_R1km.obj"
+
+Mutual potential order := 2
+
+M1 := 1e+18
+M2 := 10000
+
+Numerical method := "RKF78 (fixed)"
+Epoch := 0
+Duration := 30
+Step := 0.006
+
+Relative position and velocity := "Keplerian"
+a  := 100
+e  := 0
+i  := 80
+Om := 90
+w  := 0
+M  := 90
+
+Orientations := "Euler angles"
+roll 1  := 0
+pitch 1 := 0
+yaw 1   := 0
+roll 2  := 0
+pitch 2 := 0
+yaw 2   := 0
+
+Angular velocities := "At inertial frame"
+w1ix := 2e-06
+w1iy := 0
+w1iz := 0
+w2ix := 0
+w2iy := 0
+w2iz := 0
+
+Collision shapes := "Polyhedra"
+
