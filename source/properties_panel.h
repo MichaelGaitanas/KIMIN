@@ -266,10 +266,10 @@ public:
 
                 impactors_checkbox = true; impactors_clicked_ok = true;
             }
-            else
-            {
-                impactors_checkbox = false; impactors_clicked_ok = false;
-            }
+        }
+        else
+        {
+            impactors_checkbox = false; impactors_clicked_ok = false;
         }
 
         fclose(fp);
