@@ -141,8 +141,16 @@ public:
         }
         else //".obj files"
         {
-            if (find_assignment_operator(fp)) {fscanf(fp, " \"%[^\"]\"", obj1_path); obj1_path = buffer;}
-            if (find_assignment_operator(fp)) {fscanf(fp, " \"%[^\"]\"", obj2_path); obj2_path = buffer;}
+            if (find_assignment_operator(fp))
+            {   
+                fscanf(fp, " \"%[^\"]\"", buffer);
+                obj1_path = buffer;
+            }
+            if (find_assignment_operator(fp))
+            {
+                fscanf(fp, " \"%[^\"]\"", buffer);
+                obj2_path = buffer;
+            }
             ell_checkbox = ell_clicked_ok = false;
             obj_checkbox = obj_clicked_ok = true;
         }
@@ -258,7 +266,10 @@ public:
 
                 impactors_checkbox = true; impactors_clicked_ok = true;
             }
-            else 
+            else
+            {
+                impactors_checkbox = false; impactors_clicked_ok = false;
+            }
         }
 
         fclose(fp);
