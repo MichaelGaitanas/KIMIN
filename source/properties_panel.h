@@ -30,8 +30,6 @@ public:
     bool ell_clicked_ok; //Ellipsoids 'OK' button.
 
     bool obj_checkbox; //'.obj file' checkbox state.
-    int obj1_clicked_index, obj2_clicked_index; //Index of the clicked .obj path. -1 means no path is clicked. Only one path per body can be clicked.
-    bool obj1_clicked, obj2_clicked; //Decide if an obj file (from 'Body 1' or 'Body 2') is clicked.
     std::string obj1_path, obj2_path; //Relative paths to the 2 .obj models.
     bool obj_clicked_ok; //.obj 'OK' button.
 
@@ -77,10 +75,6 @@ public:
                          semiaxes2(dvec3{0.0,0.0,0.0}),
                          ell_clicked_ok(false),
                          obj_checkbox(false),
-                         obj1_clicked_index(-1),
-                         obj2_clicked_index(-1),
-                         obj1_clicked(false),
-                         obj2_clicked(false),
                          obj1_path(""),
                          obj2_path(""),
                          obj_clicked_ok(false),
@@ -147,8 +141,8 @@ public:
         }
         else //".obj files"
         {
-            if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", obj1_path);
-            if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", obj2_path);
+            if (find_assignment_operator(fp)) {fscanf(fp, " \"%[^\"]\"", obj1_path); obj1_path = buffer;}
+            if (find_assignment_operator(fp)) {fscanf(fp, " \"%[^\"]\"", obj2_path); obj2_path = buffer;}
             ell_checkbox = ell_clicked_ok = false;
             obj_checkbox = obj_clicked_ok = true;
         }
@@ -247,18 +241,24 @@ public:
         {
             collision_no = false; collision_spheres = false; collision_polyhedra = true;
         }
-        if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", buffer);
-        if (strcmp(buffer, "Yes") == 0)
+        if (find_assignment_operator(fp))
         {
-            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&M1_impact);
-            for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&v1_impact[i]);
-            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&beta1);
-            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&t1_impact);
+            fscanf(fp, " \"%[^\"]\"", buffer);
+            if (strcmp(buffer, "Yes") == 0)
+            {
+                if (find_assignment_operator(fp)) fscanf(fp, "%lf",&M1_impact);
+                for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&v1_impact[i]);
+                if (find_assignment_operator(fp)) fscanf(fp, "%lf",&beta1);
+                if (find_assignment_operator(fp)) fscanf(fp, "%lf",&t1_impact);
 
-            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&M2_impact);
-            for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&v2_impact[i]);
-            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&beta2);
-            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&t2_impact);
+                if (find_assignment_operator(fp)) fscanf(fp, "%lf",&M2_impact);
+                for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&v2_impact[i]);
+                if (find_assignment_operator(fp)) fscanf(fp, "%lf",&beta2);
+                if (find_assignment_operator(fp)) fscanf(fp, "%lf",&t2_impact);
+
+                impactors_checkbox = true; impactors_clicked_ok = true;
+            }
+            else 
         }
 
         fclose(fp);
@@ -336,7 +336,7 @@ public:
         //Possible error 6 : .obj files (at least one .obj file per body must be selected). Also the polyhedra must be closed manifold geometries.
         if (obj_checkbox)
         {   
-            if (obj1_clicked_index == -1)
+            if (obj1_path.empty())
                 {console.add_timed_text("[Error] : No .obj file is selected for 'Body 1'.\n"); return false;}
             else
             {
@@ -352,7 +352,7 @@ public:
                 else
                     {console.add_text("< Invalid .obj file for 'Body 1' (it must contain only vertices and faces). >\n"); return false;}
             }
-            if (obj2_clicked_index == -1)
+            if (obj2_path.empty())
                 {console.add_timed_text("[Error] : No .obj file is selected for 'Body 2'.\n"); return false;}
             else
             {
@@ -513,30 +513,28 @@ public:
                 obj_refers_to_body = 2;
             ImGui::Dummy(ImVec2(0.0f,5.0f));
 
-            //File listing logic.
+            //File listing and selection logic.
             static std::vector<std::filesystem::path> all_obj_files = list_obj_files("../obj/polyhedra/"); //Store all the .obj files located in the obj/polyhedra/ directory.
             if (ImGui::TreeNodeEx("Available .obj files", ImGuiTreeNodeFlags_Framed))
             {
                 for (size_t i = 0; i < all_obj_files.size(); ++i)
                 {
-                    //Which .obj path for Body 1.
                     if (obj_refers_to_body == 1)
                     {
-                        if (ImGui::Selectable(all_obj_files[i].string().c_str(), (obj1_clicked_index == (int)i)))
+                        bool selected = (all_obj_files[i].string() == obj1_path);
+                        if (ImGui::Selectable(all_obj_files[i].string().c_str(), selected))
                         {
-                            obj1_clicked = true;
-                            obj1_clicked_index = i;
                             obj1_path = all_obj_files[i].string();
+                            obj_clicked_ok = false;
                         }
                     }
                     else
                     {
-                        //Which .obj path for Body 2.
-                        if (ImGui::Selectable(all_obj_files[i].string().c_str(), (obj2_clicked_index == (int)i)))
+                        bool selected = (all_obj_files[i].string() == obj2_path);
+                        if (ImGui::Selectable(all_obj_files[i].string().c_str(), selected))
                         {
-                            obj2_clicked = true;
-                            obj2_clicked_index = i;
                             obj2_path = all_obj_files[i].string();
+                            obj_clicked_ok = false;
                         }
                     }
                 }
