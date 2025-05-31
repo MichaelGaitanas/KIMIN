@@ -30,8 +30,8 @@ public:
 
     //The following members were NOT directly evaluated by the integrator. Instead, we use what the integrator evaluated to evaluate the following.
     dvec dist, vel; //Both are scalars. They are the corresponding magnitudes of (x,y,z) and (vx,vy,vz).
-    dvec roll1, pitch1, yaw1; 
-    dvec roll2, pitch2, yaw2;
+    dvec roll1, pitch1, yaw1, relyaw1; 
+    dvec roll2, pitch2, yaw2, relyaw2;
     dvec w1ix, w1iy, w1iz;
     dvec w2ix, w2iy, w2iz;
     dvec sma, ecc, inc, raan, argper, manom;
@@ -49,8 +49,6 @@ public:
     {
         console.add_timed_text("[Solution] : Constructing solution... ");
 
-        double energy_at_t0, momentum_at_t0;
-
         const size_t N = integr.orbit.size();
         
         t.resize(N);
@@ -63,13 +61,14 @@ public:
         w2bx.resize(N); w2by.resize(N); w2bz.resize(N);
 
         dist.resize(N);  vel.resize(N);
-        roll1.resize(N); pitch1.resize(N); yaw1.resize(N);
-        roll2.resize(N); pitch2.resize(N); yaw2.resize(N);
+        roll1.resize(N); pitch1.resize(N); yaw1.resize(N), relyaw1.resize(N);
+        roll2.resize(N); pitch2.resize(N); yaw2.resize(N), relyaw2.resize(N);
         w1ix.resize(N);  w1iy.resize(N);   w1iz.resize(N);
         w2ix.resize(N);  w2iy.resize(N);   w2iz.resize(N);
         sma.resize(N);   ecc.resize(N); inc.resize(N);  raan.resize(N); argper.resize(N); manom.resize(N);
         ener_rel_err.resize(N); mom_rel_err.resize(N);
 
+        double energy_at_t0, momentum_at_t0;
         for (size_t i = 0; i < N; ++i)
         {
             //Extract the integr.orbit[][] matrix into temporary variables for readability (though one could operate directly on integr.orbit[][]).
@@ -87,6 +86,17 @@ public:
             dvec3 w2i  = body2iner(w2b,A2);
             dvec3 rpy1 = quat2ang(q1);
             dvec3 rpy2 = quat2ang(q2);
+
+            dvec3 rcyl = cart2cyl(r);
+            double temp = rpy1[2] - rcyl[1]; //phi1 = thita1z - thita
+            while (temp > pi) temp -= 2.0*pi;
+            while (temp <= -pi) temp += 2.0*pi;
+            double libr1 = temp;
+            temp = rpy2[2] - rcyl[1];  //phi2 = thita2z - thita
+            while (temp > pi) temp -= 2.0*pi;
+            while (temp <= -pi) temp += 2.0*pi;
+            double libr2 = temp;
+
             dvec6 kep  = cart2kep(dvec6{r[0],r[1],r[2], v[0],v[1],v[2]}, G*(integr.properties.M1 + integr.properties.M2));
             
             //Kinetic energy part.
@@ -131,16 +141,18 @@ public:
             w2by[i] = w2b[1];
             w2bz[i] = w2b[2];
 
-            dist[i] = length(r);
+            dist[i] = rcyl[0];
             vel[i]  = length(v);
 
-            roll1[i]  = rpy1[0]*180.0/pi;
-            pitch1[i] = rpy1[1]*180.0/pi;
-            yaw1[i]   = rpy1[2]*180.0/pi;
+            roll1[i]   = rpy1[0]*180.0/pi;
+            pitch1[i]  = rpy1[1]*180.0/pi;
+            yaw1[i]    = rpy1[2]*180.0/pi;
+            relyaw1[i] = libr1*180.0/pi;
 
             roll2[i]  = rpy2[0]*180.0/pi;
             pitch2[i] = rpy2[1]*180.0/pi;
             yaw2[i]   = rpy2[2]*180.0/pi;
+            relyaw2[i] = libr2*180.0/pi;
 
             w1ix[i] = w1i[0];
             w1iy[i] = w1i[1];
@@ -199,49 +211,51 @@ public:
             return;
 
         //Reduce all solution member vectors.
-        reduce_vector(t, final_size);
-        reduce_vector(x, final_size);
-        reduce_vector(y, final_size);
-        reduce_vector(z, final_size);
-        reduce_vector(vx, final_size);
-        reduce_vector(vy, final_size);
-        reduce_vector(vz, final_size);
-        reduce_vector(q10, final_size);
-        reduce_vector(q11, final_size);
-        reduce_vector(q12, final_size);
-        reduce_vector(q13, final_size);
-        reduce_vector(w1bx, final_size);
-        reduce_vector(w1by, final_size);
-        reduce_vector(w1bz, final_size);
-        reduce_vector(q20, final_size);
-        reduce_vector(q21, final_size);
-        reduce_vector(q22, final_size);
-        reduce_vector(q23, final_size);
-        reduce_vector(w2bx, final_size);
-        reduce_vector(w2by, final_size);
-        reduce_vector(w2bz, final_size);
-        reduce_vector(dist, final_size);
-        reduce_vector(vel, final_size);
-        reduce_vector(roll1, final_size);
-        reduce_vector(pitch1, final_size);
-        reduce_vector(yaw1, final_size);
-        reduce_vector(roll2, final_size);
-        reduce_vector(pitch2, final_size);
-        reduce_vector(yaw2, final_size);
-        reduce_vector(w1ix, final_size);
-        reduce_vector(w1iy, final_size);
-        reduce_vector(w1iz, final_size);
-        reduce_vector(w2ix, final_size);
-        reduce_vector(w2iy, final_size);
-        reduce_vector(w2iz, final_size);
-        reduce_vector(sma, final_size);
-        reduce_vector(ecc, final_size);
-        reduce_vector(inc, final_size);
-        reduce_vector(raan, final_size);
-        reduce_vector(argper, final_size);
-        reduce_vector(manom, final_size);
+        reduce_vector(t,            final_size);
+        reduce_vector(x,            final_size);
+        reduce_vector(y,            final_size);
+        reduce_vector(z,            final_size);
+        reduce_vector(vx,           final_size);
+        reduce_vector(vy,           final_size);
+        reduce_vector(vz,           final_size);
+        reduce_vector(q10,          final_size);
+        reduce_vector(q11,          final_size);
+        reduce_vector(q12,          final_size);
+        reduce_vector(q13,          final_size);
+        reduce_vector(w1bx,         final_size);
+        reduce_vector(w1by,         final_size);
+        reduce_vector(w1bz,         final_size);
+        reduce_vector(q20,          final_size);
+        reduce_vector(q21,          final_size);
+        reduce_vector(q22,          final_size);
+        reduce_vector(q23,          final_size);
+        reduce_vector(w2bx,         final_size);
+        reduce_vector(w2by,         final_size);
+        reduce_vector(w2bz,         final_size);
+        reduce_vector(dist,         final_size);
+        reduce_vector(vel,          final_size);
+        reduce_vector(roll1,        final_size);
+        reduce_vector(pitch1,       final_size);
+        reduce_vector(yaw1,         final_size);
+        reduce_vector(relyaw1,      final_size);
+        reduce_vector(roll2,        final_size);
+        reduce_vector(pitch2,       final_size);
+        reduce_vector(yaw2,         final_size);
+        reduce_vector(relyaw2,      final_size);
+        reduce_vector(w1ix,         final_size);
+        reduce_vector(w1iy,         final_size);
+        reduce_vector(w1iz,         final_size);
+        reduce_vector(w2ix,         final_size);
+        reduce_vector(w2iy,         final_size);
+        reduce_vector(w2iz,         final_size);
+        reduce_vector(sma,          final_size);
+        reduce_vector(ecc,          final_size);
+        reduce_vector(inc,          final_size);
+        reduce_vector(raan,         final_size);
+        reduce_vector(argper,       final_size);
+        reduce_vector(manom,        final_size);
         reduce_vector(ener_rel_err, final_size);
-        reduce_vector(mom_rel_err, final_size);
+        reduce_vector(mom_rel_err,  final_size);
     }
 
     //Create and return a reduced (downsample) version of the solution.

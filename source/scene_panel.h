@@ -22,7 +22,7 @@ class scene_panel
 private:
     bvec plot_cart; //Buttons : [x, y, z, r] and [υx, υy, υz, υ].
     bvec plot_kep; //Buttons : [a, e, i, Ω, ω, M].
-    bvec plot_rpy1, plot_rpy2; //Buttons : [roll 1, pitch 1, yaw 1] and [roll 2, pitch 2, yaw 2].
+    bvec plot_rpy1, plot_rpy2; //Buttons : [roll 1, pitch 1, yaw 1, libration 1] and [roll 2, pitch 2, yaw 2, libration 1].
     bvec plot_w1i, plot_w1b; //Buttons : [ω1ix, ω1iy, ω1iz] and [ω1bx, ω1by, ω1bz].
     bvec plot_w2i, plot_w2b; //Buttons : [ω2ix, ω2iy, ω2iz] and [ω2bx, ω2by, ω2bz].
     bvec plot_ener_mom_rel_err; //Energy and angular momentum magnitude relative errors.
@@ -68,8 +68,8 @@ private:
 public:
     scene_panel() : plot_cart({false,false,false,false, false,false,false,false}),
                     plot_kep({false,false,false,false,false,false}),
-                    plot_rpy1({false,false,false}),
-                    plot_rpy2({false,false,false}),
+                    plot_rpy1({false,false,false,false}),
+                    plot_rpy2({false,false,false,false}),
                     plot_w1i({false,false,false}),
                     plot_w1b({false,false,false}),
                     plot_w2i({false,false,false}),
@@ -451,21 +451,22 @@ public:
         {
             ImGui::Dummy(ImVec2(0.0f,7.5f));
             ImGui::Text("Euler angles (XYZ)");
-            plot_rpy1[0] = common_onoff_button("roll##17",  ImVec2(50.0f, 20.0f), plot_rpy1[0]); ImGui::SameLine();
-            plot_rpy1[1] = common_onoff_button("pitch##18", ImVec2(50.0f, 20.0f), plot_rpy1[1]); ImGui::SameLine();
-            plot_rpy1[2] = common_onoff_button("yaw##19",   ImVec2(50.0f, 20.0f), plot_rpy1[2]);
+            plot_rpy1[0] = common_onoff_button("roll##17",        ImVec2(50.0f, 20.0f), plot_rpy1[0]); ImGui::SameLine();
+            plot_rpy1[1] = common_onoff_button("pitch##18",       ImVec2(50.0f, 20.0f), plot_rpy1[1]); ImGui::SameLine();
+            plot_rpy1[2] = common_onoff_button("yaw##19",         ImVec2(50.0f, 20.0f), plot_rpy1[2]); ImGui::SameLine();
+            plot_rpy1[3] = common_onoff_button("libration##20",   ImVec2(60.0f, 20.0f), plot_rpy1[3]);
             ImGui::Dummy(ImVec2(0.0f,7.5f));
 
             ImGui::Text("Angular velocity (inertial frame)");
-            plot_w1i[0] = common_onoff_button("ωx##20", ImVec2(50.0f, 20.0f), plot_w1i[0]); ImGui::SameLine();
-            plot_w1i[1] = common_onoff_button("ωy##21", ImVec2(50.0f, 20.0f), plot_w1i[1]); ImGui::SameLine();
-            plot_w1i[2] = common_onoff_button("ωz##22", ImVec2(50.0f, 20.0f), plot_w1i[2]);
+            plot_w1i[0] = common_onoff_button("ωx##21", ImVec2(50.0f, 20.0f), plot_w1i[0]); ImGui::SameLine();
+            plot_w1i[1] = common_onoff_button("ωy##22", ImVec2(50.0f, 20.0f), plot_w1i[1]); ImGui::SameLine();
+            plot_w1i[2] = common_onoff_button("ωz##23", ImVec2(50.0f, 20.0f), plot_w1i[2]);
             ImGui::Dummy(ImVec2(0.0f,7.5f));
             
             ImGui::Text("Angular velocity (body frame)");
-            plot_w1b[0] = common_onoff_button("ω1##23", ImVec2(50.0f, 20.0f), plot_w1b[0]); ImGui::SameLine();
-            plot_w1b[1] = common_onoff_button("ω2##24", ImVec2(50.0f, 20.0f), plot_w1b[1]); ImGui::SameLine();
-            plot_w1b[2] = common_onoff_button("ω3##25", ImVec2(50.0f, 20.0f), plot_w1b[2]);
+            plot_w1b[0] = common_onoff_button("ω1##24", ImVec2(50.0f, 20.0f), plot_w1b[0]); ImGui::SameLine();
+            plot_w1b[1] = common_onoff_button("ω2##25", ImVec2(50.0f, 20.0f), plot_w1b[1]); ImGui::SameLine();
+            plot_w1b[2] = common_onoff_button("ω3##26", ImVec2(50.0f, 20.0f), plot_w1b[2]);
             ImGui::Dummy(ImVec2(0.0f,7.5f));
 
             ImGui::TreePop();
@@ -475,21 +476,22 @@ public:
         {
             ImGui::Dummy(ImVec2(0.0f,7.5f));
             ImGui::Text("Euler angles (XYZ)");
-            plot_rpy2[0] = common_onoff_button("roll##26",  ImVec2(50.0f, 20.0f), plot_rpy2[0]); ImGui::SameLine();
-            plot_rpy2[1] = common_onoff_button("pitch##27", ImVec2(50.0f, 20.0f), plot_rpy2[1]); ImGui::SameLine();
-            plot_rpy2[2] = common_onoff_button("yaw##28",   ImVec2(50.0f, 20.0f), plot_rpy2[2]);
+            plot_rpy2[0] = common_onoff_button("roll##27",        ImVec2(50.0f, 20.0f), plot_rpy2[0]); ImGui::SameLine();
+            plot_rpy2[1] = common_onoff_button("pitch##28",       ImVec2(50.0f, 20.0f), plot_rpy2[1]); ImGui::SameLine();
+            plot_rpy2[2] = common_onoff_button("yaw##29",         ImVec2(50.0f, 20.0f), plot_rpy2[2]); ImGui::SameLine();
+            plot_rpy2[3] = common_onoff_button("libration##30",   ImVec2(60.0f, 20.0f), plot_rpy2[3]);
             ImGui::Dummy(ImVec2(0.0f,7.5f));
 
             ImGui::Text("Angular velocity (inertial frame)");
-            plot_w2i[0] = common_onoff_button("ωx##29", ImVec2(50.0f, 20.0f), plot_w2i[0]); ImGui::SameLine();
-            plot_w2i[1] = common_onoff_button("ωy##30", ImVec2(50.0f, 20.0f), plot_w2i[1]); ImGui::SameLine();
-            plot_w2i[2] = common_onoff_button("ωz##31", ImVec2(50.0f, 20.0f), plot_w2i[2]);
+            plot_w2i[0] = common_onoff_button("ωx##31", ImVec2(50.0f, 20.0f), plot_w2i[0]); ImGui::SameLine();
+            plot_w2i[1] = common_onoff_button("ωy##32", ImVec2(50.0f, 20.0f), plot_w2i[1]); ImGui::SameLine();
+            plot_w2i[2] = common_onoff_button("ωz##33", ImVec2(50.0f, 20.0f), plot_w2i[2]);
             ImGui::Dummy(ImVec2(0.0f,7.5f));
             
             ImGui::Text("Angular velocity (body frame)");
-            plot_w2b[0] = common_onoff_button("ω1##32", ImVec2(50.0f, 20.0f), plot_w2b[0]); ImGui::SameLine();
-            plot_w2b[1] = common_onoff_button("ω2##33", ImVec2(50.0f, 20.0f), plot_w2b[1]); ImGui::SameLine();
-            plot_w2b[2] = common_onoff_button("ω3##34", ImVec2(50.0f, 20.0f), plot_w2b[2]);
+            plot_w2b[0] = common_onoff_button("ω1##34", ImVec2(50.0f, 20.0f), plot_w2b[0]); ImGui::SameLine();
+            plot_w2b[1] = common_onoff_button("ω2##35", ImVec2(50.0f, 20.0f), plot_w2b[1]); ImGui::SameLine();
+            plot_w2b[2] = common_onoff_button("ω3##36", ImVec2(50.0f, 20.0f), plot_w2b[2]);
             ImGui::Dummy(ImVec2(0.0f,7.5f));
 
             ImGui::TreePop();
@@ -501,7 +503,7 @@ public:
     {
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Text("Content state");
-        render_scene = common_onoff_button("Render##35", ImVec2(80.0f, 25.0f), render_scene);
+        render_scene = common_onoff_button("Render##37", ImVec2(80.0f, 25.0f), render_scene);
         ImGui::SameLine();
         total_frames = static_cast<uint64_t>(sol.t.size());
         uint64_t max_frame = (total_frames > 0) ? total_frames - 1 : 0;
@@ -527,12 +529,12 @@ public:
         ImGui::Text("Frame");
         ImGui::SameLine();
         ImGui::SetCursorPosX(50.0f);
-        ImGui::SliderScalar("##36", ImGuiDataType_U64, &current_frame, &zero_frame, &max_frame, "%llu");
+        ImGui::SliderScalar("##38", ImGuiDataType_U64, &current_frame, &zero_frame, &max_frame, "%llu");
 
         ImGui::Text("Rate");
         ImGui::SameLine();
         ImGui::SetCursorPosX(50.0f);
-        ImGui::SliderInt("[Hz]##37", &frame_rate, 0, 60, "%d");
+        ImGui::SliderInt("[Hz]##39", &frame_rate, 0, 60, "%d");
 
         if (sol.t.empty())
             ImGui::Text("Time : 0.00  [days]");
@@ -548,22 +550,22 @@ public:
         ImGui::Text("Dist");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[km]##38", &cam_dist, 1.1f*cam_rmin, 40.0f*cam_rmax);
+        ImGui::SliderFloat("[km]##40", &cam_dist, 1.1f*cam_rmin, 40.0f*cam_rmax, "%.3f", ImGuiSliderFlags_Logarithmic);
 
         ImGui::Text("Lon");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##39", &cam_lon, 0.0f, 360.0f);
+        ImGui::SliderFloat("[deg]##41", &cam_lon, 0.0f, 360.0f);
 
         ImGui::Text("Lat");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##40", &cam_lat, 0.0f, 180.0f);
+        ImGui::SliderFloat("[deg]##42", &cam_lat, 0.0f, 180.0f);
 
         ImGui::Text("FoV");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##41", &cam_fov, 1.0f, 179.0f, "%.0f");
+        ImGui::SliderFloat("[deg]##43", &cam_fov, 1.0f, 179.0f, "%.0f");
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Separator();
@@ -574,12 +576,12 @@ public:
         ImGui::Text("Lon");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##42", &light_lon, 0.0f, 360.0f);
+        ImGui::SliderFloat("[deg]##44", &light_lon, 0.0f, 360.0f);
 
         ImGui::Text("Lat");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##43", &light_lat, 0.0f, 180.0f);
+        ImGui::SliderFloat("[deg]##45", &light_lat, 0.0f, 180.0f);
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Separator();
@@ -590,7 +592,7 @@ public:
         ImGui::Text("Reso");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        if (ImGui::SliderInt("[pix]##44", &shadow_tex_reso, 1024, 8192))
+        if (ImGui::SliderInt("[pix]##46", &shadow_tex_reso, 1024, 8192))
             setup_fbo_depth();
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
@@ -602,22 +604,22 @@ public:
         ImGui::Text("Body 1");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##45", &render_aster1);
+        ImGui::Checkbox("##47", &render_aster1);
         ImGui::SameLine();
         ImGui::SetCursorPosX(120.0f);
         ImGui::Text("Axes 1");
         ImGui::SameLine();
-        ImGui::Checkbox("##46", &render_axes1);
+        ImGui::Checkbox("##48", &render_axes1);
 
         ImGui::Text("Body 2");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##47", &render_aster2);
+        ImGui::Checkbox("##49", &render_aster2);
         ImGui::SameLine();
         ImGui::SetCursorPosX(120.0f);
         ImGui::Text("Axes 2");
         ImGui::SameLine();
-        ImGui::Checkbox("##48", &render_axes2);
+        ImGui::Checkbox("##50", &render_axes2);
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Separator();
@@ -628,12 +630,12 @@ public:
         ImGui::Text("Body 1");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::ColorEdit3("##49", glm::value_ptr(aster1_col), ImGuiColorEditFlags_NoInputs);
+        ImGui::ColorEdit3("##51", glm::value_ptr(aster1_col), ImGuiColorEditFlags_NoInputs);
         ImGui::SameLine();
         ImGui::SetCursorPosX(120.0f);
         ImGui::Text("Body 2");
         ImGui::SameLine();
-        ImGui::ColorEdit3("##50", glm::value_ptr(aster2_col), ImGuiColorEditFlags_NoInputs);
+        ImGui::ColorEdit3("##52", glm::value_ptr(aster2_col), ImGuiColorEditFlags_NoInputs);
 
         if (disabled)
             ImGui::EndDisabled();
@@ -675,39 +677,41 @@ public:
                 if (plot_cart[6]) plot_cart[6] = common_plot("##107", "Relative υz",          "υz [km/sec]",          plot_cart[6], sol_reduced.vz);
                 if (plot_cart[7]) plot_cart[7] = common_plot("##108", "Relative υ magnitude", "υ magnitude [km/sec]", plot_cart[7], sol_reduced.vel);
 
-                if (plot_kep[0]) plot_kep[0] = common_plot("##109",  "Semi-major axis",             "a [km]",  plot_kep[0], sol_reduced.sma);
+                if (plot_kep[0]) plot_kep[0] = common_plot("##109",  "Semi-major axis",            "a [km]",  plot_kep[0], sol_reduced.sma);
                 if (plot_kep[1]) plot_kep[1] = common_plot("##110", "Eccentricity",                "e [  ]",  plot_kep[1], sol_reduced.ecc);
                 if (plot_kep[2]) plot_kep[2] = common_plot("##111", "Inclination",                 "i [deg]", plot_kep[2], sol_reduced.inc);
                 if (plot_kep[3]) plot_kep[3] = common_plot("##112", "Longitude of ascending node", "Ω [deg]", plot_kep[3], sol_reduced.raan);
                 if (plot_kep[4]) plot_kep[4] = common_plot("##113", "Argument of periapsis",       "ω [deg]", plot_kep[4], sol_reduced.argper);
                 if (plot_kep[5]) plot_kep[5] = common_plot("##114", "Mean anomaly",                "M [deg]", plot_kep[5], sol_reduced.manom);
 
-                if (plot_rpy1[0]) plot_rpy1[0] = common_plot("##115", "Body 1 roll",  "roll 1 [deg]",  plot_rpy1[0], sol_reduced.roll1);
-                if (plot_rpy1[1]) plot_rpy1[1] = common_plot("##116", "Body 1 pitch", "pitch 1 [deg]", plot_rpy1[1], sol_reduced.pitch1);
-                if (plot_rpy1[2]) plot_rpy1[2] = common_plot("##117", "Body 1 yaw",   "yaw 1 [deg]",   plot_rpy1[2], sol_reduced.yaw1);
+                if (plot_rpy1[0]) plot_rpy1[0] = common_plot("##115", "Body 1 roll",        "roll 1 [deg]", plot_rpy1[0], sol_reduced.roll1);
+                if (plot_rpy1[1]) plot_rpy1[1] = common_plot("##116", "Body 1 pitch",       "pitch 1 [deg]", plot_rpy1[1], sol_reduced.pitch1);
+                if (plot_rpy1[2]) plot_rpy1[2] = common_plot("##117", "Body 1 yaw",         "yaw 1 [deg]", plot_rpy1[2], sol_reduced.yaw1);
+                if (plot_rpy1[3]) plot_rpy1[3] = common_plot("##118", "Body 1 libration",   "rel.  yaw 1 [deg]", plot_rpy1[3], sol_reduced.relyaw1);
 
-                if (plot_rpy2[0]) plot_rpy2[0] = common_plot("##118", "Body 2 roll",  "roll 2 [deg]",  plot_rpy2[0], sol_reduced.roll2);
-                if (plot_rpy2[1]) plot_rpy2[1] = common_plot("##119", "Body 2 pitch", "pitch 2 [deg]", plot_rpy2[1], sol_reduced.pitch2);
-                if (plot_rpy2[2]) plot_rpy2[2] = common_plot("##120", "Body 2 yaw",   "yaw 2 [deg]",   plot_rpy2[2], sol_reduced.yaw2);
+                if (plot_rpy2[0]) plot_rpy2[0] = common_plot("##119", "Body 2 roll",        "roll 2  [deg]", plot_rpy2[0], sol_reduced.roll2);
+                if (plot_rpy2[1]) plot_rpy2[1] = common_plot("##120", "Body 2 pitch",       "pitch 2 [deg]", plot_rpy2[1], sol_reduced.pitch2);
+                if (plot_rpy2[2]) plot_rpy2[2] = common_plot("##121", "Body 2 yaw",         "yaw 2 [deg]", plot_rpy2[2], sol_reduced.yaw2);
+                if (plot_rpy2[3]) plot_rpy2[3] = common_plot("##122", "Body 2 libration",   "rel.  yaw 2 [deg]", plot_rpy2[3], sol_reduced.relyaw2);
 
-                if (plot_w1i[0]) plot_w1i[0] = common_plot("##121", "Body 1 ωx (inertial frame)", "ω1ix [rad/sec]", plot_w1i[0], sol_reduced.w1ix);
-                if (plot_w1i[1]) plot_w1i[1] = common_plot("##122", "Body 1 ωy (inertial frame)", "ω1iy [rad/sec]", plot_w1i[1], sol_reduced.w1iy);
-                if (plot_w1i[2]) plot_w1i[2] = common_plot("##123", "Body 1 ωz (inertial frame)", "ω1iz [rad/sec]", plot_w1i[2], sol_reduced.w1iz);
+                if (plot_w1i[0]) plot_w1i[0] = common_plot("##123", "Body 1 ωx (inertial frame)", "ω1ix [rad/sec]", plot_w1i[0], sol_reduced.w1ix);
+                if (plot_w1i[1]) plot_w1i[1] = common_plot("##124", "Body 1 ωy (inertial frame)", "ω1iy [rad/sec]", plot_w1i[1], sol_reduced.w1iy);
+                if (plot_w1i[2]) plot_w1i[2] = common_plot("##125", "Body 1 ωz (inertial frame)", "ω1iz [rad/sec]", plot_w1i[2], sol_reduced.w1iz);
 
-                if (plot_w1b[0]) plot_w1b[0] = common_plot("##124", "Body 1 ωx (body frame)", "ω1bx [rad/sec]", plot_w1b[0], sol_reduced.w1bx);
-                if (plot_w1b[1]) plot_w1b[1] = common_plot("##125", "Body 1 ωy (body frame)", "ω1by [rad/sec]", plot_w1b[1], sol_reduced.w1by);
-                if (plot_w1b[2]) plot_w1b[2] = common_plot("##126", "Body 1 ωz (body frame)", "ω1bz [rad/sec]", plot_w1b[2], sol_reduced.w1bz);
+                if (plot_w1b[0]) plot_w1b[0] = common_plot("##126", "Body 1 ωx (body frame)", "ω1bx [rad/sec]", plot_w1b[0], sol_reduced.w1bx);
+                if (plot_w1b[1]) plot_w1b[1] = common_plot("##127", "Body 1 ωy (body frame)", "ω1by [rad/sec]", plot_w1b[1], sol_reduced.w1by);
+                if (plot_w1b[2]) plot_w1b[2] = common_plot("##128", "Body 1 ωz (body frame)", "ω1bz [rad/sec]", plot_w1b[2], sol_reduced.w1bz);
 
-                if (plot_w2i[0]) plot_w2i[0] = common_plot("##127", "Body 2 ωx (inertial frame)", "ω2ix [rad/sec]", plot_w2i[0], sol_reduced.w2ix);
-                if (plot_w2i[1]) plot_w2i[1] = common_plot("##128", "Body 2 ωy (inertial frame)", "ω2iy [rad/sec]", plot_w2i[1], sol_reduced.w2iy);
-                if (plot_w2i[2]) plot_w2i[2] = common_plot("##129", "Body 2 ωz (inertial frame)", "ω2iz [rad/sec]", plot_w2i[2], sol_reduced.w2iz);
+                if (plot_w2i[0]) plot_w2i[0] = common_plot("##129", "Body 2 ωx (inertial frame)", "ω2ix [rad/sec]", plot_w2i[0], sol_reduced.w2ix);
+                if (plot_w2i[1]) plot_w2i[1] = common_plot("##130", "Body 2 ωy (inertial frame)", "ω2iy [rad/sec]", plot_w2i[1], sol_reduced.w2iy);
+                if (plot_w2i[2]) plot_w2i[2] = common_plot("##131", "Body 2 ωz (inertial frame)", "ω2iz [rad/sec]", plot_w2i[2], sol_reduced.w2iz);
 
-                if (plot_w2b[0]) plot_w2b[0] = common_plot("##130", "Body 2 ωx (body frame)", "ω2bx [rad/sec]", plot_w2b[0], sol_reduced.w2bx);
-                if (plot_w2b[1]) plot_w2b[1] = common_plot("##131", "Body 2 ωy (body frame)", "ω2by [rad/sec]", plot_w2b[1], sol_reduced.w2by);
-                if (plot_w2b[2]) plot_w2b[2] = common_plot("##132", "Body 2 ωz (body frame)", "ω2bz [rad/sec]", plot_w2b[2], sol_reduced.w2bz);
+                if (plot_w2b[0]) plot_w2b[0] = common_plot("##132", "Body 2 ωx (body frame)", "ω2bx [rad/sec]", plot_w2b[0], sol_reduced.w2bx);
+                if (plot_w2b[1]) plot_w2b[1] = common_plot("##133", "Body 2 ωy (body frame)", "ω2by [rad/sec]", plot_w2b[1], sol_reduced.w2by);
+                if (plot_w2b[2]) plot_w2b[2] = common_plot("##134", "Body 2 ωz (body frame)", "ω2bz [rad/sec]", plot_w2b[2], sol_reduced.w2bz);
 
-                if (plot_ener_mom_rel_err[0]) plot_ener_mom_rel_err[0] = common_plot("##133", "Energy relative error",             "energy error [  ]",   plot_ener_mom_rel_err[0], sol_reduced.ener_rel_err);
-                if (plot_ener_mom_rel_err[1]) plot_ener_mom_rel_err[1] = common_plot("##134", "Momentum magnitude relative error", "momentum error [  ]", plot_ener_mom_rel_err[1], sol_reduced.mom_rel_err);
+                if (plot_ener_mom_rel_err[0]) plot_ener_mom_rel_err[0] = common_plot("##135", "Energy relative error",             "energy error [  ]",   plot_ener_mom_rel_err[0], sol_reduced.ener_rel_err);
+                if (plot_ener_mom_rel_err[1]) plot_ener_mom_rel_err[1] = common_plot("##136", "Momentum magnitude relative error", "momentum error [  ]", plot_ener_mom_rel_err[1], sol_reduced.mom_rel_err);
 
             }
             ImGui::PopStyleColor();
