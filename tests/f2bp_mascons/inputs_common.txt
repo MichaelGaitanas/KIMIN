@@ -12,16 +12,16 @@ File 1 := "../../obj/polyhedra/didymain2019_R04km.obj"
 File 2 := "../../obj/polyhedra/dimorphos_ellipsoid_R01km.obj"
 
 Grid resolutions for the raycasting algorithm which fills the polyhedron with mascons :
-Resolution 1 x := 12
-Resolution 1 y := 12
-Resolution 1 z := 12
-Resolution 2 x := 12
-Resolution 2 y := 12
-Resolution 2 z := 12
+Resolution 1 x := 18
+Resolution 1 y := 18
+Resolution 1 z := 18
+Resolution 2 x := 15
+Resolution 2 y := 15
+Resolution 2 z := 15
 
 Integration time parameters :
 t0   := 0.0 [sec]
-tmax := 2592000.0 [sec]
+tmax := 1728000.0 [sec]
 atol := 1e-15
 rtol := 1e-15
 
