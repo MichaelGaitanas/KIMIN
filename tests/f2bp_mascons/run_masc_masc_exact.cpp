@@ -269,6 +269,17 @@ int main()
         dvec3 w2i = body2iner(w2b,A2);
         dvec3 rpy1 = quat2ang(q1)*180.0/pi;
         dvec3 rpy2 = quat2ang(q2)*180.0/pi;
+
+        dvec3 rcyl = cart2cyl(r);
+        double temp = rpy1[2] - rcyl[1]*180.0/pi; //phi1 = thita1z - thita
+        while (temp > 180.0) temp -= 360.0;
+        while (temp <= -180.0) temp += 360.0;
+        double libr1 = temp; //In [deg].
+        temp = rpy2[2] - rcyl[1]*180.0/pi;  //phi2 = thita2z - thita
+        while (temp > 180.0) temp -= 360.0;
+        while (temp <= -180.0) temp += 360.0;
+        double libr2 = temp; //In [deg].
+
         double energy = 0.5*pars.m*dot(v,v) + 0.5*dot( dot(w1b,pars.I1), w1b) + 0.5*dot( dot(w2b,pars.I2), w2b) + mut_pot_masc(r, pars.M1,pars.masc1.get_points(),A1, pars.M2,pars.masc2.get_points(),A2);
         double momentum = length(pars.m*cross(r,v) + dot(A1, dot(pars.I1,w1b)) + dot(A2, dot(pars.I2,w2b)));
 
@@ -302,9 +313,9 @@ int main()
         fprintf(file_q2,"%.16lf %.16lf %.16lf %.16lf\n",q2[0],q2[1],q2[2],q2[3]);
         fprintf(file_w2b,"%.16lf %.16lf %.16lf\n",w2b[0],w2b[1],w2b[2]);
 
-        fprintf(file_rpy1,"%.16lf %.16lf %.16lf\n",rpy1[0],rpy1[1],rpy1[2]);
+        fprintf(file_rpy1,"%.16lf %.16lf %.16lf %.16lf\n",rpy1[0],rpy1[1],rpy1[2],libr1);
         fprintf(file_w1i,"%.16lf %.16lf %.16lf\n",w1i[0],w1i[1],w1i[2]);
-        fprintf(file_rpy2,"%.16lf %.16lf %.16lf\n",rpy2[0],rpy2[1],rpy2[2]);
+        fprintf(file_rpy2,"%.16lf %.16lf %.16lf %.16lf\n",rpy2[0],rpy2[1],rpy2[2],libr2);
         fprintf(file_w2i,"%.16lf %.16lf %.16lf\n",w2i[0],w2i[1],w2i[2]); 
         fprintf(file_EL_err,"%.16lf %.16lf\n", energy_rel_err, momentum_rel_err);
     }

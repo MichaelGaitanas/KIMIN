@@ -25,8 +25,8 @@ tmax := 1728000.0 [sec]
 atol := 1e-15
 rtol := 1e-15
 
-Initial state vector (relative position, absolute orientations):
-x   := 1.18 [km]
+Initial state vector (relative position, absolute orientations) :
+x   := 1.19 [km]
 y   := 0.0  [km]
 z   := 0.0  [km]
 
