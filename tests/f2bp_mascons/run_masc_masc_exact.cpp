@@ -244,6 +244,7 @@ int main()
     FILE *file_t      = fopen("io/mme_time.txt","w");
     FILE *file_pos    = fopen("io/mme_rel_pos.txt","w");
     FILE *file_vel    = fopen("io/mme_rel_vel.txt","w");
+    FILE *file_kep    = fopen("io/mme_rel_kep.txt","w");
     FILE *file_q1     = fopen("io/mme_quaternion1.txt","w");
     FILE *file_w1b    = fopen("io/mme_ang_vel_w1b.txt","w");
     FILE *file_q2     = fopen("io/mme_quaternion2.txt","w");
@@ -280,6 +281,8 @@ int main()
         while (temp <= -180.0) temp += 360.0;
         double libr2 = temp; //In [deg].
 
+        dvec6 kep = cart2kep({r[0],r[1],r[2],v[0],v[1],v[2]}, G*(pars.M1+pars.M2));
+
         double energy = 0.5*pars.m*dot(v,v) + 0.5*dot( dot(w1b,pars.I1), w1b) + 0.5*dot( dot(w2b,pars.I2), w2b) + mut_pot_masc(r, pars.M1,pars.masc1.get_points(),A1, pars.M2,pars.masc2.get_points(),A2);
         double momentum = length(pars.m*cross(r,v) + dot(A1, dot(pars.I1,w1b)) + dot(A2, dot(pars.I2,w2b)));
 
@@ -308,6 +311,7 @@ int main()
         fprintf(file_t,"%.16lf\n", orbit[i][0]/86400.0); //Export t in [days]
         fprintf(file_pos,"%.16lf %.16lf %.16lf %.16lf\n",r[0],r[1],r[2], length(r));
         fprintf(file_vel,"%.16lf %.16lf %.16lf %.16lf\n",v[0],v[1],v[2], length(v));
+        fprintf(file_kep,"%.16lf %.16lf %.16lf\n",kep[0],kep[1],kep[2]*180.0/pi);
         fprintf(file_q1,"%.16lf %.16lf %.16lf %.16lf\n",q1[0],q1[1],q1[2],q1[3]);
         fprintf(file_w1b,"%.16lf %.16lf %.16lf\n",w1b[0],w1b[1],w1b[2]);
         fprintf(file_q2,"%.16lf %.16lf %.16lf %.16lf\n",q2[0],q2[1],q2[2],q2[3]);
@@ -322,6 +326,7 @@ int main()
     fclose(file_t);
     fclose(file_pos);
     fclose(file_vel);
+    fclose(file_kep);
     fclose(file_q1);
     fclose(file_w1b);
     fclose(file_q2);
