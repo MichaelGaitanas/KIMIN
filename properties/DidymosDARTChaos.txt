@@ -1,0 +1,55 @@
+Simulation name := "DidymosDARTChaos"
+
+Shape models := ".obj files"
+file 1 := "didymain2019_R04km.obj"
+file 2 := "dimorphos_ellipsoid_R01km.obj"
+
+Mutual potential order := 2
+
+M1 := 515041825125.529
+M2 := 3926933196.12399
+
+Numerical method := "BStoer (adaptive)"
+Epoch := 0
+Duration := 31
+Target error := 1e-13
+
+Relative position and velocity := "Cartesian"
+x  := 1.18
+y  := 0
+z  := 0
+vx := 0
+vy := 0.000172754231527419
+vz := 0
+
+Orientations := "Euler angles"
+roll 1  := 0
+pitch 1 := 0
+yaw 1   := 0
+roll 2  := 0
+pitch 2 := 0
+yaw 2   := 0
+
+Angular velocities := "At inertial frame"
+w1ix := 0
+w1iy := 0
+w1iz := 0.000772269580528464
+w2ix := 0
+w2iy := 0
+w2iz := 0.000146402
+
+Collision shapes := "Spheres"
+
+Kinetic impactors := "Yes"
+m1    := 0
+vx1   := 0
+vy1   := 0
+vz1   := 0
+beta1 := 0
+t1    := 0
+m2    := 579.434
+vx2   := 0
+vy2   := -6.06924608412306
+vz2   := 0.961274144225715
+beta2 := 3.6
+t2    := 10.19

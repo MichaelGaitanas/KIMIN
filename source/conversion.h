@@ -379,28 +379,6 @@ dvec6 cart2kep(const dvec6 &cart, const double GM)
     return {a,e,i,Om,w,M};
 }
 
-//Convert Cartesian elements to Keplerian.
-/*
-dvec6 cart2kep(const dvec6 &cart, const double GM)
-{
-    dvec3 r = {cart[0],cart[1],cart[2]};
-    dvec3 v = {cart[3],cart[4],cart[5]};
-
-    double rmag = length(r);
-    
-    dvec3 h = cross(r,v);
-    double hmag = length(h), hz = h[2];
-
-    dvec3 n = cross(dvec3{0.0,0.0,1.0}, h);
-
-    dvec3 e = cross(v,h)/GM - r/rmag;
-
-    double a = pow(length(h),2)/(GM*(1-e*e));
-    
-    return {a,e,i,Om,w,M};
-}
-*/
-
 //Convert cylindrical coordinates to Cartesian.
 dvec3 cyl2cart(const dvec3 &cyl)
 {
