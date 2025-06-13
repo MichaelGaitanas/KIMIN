@@ -48,7 +48,7 @@ public:
                                 task_was_aborted(false),
                                 task_progress(0.0f)
     {
-        //Query the OS/GLFW for DPI scale.
+        //Query the OS/glfw for DPI scale.
         float xscale, yscale;
         glfwGetWindowContentScale(wpointer, &xscale, &yscale); //Typically xscale = yscale on desktop, so we just rely on xscale.
         IMGUI_CHECKVERSION();

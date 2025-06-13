@@ -1,4 +1,4 @@
-Simulation name := "ImpactExperiment"
+Simulation name := "StrongImpact"
 
 Shape models := ".obj files"
 file 1 := "ryugu196k_R05km.obj"
