@@ -8,6 +8,7 @@
 #include"../imgui/imgui_impl_opengl3.h"
 #include"../imgui/implot.h"
 
+#include"constant.h"
 #include"typedef.h"
 #include"solution.h"
 #include"shader.h"
@@ -52,14 +53,13 @@ private:
 
     bool render_axes1, render_axes2;
 
-    bool first_time_here;
+    bool reset_essential;
 
-    float light_rmax;
     glm::mat4 light_projection;
 
     unsigned int fbo_depth, tex_depth; //IDs to hold the depth fbo and the depth texture (for the shadow map).
 
-    solution sol, sol_reduced; //The 'sol' contains all the orbital data and is used to render the 3D scene. The 'sol_reduced' is used for the 2D plots.
+    solution sol, sol2D; //The 'sol' contains all the orbital data and is used to render the 3D scene. The 'sol2D' is used for the 2D plots.
 
     int win_width, win_height; //These are copies of the members 'width' and 'height' of the window class. Neede to compute the projection matrix.
 
@@ -118,8 +118,7 @@ public:
         glBindFramebuffer(GL_FRAMEBUFFER, fbo_depth);
         glGenTextures(1, &tex_depth);
         glBindTexture(GL_TEXTURE_2D, tex_depth);
-        //Shadow mapping is highly sensitive to depth precision, hence the 32 bits.
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, shadow_tex_reso, shadow_tex_reso, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, shadow_tex_reso, shadow_tex_reso, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr); //Shadow mapping is highly sensitive to depth precision, hence the 32 bits.
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);  
@@ -135,24 +134,26 @@ public:
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    //Fetch the numerical solution and assign : 1) the full version to the member 'sol' and 2) a reduced version to the member sol_reduced.
-    void copy_solution(const solution &sol)
+    //Do essential (re)sets upon a new simulation termination.
+    void setup(const solution &sol)
     {
+        //1) Obtain a whole solution copy for the 3D rendering. Then create a downsampled solution for the 2D plots.
         this->sol = sol;
-        this->sol_reduced = sol.get_reduced_solution(4000);
-        
-        current_frame = 0; //(Re)set the whole scene to correspond at the first frame. This will automatically set the frame slider to 0
-        play_pause_video = false; //Pause state.
+        this->sol2D = sol.get_reduced_solution(PLOT_POINTS_2D);
 
-        cam_rmin = sol.integr.brillouin1 + sol.integr.brillouin2;
-        cam_rmax = *std::max_element(sol.dist.begin(), sol.dist.end());
-        cam_dist = 5.0f*(*std::max_element(sol.dist.begin(), sol.dist.end()));
+        //2) Compute essential directional light stuff.
+        float binary_dist_max = *std::max_element(sol.dist.begin(), sol.dist.end());
+        light_dist = fl*(sol.integr.brillouin1 + sol.integr.brillouin2 + binary_dist_max);
+        light_projection = glm::ortho(-fc*light_dist,fc*light_dist, -fc*light_dist,fc*light_dist, (fl-fc)*light_dist, 2.0f*fc*light_dist);
 
-        light_rmax = cam_rmin + cam_rmax;
-        light_dist = fl*light_rmax;
-        light_projection = glm::ortho(-fc*light_rmax,fc*light_rmax, -fc*light_rmax,fc*light_rmax, (fl-fc)*light_rmax, 2.0f*fc*light_rmax);
+        //3) Compute essential camera stuff.
+        cam_rmin = 1.1f*(sol.integr.brillouin1 + sol.integr.brillouin2);
+        cam_rmax = 40.0f*binary_dist_max;
+        cam_dist = cam_rmin + 0.1f*(cam_rmax - cam_rmin);
 
-        first_time_here = true;
+        current_frame = 0; //(Re)set the frame slider to 0. Hence a new simulation video starts from the beginning.
+        play_pause_video = false; //Set the video state paused initially.
+        reset_essential = true;
     }
 
     //This function controls the on/off logic of a clickable button in the gui.
@@ -199,18 +200,18 @@ public:
         if (ImPlot::BeginPlot(begin_plot_id, plot_win_size))
         {
             ImPlot::SetupAxes("time [days]", yaxis_str);
-            ImPlot::PlotLine("", &sol_reduced.t[0], &plot_func[0], sol_reduced.t.size());
+            ImPlot::PlotLine("", &sol2D.t[0], &plot_func[0], sol2D.t.size());
             
             //Current frame marker logic :
-            size_t i_reduced = map_frame_to_reduced_sol(current_frame, sol.t.size(), sol_reduced.t.size());
+            size_t i_reduced = map_frame_to_reduced_sol(current_frame, sol.t.size(), sol2D.t.size());
             ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 6.0f, ImColor(0, 255, 0, 255), 1.0f, ImColor(0, 255, 0, 255));
-            ImPlot::PlotScatter("Current frame", &sol_reduced.t[i_reduced], &plot_func[i_reduced], 1);
+            ImPlot::PlotScatter("Current frame", &sol2D.t[i_reduced], &plot_func[i_reduced], 1);
 
             //If there's a collision, highlight final point.
-            if (sol_reduced.integr.collision)
+            if (sol2D.integr.collision)
             {
                 ImPlot::SetNextMarkerStyle(ImPlotMarker_Down, 6.0f, ImColor(255, 100, 0, 255), 1.0f, ImColor(255, 100, 0, 255));
-                ImPlot::PlotScatter("Collision frame", &sol_reduced.t.back(), &plot_func.back(), 1); //Plot the final point as a scatter plot.
+                ImPlot::PlotScatter("Collision frame", &sol2D.t.back(), &plot_func.back(), 1); //Plot the final point as a scatter plot.
             }
             ImPlot::EndPlot();
         }
@@ -223,7 +224,7 @@ public:
         //Prepare the polyhedral meshes for rendering, by the running appropriate - GPU - tasks.
         sol.integr.properties.poly1.set_as_gl_mesh();
         sol.integr.properties.poly2.set_as_gl_mesh();
-        if (first_time_here)
+        if (reset_essential)
         {
             setup_fbo_depth();
 
@@ -257,7 +258,7 @@ public:
             zaxis2.gen_norms();
             zaxis2.set_as_gl_mesh();
             
-            first_time_here = false;
+            reset_essential = false;
         }
         
         //Instantiate the shaders.
@@ -550,7 +551,7 @@ public:
         ImGui::Text("Dist");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[km]##40", &cam_dist, 1.1f*cam_rmin, 40.0f*cam_rmax, "%.3f", ImGuiSliderFlags_Logarithmic);
+        ImGui::SliderFloat("[km]##40", &cam_dist, cam_rmin, cam_rmax, "%.3f", ImGuiSliderFlags_Logarithmic);
 
         ImGui::Text("Lon");
         ImGui::SameLine();
@@ -667,51 +668,51 @@ public:
             {
                 render_plot_buttons();
 
-                if (plot_cart[0]) plot_cart[0] = common_plot("##101", "Relative x",        "x [km]",        plot_cart[0], sol_reduced.x);
-                if (plot_cart[1]) plot_cart[1] = common_plot("##102", "Relative y",        "y [km]",        plot_cart[1], sol_reduced.y);
-                if (plot_cart[2]) plot_cart[2] = common_plot("##103", "Relative z",        "z [km]",        plot_cart[2], sol_reduced.z);
-                if (plot_cart[3]) plot_cart[3] = common_plot("##104", "Relative distance", "distance [km]", plot_cart[3], sol_reduced.dist);
+                if (plot_cart[0]) plot_cart[0] = common_plot("##101", "Relative x",        "x [km]",        plot_cart[0], sol2D.x);
+                if (plot_cart[1]) plot_cart[1] = common_plot("##102", "Relative y",        "y [km]",        plot_cart[1], sol2D.y);
+                if (plot_cart[2]) plot_cart[2] = common_plot("##103", "Relative z",        "z [km]",        plot_cart[2], sol2D.z);
+                if (plot_cart[3]) plot_cart[3] = common_plot("##104", "Relative distance", "distance [km]", plot_cart[3], sol2D.dist);
 
-                if (plot_cart[4]) plot_cart[4] = common_plot("##105", "Relative υx",          "υx [km/sec]",          plot_cart[4], sol_reduced.vx);
-                if (plot_cart[5]) plot_cart[5] = common_plot("##106", "Relative υy",          "υy [km/sec]",          plot_cart[5], sol_reduced.vy);
-                if (plot_cart[6]) plot_cart[6] = common_plot("##107", "Relative υz",          "υz [km/sec]",          plot_cart[6], sol_reduced.vz);
-                if (plot_cart[7]) plot_cart[7] = common_plot("##108", "Relative υ magnitude", "υ magnitude [km/sec]", plot_cart[7], sol_reduced.vel);
+                if (plot_cart[4]) plot_cart[4] = common_plot("##105", "Relative υx",          "υx [km/sec]",          plot_cart[4], sol2D.vx);
+                if (plot_cart[5]) plot_cart[5] = common_plot("##106", "Relative υy",          "υy [km/sec]",          plot_cart[5], sol2D.vy);
+                if (plot_cart[6]) plot_cart[6] = common_plot("##107", "Relative υz",          "υz [km/sec]",          plot_cart[6], sol2D.vz);
+                if (plot_cart[7]) plot_cart[7] = common_plot("##108", "Relative υ magnitude", "υ magnitude [km/sec]", plot_cart[7], sol2D.vel);
 
-                if (plot_kep[0]) plot_kep[0] = common_plot("##109",  "Semi-major axis",            "a [km]",  plot_kep[0], sol_reduced.sma);
-                if (plot_kep[1]) plot_kep[1] = common_plot("##110", "Eccentricity",                "e [  ]",  plot_kep[1], sol_reduced.ecc);
-                if (plot_kep[2]) plot_kep[2] = common_plot("##111", "Inclination",                 "i [deg]", plot_kep[2], sol_reduced.inc);
-                if (plot_kep[3]) plot_kep[3] = common_plot("##112", "Longitude of ascending node", "Ω [deg]", plot_kep[3], sol_reduced.raan);
-                if (plot_kep[4]) plot_kep[4] = common_plot("##113", "Argument of periapsis",       "ω [deg]", plot_kep[4], sol_reduced.argper);
-                if (plot_kep[5]) plot_kep[5] = common_plot("##114", "Mean anomaly",                "M [deg]", plot_kep[5], sol_reduced.manom);
+                if (plot_kep[0]) plot_kep[0] = common_plot("##109",  "Semi-major axis",            "a [km]",  plot_kep[0], sol2D.sma);
+                if (plot_kep[1]) plot_kep[1] = common_plot("##110", "Eccentricity",                "e [  ]",  plot_kep[1], sol2D.ecc);
+                if (plot_kep[2]) plot_kep[2] = common_plot("##111", "Inclination",                 "i [deg]", plot_kep[2], sol2D.inc);
+                if (plot_kep[3]) plot_kep[3] = common_plot("##112", "Longitude of ascending node", "Ω [deg]", plot_kep[3], sol2D.raan);
+                if (plot_kep[4]) plot_kep[4] = common_plot("##113", "Argument of periapsis",       "ω [deg]", plot_kep[4], sol2D.argper);
+                if (plot_kep[5]) plot_kep[5] = common_plot("##114", "Mean anomaly",                "M [deg]", plot_kep[5], sol2D.manom);
 
-                if (plot_rpy1[0]) plot_rpy1[0] = common_plot("##115", "Body 1 roll",        "roll 1 [deg]", plot_rpy1[0], sol_reduced.roll1);
-                if (plot_rpy1[1]) plot_rpy1[1] = common_plot("##116", "Body 1 pitch",       "pitch 1 [deg]", plot_rpy1[1], sol_reduced.pitch1);
-                if (plot_rpy1[2]) plot_rpy1[2] = common_plot("##117", "Body 1 yaw",         "yaw 1 [deg]", plot_rpy1[2], sol_reduced.yaw1);
-                if (plot_rpy1[3]) plot_rpy1[3] = common_plot("##118", "Body 1 libration",   "rel.  yaw 1 [deg]", plot_rpy1[3], sol_reduced.relyaw1);
+                if (plot_rpy1[0]) plot_rpy1[0] = common_plot("##115", "Body 1 roll",        "roll 1 [deg]", plot_rpy1[0], sol2D.roll1);
+                if (plot_rpy1[1]) plot_rpy1[1] = common_plot("##116", "Body 1 pitch",       "pitch 1 [deg]", plot_rpy1[1], sol2D.pitch1);
+                if (plot_rpy1[2]) plot_rpy1[2] = common_plot("##117", "Body 1 yaw",         "yaw 1 [deg]", plot_rpy1[2], sol2D.yaw1);
+                if (plot_rpy1[3]) plot_rpy1[3] = common_plot("##118", "Body 1 libration",   "rel.  yaw 1 [deg]", plot_rpy1[3], sol2D.relyaw1);
 
-                if (plot_rpy2[0]) plot_rpy2[0] = common_plot("##119", "Body 2 roll",        "roll 2  [deg]", plot_rpy2[0], sol_reduced.roll2);
-                if (plot_rpy2[1]) plot_rpy2[1] = common_plot("##120", "Body 2 pitch",       "pitch 2 [deg]", plot_rpy2[1], sol_reduced.pitch2);
-                if (plot_rpy2[2]) plot_rpy2[2] = common_plot("##121", "Body 2 yaw",         "yaw 2 [deg]", plot_rpy2[2], sol_reduced.yaw2);
-                if (plot_rpy2[3]) plot_rpy2[3] = common_plot("##122", "Body 2 libration",   "rel.  yaw 2 [deg]", plot_rpy2[3], sol_reduced.relyaw2);
+                if (plot_rpy2[0]) plot_rpy2[0] = common_plot("##119", "Body 2 roll",        "roll 2  [deg]", plot_rpy2[0], sol2D.roll2);
+                if (plot_rpy2[1]) plot_rpy2[1] = common_plot("##120", "Body 2 pitch",       "pitch 2 [deg]", plot_rpy2[1], sol2D.pitch2);
+                if (plot_rpy2[2]) plot_rpy2[2] = common_plot("##121", "Body 2 yaw",         "yaw 2 [deg]", plot_rpy2[2], sol2D.yaw2);
+                if (plot_rpy2[3]) plot_rpy2[3] = common_plot("##122", "Body 2 libration",   "rel.  yaw 2 [deg]", plot_rpy2[3], sol2D.relyaw2);
 
-                if (plot_w1i[0]) plot_w1i[0] = common_plot("##123", "Body 1 ωx (inertial frame)", "ω1ix [rad/sec]", plot_w1i[0], sol_reduced.w1ix);
-                if (plot_w1i[1]) plot_w1i[1] = common_plot("##124", "Body 1 ωy (inertial frame)", "ω1iy [rad/sec]", plot_w1i[1], sol_reduced.w1iy);
-                if (plot_w1i[2]) plot_w1i[2] = common_plot("##125", "Body 1 ωz (inertial frame)", "ω1iz [rad/sec]", plot_w1i[2], sol_reduced.w1iz);
+                if (plot_w1i[0]) plot_w1i[0] = common_plot("##123", "Body 1 ωx (inertial frame)", "ω1ix [rad/sec]", plot_w1i[0], sol2D.w1ix);
+                if (plot_w1i[1]) plot_w1i[1] = common_plot("##124", "Body 1 ωy (inertial frame)", "ω1iy [rad/sec]", plot_w1i[1], sol2D.w1iy);
+                if (plot_w1i[2]) plot_w1i[2] = common_plot("##125", "Body 1 ωz (inertial frame)", "ω1iz [rad/sec]", plot_w1i[2], sol2D.w1iz);
 
-                if (plot_w1b[0]) plot_w1b[0] = common_plot("##126", "Body 1 ωx (body frame)", "ω1bx [rad/sec]", plot_w1b[0], sol_reduced.w1bx);
-                if (plot_w1b[1]) plot_w1b[1] = common_plot("##127", "Body 1 ωy (body frame)", "ω1by [rad/sec]", plot_w1b[1], sol_reduced.w1by);
-                if (plot_w1b[2]) plot_w1b[2] = common_plot("##128", "Body 1 ωz (body frame)", "ω1bz [rad/sec]", plot_w1b[2], sol_reduced.w1bz);
+                if (plot_w1b[0]) plot_w1b[0] = common_plot("##126", "Body 1 ωx (body frame)", "ω1bx [rad/sec]", plot_w1b[0], sol2D.w1bx);
+                if (plot_w1b[1]) plot_w1b[1] = common_plot("##127", "Body 1 ωy (body frame)", "ω1by [rad/sec]", plot_w1b[1], sol2D.w1by);
+                if (plot_w1b[2]) plot_w1b[2] = common_plot("##128", "Body 1 ωz (body frame)", "ω1bz [rad/sec]", plot_w1b[2], sol2D.w1bz);
 
-                if (plot_w2i[0]) plot_w2i[0] = common_plot("##129", "Body 2 ωx (inertial frame)", "ω2ix [rad/sec]", plot_w2i[0], sol_reduced.w2ix);
-                if (plot_w2i[1]) plot_w2i[1] = common_plot("##130", "Body 2 ωy (inertial frame)", "ω2iy [rad/sec]", plot_w2i[1], sol_reduced.w2iy);
-                if (plot_w2i[2]) plot_w2i[2] = common_plot("##131", "Body 2 ωz (inertial frame)", "ω2iz [rad/sec]", plot_w2i[2], sol_reduced.w2iz);
+                if (plot_w2i[0]) plot_w2i[0] = common_plot("##129", "Body 2 ωx (inertial frame)", "ω2ix [rad/sec]", plot_w2i[0], sol2D.w2ix);
+                if (plot_w2i[1]) plot_w2i[1] = common_plot("##130", "Body 2 ωy (inertial frame)", "ω2iy [rad/sec]", plot_w2i[1], sol2D.w2iy);
+                if (plot_w2i[2]) plot_w2i[2] = common_plot("##131", "Body 2 ωz (inertial frame)", "ω2iz [rad/sec]", plot_w2i[2], sol2D.w2iz);
 
-                if (plot_w2b[0]) plot_w2b[0] = common_plot("##132", "Body 2 ωx (body frame)", "ω2bx [rad/sec]", plot_w2b[0], sol_reduced.w2bx);
-                if (plot_w2b[1]) plot_w2b[1] = common_plot("##133", "Body 2 ωy (body frame)", "ω2by [rad/sec]", plot_w2b[1], sol_reduced.w2by);
-                if (plot_w2b[2]) plot_w2b[2] = common_plot("##134", "Body 2 ωz (body frame)", "ω2bz [rad/sec]", plot_w2b[2], sol_reduced.w2bz);
+                if (plot_w2b[0]) plot_w2b[0] = common_plot("##132", "Body 2 ωx (body frame)", "ω2bx [rad/sec]", plot_w2b[0], sol2D.w2bx);
+                if (plot_w2b[1]) plot_w2b[1] = common_plot("##133", "Body 2 ωy (body frame)", "ω2by [rad/sec]", plot_w2b[1], sol2D.w2by);
+                if (plot_w2b[2]) plot_w2b[2] = common_plot("##134", "Body 2 ωz (body frame)", "ω2bz [rad/sec]", plot_w2b[2], sol2D.w2bz);
 
-                if (plot_ener_mom_rel_err[0]) plot_ener_mom_rel_err[0] = common_plot("##135", "Energy relative error",             "| (E[i+1] - E[0])/E[0] |", plot_ener_mom_rel_err[0], sol_reduced.ener_rel_err);
-                if (plot_ener_mom_rel_err[1]) plot_ener_mom_rel_err[1] = common_plot("##136", "Momentum magnitude relative error", "| (L[i+1] - L[0])/L[0] |", plot_ener_mom_rel_err[1], sol_reduced.mom_rel_err);
+                if (plot_ener_mom_rel_err[0]) plot_ener_mom_rel_err[0] = common_plot("##135", "Energy relative error",             "| (E[i+1] - E[0])/E[0] |", plot_ener_mom_rel_err[0], sol2D.ener_rel_err);
+                if (plot_ener_mom_rel_err[1]) plot_ener_mom_rel_err[1] = common_plot("##136", "Momentum magnitude relative error", "| (L[i+1] - L[0])/L[0] |", plot_ener_mom_rel_err[1], sol2D.mom_rel_err);
 
             }
             ImGui::PopStyleColor();

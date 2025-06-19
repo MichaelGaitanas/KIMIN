@@ -128,7 +128,7 @@ private:
                         delete sol; //Clean up the solution if allocated. If not (nullptr), the 'delete' operator does nothing.
                         sol = new solution(*integr);
                         sol->construct(console);
-                        scene.copy_solution(*sol);
+                        scene.setup(*sol);
                     }
                     //In case abort, the previous solution (if present) exists in the memory.
                     delete integr; //The integrator lives only inside the current thread scope.
