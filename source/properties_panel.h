@@ -815,7 +815,7 @@ public:
             ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.7f,0.0f,0.0f, 1.0f)); //Red.
         else
             ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.0f,0.7f,0.0f, 1.0f)); //Green.
-        ImGui::ProgressBar(task_progress.load(), ImVec2(150.0f,20.0f));
+        ImGui::ProgressBar(task_progress.load(), ImVec2(150.0f,17.0f));
         ImGui::PopStyleColor();
         ImGui::Dummy(ImVec2(0.0f,700.0f)); //Some extra y-space in order to be able to scroll down along properties panel.
 

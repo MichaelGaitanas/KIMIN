@@ -41,7 +41,7 @@ private:
 
     float light_dist, light_lon, light_lat; //Directional light's position in spherical coordinates.
 
-    int shadow_tex_reso; //Shadow image resolution.
+    int depth_reso; //Shadow image resolution.
 
     glm::vec3 aster1_col, aster2_col; //Colors of the asteroids.
 
@@ -92,7 +92,7 @@ public:
                     light_dist(0.0f),
                     light_lon(0.0f),
                     light_lat(90.0f),
-                    shadow_tex_reso(2048),
+                    depth_reso(2048),
                     aster1_col(glm::vec3(1.0f,1.0f,1.0f)),
                     aster2_col(glm::vec3(1.0f,1.0f,1.0f)),
                     xaxis_col(glm::vec3(1.0f,0.0f,0.0f)),
@@ -118,7 +118,7 @@ public:
         glBindFramebuffer(GL_FRAMEBUFFER, fbo_depth);
         glGenTextures(1, &tex_depth);
         glBindTexture(GL_TEXTURE_2D, tex_depth);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, shadow_tex_reso, shadow_tex_reso, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr); //Shadow mapping is highly sensitive to depth precision, hence the 32 bits.
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, depth_reso, depth_reso, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr); //Shadow mapping is highly sensitive to depth precision, hence the 32 bits.
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);  
@@ -302,7 +302,7 @@ public:
         glm::vec3 pos2 = (float)cm2fac*glm::vec3(sol.x[current_frame],sol.y[current_frame],sol.z[current_frame]);
         
         glBindFramebuffer(GL_FRAMEBUFFER, fbo_depth);
-        glViewport(0,0, shadow_tex_reso,shadow_tex_reso);
+        glViewport(0,0, depth_reso,depth_reso);
         glClear(GL_DEPTH_BUFFER_BIT);
         glm::mat4 model = glm::mat4(1.0f);
         model = glm::translate(model, pos1);
@@ -588,12 +588,12 @@ public:
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
 
-        ImGui::Text("Shadow");
+        ImGui::Text("Shadow map");
 
         ImGui::Text("Reso");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        if (ImGui::SliderInt("[pix]##46", &shadow_tex_reso, 1024, 8192))
+        if (ImGui::SliderInt("[pix]##46", &depth_reso, 1024, 8192))
             setup_fbo_depth();
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
