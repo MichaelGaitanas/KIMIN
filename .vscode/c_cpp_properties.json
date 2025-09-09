@@ -1,0 +1,34 @@
+{
+  "version": 4,
+  "configurations": [
+    {
+      "name": "mingw64",
+      "compilerPath": "C:/msys64/mingw64/bin/g++.exe",
+      "intelliSenseMode": "gcc-x64",
+      "cStandard": "c11",
+      "cppStandard": "c++17",
+
+      "includePath": [
+        "${workspaceFolder}/**",
+        "C:/msys64/mingw64/include",
+        "C:/msys64/mingw64/include/GL",
+        "C:/msys64/mingw64/include/GLFW"
+      ],
+
+      "browse": {
+        "path": [
+          "${workspaceFolder}",
+          "C:/msys64/mingw64/include",
+          "C:/msys64/mingw64/include/GL",
+          "C:/msys64/mingw64/include/GLFW"
+        ]
+      },
+
+      "defines": [
+        // uncomment if applicable:
+        // "GLEW_STATIC",
+        // "GLFW_INCLUDE_NONE"
+      ]
+    }
+  ]
+}

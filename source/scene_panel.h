@@ -13,6 +13,7 @@
 #include"solution.h"
 #include"shader.h"
 #include"polyhedron.h"
+#include"orbmesh.h"
 
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
@@ -67,6 +68,8 @@ private:
     int win_width, win_height; //These are copies of the members 'width' and 'height' of the window class. Neede to compute the projection matrix.
 
     polyhedron xaxis1, yaxis1, zaxis1, xaxis2, yaxis2, zaxis2;
+
+    orbmesh orb1, orb2;
 
 public:
     scene_panel() : plot_cart({false,false,false,false, false,false,false,false}),
@@ -226,9 +229,13 @@ public:
 
     void render_3d_content()
     {
-        //Prepare the polyhedral meshes for rendering, by the running appropriate - GPU - tasks.
+        //Prepare the polyhedral meshes for rendering, by running the appropriate CPU/GPU tasks.
         sol.integr.properties.poly1.set_as_gl_mesh();
         sol.integr.properties.poly2.set_as_gl_mesh();
+        double cm1fac = -sol.integr.properties.M2/(sol.integr.properties.M1 + sol.integr.properties.M2);
+        double cm2fac =  sol.integr.properties.M1/(sol.integr.properties.M1 + sol.integr.properties.M2);
+        orb1.set_as_gl_mesh(sol, (float)cm1fac);
+        orb2.set_as_gl_mesh(sol, (float)cm2fac);
         if (reset_essential)
         {
             setup_fbo_depth();
@@ -269,6 +276,7 @@ public:
         //Instantiate the shaders.
         static shader shad_depth("../shaders/vertex/trans_dir_light_mvp.vert","../shaders/fragment/nothing.frag");
         static shader shad_dir_light_with_shadow("../shaders/vertex/trans_mvpn_shadow.vert","../shaders/fragment/dir_light_ad_shadow.frag");
+        static shader shad_orb("../shaders/vertex/trans_mvp.vert","../shaders/fragment/monochromatic.frag");
 
         //The user controls the light's direction from the gui, assuming spherical coords (longitude and latitude).
         //Here we convert them back to Cartesian coords and end them to the fragment shader.
@@ -299,9 +307,6 @@ public:
 
         shad_depth.use();
         shad_depth.set_mat4_uniform("light_pv", light_pv);
-
-        double cm1fac = -sol.integr.properties.M2/(sol.integr.properties.M1 + sol.integr.properties.M2);
-        double cm2fac =  sol.integr.properties.M1/(sol.integr.properties.M1 + sol.integr.properties.M2);
 
         glm::vec3 pos1 = (float)cm1fac*glm::vec3(sol.x[current_frame],sol.y[current_frame],sol.z[current_frame]);
         glm::vec3 pos2 = (float)cm2fac*glm::vec3(sol.x[current_frame],sol.y[current_frame],sol.z[current_frame]);
@@ -384,6 +389,16 @@ public:
             zaxis2.draw_gl_mesh();
         }
         glBindTexture(GL_TEXTURE_2D, 0);
+
+        model = glm::mat4(1.0f);
+        shad_orb.use();
+        shad_orb.set_mat4_uniform("projection", projection);
+        shad_orb.set_mat4_uniform("view", view);
+        shad_orb.set_mat4_uniform("model", model);
+        glm::vec3 orb_col = glm::vec3(0.0f,1.0f,0.0f);
+        shad_orb.set_vec3_uniform("mesh_col",orb_col);
+         if (render_orb2)
+            orb2.draw();
 
         if (play_pause_video && current_frame < total_frames - 1)
         {
@@ -612,13 +627,14 @@ public:
         ImGui::SetCursorPosX(60.0f);
         ImGui::Checkbox("##47", &render_aster1);
         ImGui::SameLine();
-        ImGui::SetCursorPosX(120.0f);
+        ImGui::SetCursorPosX(100.0f);
         ImGui::Text("Axes 1");
         ImGui::SameLine();
         ImGui::Checkbox("##48", &render_axes1);
         ImGui::SameLine();
-        ImGui::SetCursorPosX(180.0f);
+        ImGui::SetCursorPosX(190.0f);
         ImGui::Text("Orbit 1");
+        ImGui::SameLine();
         ImGui::Checkbox("##49", &render_orb1);
 
         ImGui::Text("Body 2");
@@ -626,13 +642,14 @@ public:
         ImGui::SetCursorPosX(60.0f);
         ImGui::Checkbox("##50", &render_aster2);
         ImGui::SameLine();
-        ImGui::SetCursorPosX(120.0f);
+        ImGui::SetCursorPosX(100.0f);
         ImGui::Text("Axes 2");
         ImGui::SameLine();
         ImGui::Checkbox("##51", &render_axes2);
         ImGui::SameLine();
-        ImGui::SetCursorPosX(180.0f);
+        ImGui::SetCursorPosX(190.0f);
         ImGui::Text("Orbit 2");
+        ImGui::SameLine();
         ImGui::Checkbox("##52", &render_orb2);
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));

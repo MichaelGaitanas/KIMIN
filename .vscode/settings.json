@@ -97,6 +97,9 @@
         "*.ipp": "cpp",
         "any": "cpp",
         "future": "cpp",
-        "xhash": "cpp"
+        "xhash": "cpp",
+        "shared_mutex": "cpp",
+        "stdfloat": "cpp",
+        "text_encoding": "cpp"
     }
 }
