@@ -53,6 +53,9 @@ private:
 
     bool render_axes1, render_axes2;
 
+    bool render_orb1, render_orb2;
+
+
     bool reset_essential;
 
     glm::mat4 light_projection;
@@ -103,7 +106,9 @@ public:
                     render_aster1(true),
                     render_aster2(true),
                     render_axes1(false),
-                    render_axes2(false)
+                    render_axes2(false),
+                    render_orb1(false),
+                    render_orb2(false)
     { }
 
     //Setup the depth framebuffer.
@@ -611,16 +616,24 @@ public:
         ImGui::Text("Axes 1");
         ImGui::SameLine();
         ImGui::Checkbox("##48", &render_axes1);
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(180.0f);
+        ImGui::Text("Orbit 1");
+        ImGui::Checkbox("##49", &render_orb1);
 
         ImGui::Text("Body 2");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##49", &render_aster2);
+        ImGui::Checkbox("##50", &render_aster2);
         ImGui::SameLine();
         ImGui::SetCursorPosX(120.0f);
         ImGui::Text("Axes 2");
         ImGui::SameLine();
-        ImGui::Checkbox("##50", &render_axes2);
+        ImGui::Checkbox("##51", &render_axes2);
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(180.0f);
+        ImGui::Text("Orbit 2");
+        ImGui::Checkbox("##52", &render_orb2);
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Separator();
