@@ -58,6 +58,8 @@ private:
 
     glm::vec3 orb1_col, orb2_col;
 
+    bool orb1_anim, orb2_anim;
+
     bool reset_essential;
 
     glm::mat4 light_projection;
@@ -114,7 +116,9 @@ public:
                     render_orb1(false),
                     render_orb2(false),
                     orb1_col(glm::vec3(0.0f,0.75f,0.0f)),
-                    orb2_col(glm::vec3(0.0f,0.75f,0.0f))
+                    orb2_col(glm::vec3(0.0f,0.75f,0.0f)),
+                    orb1_anim(false),
+                    orb2_anim(false)
     { }
 
     //Setup the depth framebuffer.
@@ -652,41 +656,58 @@ public:
 
         ImGui::Text("Orbits");
 
+        uint64_t visible_last1 = (orb1.draw_count == 0) ? 0 : static_cast<uint64_t>(orb1.draw_count - 1);
+
         ImGui::Text("Body 1");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
         ImGui::Checkbox("##51", &render_orb1);
         ImGui::SameLine();
         ImGui::SetCursorPosX(100.0f);
-        ImGui::SliderScalar("##52", ImGuiDataType_U64, &orb1.draw_count, 0, static_cast<uint64_t>(sol.t.size())-1, "%llu");
+        ImGui::SetNextItemWidth(100);
+        ImGui::SliderScalar("##52", ImGuiDataType_U64, &visible_last1, &zero_frame, &max_frame, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
-        ImGui::ColorEdit3("##53", glm::value_ptr(orb1_col), ImGuiColorEditFlags_NoInputs);
+        orb1_anim = common_onoff_button("Match##53", ImVec2(50.0f, 18.0f), orb1_anim);
+        orb1.draw_count = static_cast<size_t>(visible_last1 + 1);
         
+        uint64_t visible_last2 = (orb2.draw_count == 0) ? 0 : static_cast<uint64_t>(orb2.draw_count - 1);
+
         ImGui::Text("Body 2");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
         ImGui::Checkbox("##54", &render_orb2);
         ImGui::SameLine();
         ImGui::SetCursorPosX(100.0f);
-        ImGui::SliderScalar("##55", ImGuiDataType_U64, &orb2.draw_count, 0, static_cast<uint64_t>(sol.t.size())-1, "%llu");
+        ImGui::SetNextItemWidth(100);
+        ImGui::SliderScalar("##55", ImGuiDataType_U64, &visible_last2, &zero_frame, &max_frame, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
-        ImGui::ColorEdit3("##56", glm::value_ptr(orb2_col), ImGuiColorEditFlags_NoInputs);
+        orb2.draw_count = static_cast<size_t>(visible_last2 + 1);
+        orb2_anim = common_onoff_button("Match##56", ImVec2(50.0f, 18.0f), orb2_anim);
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
 
-        ImGui::Text("Body colors");
+        ImGui::Text("Colors");
 
         ImGui::Text("Body 1");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::ColorEdit3("##57", glm::value_ptr(aster1_col), ImGuiColorEditFlags_NoInputs);
+        ImGui::ColorEdit3("##55", glm::value_ptr(aster1_col), ImGuiColorEditFlags_NoInputs);
         ImGui::SameLine();
         ImGui::SetCursorPosX(120.0f);
         ImGui::Text("Body 2");
         ImGui::SameLine();
-        ImGui::ColorEdit3("##58", glm::value_ptr(aster2_col), ImGuiColorEditFlags_NoInputs);
+        ImGui::ColorEdit3("##56", glm::value_ptr(aster2_col), ImGuiColorEditFlags_NoInputs);
+        ImGui::Text("Orbit 1");
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(60.0f);
+        ImGui::ColorEdit3("##57", glm::value_ptr(orb1_col), ImGuiColorEditFlags_NoInputs);
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(120.0f);
+        ImGui::Text("Orbit 2");
+        ImGui::SameLine();
+        ImGui::ColorEdit3("##58", glm::value_ptr(orb2_col), ImGuiColorEditFlags_NoInputs);
 
         if (disabled)
             ImGui::EndDisabled();
