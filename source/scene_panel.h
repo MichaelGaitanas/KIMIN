@@ -56,6 +56,7 @@ private:
 
     bool render_orb1, render_orb2;
 
+    glm::vec3 orb1_col, orb2_col;
 
     bool reset_essential;
 
@@ -111,7 +112,9 @@ public:
                     render_axes1(false),
                     render_axes2(false),
                     render_orb1(false),
-                    render_orb2(false)
+                    render_orb2(false),
+                    orb1_col(glm::vec3(0.0f,0.75f,0.0f)),
+                    orb2_col(glm::vec3(0.0f,0.75f,0.0f))
     { }
 
     //Setup the depth framebuffer.
@@ -239,6 +242,8 @@ public:
         if (reset_essential)
         {
             setup_fbo_depth();
+            orb1.clear();
+            orb2.clear();
 
             xaxis1.load_obj_file("../obj/axes/xaxis.obj");
             xaxis1.set_scale(sol.integr.brillouin1);
@@ -395,9 +400,11 @@ public:
         shad_orb.set_mat4_uniform("projection", projection);
         shad_orb.set_mat4_uniform("view", view);
         shad_orb.set_mat4_uniform("model", model);
-        glm::vec3 orb_col = glm::vec3(0.0f,1.0f,0.0f);
-        shad_orb.set_vec3_uniform("mesh_col",orb_col);
-         if (render_orb2)
+        shad_orb.set_vec3_uniform("mesh_col",orb1_col);
+        if (render_orb1)
+            orb1.draw();
+        shad_orb.set_vec3_uniform("mesh_col",orb2_col);
+        if (render_orb2)
             orb2.draw();
 
         if (play_pause_video && current_frame < total_frames - 1)
@@ -631,26 +638,39 @@ public:
         ImGui::Text("Axes 1");
         ImGui::SameLine();
         ImGui::Checkbox("##48", &render_axes1);
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(190.0f);
-        ImGui::Text("Orbit 1");
-        ImGui::SameLine();
-        ImGui::Checkbox("##49", &render_orb1);
 
         ImGui::Text("Body 2");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##50", &render_aster2);
+        ImGui::Checkbox("##49", &render_aster2);
         ImGui::SameLine();
         ImGui::SetCursorPosX(100.0f);
         ImGui::Text("Axes 2");
         ImGui::SameLine();
-        ImGui::Checkbox("##51", &render_axes2);
+        ImGui::Checkbox("##50", &render_axes2);
+        ImGui::Dummy(ImVec2(0.0f,0.6f));
+
+        ImGui::Text("Orbits");
+
+        ImGui::Text("Body 1");
         ImGui::SameLine();
-        ImGui::SetCursorPosX(190.0f);
-        ImGui::Text("Orbit 2");
+        ImGui::SetCursorPosX(60.0f);
+        ImGui::Checkbox("##51", &render_orb1);
         ImGui::SameLine();
-        ImGui::Checkbox("##52", &render_orb2);
+        ImGui::SetCursorPosX(100.0f);
+        ImGui::SliderScalar("##52", ImGuiDataType_U64, &orb1.draw_count, 0, static_cast<uint64_t>(sol.t.size())-1, "%llu");
+        ImGui::SameLine();
+        ImGui::ColorEdit3("##53", glm::value_ptr(orb1_col), ImGuiColorEditFlags_NoInputs);
+        
+        ImGui::Text("Body 2");
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(60.0f);
+        ImGui::Checkbox("##54", &render_orb2);
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(100.0f);
+        ImGui::SliderScalar("##55", ImGuiDataType_U64, &orb2.draw_count, 0, static_cast<uint64_t>(sol.t.size())-1, "%llu");
+        ImGui::SameLine();
+        ImGui::ColorEdit3("##56", glm::value_ptr(orb2_col), ImGuiColorEditFlags_NoInputs);
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Separator();
@@ -661,12 +681,12 @@ public:
         ImGui::Text("Body 1");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::ColorEdit3("##51", glm::value_ptr(aster1_col), ImGuiColorEditFlags_NoInputs);
+        ImGui::ColorEdit3("##57", glm::value_ptr(aster1_col), ImGuiColorEditFlags_NoInputs);
         ImGui::SameLine();
         ImGui::SetCursorPosX(120.0f);
         ImGui::Text("Body 2");
         ImGui::SameLine();
-        ImGui::ColorEdit3("##52", glm::value_ptr(aster2_col), ImGuiColorEditFlags_NoInputs);
+        ImGui::ColorEdit3("##58", glm::value_ptr(aster2_col), ImGuiColorEditFlags_NoInputs);
 
         if (disabled)
             ImGui::EndDisabled();

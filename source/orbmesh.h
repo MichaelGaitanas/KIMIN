@@ -12,13 +12,16 @@ class orbmesh
 private:
     bool gl_ready;
     unsigned int vao, vbo;
-    size_t draw_count;
 
 public:
+    size_t draw_count;
+    float thickness; //This is basically the rasterized line width of the trajectory.
+
     orbmesh() : gl_ready(false),
                 vao(0),
                 vbo(0),
-                draw_count(0)
+                draw_count(0),
+                thickness(1.0f)
     { }
 
     void clear()
@@ -74,6 +77,7 @@ public:
     void draw()
     {
         glBindVertexArray(vao);
+        glLineWidth(thickness);
         glDrawArrays(GL_LINE_STRIP, 0, draw_count);
         glBindVertexArray(0);
     }
