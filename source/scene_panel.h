@@ -11,9 +11,7 @@
 #include"constant.h"
 #include"typedef.h"
 #include"solution.h"
-#include"shader.h"
-#include"polyhedron.h"
-#include"orbmesh.h"
+#include"renderer3D.h"
 
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
@@ -27,52 +25,19 @@ private:
     bvec plot_rpy1, plot_rpy2; //Buttons : [roll 1, pitch 1, yaw 1, libration 1] and [roll 2, pitch 2, yaw 2, libration 1].
     bvec plot_w1i, plot_w1b; //Buttons : [ω1ix, ω1iy, ω1iz] and [ω1bx, ω1by, ω1bz].
     bvec plot_w2i, plot_w2b; //Buttons : [ω2ix, ω2iy, ω2iz] and [ω2bx, ω2by, ω2bz].
-    bvec plot_ener_mom_rel_err; //Energy and angular momentum magnitude relative errors.
+    bvec plot_ener_mom_rel_err; //Buttons : [energy, momentum].
     
     bool render_scene, play_pause_video;
     uint64_t zero_frame, current_frame, total_frames;
 
-    int frame_rate;  //Frame updates per second.
-    float frame_accumulator;  //Accumulates fractional frames between updates.
-
-    float cam_dist, cam_lon, cam_lat; //Camera's position in spherical coordinates.
-    float cam_fov; //Camera's (vertical) field of view.
-    glm::vec3 cam_aim;
-    float cam_rmin, cam_rmax;
-
-    float light_dist, light_lon, light_lat; //Directional light's position in spherical coordinates.
-
-    int depth_reso; //Shadow image resolution.
-
-    glm::vec3 aster1_col, aster2_col; //Colors of the asteroids.
-
-    glm::vec3 xaxis_col, yaxis_col, zaxis_col;
-
-    float fc, fl;
-
-    bool render_aster1, render_aster2;
-
-    bool render_axes1, render_axes2;
-
-    bool render_orb1, render_orb2;
-
-    glm::vec3 orb1_col, orb2_col;
-
-    bool orb1_anim, orb2_anim;
+    int frame_rate; //Frame updates per second.
+    float frame_accumulator; //Accumulates fractional frames between updates.
 
     bool reset_essential;
 
-    glm::mat4 light_projection;
-
-    unsigned int fbo_depth, tex_depth; //IDs to hold the depth fbo and the depth texture (for the shadow map).
-
     solution sol, sol2D; //The 'sol' contains all the orbital data and is used to render the 3D scene. The 'sol2D' is used for the 2D plots.
 
-    int win_width, win_height; //These are copies of the members 'width' and 'height' of the window class. Neede to compute the projection matrix.
-
-    polyhedron xaxis1, yaxis1, zaxis1, xaxis2, yaxis2, zaxis2;
-
-    orbmesh orb1, orb2;
+    renderer3D rend3D;
 
 public:
     scene_panel() : plot_cart({false,false,false,false, false,false,false,false}),
@@ -91,83 +56,22 @@ public:
                     total_frames(0),
                     frame_rate(60),
                     frame_accumulator(0.0f),
-                    cam_dist(0.0f),
-                    cam_lon(40.0f),
-                    cam_lat(60.0f),
-                    cam_fov(60.0f),
-                    cam_aim(glm::vec3(0.0f)),
-                    cam_rmin(0.0f),
-                    cam_rmax(0.0f),
-                    light_dist(0.0f),
-                    light_lon(0.0f),
-                    light_lat(90.0f),
-                    depth_reso(2048),
-                    aster1_col(glm::vec3(1.0f,1.0f,1.0f)),
-                    aster2_col(glm::vec3(1.0f,1.0f,1.0f)),
-                    xaxis_col(glm::vec3(1.0f,0.0f,0.0f)),
-                    yaxis_col(glm::vec3(0.0f,1.0f,0.0f)),
-                    zaxis_col(glm::vec3(0.0f,0.0f,1.0f)),
-                    fc(1.1f),
-                    fl(1.2f),
-                    render_aster1(true),
-                    render_aster2(true),
-                    render_axes1(false),
-                    render_axes2(false),
-                    render_orb1(false),
-                    render_orb2(false),
-                    orb1_col(glm::vec3(0.0f,0.75f,0.0f)),
-                    orb2_col(glm::vec3(0.0f,0.75f,0.0f)),
-                    orb1_anim(false),
-                    orb2_anim(false)
+                    
     { }
 
-    //Setup the depth framebuffer.
-    void setup_fbo_depth()
-    {
-        if (fbo_depth)
-        {
-            glDeleteFramebuffers(1, &fbo_depth);
-            glDeleteTextures(1, &tex_depth);
-        }
-        glGenFramebuffers(1, &fbo_depth);
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo_depth);
-        glGenTextures(1, &tex_depth);
-        glBindTexture(GL_TEXTURE_2D, tex_depth);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, depth_reso, depth_reso, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr); //Shadow mapping is highly sensitive to depth precision, hence the 32 bits.
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);  
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-        constexpr float border_col[] = {1.0f, 1.0f, 1.0f, 1.0f}; //Pure white that is, coz white color corresponds to maximum depth.
-        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border_col);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, tex_depth, 0);
-        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-            fprintf(stderr, "Depth framebuffer is not completed!\n");
-        glDrawBuffer(GL_NONE);
-        glReadBuffer(GL_NONE);
-        glBindTexture(GL_TEXTURE_2D, 0);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    }
-
-    //Do essential (re)sets upon a new simulation termination.
+    //(Re)set essential stuff upon a new simulation termination.
     void setup(const solution &sol)
     {
-        //1) Obtain a whole solution copy for the 3D rendering. Then create a downsampled solution for the 2D plots.
+        //Obtain a whole solution copy for the 3D rendering. Then create a downsampled solution for the 2D plots.
         this->sol = sol;
         this->sol2D = sol.get_reduced_solution(PLOT_POINTS_2D);
 
-        //2) Compute essential directional light stuff.
-        float binary_dist_max = *std::max_element(sol.dist.begin(), sol.dist.end());
-        light_dist = fl*(sol.integr.brillouin1 + sol.integr.brillouin2 + binary_dist_max);
-        light_projection = glm::ortho(-fc*light_dist,fc*light_dist, -fc*light_dist,fc*light_dist, (fl-fc)*light_dist, 2.0f*fc*light_dist);
+        float binary_max_dist = *std::max_element(sol.dist.begin(), sol.dist.end());
+        rend3D.sunlight.reset(sol.integr.brillouin1 + sol.integr.brillouin2 + binary_max_dist);
+        rend3D.cam.reset(sol.integr.brillouin1 + sol.integr.brillouin2, binary_max_dist);
 
-        //3) Compute essential camera stuff.
-        cam_rmin = 1.1f*(sol.integr.brillouin1 + sol.integr.brillouin2);
-        cam_rmax = 40.0f*binary_dist_max;
-        cam_dist = cam_rmin + 0.1f*(cam_rmax - cam_rmin);
-
-        current_frame = 0; //(Re)set the frame slider to 0. Hence a new simulation video starts from the beginning.
-        play_pause_video = false; //Set the video state paused initially.
+        current_frame = 0; //Set the frame slider to 0.
+        play_pause_video = false; //Set the video at paused state ('true' means playing, 'false' means paused).
         reset_essential = true;
     }
 
@@ -232,213 +136,6 @@ public:
         }
         ImGui::End();
         return bool_plot_func;
-    }
-
-    void render_3d_content()
-    {
-        //Prepare the polyhedral meshes for rendering, by running the appropriate CPU/GPU tasks.
-        sol.integr.properties.poly1.set_as_gl_mesh();
-        sol.integr.properties.poly2.set_as_gl_mesh();
-        double cm1fac = -sol.integr.properties.M2/(sol.integr.properties.M1 + sol.integr.properties.M2);
-        double cm2fac =  sol.integr.properties.M1/(sol.integr.properties.M1 + sol.integr.properties.M2);
-        orb1.set_as_gl_mesh(sol, (float)cm1fac);
-        orb2.set_as_gl_mesh(sol, (float)cm2fac);
-        if (reset_essential)
-        {
-            setup_fbo_depth();
-            orb1.clear();
-            orb2.clear();
-
-            xaxis1.load_obj_file("../obj/axes/xaxis.obj");
-            xaxis1.set_scale(sol.integr.brillouin1);
-            xaxis1.gen_norms();
-            xaxis1.set_as_gl_mesh();
-
-            yaxis1.load_obj_file("../obj/axes/yaxis.obj");
-            yaxis1.set_scale(sol.integr.brillouin1);
-            yaxis1.gen_norms();
-            yaxis1.set_as_gl_mesh();
-
-            zaxis1.load_obj_file("../obj/axes/zaxis.obj");
-            zaxis1.set_scale(sol.integr.brillouin1);
-            zaxis1.gen_norms();
-            zaxis1.set_as_gl_mesh();
-            
-            xaxis2.load_obj_file("../obj/axes/xaxis.obj");
-            xaxis2.set_scale(sol.integr.brillouin2);
-            xaxis2.gen_norms();
-            xaxis2.set_as_gl_mesh();
-
-            yaxis2.load_obj_file("../obj/axes/yaxis.obj");
-            yaxis2.set_scale(sol.integr.brillouin2);
-            yaxis2.gen_norms();
-            yaxis2.set_as_gl_mesh();
-
-            zaxis2.load_obj_file("../obj/axes/zaxis.obj");
-            zaxis2.set_scale(sol.integr.brillouin2);
-            zaxis2.gen_norms();
-            zaxis2.set_as_gl_mesh();
-            
-            reset_essential = false;
-        }
-        
-        //Instantiate the shaders.
-        static shader shad_depth("../shaders/vertex/trans_dir_light_mvp.vert","../shaders/fragment/nothing.frag");
-        static shader shad_dir_light_with_shadow("../shaders/vertex/trans_mvpn_shadow.vert","../shaders/fragment/dir_light_ad_shadow.frag");
-        static shader shad_orb("../shaders/vertex/trans_mvp.vert","../shaders/fragment/monochromatic.frag");
-
-        //The user controls the light's direction from the gui, assuming spherical coords (longitude and latitude).
-        //Here we convert them back to Cartesian coords and end them to the fragment shader.
-        glm::vec3 light_dir = glm::normalize(glm::vec3(cos(glm::radians(light_lon))*sin(glm::radians(light_lat)),
-                                                       sin(glm::radians(light_lon))*sin(glm::radians(light_lat)),
-                                                       cos(glm::radians(light_lat))));
-        glm::vec3 light_up = (glm::abs(light_dir).z > 0.999f) ? glm::vec3(0.0f,1.0f,0.0f) : glm::vec3(0.0f,0.0f,1.0f);
-
-        glm::mat4 light_view = glm::lookAt(light_dist*light_dir, glm::vec3(0.0f), light_up);
-        glm::mat4 light_pv = light_projection*light_view; //Directional light's projection*view (total) matrix.
-
-        glm::mat4 projection = glm::infinitePerspective(glm::radians(cam_fov), win_width/(float)win_height, 0.1f);
-
-        glm::vec3 cam_pos = cam_dist*glm::vec3(cos(glm::radians(cam_lon))*sin(glm::radians(cam_lat)),
-                                               sin(glm::radians(cam_lon))*sin(glm::radians(cam_lat)),
-                                               cos(glm::radians(cam_lat)));
-        //The cam_up vector is equal to the minus unit latitude basis vector (expressed as a function of the cartesian unit vectors). cam_up = -hat(θ(hat(x),hat(y),hat(z))).
-        glm::vec3 cam_up = -glm::vec3(cos(glm::radians(cam_lat))*cos(glm::radians(cam_lon)),
-                                      cos(glm::radians(cam_lat))*sin(glm::radians(cam_lon)),
-                                     -sin(glm::radians(cam_lat)));
-        glm::mat4 view = glm::lookAt(cam_pos, cam_aim, cam_up);
-
-        shad_dir_light_with_shadow.use();
-        shad_dir_light_with_shadow.set_mat4_uniform("projection", projection);
-        shad_dir_light_with_shadow.set_mat4_uniform("view", view);
-        shad_dir_light_with_shadow.set_mat4_uniform("light_pv", light_pv);
-        shad_dir_light_with_shadow.set_vec3_uniform("light_dir", light_dir);
-
-        shad_depth.use();
-        shad_depth.set_mat4_uniform("light_pv", light_pv);
-
-        glm::vec3 pos1 = (float)cm1fac*glm::vec3(sol.x[current_frame],sol.y[current_frame],sol.z[current_frame]);
-        glm::vec3 pos2 = (float)cm2fac*glm::vec3(sol.x[current_frame],sol.y[current_frame],sol.z[current_frame]);
-        
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo_depth);
-        glViewport(0,0, depth_reso,depth_reso);
-        glClear(GL_DEPTH_BUFFER_BIT);
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, pos1);
-        model = glm::rotate(model, glm::radians((float)sol.yaw1[current_frame]),   glm::vec3(0.0f,0.0f,1.0f));
-        model = glm::rotate(model, glm::radians((float)sol.pitch1[current_frame]), glm::vec3(0.0f,1.0f,0.0f));
-        model = glm::rotate(model, glm::radians((float)sol.roll1[current_frame]),  glm::vec3(1.0f,0.0f,0.0f));
-        shad_depth.set_mat4_uniform("model", model);
-        if (render_aster1)
-            sol.integr.properties.poly1.draw_gl_mesh();
-        if (render_axes1)
-        {
-            xaxis1.draw_gl_mesh();
-            yaxis1.draw_gl_mesh();
-            zaxis1.draw_gl_mesh();
-        }
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, pos2);
-        model = glm::rotate(model, glm::radians((float)sol.yaw2[current_frame]),   glm::vec3(0.0f,0.0f,1.0f));
-        model = glm::rotate(model, glm::radians((float)sol.pitch2[current_frame]), glm::vec3(0.0f,1.0f,0.0f));
-        model = glm::rotate(model, glm::radians((float)sol.roll2[current_frame]),  glm::vec3(1.0f,0.0f,0.0f));
-        shad_depth.set_mat4_uniform("model", model);
-        if (render_aster2)
-            sol.integr.properties.poly2.draw_gl_mesh();
-        if (render_axes2)
-        {
-            xaxis2.draw_gl_mesh();
-            yaxis2.draw_gl_mesh();
-            zaxis2.draw_gl_mesh();
-        }
-        
-
-
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glViewport(0,0, win_width,win_height);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, tex_depth);
-        shad_dir_light_with_shadow.use();
-        shad_dir_light_with_shadow.set_int_uniform("sample_shadow", 0);
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, pos1);
-        model = glm::rotate(model, glm::radians((float)sol.yaw1[current_frame]),   glm::vec3(0.0f,0.0f,1.0f));
-        model = glm::rotate(model, glm::radians((float)sol.pitch1[current_frame]), glm::vec3(0.0f,1.0f,0.0f));
-        model = glm::rotate(model, glm::radians((float)sol.roll1[current_frame]),  glm::vec3(1.0f,0.0f,0.0f));
-        shad_dir_light_with_shadow.set_mat4_uniform("model", model);
-        shad_dir_light_with_shadow.set_vec3_uniform("mesh_col", aster1_col);
-        if (render_aster1)
-            sol.integr.properties.poly1.draw_gl_mesh();
-        if (render_axes1)
-        {
-            shad_dir_light_with_shadow.set_vec3_uniform("mesh_col", xaxis_col);
-            xaxis1.draw_gl_mesh();
-            shad_dir_light_with_shadow.set_vec3_uniform("mesh_col", yaxis_col);
-            yaxis1.draw_gl_mesh();
-            shad_dir_light_with_shadow.set_vec3_uniform("mesh_col", zaxis_col);
-            zaxis1.draw_gl_mesh();
-        }
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, pos2);
-        model = glm::rotate(model, glm::radians((float)sol.yaw2[current_frame]),   glm::vec3(0.0f,0.0f,1.0f));
-        model = glm::rotate(model, glm::radians((float)sol.pitch2[current_frame]), glm::vec3(0.0f,1.0f,0.0f));
-        model = glm::rotate(model, glm::radians((float)sol.roll2[current_frame]),  glm::vec3(1.0f,0.0f,0.0f));
-        shad_dir_light_with_shadow.set_mat4_uniform("model", model);
-        shad_dir_light_with_shadow.set_vec3_uniform("mesh_col", aster2_col);
-        if (render_aster2)
-            sol.integr.properties.poly2.draw_gl_mesh();
-        if (render_axes2)
-        {
-            shad_dir_light_with_shadow.set_vec3_uniform("mesh_col", xaxis_col);
-            xaxis2.draw_gl_mesh();
-            shad_dir_light_with_shadow.set_vec3_uniform("mesh_col", yaxis_col);
-            yaxis2.draw_gl_mesh();
-            shad_dir_light_with_shadow.set_vec3_uniform("mesh_col", zaxis_col);
-            zaxis2.draw_gl_mesh();
-        }
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        model = glm::mat4(1.0f);
-        shad_orb.use();
-        shad_orb.set_mat4_uniform("projection", projection);
-        shad_orb.set_mat4_uniform("view", view);
-        shad_orb.set_mat4_uniform("model", model);
-        shad_orb.set_vec3_uniform("mesh_col",orb1_col);
-        if (render_orb1)
-            orb1.draw();
-        shad_orb.set_vec3_uniform("mesh_col",orb2_col);
-        if (render_orb2)
-            orb2.draw();
-
-        if (play_pause_video && current_frame < total_frames - 1)
-        {
-            if (frame_rate == 0)
-            {
-                // The slider is set to 0 => paused
-                // Do not increment current_frame
-            }
-            else if (frame_rate < 60)
-            {
-                // We do a time-based step to achieve the chosen frame_rate
-                frame_accumulator += ImGui::GetIO().DeltaTime;
-                float step = 1.0f / static_cast<float>(frame_rate);
-
-                // In case dt is large (e.g., if the user drags the window), 
-                // use a while() so we don’t “miss” increments:
-                while (frame_accumulator >= step && current_frame < total_frames - 1)
-                {
-                    current_frame++;
-                    frame_accumulator -= step;
-                }
-            }
-            else
-            {
-                // frame_rate == 60 => let it play as fast as the machine can handle
-                // i.e. increment every time we render:
-                current_frame++;
-            }
-        }
     }
     
     //Draw the 2D plot buttons in the gui.
@@ -582,22 +279,22 @@ public:
         ImGui::Text("Dist");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[km]##40", &cam_dist, cam_rmin, cam_rmax, "%.3f", ImGuiSliderFlags_Logarithmic);
+        ImGui::SliderFloat("[km]##40", &rend3D.cam.dist, rend3D.cam.min_dist, rend3D.cam.max_dist, "%.3f", ImGuiSliderFlags_Logarithmic);
 
         ImGui::Text("Lon");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##41", &cam_lon, 0.0f, 360.0f);
+        ImGui::SliderFloat("[deg]##41", &rend3D.cam.lon, 0.0f, 360.0f);
 
         ImGui::Text("Lat");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##42", &cam_lat, 0.0f, 180.0f);
+        ImGui::SliderFloat("[deg]##42", &rend3D.cam.lat, 0.0f, 180.0f);
 
         ImGui::Text("FoV");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##43", &cam_fov, 1.0f, 179.0f, "%.0f");
+        ImGui::SliderFloat("[deg]##43", &rend3D.cam.fov, 1.0f, 179.0f, "%.0f");
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Separator();
@@ -608,12 +305,12 @@ public:
         ImGui::Text("Lon");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##44", &light_lon, 0.0f, 360.0f);
+        ImGui::SliderFloat("[deg]##44", &rend3D.sunlight.lon, 0.0f, 360.0f);
 
         ImGui::Text("Lat");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##45", &light_lat, 0.0f, 180.0f);
+        ImGui::SliderFloat("[deg]##45", &rend3D.sunlight.lat, 0.0f, 180.0f);
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Separator();
@@ -624,8 +321,8 @@ public:
         ImGui::Text("Reso");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        if (ImGui::SliderInt("[pix]##46", &depth_reso, 1024, 8192))
-            setup_fbo_depth();
+        if (ImGui::SliderInt("[pix]##46", &rend3D.depth_reso, 1024, 8192))
+            rend3D.setup_depth_fbo();
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Separator();
@@ -667,8 +364,10 @@ public:
         ImGui::SetNextItemWidth(100);
         ImGui::SliderScalar("##52", ImGuiDataType_U64, &visible_last1, &zero_frame, &max_frame, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
-        orb1_anim = common_onoff_button("Match##53", ImVec2(50.0f, 18.0f), orb1_anim);
-        orb1.draw_count = static_cast<size_t>(visible_last1 + 1);
+        orb1_match = common_onoff_button("Match##53", ImVec2(50.0f, 18.0f), orb1_match);
+        orb1.draw_count = static_cast<size_t>(visible_last1+1);
+        if (orb1_match)
+            orb1.draw_count = current_frame;
         
         uint64_t visible_last2 = (orb2.draw_count == 0) ? 0 : static_cast<uint64_t>(orb2.draw_count - 1);
 
@@ -681,8 +380,10 @@ public:
         ImGui::SetNextItemWidth(100);
         ImGui::SliderScalar("##55", ImGuiDataType_U64, &visible_last2, &zero_frame, &max_frame, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
-        orb2.draw_count = static_cast<size_t>(visible_last2 + 1);
-        orb2_anim = common_onoff_button("Match##56", ImVec2(50.0f, 18.0f), orb2_anim);
+        orb2.draw_count = static_cast<size_t>(visible_last2+1);
+        orb2_match = common_onoff_button("Match##56", ImVec2(50.0f, 18.0f), orb2_match);
+        if (orb2_match)
+            orb2.draw_count = current_frame;
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Separator();
@@ -693,34 +394,64 @@ public:
         ImGui::Text("Body 1");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::ColorEdit3("##55", glm::value_ptr(aster1_col), ImGuiColorEditFlags_NoInputs);
+        ImGui::ColorEdit3("##57", glm::value_ptr(aster1_col), ImGuiColorEditFlags_NoInputs);
         ImGui::SameLine();
         ImGui::SetCursorPosX(120.0f);
         ImGui::Text("Body 2");
         ImGui::SameLine();
-        ImGui::ColorEdit3("##56", glm::value_ptr(aster2_col), ImGuiColorEditFlags_NoInputs);
+        ImGui::ColorEdit3("##58", glm::value_ptr(aster2_col), ImGuiColorEditFlags_NoInputs);
         ImGui::Text("Orbit 1");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::ColorEdit3("##57", glm::value_ptr(orb1_col), ImGuiColorEditFlags_NoInputs);
+        ImGui::ColorEdit3("##59", glm::value_ptr(orb1_col), ImGuiColorEditFlags_NoInputs);
         ImGui::SameLine();
         ImGui::SetCursorPosX(120.0f);
         ImGui::Text("Orbit 2");
         ImGui::SameLine();
-        ImGui::ColorEdit3("##58", glm::value_ptr(orb2_col), ImGuiColorEditFlags_NoInputs);
+        ImGui::ColorEdit3("##60", glm::value_ptr(orb2_col), ImGuiColorEditFlags_NoInputs);
 
         if (disabled)
             ImGui::EndDisabled();
 
         if (!disabled)
-            render_3d_content();
+            render_3D_content();
+
+
+        if (play_pause_video && current_frame < total_frames - 1)
+        {
+            if (frame_rate == 0)
+            {
+                // The slider is set to 0 => paused
+                // Do not increment current_frame
+            }
+            else if (frame_rate < 60)
+            {
+                // We do a time-based step to achieve the chosen frame_rate
+                frame_accumulator += ImGui::GetIO().DeltaTime;
+                float step = 1.0f / static_cast<float>(frame_rate);
+
+                // In case dt is large (e.g., if the user drags the window), 
+                // use a while() so we don’t “miss” increments:
+                while (frame_accumulator >= step && current_frame < total_frames - 1)
+                {
+                    current_frame++;
+                    frame_accumulator -= step;
+                }
+            }
+            else
+            {
+                // frame_rate == 60 => let it play as fast as the machine can handle
+                // i.e. increment every time we render:
+                current_frame++;
+            }
+        }
     }
     
     void render(const int win_width, const int win_height)
     {
-        //Copy the window's dimensions to the members.
-        this->win_width = win_width;
-        this->win_height = win_height;
+        //Copy the window's dimensions to the renderer3D's members. We need them at each frame to compute the camera's projection matrix.
+        rend3D.win_width = win_width;
+        rend3D.win_height = win_height;
 
         ImGui::SetNextWindowPos( ImVec2(0.85f*ImGui::GetIO().DisplaySize.x, 21.0f), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(0.15f*ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y - 21.0f), ImGuiCond_FirstUseEver);

@@ -221,7 +221,8 @@ public:
                 return false;
             i += count;
         }
-    return true;
+        
+        return true;
     }
 
     bool is_kimin_valid_obj(const char *path)
@@ -257,7 +258,7 @@ public:
     //Build and upload to the GPU an interleaved (position + normal) buffer for flat shading (Lambert).
     void set_as_gl_mesh()
     {
-        //If the polyhedron is already ready for drawing, exit the function.
+        //If the polyhedron is already ready for rendering, exit the function.
         if (gl_ready) return;
 
         //Safety check. You never know...
@@ -306,8 +307,8 @@ public:
         gl_ready = true;
     }
 
-    //Draw the polyhedral mesh.
-    void draw_gl_mesh()
+    //Render the polyhedral mesh.
+    void render()
     {
         glBindVertexArray(gl_vao);
         glDrawArrays(GL_TRIANGLES, 0, (GLsizei)gl_vertex_count);

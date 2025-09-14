@@ -13,12 +13,12 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include"stb_image.h"
 
-bool render_logo_for_seconds(const char *img_path, const float seconds)
+bool render_logo(const char *img_path, const float seconds)
 {
     //Initialize glfw along with some settings.
     if(!glfwInit())
     {
-        fprintf(stderr, "[Warning] : render_logo_for_seconds() failed to initialize glfw. Returned false.\n");
+        fprintf(stderr, "[Warning] : render_logo() failed to initialize glfw. Returned false.\n");
         glfwTerminate();
         return false;
     }
@@ -38,7 +38,7 @@ bool render_logo_for_seconds(const char *img_path, const float seconds)
     GLFWwindow *window = glfwCreateWindow(win_width, win_height, "Logo", nullptr, nullptr);
     if (window == nullptr)
     {
-        fprintf(stderr, "[Warning] : 'render_logo_for_seconds()' failed to create glfw window. Returned false.\n");
+        fprintf(stderr, "[Warning] : 'render_logo()' failed to create glfw window. Returned false.\n");
         glfwTerminate();
         return false;
     }
@@ -48,7 +48,7 @@ bool render_logo_for_seconds(const char *img_path, const float seconds)
     glewExperimental = GL_TRUE;
     if (glewInit() != GLEW_OK)
     {
-        fprintf(stderr, "[Warning] : 'render_logo_for_seconds()' failed to initialize glew. Returned false.\n");
+        fprintf(stderr, "[Warning] : 'render_logo()' failed to initialize glew. Returned false.\n");
         glfwDestroyWindow(window);
         glfwTerminate();
         return false;
@@ -61,7 +61,7 @@ bool render_logo_for_seconds(const char *img_path, const float seconds)
     unsigned char *img_data = stbi_load(img_path, &img_width, &img_height, &img_channels, 0);
     if (!img_data)
     {
-        fprintf(stderr, "[Warning] : 'render_logo_for_seconds()' failed to load stbi image. Returned false.\n");
+        fprintf(stderr, "[Warning] : 'render_logo()' failed to load stbi image. Returned false.\n");
         glfwDestroyWindow(window);
         glfwTerminate();
         return false;
@@ -78,7 +78,7 @@ bool render_logo_for_seconds(const char *img_path, const float seconds)
         format = GL_RGBA; //4-channel image, i.e. RGB + alpha channel for opacity (e.g. png).
     else
     {
-        fprintf(stderr, "[Warning] : 'render_logo_for_seconds()' loaded unknown image format. Returned false.\n");
+        fprintf(stderr, "[Warning] : 'render_logo()' loaded unknown image format. Returned false.\n");
         glfwDestroyWindow(window);
         glfwTerminate();
         return false;
@@ -132,9 +132,9 @@ bool render_logo_for_seconds(const char *img_path, const float seconds)
     glBindVertexArray(0);
 
     //Create the shader used to calculate each pixel's color for the quad mesh to render.
-    shader shad_logo("../shaders/vertex/texture.vert","../shaders/fragment/texture.frag");
-    shad_logo.use();
-    shad_logo.set_int_uniform("sample_tex", 0);
+    shader sh_logo("../shaders/vertex/texture.vert","../shaders/fragment/texture.frag");
+    sh_logo.use();
+    sh_logo.set_int_uniform("sample_tex", 0);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, tex);
     glBindVertexArray(vao);

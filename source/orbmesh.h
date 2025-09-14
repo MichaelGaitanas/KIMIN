@@ -21,7 +21,7 @@ public:
                 vao(0),
                 vbo(0),
                 draw_count(0),
-                thickness(1.0f)
+                thickness(0.2f)
     { }
 
     void clear()
@@ -74,7 +74,7 @@ public:
     }
 
     //Draw the orbital mesh in the form of line strip.
-    void draw()
+    void render()
     {
         glBindVertexArray(vao);
         glLineWidth(thickness);
