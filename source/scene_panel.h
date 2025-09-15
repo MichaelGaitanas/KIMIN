@@ -1,4 +1,4 @@
-/* This class handles the rendering logic of the right panel (scene) in the gui AND the actual 3D scene. */
+/* This class handles the rendering logic of the right panel (scene) in the gui. */
 
 #ifndef SCENE_PANEL_H
 #define SCENE_PANEL_H
@@ -27,16 +27,12 @@ private:
     bvec plot_w2i, plot_w2b; //Buttons : [ω2ix, ω2iy, ω2iz] and [ω2bx, ω2by, ω2bz].
     bvec plot_ener_mom_rel_err; //Buttons : [energy, momentum].
     
-    bool render_scene, play_pause_video;
+    bool render_scene, play_pause_video, reset_essential;
     uint64_t zero_frame, current_frame, total_frames;
-
     int frame_rate; //Frame updates per second.
     float frame_accumulator; //Accumulates fractional frames between updates.
 
-    bool reset_essential;
-
-    solution sol, sol2D; //The 'sol' contains all the orbital data and is used to render the 3D scene. The 'sol2D' is used for the 2D plots.
-
+    solution sol, sol2D; //The 'sol' contains all the orbital data and is used to render the 3D scene. The 'sol2D' is downsampled and used for the 2D plots.
     renderer3D rend3D;
 
 public:
@@ -51,20 +47,22 @@ public:
                     plot_ener_mom_rel_err({false,false}),
                     render_scene(false),
                     play_pause_video(false),
+                    reset_essential(false),
                     zero_frame(0),
                     current_frame(0),
                     total_frames(0),
                     frame_rate(60),
-                    frame_accumulator(0.0f),
-                    
+                    frame_accumulator(0.0f)
     { }
 
-    //(Re)set essential stuff upon a new simulation termination.
+    //Reset essential stuff upon a new simulation termination.
+    //Note : apart from the following resets, we still have to reset OpenGL stuff. But this function is gonna run in
+    //the 'task_thread' thread defined in gui.h, NOT in the main thread. So any gl* commands that handle
+    //graphics resets must not happen here!
     void setup(const solution &sol)
     {
-        //Obtain a whole solution copy for the 3D rendering. Then create a downsampled solution for the 2D plots.
-        this->sol = sol;
-        this->sol2D = sol.get_reduced_solution(PLOT_POINTS_2D);
+        this->sol = sol; //Obtain a solution copy for the 3D rendering.
+        this->sol2D = sol.get_reduced_solution(PLOT_POINTS_2D); //Then create a downsampled solution for the 2D plots.
 
         float binary_max_dist = *std::max_element(sol.dist.begin(), sol.dist.end());
         rend3D.sunlight.reset(sol.integr.brillouin1 + sol.integr.brillouin2 + binary_max_dist);
@@ -86,7 +84,7 @@ public:
         if (ImGui::Button(label, dimensions))
             state = !state;
         ImGui::PopStyleColor();
-        
+
         return state;
     }
 
@@ -101,7 +99,6 @@ public:
         
         //Round to nearest integer.
         size_t i_reduced = (size_t)std::floor(val + 0.5);
-    
         //Clamp to [0, reduced_size - 1].
         if (i_reduced >= reduced_size)
             i_reduced = reduced_size - 1;
@@ -238,7 +235,6 @@ public:
         uint64_t max_frame = (total_frames > 0) ? total_frames - 1 : 0;
 
         bool disabled = !render_scene;
-
         if (disabled)
         {
             ImGui::BeginDisabled();
@@ -333,57 +329,57 @@ public:
         ImGui::Text("Body 1");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##47", &render_aster1);
+        ImGui::Checkbox("##47", &rend3D.render_aster1);
         ImGui::SameLine();
         ImGui::SetCursorPosX(100.0f);
         ImGui::Text("Axes 1");
         ImGui::SameLine();
-        ImGui::Checkbox("##48", &render_axes1);
+        ImGui::Checkbox("##48", &rend3D.render_axes1);
 
         ImGui::Text("Body 2");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##49", &render_aster2);
+        ImGui::Checkbox("##49", &rend3D.render_aster2);
         ImGui::SameLine();
         ImGui::SetCursorPosX(100.0f);
         ImGui::Text("Axes 2");
         ImGui::SameLine();
-        ImGui::Checkbox("##50", &render_axes2);
+        ImGui::Checkbox("##50", &rend3D.render_axes2);
         ImGui::Dummy(ImVec2(0.0f,0.6f));
 
         ImGui::Text("Orbits");
 
-        uint64_t visible_last1 = (orb1.draw_count == 0) ? 0 : static_cast<uint64_t>(orb1.draw_count - 1);
+        uint64_t visible_last1 = (rend3D.orb1.draw_count == 0) ? 0 : static_cast<uint64_t>(rend3D.orb1.draw_count - 1);
 
         ImGui::Text("Body 1");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##51", &render_orb1);
+        ImGui::Checkbox("##51", &rend3D.render_orb1);
         ImGui::SameLine();
         ImGui::SetCursorPosX(100.0f);
         ImGui::SetNextItemWidth(100);
         ImGui::SliderScalar("##52", ImGuiDataType_U64, &visible_last1, &zero_frame, &max_frame, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
-        orb1_match = common_onoff_button("Match##53", ImVec2(50.0f, 18.0f), orb1_match);
-        orb1.draw_count = static_cast<size_t>(visible_last1+1);
-        if (orb1_match)
-            orb1.draw_count = current_frame;
+        rend3D.orb1_match = common_onoff_button("Match##53", ImVec2(50.0f, 18.0f), rend3D.orb1_match);
+        rend3D.orb1.draw_count = static_cast<size_t>(visible_last1+1);
+        if (rend3D.orb1_match)
+            rend3D.orb1.draw_count = current_frame;
         
-        uint64_t visible_last2 = (orb2.draw_count == 0) ? 0 : static_cast<uint64_t>(orb2.draw_count - 1);
+        uint64_t visible_last2 = (rend3D.orb2.draw_count == 0) ? 0 : static_cast<uint64_t>(rend3D.orb2.draw_count - 1);
 
         ImGui::Text("Body 2");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##54", &render_orb2);
+        ImGui::Checkbox("##54", &rend3D.render_orb2);
         ImGui::SameLine();
         ImGui::SetCursorPosX(100.0f);
         ImGui::SetNextItemWidth(100);
         ImGui::SliderScalar("##55", ImGuiDataType_U64, &visible_last2, &zero_frame, &max_frame, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
-        orb2.draw_count = static_cast<size_t>(visible_last2+1);
-        orb2_match = common_onoff_button("Match##56", ImVec2(50.0f, 18.0f), orb2_match);
-        if (orb2_match)
-            orb2.draw_count = current_frame;
+        rend3D.orb2.draw_count = static_cast<size_t>(visible_last2+1);
+        rend3D.orb2_match = common_onoff_button("Match##56", ImVec2(50.0f, 18.0f), rend3D.orb2_match);
+        if (rend3D.orb2_match)
+            rend3D.orb2.draw_count = current_frame;
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Separator();
@@ -394,54 +390,49 @@ public:
         ImGui::Text("Body 1");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::ColorEdit3("##57", glm::value_ptr(aster1_col), ImGuiColorEditFlags_NoInputs);
+        ImGui::ColorEdit3("##57", glm::value_ptr(rend3D.aster1_col), ImGuiColorEditFlags_NoInputs);
         ImGui::SameLine();
         ImGui::SetCursorPosX(120.0f);
         ImGui::Text("Body 2");
         ImGui::SameLine();
-        ImGui::ColorEdit3("##58", glm::value_ptr(aster2_col), ImGuiColorEditFlags_NoInputs);
+        ImGui::ColorEdit3("##58", glm::value_ptr(rend3D.aster2_col), ImGuiColorEditFlags_NoInputs);
         ImGui::Text("Orbit 1");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::ColorEdit3("##59", glm::value_ptr(orb1_col), ImGuiColorEditFlags_NoInputs);
+        ImGui::ColorEdit3("##59", glm::value_ptr(rend3D.orb1_col), ImGuiColorEditFlags_NoInputs);
         ImGui::SameLine();
         ImGui::SetCursorPosX(120.0f);
         ImGui::Text("Orbit 2");
         ImGui::SameLine();
-        ImGui::ColorEdit3("##60", glm::value_ptr(orb2_col), ImGuiColorEditFlags_NoInputs);
+        ImGui::ColorEdit3("##60", glm::value_ptr(rend3D.orb2_col), ImGuiColorEditFlags_NoInputs);
 
         if (disabled)
             ImGui::EndDisabled();
 
         if (!disabled)
-            render_3D_content();
+            rend3D.render_3D_content(sol, current_frame, reset_essential);
 
 
         if (play_pause_video && current_frame < total_frames - 1)
         {
-            if (frame_rate == 0)
+            if (frame_rate == 0) //The slider is set to 0 => paused. Do not increment current_frame.
             {
-                // The slider is set to 0 => paused
-                // Do not increment current_frame
-            }
-            else if (frame_rate < 60)
-            {
-                // We do a time-based step to achieve the chosen frame_rate
-                frame_accumulator += ImGui::GetIO().DeltaTime;
-                float step = 1.0f / static_cast<float>(frame_rate);
 
-                // In case dt is large (e.g., if the user drags the window), 
-                // use a while() so we don’t “miss” increments:
+            }
+            else if (frame_rate < 60) //We do a time-based step to achieve the chosen frame_rate.
+            {
+                frame_accumulator += ImGui::GetIO().DeltaTime;
+                float step = 1.0f/static_cast<float>(frame_rate);
+
+                //In case dt is large (e.g. if the user drags the window), use a while() so we don't 'miss' increments.
                 while (frame_accumulator >= step && current_frame < total_frames - 1)
                 {
                     current_frame++;
                     frame_accumulator -= step;
                 }
             }
-            else
+            else //frame_rate == 60 => let it play as fast as the machine can handle, i.e. increment every time we render.
             {
-                // frame_rate == 60 => let it play as fast as the machine can handle
-                // i.e. increment every time we render:
                 current_frame++;
             }
         }

@@ -7,10 +7,11 @@
 #include"constant.h"
 #include"typedef.h"
 #include"shader.h"
-#include"orbmesh.h"
 #include"polyhedron.h"
-#include"camera.h"
 #include"light.h"
+#include"camera.h"
+#include"orbmesh.h"
+#include"solution.h"
 
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
@@ -20,18 +21,14 @@ class renderer3D
 {
 private:
     unsigned int depth_fbo, depth_tex; //IDs to hold the depth fbo and the depth texture for the shadow map.
-    glm::vec3 xaxis_col, yaxis_col, zaxis_col;
-
+    glm::vec3 xaxis_col, yaxis_col, zaxis_col; //Colors of the body-frame axes (red, green, blue, respectively).
     polyhedron xaxis1, yaxis1, zaxis1, xaxis2, yaxis2, zaxis2;
 
+public:
     camera cam;
     light sunlight;
-
     orbmesh orb1, orb2;
-
-    glm::mat4 model;
-
-public:
+    
     int depth_reso; //Shadow image resolution.
     glm::vec3 aster1_col, aster2_col;
     glm::vec3 orb1_col, orb2_col;
@@ -43,25 +40,40 @@ public:
 
     int win_width, win_height;
     
-    renderer3D() : depth_reso(2048),
-                   aster1_col(glm::vec3(1.0f,1.0f,1.0f)),
-                   aster2_col(glm::vec3(1.0f,1.0f,1.0f)),
+    renderer3D() : depth_fbo(0),
+                   depth_tex(0),
                    xaxis_col(glm::vec3(1.0f,0.0f,0.0f)),
                    yaxis_col(glm::vec3(0.0f,1.0f,0.0f)),
                    zaxis_col(glm::vec3(0.0f,0.0f,1.0f)),
-                   orb1_col(glm::vec3(0.0f,0.75f,0.0f)),
-                   orb2_col(glm::vec3(0.0f,0.75f,0.0f)),
+                   xaxis1(),
+                   yaxis1(),
+                   zaxis1(),
+                   xaxis2(),
+                   yaxis2(),
+                   zaxis2(),
+                   cam(),
+                   sunlight(),
+                   orb1(),
+                   orb2(),
+                   depth_reso(2048),
+                   aster1_col(glm::vec3(1.0f)),
+                   aster2_col(glm::vec3(1.0f)),
+                   orb1_col(glm::vec3(0.0f,0.75f,0.75f)),
+                   orb2_col(glm::vec3(0.0f,0.75f,0.75f)),
                    render_aster1(true),
-                    render_aster2(true),
-                    render_axes1(false),
-                    render_axes2(false),
-                    render_orb1(false),
-                    render_orb2(false),
-                    orb1_match(false),
-                    orb2_match(false)
+                   render_aster2(true),
+                   render_axes1(false),
+                   render_axes2(false),
+                   render_orb1(false),
+                   render_orb2(false),
+                   orb1_match(false),
+                   orb2_match(false),
+                   win_width(1),
+                   win_height(1)
     { }
 
-    //(Re)set the depth framebuffer, later used for shadowing.
+    //(Re)set the depth framebuffer, used for shadowing. This is one of the resets that we can't run in scene_panel::setup() due to the separate thread issue.
+    //So this will run only once in the render_3D_content() after the simulation is terminated or it will run every time the user changes the depth_reso from the gui exposed slider.
     void setup_depth_fbo()
     {
         if (depth_fbo)
@@ -89,15 +101,18 @@ public:
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    void render_3D_content(const int i)
+    //This function handles the rendering logic of the 3D content.
+    void render_3D_content(solution &sol, const size_t i, bool &reset_essential)
     {
+        ////////////////////////// Setup part - happens only once, after a simuation terminates, in order to prepare the meshes. //////////////////////////
+
         //Prepare the polyhedral meshes for rendering, by running the appropriate CPU/GPU tasks.
-        sol.integr.properties.poly1.set_as_gl_mesh();
-        sol.integr.properties.poly2.set_as_gl_mesh();
         double cm1fac = -sol.integr.properties.M2/(sol.integr.properties.M1 + sol.integr.properties.M2);
         double cm2fac =  sol.integr.properties.M1/(sol.integr.properties.M1 + sol.integr.properties.M2);
         glm::vec3 pos1 = (float)cm1fac*glm::vec3(sol.x[i],sol.y[i],sol.z[i]);
         glm::vec3 pos2 = (float)cm2fac*glm::vec3(sol.x[i],sol.y[i],sol.z[i]);
+        sol.integr.properties.poly1.set_as_gl_mesh();
+        sol.integr.properties.poly2.set_as_gl_mesh();
         orb1.set_as_gl_mesh(sol, (float)cm1fac);
         orb2.set_as_gl_mesh(sol, (float)cm2fac);
         if (reset_essential)
@@ -138,6 +153,8 @@ public:
             
             reset_essential = false;
         }
+
+        ////////////////////////// End of setup part. //////////////////////////
         
         static shader sh_depth("../shaders/vertex/trans_dir_light_mvp.vert","../shaders/fragment/nothing.frag");
         static shader sh_dlight_shadow("../shaders/vertex/trans_mvpn_shadow.vert","../shaders/fragment/dir_light_ad_shadow.frag");
@@ -157,18 +174,16 @@ public:
         glBindFramebuffer(GL_FRAMEBUFFER, depth_fbo);
         glViewport(0,0, depth_reso,depth_reso);
         glClear(GL_DEPTH_BUFFER_BIT);
-        model = glm::translate(glm::mat4(1.0f), pos1)*
-                glm::rotate(glm::mat4(1.0f), glm::radians((float)sol.yaw1[i]),   glm::vec3(0.0f,0.0f,1.0f))*
-                glm::rotate(glm::mat4(1.0f), glm::radians((float)sol.pitch1[i]), glm::vec3(0.0f,1.0f,0.0f))*
-                glm::rotate(glm::mat4(1.0f), glm::radians((float)sol.roll1[i]),  glm::vec3(1.0f,0.0f,0.0f));
+        glm::mat4 model = glm::translate(glm::mat4(1.0f), pos1)*
+                          glm::rotate(glm::mat4(1.0f), glm::radians((float)sol.yaw1[i]),   glm::vec3(0.0f,0.0f,1.0f))*
+                          glm::rotate(glm::mat4(1.0f), glm::radians((float)sol.pitch1[i]), glm::vec3(0.0f,1.0f,0.0f))*
+                          glm::rotate(glm::mat4(1.0f), glm::radians((float)sol.roll1[i]),  glm::vec3(1.0f,0.0f,0.0f));
         sh_depth.set_mat4_uniform("model", model);
         if (render_aster1)
             sol.integr.properties.poly1.render();
         if (render_axes1)
         {
-            xaxis1.render();
-            yaxis1.render();
-            zaxis1.render();
+            xaxis1.render(); yaxis1.render(); zaxis1.render();
         }
         model = glm::translate(glm::mat4(1.0f), pos2)*
                 glm::rotate(glm::mat4(1.0f), glm::radians((float)sol.yaw2[i]),   glm::vec3(0.0f,0.0f,1.0f))*
@@ -179,9 +194,7 @@ public:
             sol.integr.properties.poly2.render();
         if (render_axes2)
         {
-            xaxis2.render();
-            yaxis2.render();
-            zaxis2.render();
+            xaxis2.render(); yaxis2.render(); zaxis2.render();
         }
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -201,12 +214,9 @@ public:
             sol.integr.properties.poly1.render();
         if (render_axes1)
         {
-            sh_dlight_shadow.set_vec3_uniform("mesh_col", xaxis_col);
-            xaxis1.render();
-            sh_dlight_shadow.set_vec3_uniform("mesh_col", yaxis_col);
-            yaxis1.render();
-            sh_dlight_shadow.set_vec3_uniform("mesh_col", zaxis_col);
-            zaxis1.render();
+            sh_dlight_shadow.set_vec3_uniform("mesh_col", xaxis_col); xaxis1.render();
+            sh_dlight_shadow.set_vec3_uniform("mesh_col", yaxis_col); yaxis1.render();
+            sh_dlight_shadow.set_vec3_uniform("mesh_col", zaxis_col); zaxis1.render();
         }
         model = glm::translate(glm::mat4(1.0f), pos2)*
                 glm::rotate(glm::mat4(1.0f), glm::radians((float)sol.yaw2[i]),   glm::vec3(0.0f,0.0f,1.0f))*
@@ -218,12 +228,9 @@ public:
             sol.integr.properties.poly2.render();
         if (render_axes2)
         {
-            sh_dlight_shadow.set_vec3_uniform("mesh_col", xaxis_col);
-            xaxis2.render();
-            sh_dlight_shadow.set_vec3_uniform("mesh_col", yaxis_col);
-            yaxis2.render();
-            sh_dlight_shadow.set_vec3_uniform("mesh_col", zaxis_col);
-            zaxis2.render();
+            sh_dlight_shadow.set_vec3_uniform("mesh_col", xaxis_col); xaxis2.render();
+            sh_dlight_shadow.set_vec3_uniform("mesh_col", yaxis_col); yaxis2.render();
+            sh_dlight_shadow.set_vec3_uniform("mesh_col", zaxis_col); zaxis2.render();
         }
         glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -234,12 +241,11 @@ public:
         sh_orb.set_mat4_uniform("model", model);
         sh_orb.set_vec3_uniform("mesh_col", orb1_col);
         if (render_orb1)
-            orb1.draw();
+            orb1.render();
         sh_orb.set_vec3_uniform("mesh_col", orb2_col);
         if (render_orb2)
-            orb2.draw();
+            orb2.render();
     }
-
 };
 
 #endif

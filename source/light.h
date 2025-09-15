@@ -43,11 +43,10 @@ public:
     {
         //The user controls the light's direction from the gui, assuming spherical coords (longitude and latitude).
         //So here we convert it back to Cartesian coords and send the vector to the fragment shader to evaluate the shadow.
+        //Note : glm::normalize() is not necessary, but let it be deffensive for now.
         dir = glm::normalize(glm::vec3(cos(glm::radians(lon))*sin(glm::radians(lat)),
                                        sin(glm::radians(lon))*sin(glm::radians(lat)),
                                        cos(glm::radians(lat))));
-
-        /* CHECK glm::normalize() */
 
         up = (glm::abs(dir).z > 0.999f) ? glm::vec3(0.0f,1.0f,0.0f) : glm::vec3(0.0f,0.0f,1.0f);
         view = glm::lookAt(dist*dir, glm::vec3(0.0f), up);
