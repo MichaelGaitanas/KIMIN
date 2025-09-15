@@ -37,6 +37,8 @@ public:
     dvec sma, ecc, inc, raan, argper, manom;
     dvec ener_rel_err, mom_rel_err;
 
+    double com1_coeff, com2_coeff; //These, when multiplied with relative position {x,y,z} transform to the absolutes {x1,y1,z1}, {x2,y2,z2}.
+
     solution() { } //This is needed in the scene_panel class.
 
     solution(const integrator &integr) //And this is needed in the gui class (deep copy of the integrator).
@@ -67,6 +69,9 @@ public:
         w2ix.resize(N);  w2iy.resize(N);   w2iz.resize(N);
         sma.resize(N);   ecc.resize(N); inc.resize(N);  raan.resize(N); argper.resize(N); manom.resize(N);
         ener_rel_err.resize(N); mom_rel_err.resize(N);
+
+        com1_coeff = -integr.properties.M2/(integr.properties.M1 + integr.properties.M2);
+        com2_coeff =  integr.properties.M1/(integr.properties.M1 + integr.properties.M2);
 
         double energy_at_t0, momentum_at_t0;
         for (size_t i = 0; i < N; ++i)

@@ -106,14 +106,14 @@ public:
     }
     
     //Pass to the currently active shader 1 vector of 3 floats.
-    void set_vec3_uniform(const std::string &name, glm::vec3 &v)
+    void set_vec3_uniform(const std::string &name, const glm::vec3 &v)
     {
         unsigned location = glGetUniformLocation(ID, name.c_str());
         glUniform3fv(location, 1, &v[0]);
     }
     
     //Pass to the currently active shader 1 4x4 float matrix.
-    void set_mat4_uniform(const std::string &name, glm::mat4 &m)
+    void set_mat4_uniform(const std::string &name, const glm::mat4 &m)
     {
         unsigned location = glGetUniformLocation(ID, name.c_str());
         glUniformMatrix4fv(location, 1, GL_FALSE, &m[0][0]);
