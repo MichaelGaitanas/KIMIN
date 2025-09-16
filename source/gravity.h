@@ -337,6 +337,159 @@ double pot_masc(const dvec3 &r, const double M, const dmatnx3 &masc, const dmat3
     return -G*M*sum/(double)N;
 }
 
+//Potential of a rigid body upon a test particle at position r, assuming integral expansion of order 2 approximation.
+double pot_integrals_ord2(const dvec3 &r, const double M, const dtens &J, const dmat3 &A)
+{
+    double Ix = J[0][2][0] + J[0][0][2];
+    double Iy = J[2][0][0] + J[0][0][2];
+    double Iz = J[2][0][0] + J[0][2][0];
+
+    dvec3 a1 = {A[0][0], A[1][0], A[2][0]};
+    dvec3 a2 = {A[0][1], A[1][1], A[2][1]};
+    dvec3 a3 = {A[0][2], A[1][2], A[2][2]};
+
+    double d = sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2]);
+    dvec3 ru = r/d;
+
+    double l = dot(ru,a1);
+    double m = dot(ru,a2);
+    double n = dot(ru,a3);
+
+    //Order 0 (Keplerian).
+    double V0 = -G*M/d;
+
+    //Order 1.
+    //V1 = 0 (by default)
+
+    //Order 2.
+    double V2 = -(G/(2*d*d*d))*( (1 - 3*l*l)*Ix + (1 - 3*m*m)*Iy + (1 - 3*n*n)*Iz );
+
+    //V
+    return V0 + V2;
+}
+
+//Potential of a rigid body upon a test particle at position r, assuming integral expansion of order 3 approximation.
+double pot_integrals_ord3(const dvec3 &r, const double M, const dtens &J, const dmat3 &A)
+{
+    double Jxxx = J[3][0][0];
+    double Jyyy = J[0][3][0];
+    double Jzzz = J[0][0][3];
+    double Jxxy = J[2][1][0];
+    double Jxyy = J[1][2][0];
+    double Jxxz = J[2][0][1];
+    double Jxzz = J[1][0][2];
+    double Jyyz = J[0][2][1];
+    double Jyzz = J[0][1][2];
+    double Jxyz = J[1][1][1];
+    
+    double Ix = J[0][2][0] + J[0][0][2];
+    double Iy = J[2][0][0] + J[0][0][2];
+    double Iz = J[2][0][0] + J[0][2][0];
+
+    dvec3 a1 = {A[0][0], A[1][0], A[2][0]};
+    dvec3 a2 = {A[0][1], A[1][1], A[2][1]};
+    dvec3 a3 = {A[0][2], A[1][2], A[2][2]};
+
+    double d = sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2]);
+    dvec3 ru = r/d;
+
+    double l = dot(ru,a1);
+    double m = dot(ru,a2);
+    double n = dot(ru,a3);
+
+    //Order 0 (Keplerian).
+    double V0 = -G*M/d;
+
+    //Order 1.
+    //V1 = 0 (by default)
+
+    //Order 2.
+    double V2 = -(G/(2*d*d*d))*( (1 - 3*l*l)*Ix + (1 - 3*m*m)*Iy + (1 - 3*n*n)*Iz );
+
+    //Order 3.
+    double V3 = -(G/(2*d*d*d*d))*(    l*(5*l*l - 3)*Jxxx +   m*(5*m*m - 3)*Jyyy +   n*(5*n*n - 3)*Jzzz +
+                                    3*m*(5*l*l - 1)*Jxxy + 3*l*(5*m*m - 1)*Jxyy + 3*n*(5*l*l - 1)*Jxxz +
+                                    3*l*(5*n*n - 1)*Jxzz + 3*n*(5*m*m - 1)*Jyyz + 3*m*(5*n*n - 1)*Jyzz +
+                                   30*l*m*n*Jxyz );
+
+    //V
+    return V0 + V2 + V3;
+}
+
+//Potential of a rigid body upon a test particle at position r, assuming integral expansion of order 4 approximation.
+double pot_integrals_ord4(const dvec3 &r, const double M, const dtens &J, const dmat3 &A)
+{
+    double Jxxx = J[3][0][0];
+    double Jyyy = J[0][3][0];
+    double Jzzz = J[0][0][3];
+    double Jxxy = J[2][1][0];
+    double Jxyy = J[1][2][0];
+    double Jxxz = J[2][0][1];
+    double Jxzz = J[1][0][2];
+    double Jyyz = J[0][2][1];
+    double Jyzz = J[0][1][2];
+    double Jxyz = J[1][1][1];
+
+    double Jxxxx = J[4][0][0];
+    double Jyyyy = J[0][4][0];
+    double Jzzzz = J[0][0][4];
+    double Jxxxy = J[3][1][0];
+    double Jxyyy = J[1][3][0];
+    double Jxxxz = J[3][0][1];
+    double Jxzzz = J[1][0][3];
+    double Jyyyz = J[0][3][1];
+    double Jyzzz = J[0][1][3];
+    double Jxxyy = J[2][2][0];
+    double Jxxzz = J[2][0][2];
+    double Jyyzz = J[0][2][2];
+    double Jxxyz = J[2][1][1];
+    double Jxyyz = J[1][2][1];
+    double Jxyzz = J[1][1][2];
+    
+    double Ix = J[0][2][0] + J[0][0][2];
+    double Iy = J[2][0][0] + J[0][0][2];
+    double Iz = J[2][0][0] + J[0][2][0];
+
+    dvec3 a1 = {A[0][0], A[1][0], A[2][0]};
+    dvec3 a2 = {A[0][1], A[1][1], A[2][1]};
+    dvec3 a3 = {A[0][2], A[1][2], A[2][2]};
+
+    double d = sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2]);
+    dvec3 ru = r/d;
+
+    double l = dot(ru,a1);
+    double m = dot(ru,a2);
+    double n = dot(ru,a3);
+
+    //Order 0 (Keplerian).
+    double V0 = -G*M/d;
+
+    //Order 1.
+    //V1 = 0 (by default)
+
+    //Order 2.
+    double V2 = -(G/(2*d*d*d))*( (1 - 3*l*l)*Ix + (1 - 3*m*m)*Iy + (1 - 3*n*n)*Iz );
+
+    //Order 3.
+    double V3 = -(G/(2*d*d*d*d))*(    l*(5*l*l - 3)*Jxxx +   m*(5*m*m - 3)*Jyyy +   n*(5*n*n - 3)*Jzzz +
+                                    3*m*(5*l*l - 1)*Jxxy + 3*l*(5*m*m - 1)*Jxyy + 3*n*(5*l*l - 1)*Jxxz +
+                                    3*l*(5*n*n - 1)*Jxzz + 3*n*(5*m*m - 1)*Jyyz + 3*m*(5*n*n - 1)*Jyzz +
+                                   30*l*m*n*Jxyz );
+
+    //Order 4.
+    double V4 = -(G/(8*d*d*d*d*d))*( (35*pow(l,4) - 30*l*l + 3)*Jxxxx + (35*pow(m,4) - 30*m*m + 3)*Jyyyy + (35*pow(n,4) - 30*n*n + 3)*Jzzzz +
+                                      20*l*m*(7*l*l - 3)*Jxxxy + 20*l*m*(7*m*m - 3)*Jxyyy +
+                                      20*l*n*(7*l*l - 3)*Jxxxz + 20*l*n*(7*n*n - 3)*Jxzzz +
+                                      20*m*n*(7*m*m - 3)*Jyyyz + 20*m*n*(7*n*n - 3)*Jyzzz +
+                                      6*(35*l*l*m*m - 5*(l*l + m*m) + 1)*Jxxyy +
+                                      6*(35*l*l*n*n - 5*(l*l + n*n) + 1)*Jxxzz +
+                                      6*(35*m*m*n*n - 5*(m*m + n*n) + 1)*Jyyzz +
+                                      60*m*n*(7*l*l - 1)*Jxxyz + 60*l*n*(7*m*m - 1)*Jxyyz + 60*l*m*(7*n*n - 1)*Jxyzz );
+
+    //V
+    return V0 + V2 + V3 + V4;
+}
+
 /* End of gravity potential expressions. */
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
