@@ -64,6 +64,10 @@ public:
     double beta1, beta2; //Momentum enhancement factors β1 and β2 (due to the assumed recoiled ejecta).
     double t1_impact, t2_impact; //Times of impacts.
 
+    bool spacecraft_checkbox; //'Spacecraft orbiter' checkbox state.
+    bool spacecraft_clicked_ok; //'OK' button in the spacecraft orbiter window.
+    dvec3 r_sp, v_sp; //Spacecraft's 'x', 'y', 'z' and 'vx', 'vy', 'vz'.
+
     bool run_pressed; //Whether or not the 'Run' button has been pressed.
     bool abort_pressed; //Whether or not the 'Abort' button has been pressed.
 
@@ -114,6 +118,10 @@ public:
                          beta2(0.0),
                          t1_impact(0.0),
                          t2_impact(0.0),
+                         spacecraft_checkbox(false),
+                         spacecraft_clicked_ok(false),
+                         r_sp(dvec3{0.0,0.0,0.0}),
+                         v_sp(dvec3{0.0,0.0,0.0}),
                          run_pressed(false),
                          abort_pressed(false),
                          poly1(),
@@ -783,6 +791,40 @@ public:
 
             ImGui::End();
         }
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
+
+        //Spacecraft orbiter logic.
+        ImGui::Text("Spacecraft orbiter");
+        if (ImGui::Checkbox("Assume spacecraft orbiter", &spacecraft_checkbox) && spacecraft_checkbox)
+            spacecraft_clicked_ok = false;
+        if (spacecraft_checkbox && !spacecraft_clicked_ok)
+        {
+            ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, 0.0f), ImGuiCond_FirstUseEver); 
+            ImGui::SetNextWindowSize(ImVec2(0.15f*ImGui::GetIO().DisplaySize.x, 0.4f*ImGui::GetIO().DisplaySize.y), ImGuiCond_FirstUseEver); 
+            ImGui::Begin("Orbiter's initial state", &spacecraft_checkbox);
+
+            ImGui::Text("Position (inertial)");
+            double_field("xs ", 100.0f, 40.0f, id, "[km]", r_sp[0]);
+            double_field("ys ", 100.0f, 40.0f, id, "[km]", r_sp[1]);
+            double_field("zs ", 100.0f, 40.0f, id, "[km]", r_sp[2]);
+            ImGui::Dummy(ImVec2(0.0f,15.0f));
+            ImGui::Text("Velocity (inertial)");
+            double_field("υxs ", 100.0f, 40.0f, id, "[km/sec]", v_sp[0]);
+            double_field("υys ", 100.0f, 40.0f, id, "[km/sec]", v_sp[1]);
+            double_field("υzs ", 100.0f, 40.0f, id, "[km/sec]", v_sp[2]);
+            ImGui::Dummy(ImVec2(0.0f,15.0f));
+
+            ImGui::Dummy(ImVec2(0.0f,15.0f));
+
+            //Final "OK" button. This must be pressed, otherwise the spacecraft's i.c. will not be taken into account.
+            if (ImGui::Button("OK", ImVec2(50.0f,30.0f)))
+                spacecraft_clicked_ok = true;
+
+            ImGui::End();
+        }
+
         ImGui::Dummy(ImVec2(0.0f,7.5f));
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f,7.5f));

@@ -91,8 +91,6 @@ private:
         dvec4 dq2 = quat_rhs(q2,w2b);
         dvec3 dw2b = euler_rhs(w2b,I2,tau2b);
 
-        //Now here are the actual RHS :
-
         //Relative position RHS (x,y,z).
         dstate[0] = v[0];
         dstate[1] = v[1];
@@ -270,7 +268,7 @@ public:
         boost::numeric::odeint::bulirsch_stoer<boost::array<double, 20>> bstoer_adaptive(properties.target_error, properties.target_error);
         boost::numeric::odeint::adams_bashforth_moulton<5, boost::array<double, 20>> abm_const;
 
-        if (properties.integration_method_var_choice == 3) //Seed ABM only if requested.
+        if (properties.integration_method_var_choice == 3) //Seed Adams-Bashforth-Moulton only if this is the requested method of integration.
             abm_const.initialize(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, dt);
         
         char formatted_text[128];

@@ -641,8 +641,8 @@ dvec6 mut_force_tau1i_integrals_ord3(const dvec3 &r, const double M1, const dten
                                       3*l2*(5*n2*n2 - 1)*J2xzz + 3*n2*(5*m2*m2 - 1)*J2yyz + 3*m2*(5*n2*n2 - 1)*J2yzz +
                                      30*l2*m2*n2*J2xyz );
 
-    double dV_dd  = -V0/d - 3*V2/d - 4*V3/d;
-    dvec3 dd_dr  = r/d;
+    double dV_dd = -V0/d - 3*V2/d - 4*V3/d;
+    dvec3 dd_dr = r/d;
 
     double dV_dl1 = 3*G*I1x*M2*l1/(d*d*d) - G*M2*(10*J1xxx*l1*l1 + J1xxx*(5*l1*l1 - 3) + 30*J1xxy*l1*m1 + 30*J1xxz*l1*n1 + 3*J1xyy*(5*m1*m1 - 1) + 30*J1xyz*m1*n1 + 3*J1xzz*(5*n1*n1 - 1))/(2*d*d*d*d);
     double dV_dm1 = 3*G*I1y*M2*m1/(d*d*d) - G*M2*(3*J1xxy*(5*l1*l1 - 1) + 30*J1xyy*l1*m1 + 30*J1xyz*l1*n1 + 10*J1yyy*m1*m1 + J1yyy*(5*m1*m1 - 3) + 30*J1yyz*m1*n1 + 3*J1yzz*(5*n1*n1 - 1))/(2*d*d*d*d);
@@ -959,6 +959,186 @@ dvec3 force_masc(const dvec3 &r, const double M, const dmatnx3 &masc, const dmat
 
     }
     return -G*M*dvec3{sumfx,sumfy,sumfz}/(double)N;
+}
+
+//Force of a rigid body upon a test particle at position r, assuming inertial integral expansion of order 2 approximation.
+dvec3 force_integrals_ord2(const dvec3 &r, const double M, const dtens &J, const dmat3 &A)
+{
+    double Ix = J[0][2][0] + J[0][0][2];
+    double Iy = J[2][0][0] + J[0][0][2];
+    double Iz = J[2][0][0] + J[0][2][0];
+
+    dvec3 a1 = {A[0][0], A[1][0], A[2][0]};
+    dvec3 a2 = {A[0][1], A[1][1], A[2][1]};
+    dvec3 a3 = {A[0][2], A[1][2], A[2][2]};
+
+    double d = sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2]);
+    dvec3 ru = r/d;
+
+    double l = dot(ru,a1);
+    double m = dot(ru,a2);
+    double n = dot(ru,a3);
+
+    //Order 0 (Keplerian).
+    double V0 = -G*M/d;
+
+    //Order 1.
+    //V1 = 0 (by default)
+
+    //Order 2.
+    double V2 = -(G/(2*d*d*d))*( (1 - 3*l*l)*Ix + (1 - 3*m*m)*Iy + (1 - 3*n*n)*Iz );
+
+    double dV_dd = -V0/d - 3*V2/d;
+    dvec3 dd_dr = ru;
+
+    double dV_dl = 3*G*Ix*l/(d*d*d);
+    double dV_dm = 3*G*Iy*m/(d*d*d);
+    double dV_dn = 3*G*Iz*n/(d*d*d);
+    dvec3 dl_dr = (a1*d - r*l)/(d*d);
+    dvec3 dm_dr = (a2*d - r*m)/(d*d);
+    dvec3 dn_dr = (a3*d - r*n)/(d*d);
+
+    return -(dV_dd*dd_dr + dV_dl*dl_dr + dV_dm*dm_dr + dV_dn*dn_dr);
+}
+
+//Force of a rigid body upon a test particle at position r, assuming inertial integral expansion of order 3 approximation.
+dvec3 force_integrals_ord3(const dvec3 &r, const double M, const dtens &J, const dmat3 &A)
+{
+    double Jxxx = J[3][0][0];
+    double Jyyy = J[0][3][0];
+    double Jzzz = J[0][0][3];
+    double Jxxy = J[2][1][0];
+    double Jxyy = J[1][2][0];
+    double Jxxz = J[2][0][1];
+    double Jxzz = J[1][0][2];
+    double Jyyz = J[0][2][1];
+    double Jyzz = J[0][1][2];
+    double Jxyz = J[1][1][1];
+    
+    double Ix = J[0][2][0] + J[0][0][2];
+    double Iy = J[2][0][0] + J[0][0][2];
+    double Iz = J[2][0][0] + J[0][2][0];
+
+    dvec3 a1 = {A[0][0], A[1][0], A[2][0]};
+    dvec3 a2 = {A[0][1], A[1][1], A[2][1]};
+    dvec3 a3 = {A[0][2], A[1][2], A[2][2]};
+
+    double d = sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2]);
+    dvec3 ru = r/d;
+
+    double l = dot(ru,a1);
+    double m = dot(ru,a2);
+    double n = dot(ru,a3);
+
+    //Order 0 (Keplerian).
+    double V0 = -G*M/d;
+
+    //Order 1.
+    //V1 = 0 (by default)
+
+    //Order 2.
+    double V2 = -(G/(2*d*d*d))*( (1 - 3*l*l)*Ix + (1 - 3*m*m)*Iy + (1 - 3*n*n)*Iz );
+
+    //Order 3.
+    double V3 = -(G/(2*d*d*d*d))*(    l*(5*l*l - 3)*Jxxx +   m*(5*m*m - 3)*Jyyy +   n*(5*n*n - 3)*Jzzz +
+                                    3*m*(5*l*l - 1)*Jxxy + 3*l*(5*m*m - 1)*Jxyy + 3*n*(5*l*l - 1)*Jxxz +
+                                    3*l*(5*n*n - 1)*Jxzz + 3*n*(5*m*m - 1)*Jyyz + 3*m*(5*n*n - 1)*Jyzz +
+                                   30*l*m*n*Jxyz );
+
+    double dV_dd = -V0/d - 3*V2/d - 4*V3/d;
+    dvec3 dd_dr = ru;
+
+    double dV_dl = 3*G*Ix*l/(d*d*d) - G*(10*Jxxx*l*l + Jxxx*(5*l*l - 3) + 30*Jxxy*l*m + 30*Jxxz*l*n + 3*Jxyy*(5*m*m - 1) + 30*Jxyz*m*n + 3*Jxzz*(5*n*n - 1))/(2*d*d*d*d);
+    double dV_dm = 3*G*Iy*m/(d*d*d) - G*(3*Jxxy*(5*l*l - 1) + 30*Jxyy*l*m + 30*Jxyz*l*n + 10*Jyyy*m*m + Jyyy*(5*m*m - 3) + 30*Jyyz*m*n + 3*Jyzz*(5*n*n - 1))/(2*d*d*d*d);
+    double dV_dn = 3*G*Iz*n/(d*d*d) - G*(3*Jxxz*(5*l*l - 1) + 30*Jxyz*l*m + 30*Jxzz*l*n + 3*Jyyz*(5*m*m - 1) + 30*Jyzz*m*n + 10*Jzzz*n*n + Jzzz*(5*n*n - 3))/(2*d*d*d*d);
+    dvec3 dl_dr = (a1*d - r*l)/(d*d);
+    dvec3 dm_dr = (a2*d - r*m)/(d*d);
+    dvec3 dn_dr = (a3*d - r*n)/(d*d);
+
+    return -(dV_dd*dd_dr + dV_dl*dl_dr + dV_dm*dm_dr + dV_dn*dn_dr);
+}
+
+//Force of a rigid body upon a test particle at position r, assuming integral expansion of order 4 approximation.
+dvec3 force_integrals_ord4(const dvec3 &r, const double M, const dtens &J, const dmat3 &A)
+{
+    double Jxxx = J[3][0][0];
+    double Jyyy = J[0][3][0];
+    double Jzzz = J[0][0][3];
+    double Jxxy = J[2][1][0];
+    double Jxyy = J[1][2][0];
+    double Jxxz = J[2][0][1];
+    double Jxzz = J[1][0][2];
+    double Jyyz = J[0][2][1];
+    double Jyzz = J[0][1][2];
+    double Jxyz = J[1][1][1];
+
+    double Jxxxx = J[4][0][0];
+    double Jyyyy = J[0][4][0];
+    double Jzzzz = J[0][0][4];
+    double Jxxxy = J[3][1][0];
+    double Jxyyy = J[1][3][0];
+    double Jxxxz = J[3][0][1];
+    double Jxzzz = J[1][0][3];
+    double Jyyyz = J[0][3][1];
+    double Jyzzz = J[0][1][3];
+    double Jxxyy = J[2][2][0];
+    double Jxxzz = J[2][0][2];
+    double Jyyzz = J[0][2][2];
+    double Jxxyz = J[2][1][1];
+    double Jxyyz = J[1][2][1];
+    double Jxyzz = J[1][1][2];
+    
+    double Ix = J[0][2][0] + J[0][0][2];
+    double Iy = J[2][0][0] + J[0][0][2];
+    double Iz = J[2][0][0] + J[0][2][0];
+
+    dvec3 a1 = {A[0][0], A[1][0], A[2][0]};
+    dvec3 a2 = {A[0][1], A[1][1], A[2][1]};
+    dvec3 a3 = {A[0][2], A[1][2], A[2][2]};
+
+    double d = sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2]);
+    dvec3 ru = r/d;
+
+    double l = dot(ru,a1);
+    double m = dot(ru,a2);
+    double n = dot(ru,a3);
+
+    //Order 0 (Keplerian).
+    double V0 = -G*M/d;
+
+    //Order 1.
+    //V1 = 0 (by default)
+
+    //Order 2.
+    double V2 = -(G/(2*d*d*d))*( (1 - 3*l*l)*Ix + (1 - 3*m*m)*Iy + (1 - 3*n*n)*Iz );
+
+    //Order 3.
+    double V3 = -(G/(2*d*d*d*d))*(    l*(5*l*l - 3)*Jxxx +   m*(5*m*m - 3)*Jyyy +   n*(5*n*n - 3)*Jzzz +
+                                    3*m*(5*l*l - 1)*Jxxy + 3*l*(5*m*m - 1)*Jxyy + 3*n*(5*l*l - 1)*Jxxz +
+                                    3*l*(5*n*n - 1)*Jxzz + 3*n*(5*m*m - 1)*Jyyz + 3*m*(5*n*n - 1)*Jyzz +
+                                   30*l*m*n*Jxyz );
+
+    //Order 4.
+    double V4 = -(G/(8*d*d*d*d*d))*( (35*pow(l,4) - 30*l*l + 3)*Jxxxx + (35*pow(m,4) - 30*m*m + 3)*Jyyyy + (35*pow(n,4) - 30*n*n + 3)*Jzzzz +
+                                      20*l*m*(7*l*l - 3)*Jxxxy + 20*l*m*(7*m*m - 3)*Jxyyy +
+                                      20*l*n*(7*l*l - 3)*Jxxxz + 20*l*n*(7*n*n - 3)*Jxzzz +
+                                      20*m*n*(7*m*m - 3)*Jyyyz + 20*m*n*(7*n*n - 3)*Jyzzz +
+                                      6*(35*l*l*m*m - 5*(l*l + m*m) + 1)*Jxxyy +
+                                      6*(35*l*l*n*n - 5*(l*l + n*n) + 1)*Jxxzz +
+                                      6*(35*m*m*n*n - 5*(m*m + n*n) + 1)*Jyyzz +
+                                      60*m*n*(7*l*l - 1)*Jxxyz + 60*l*n*(7*m*m - 1)*Jxyyz + 60*l*m*(7*n*n - 1)*Jxyzz );
+
+    double dV_dd = -V0/d - 3*V2/d - 4*V3/d - 5*V4/d;
+    dvec3 dd_dr = ru;
+
+    double dV_dl = 3*G*Ix*l/(d*d*d) - G*(10*Jxxx*l*l + Jxxx*(5*l*l - 3) + 30*Jxxy*l*m + 30*Jxxz*l*n + 3*Jxyy*(5*m*m - 1) + 30*Jxyz*m*n + 3*Jxzz*(5*n*n - 1))/(2*d*d*d*d) - G*(Jxxxx*(140*l*l*l - 60*l) + 280*Jxxxy*l*l*m + 20*Jxxxy*m*(7*l*l - 3) + 280*Jxxxz*l*l*n + 20*Jxxxz*n*(7*l*l - 3) + Jxxyy*(420*l*m*m - 60*l) + 840*Jxxyz*l*m*n + Jxxzz*(420*l*n*n - 60*l) + 20*Jxyyy*m*(7*m*m - 3) + 60*Jxyyz*n*(7*m*m - 1) + 60*Jxyzz*m*(7*n*n - 1) + 20*Jxzzz*n*(7*n*n - 3))/(8*d*d*d*d*d);
+    double dV_dm = 3*G*Iy*m/(d*d*d) - G*(3*Jxxy*(5*l*l - 1) + 30*Jxyy*l*m + 30*Jxyz*l*n + 10*Jyyy*m*m + Jyyy*(5*m*m - 3) + 30*Jyyz*m*n + 3*Jyzz*(5*n*n - 1))/(2*d*d*d*d) - G*(20*Jxxxy*l*(7*l*l - 3) + Jxxyy*(420*l*l*m - 60*m) + 60*Jxxyz*n*(7*l*l - 1) + 280*Jxyyy*l*m*m + 20*Jxyyy*l*(7*m*m - 3) + 840*Jxyyz*l*m*n + 60*Jxyzz*l*(7*n*n - 1) + Jyyyy*(140*m*m*m - 60*m) + 280*Jyyyz*m*m*n + 20*Jyyyz*n*(7*m*m - 3) + Jyyzz*(420*m*n*n - 60*m) + 20*Jyzzz*n*(7*n*n - 3))/(8*d*d*d*d*d);
+    double dV_dn = 3*G*Iz*n/(d*d*d) - G*(3*Jxxz*(5*l*l - 1) + 30*Jxyz*l*m + 30*Jxzz*l*n + 3*Jyyz*(5*m*m - 1) + 30*Jyzz*m*n + 10*Jzzz*n*n + Jzzz*(5*n*n - 3))/(2*d*d*d*d) - G*(20*Jxxxz*l*(7*l*l - 3) + 60*Jxxyz*m*(7*l*l - 1) + Jxxzz*(420*l*l*n - 60*n) + 60*Jxyyz*l*(7*m*m - 1) + 840*Jxyzz*l*m*n + 280*Jxzzz*l*n*n + 20*Jxzzz*l*(7*n*n - 3) + 20*Jyyyz*m*(7*m*m - 3) + Jyyzz*(420*m*m*n - 60*n) + 280*Jyzzz*m*n*n + 20*Jyzzz*m*(7*n*n - 3) + Jzzzz*(140*n*n*n - 60*n))/(8*d*d*d*d*d);
+    dvec3 dl_dr = (a1*d - r*l)/(d*d);
+    dvec3 dm_dr = (a2*d - r*m)/(d*d);
+    dvec3 dn_dr = (a3*d - r*n)/(d*d);
+
+    return -(dV_dd*dd_dr + dV_dl*dl_dr + dV_dm*dm_dr + dV_dn*dn_dr);
 }
 
 /* End of gravity force and torque expressions. */
