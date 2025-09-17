@@ -19,7 +19,7 @@ class solution
 public:
     integrator integr;
 
-    //The following members are exactly the same (copies) with what the integrator evaluated, but stored in 1-D vectors (from t to vz_sp).
+    //The following members are exactly the same (copies) with what the integrator evaluated, but stored in 1-D vectors (from t to z_sp).
     dvec t;
     dvec x, y, z;
     dvec vx, vy, vz;
@@ -28,7 +28,6 @@ public:
     dvec q20, q21, q22, q23;
     dvec w2bx, w2by, w2bz;
     dvec x_sp, y_sp, z_sp;
-    dvec vx_sp, vy_sp, vz_sp;
 
     //The following members were NOT directly evaluated by the integrator. Instead, we use what the integrator evaluated to evaluate the following.
     dvec dist, vel; //Both are scalars. They are the corresponding magnitudes of (x,y,z) and (vx,vy,vz).
@@ -38,8 +37,6 @@ public:
     dvec w2ix, w2iy, w2iz;
     dvec sma, ecc, inc, raan, argper, manom;
     dvec ener_rel_err, mom_rel_err;
-
-    double com1_coeff, com2_coeff; //These, when multiplied with relative position {x,y,z} transform to the absolutes {x1,y1,z1}, {x2,y2,z2}.
 
     solution() { } //This is needed in the scene_panel class.
 
@@ -64,7 +61,6 @@ public:
         q20.resize(N);  q21.resize(N);  q22.resize(N);  q23.resize(N);
         w2bx.resize(N); w2by.resize(N); w2bz.resize(N);
         x_sp.resize(N); y_sp.resize(N); z_sp.resize(N);
-        vx_sp.resize(N); vy_sp.resize(N); vz_sp.resize(N);
 
         dist.resize(N);  vel.resize(N);
         roll1.resize(N); pitch1.resize(N); yaw1.resize(N), relyaw1.resize(N);
@@ -74,22 +70,18 @@ public:
         sma.resize(N);   ecc.resize(N); inc.resize(N);  raan.resize(N); argper.resize(N); manom.resize(N);
         ener_rel_err.resize(N); mom_rel_err.resize(N);
 
-        com1_coeff = -integr.properties.M2/(integr.properties.M1 + integr.properties.M2);
-        com2_coeff =  integr.properties.M1/(integr.properties.M1 + integr.properties.M2);
-
         double energy_at_t0, momentum_at_t0;
         for (size_t i = 0; i < N; ++i)
         {
             //Extract the integr.orbit[][] matrix into temporary variables for readability (though one could operate directly on integr.orbit[][]).
-            //Remember integr.orbit contains : (t, x,y,z, vx,vy,vz, q10,q11,q12,q13, w1bx,w1by,w1bz, q20,q21,q22,q23, w2bx,w2by,w2bz) at each line i.
+            //Remember : integr.orbit contains (t, x,y,z, vx,vy,vz, q10,q11,q12,q13, w1bx,w1by,w1bz, q20,q21,q22,q23, w2bx,w2by,w2bz, x_sp,y_sp,z_sp) at each line i.
             dvec3  r    = dvec3{integr.orbit[i][1],  integr.orbit[i][2],  integr.orbit[i][3]};
             dvec3  v    = dvec3{integr.orbit[i][4],  integr.orbit[i][5],  integr.orbit[i][6]};
             dvec4  q1   = dvec4{integr.orbit[i][7],  integr.orbit[i][8],  integr.orbit[i][9],  integr.orbit[i][10]};
             dvec3  w1b  = dvec3{integr.orbit[i][11], integr.orbit[i][12], integr.orbit[i][13]};
             dvec4  q2   = dvec4{integr.orbit[i][14], integr.orbit[i][15], integr.orbit[i][16], integr.orbit[i][17]};
             dvec3  w2b  = dvec3{integr.orbit[i][18], integr.orbit[i][19], integr.orbit[i][20]};
-            dvec3  r_sp = dvec3{integr.orbit[i][21],  integr.orbit[i][22],  integr.orbit[i][23]};
-            dvec3  v_sp = dvec3{integr.orbit[i][24],  integr.orbit[i][25],  integr.orbit[i][26]};
+            dvec3  r_sp = dvec3{integr.orbit[i][21], integr.orbit[i][22], integr.orbit[i][23]};
 
             dmat3 A1   = quat2mat(q1);
             dmat3 A2   = quat2mat(q2);
@@ -121,7 +113,7 @@ public:
             else
                 energy += mut_pot_integrals_ord4(r, integr.properties.M1, integr.J1, A1, integr.properties.M2, integr.J2, A2);
             
-            //Momentum magnitude. Note : All 3 components of the momentum vector are conserved in time. We just choose to store and plot the magnitude only.
+            //Momentum magnitude. Note : All 3 components of the momentum vector are conserved in time. I just choose to store and plot the magnitude only.
             double momentum = length( integr.m*cross(r,v) + dot(A1, dot(integr.I1, w1b)) + dot(A2, dot(integr.I2, w2b)) );
 
             t[i] = integr.orbit[i][0]/86400.0;
@@ -155,10 +147,6 @@ public:
             x_sp[i] = r_sp[0];
             y_sp[i] = r_sp[1];
             z_sp[i] = r_sp[2];
-
-            vx_sp[i] = v_sp[0];
-            vy_sp[i] = v_sp[1];
-            vz_sp[i] = v_sp[2];
 
             dist[i] = rcyl[0];
             vel[i]  = length(v);
@@ -254,9 +242,7 @@ public:
         reduce_vector(x_sp,         final_size);
         reduce_vector(y_sp,         final_size);
         reduce_vector(z_sp,         final_size);
-        reduce_vector(vx_sp,        final_size);
-        reduce_vector(vy_sp,        final_size);
-        reduce_vector(vz_sp,        final_size);
+        
         reduce_vector(dist,         final_size);
         reduce_vector(vel,          final_size);
         reduce_vector(roll1,        final_size);
@@ -309,6 +295,7 @@ public:
         FILE *file_w1b      = fopen(("../simulations/" + std::string(sim_name) + "/ang_vel_w1b.txt"       ).c_str(), "w");
         FILE *file_q2       = fopen(("../simulations/" + std::string(sim_name) + "/quaternion2.txt"       ).c_str(), "w");
         FILE *file_w2b      = fopen(("../simulations/" + std::string(sim_name) + "/ang_vel_w2b.txt"       ).c_str(), "w");
+        FILE *file_sp       = fopen(("../simulations/" + std::string(sim_name) + "/spacecraft.txt"        ).c_str(), "w");
 
         FILE *file_rpy1     = fopen(("../simulations/" + std::string(sim_name) + "/euler_rpy1.txt"        ).c_str(), "w");
         FILE *file_w1i      = fopen(("../simulations/" + std::string(sim_name) + "/ang_vel_w1i.txt"       ).c_str(), "w");
@@ -327,6 +314,7 @@ public:
             fprintf(file_w1b,      "%.16lf %.16lf %.16lf\n",                     w1bx[i], w1by[i], w1bz[i]);
             fprintf(file_q2,       "%.16lf %.16lf %.16lf %.16lf\n",               q20[i],  q21[i],  q22[i],  q23[i]);
             fprintf(file_w2b,      "%.16lf %.16lf %.16lf\n",                     w2bx[i], w2by[i], w2bz[i]);
+            fprintf(file_sp,       "%.16lf %.16lf %.16lf\n",                     x_sp[i], y_sp[i], z_sp[i]);
 
             fprintf(file_rpy1,     "%.16lf %.16lf %.16lf\n",                      roll1[i], pitch1[i], yaw1[i]);
             fprintf(file_w1i,      "%.16lf %.16lf %.16lf\n",                       w1ix[i],   w1iy[i], w1iz[i]);
@@ -343,6 +331,7 @@ public:
         fclose(file_w1b);
         fclose(file_q2);
         fclose(file_w2b);
+        fclose(file_sp);
 
         fclose(file_rpy1);
         fclose(file_w1i);
@@ -353,7 +342,7 @@ public:
 
         //Export the collision status.
         FILE *file_collision = fopen(("../simulations/" + std::string(sim_name) + "/collision.txt").c_str(),"w");
-        fprintf(file_collision,"Collision detected : %s", integr.collision ? "Yes" : "No");
+        fprintf(file_collision,"Collision detected : %s", (integr.collision || integr.collision_sp) ? "Yes" : "No");
         fclose(file_collision);
 
         //Export the input properties.
@@ -409,7 +398,7 @@ public:
             fprintf(file_properties,"Duration := %.15g\n",integr.properties.dur);
             fprintf(file_properties,"Target error := %.15g\n\n",integr.properties.target_error);
         }
-        else //3
+        else
         {
             fprintf(file_properties,"Numerical method := \"ABM5 (fixed)\"\n");
             fprintf(file_properties,"Epoch := %.15g\n",integr.properties.epoch);
@@ -507,6 +496,23 @@ public:
             fprintf(file_properties,"beta2 := %.15g\n",integr.properties.beta2);
             fprintf(file_properties,"t2    := %.15g\n",integr.properties.t2_impact/86400.0);
         }
+        else
+            fprintf(file_properties, "Kinetic impactors := \"No\"\n");
+
+        if (integr.properties.spacecraft_checkbox)
+        {
+            fprintf(file_properties,"Spacecraft orbiter := \"Yes\"\n");
+
+            fprintf(file_properties,"xs  := %.15g\n",integr.properties.r_sp[0]);
+            fprintf(file_properties,"ys  := %.15g\n",integr.properties.r_sp[1]);
+            fprintf(file_properties,"zs  := %.15g\n",integr.properties.r_sp[2]);
+
+            fprintf(file_properties,"vxs := %.15g\n",integr.properties.v_sp[0]);
+            fprintf(file_properties,"vys := %.15g\n",integr.properties.v_sp[1]);
+            fprintf(file_properties,"vzs := %.15g\n",integr.properties.v_sp[2]);
+        }
+        else
+            fprintf(file_properties,"Spacecraft orbiter := \"No\"\n");
 
         fclose(file_properties);
 

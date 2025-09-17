@@ -279,6 +279,20 @@ public:
         {
             impactors_checkbox = false; impactors_clicked_ok = false;
         }
+        if (find_assignment_operator(fp))
+        {
+            fscanf(fp, " \"%[^\"]\"", buffer);
+            if (strcmp(buffer, "Yes") == 0)
+            {
+                for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&r_sp[i]);
+                for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&v_sp[i]);
+                spacecraft_checkbox = true; spacecraft_clicked_ok = true;
+            }
+        }
+        else
+        {
+            spacecraft_checkbox = false; spacecraft_clicked_ok = false;
+        }
 
         fclose(fp);
     }
@@ -453,6 +467,10 @@ public:
         //Possible error 16 : Times of impacts must range in the simulated time range, i.e. in [Epoch, Epoch + Duration]
         if (impactors_checkbox && (t1_impact < epoch || t1_impact > epoch + dur || t2_impact < epoch || t2_impact > epoch + dur))
             {console.add_timed_text("[Error] : Impact times must range in [Epoch,  Epoch + Duration].\n"); return false;}
+
+        //Possible error 17 : 'OK' button in the spacecraft orbiter parameters window (it must be clicked so that the i.c. are taken into account).
+        if (spacecraft_checkbox && !spacecraft_clicked_ok)
+            {console.add_timed_text("[Error] : 'OK' button must be pressed in the 'Orbiter's initial state' window.\n"); return false;}
 
         return true;
     }

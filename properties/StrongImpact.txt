@@ -53,3 +53,5 @@ vy2   := 0
 vz2   := 50
 beta2 := 5
 t2    := 25
+
+Spacecraft orbiter := "No"

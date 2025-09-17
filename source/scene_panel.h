@@ -66,6 +66,9 @@ public:
         this->sol = sol; //Obtain a solution copy for the 3D rendering.
         this->sol2D = sol.get_reduced_solution(PLOT_POINTS_2D); //Then create a downsampled solution for the 2D plots.
 
+        if (!sol.integr.properties.spacecraft_checkbox)
+            plot_cart_sp = {false,false,false}; //Clear spacecraft toggles from the previous run.
+
         float binary_max_dist = *std::max_element(sol.dist.begin(), sol.dist.end());
         rend3D.sunlight.reset(sol.integr.brillouin1 + sol.integr.brillouin2 + binary_max_dist);
         rend3D.cam.reset(sol.integr.brillouin1 + sol.integr.brillouin2, binary_max_dist);
@@ -227,12 +230,18 @@ public:
 
         if (ImGui::TreeNodeEx("Spacecraft orbiter", ImGuiTreeNodeFlags_DefaultOpen))
         {
+            if (!sol.integr.properties.spacecraft_checkbox)
+                ImGui::BeginDisabled();
+            
             ImGui::Dummy(ImVec2(0.0f,7.5f));
             ImGui::Text("Position");
             plot_cart_sp[0] = common_onoff_button("xs##37", ImVec2(50.0f, 20.0f), plot_cart_sp[0]); ImGui::SameLine();
             plot_cart_sp[1] = common_onoff_button("ys##38", ImVec2(50.0f, 20.0f), plot_cart_sp[1]); ImGui::SameLine();
-            plot_cart_sp[2] = common_onoff_button("zs##39", ImVec2(50.0f, 20.0f), plot_cart_sp[2]); ImGui::SameLine();
+            plot_cart_sp[2] = common_onoff_button("zs##39", ImVec2(50.0f, 20.0f), plot_cart_sp[2]);
             ImGui::Dummy(ImVec2(0.0f,7.5f));
+
+            if (!sol.integr.properties.spacecraft_checkbox)
+                ImGui::EndDisabled();
 
             ImGui::TreePop();
         }
@@ -446,9 +455,7 @@ public:
                 }
             }
             else //frame_rate == 60 => let it play as fast as the machine can handle, i.e. increment every time we render.
-            {
                 current_frame++;
-            }
         }
     }
     
@@ -521,9 +528,12 @@ public:
                 if (plot_ener_mom_rel_err[0]) plot_ener_mom_rel_err[0] = common_plot("##135", "Energy relative error",             "| (E[i+1] - E[0])/E[0] |", plot_ener_mom_rel_err[0], sol2D.ener_rel_err);
                 if (plot_ener_mom_rel_err[1]) plot_ener_mom_rel_err[1] = common_plot("##136", "Momentum magnitude relative error", "| (L[i+1] - L[0])/L[0] |", plot_ener_mom_rel_err[1], sol2D.mom_rel_err);
 
-                if (plot_cart_sp[0]) plot_cart_sp[0] = common_plot("##137", "Spacecraft x",        "xs [km]",        plot_cart_sp[0], sol2D.x_sp);
-                if (plot_cart_sp[1]) plot_cart_sp[1] = common_plot("##138", "Spacecraft y",        "ys [km]",        plot_cart_sp[1], sol2D.y_sp);
-                if (plot_cart_sp[2]) plot_cart_sp[2] = common_plot("##139", "Spacecraft z",        "zs [km]",        plot_cart_sp[2], sol2D.z_sp);
+                if (sol.integr.properties.spacecraft_checkbox)
+                {
+                    if (plot_cart_sp[0]) plot_cart_sp[0] = common_plot("##137", "Spacecraft x", "xs [km]", plot_cart_sp[0], sol2D.x_sp);
+                    if (plot_cart_sp[1]) plot_cart_sp[1] = common_plot("##138", "Spacecraft y", "ys [km]", plot_cart_sp[1], sol2D.y_sp);
+                    if (plot_cart_sp[2]) plot_cart_sp[2] = common_plot("##139", "Spacecraft z", "zs [km]", plot_cart_sp[2], sol2D.z_sp);
+                }
 
             }
             ImGui::PopStyleColor();

@@ -44,3 +44,6 @@ w2iz := 1.64902612622291e-05
 
 Collision shapes := "Spheres"
 
+Kinetic impactors := "No"
+
+Spacecraft orbiter := "No"

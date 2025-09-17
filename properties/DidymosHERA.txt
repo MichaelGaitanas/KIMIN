@@ -1,4 +1,4 @@
-Simulation name := "DidymosDARTChaos"
+Simulation name := "DidymosHERA"
 
 Shape models := ".obj files"
 file 1 := "didymain2019_R04km.obj"
@@ -40,18 +40,12 @@ w2iz := 0.000146402
 
 Collision shapes := "Spheres"
 
-Kinetic impactors := "Yes"
-m1    := 0
-vx1   := 0
-vy1   := 0
-vz1   := 0
-beta1 := 0
-t1    := 0
-m2    := 579.434
-vx2   := 0
-vy2   := -6.06924608412306
-vz2   := 0.961274144225715
-beta2 := 3.6
-t2    := 10.19
+Kinetic impactors := "No"
 
-Spacecraft orbiter := "No"
+Spacecraft orbiter := "Yes"
+xs  := 3.0
+ys  := 0
+zs  := 0
+vxs := 0
+vys := 0.00013
+vzs := 0

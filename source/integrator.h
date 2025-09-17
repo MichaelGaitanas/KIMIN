@@ -24,12 +24,13 @@ public:
     bool maneuver1_applied, maneuver2_applied; //Whether or each beta-kick (equivalent maneuver) has been applied to the corresponding asteroid.
 
     double m; //Reduced binary mass ( m = M1*M2/(M1 + M2) ).
+    double com1_coeff, com2_coeff; //These are the coefficients that when multiplied with the relative position, yield each body's aboslute position in the inertial frame, i.e. com1_coeff = -M2/(M1+M2), com2_coeff = M1/(M1+M2).
+
     dmat3 I1, I2; //Moments of inertia.
     dtens J1, J2; //Inertial integrals.
     double brillouin1, brillouin2; //Brillouin radii of the 2 bodies.
 
-    bool collision; //Collision detection flag for the binary.
-    bool collision_sp; //Collision detection flag for the spacecraft.
+    bool collision, collision_sp; //Collision detection flag for the binary and the spacecraft (respectively).
 
     double t0, tmax, dt, init_guess_time_step; //Integration time.
 
@@ -130,10 +131,8 @@ private:
             dvec3 r_sp = { state[20], state[21], state[22] };
             dvec3 v_sp = { state[23], state[24], state[25] };
             //Body c.o.m. positions in barycentric inertial frame.
-            double c1 = -properties.M2/(properties.M1+properties.M2);
-            double c2 =  properties.M1/(properties.M1+properties.M2);
-            dvec3 r1 = c1*r;
-            dvec3 r2 = c2*r;
+            dvec3 r1 = com1_coeff*r;
+            dvec3 r2 = com2_coeff*r;
             //Body -> spacecraft vectors.
             dvec3 rho1 = r_sp - r1;
             dvec3 rho2 = r_sp - r2;
@@ -167,6 +166,8 @@ public:
         console.add_timed_text("[Shape] : Computing inertial integrals... ");
 
         m = properties.M1*properties.M2/(properties.M1 + properties.M2);
+        com1_coeff = -properties.M2/(properties.M1 + properties.M2);
+        com2_coeff =  properties.M1/(properties.M1 + properties.M2);
 
         //Preparation 1 : If the user chose Keplerian elements as initial position/velocity, then, transform
         //them to Cartesian coords because the F2BP odes are written in Cartesian form.
@@ -278,6 +279,12 @@ public:
             }
         }
 
+        if (!properties.spacecraft_checkbox)
+        {
+            properties.r_sp[0] = properties.r_sp[1] = properties.r_sp[2] = 0.0;
+            properties.v_sp[0] = properties.v_sp[1] = properties.v_sp[2] = 0.0;
+        }
+
         collision = collision_sp = false; //Assuming no collision when the simulation starts.
         orbit.clear();
 
@@ -321,8 +328,7 @@ public:
                                 state[10], state[11], state[12],
                                 state[13], state[14], state[15], state[16],
                                 state[17], state[18], state[19],
-                                state[20], state[21], state[22],
-                                state[23], state[24], state[25]});
+                                state[20], state[21], state[22] });
 
             //2) Kinetic impacts : apply corresponding maneuvers in case that kinetic impactors were assumed in the gui.
             if (properties.impactors_checkbox)
@@ -359,10 +365,8 @@ public:
                 if (properties.spacecraft_checkbox)
                 {
                     const dvec3 r = dvec3{state[0],state[1],state[2]};
-                    const double c1 = -properties.M2/(properties.M1 + properties.M2);
-                    const double c2 =  properties.M1/(properties.M1 + properties.M2);
-                    const dvec3 r1 = c1*r;
-                    const dvec3 r2 = c2*r;
+                    const dvec3 r1 = com1_coeff*r;
+                    const dvec3 r2 = com2_coeff*r;
                     const dvec3 r_sp = dvec3{state[20],state[21],state[22]};
                     if (sphere_point_collision(length(r_sp - r1), brillouin1))
                     {
@@ -383,10 +387,8 @@ public:
             else if (properties.collision_polyhedra) //Polyhedra checkbox, but with sphere gates.
             {
                 const dvec3 r = dvec3{state[0],state[1],state[2]};
-                const double c1 = -properties.M2/(properties.M1 + properties.M2);
-                const double c2 =  properties.M1/(properties.M1 + properties.M2);
-                const dvec3 r1 = c1*r;
-                const dvec3 r2 = c2*r;
+                const dvec3 r1 = com1_coeff*r;
+                const dvec3 r2 = com2_coeff*r;
                 if (sphere_sphere_collision(length(r), brillouin1, brillouin2))
                 {
                     const dmat3 A1 = quat2mat(dvec4{state[6],state[7],state[8],state[9]});

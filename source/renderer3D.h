@@ -28,11 +28,11 @@ private:
 public:
     camera cam;
     light sunlight;
-    orbmesh orb1, orb2;
+    orbmesh orb1, orb2, orb_sp;
     
     int depth_reso; //Shadow image resolution.
     glm::vec3 aster1_col, aster2_col;
-    glm::vec3 orb1_col, orb2_col;
+    glm::vec3 orb1_col, orb2_col, orb_sp_col;
 
     bool render_aster1, render_aster2;
     bool render_axes1, render_axes2;
@@ -56,6 +56,7 @@ public:
                    sunlight(),
                    orb1(),
                    orb2(),
+                   orb_sp(),
                    depth_reso(2048),
                    aster1_col(glm::vec3(1.0f)),
                    aster2_col(glm::vec3(1.0f)),
@@ -120,10 +121,11 @@ public:
     {
         orb1.clear();
         orb2.clear();
+        orb_sp.clear();
         sol.integr.properties.poly1.clear_gl_mesh();
         sol.integr.properties.poly2.clear_gl_mesh();
-        orb1.set_as_gl_mesh(sol, (float)sol.com1_coeff);
-        orb2.set_as_gl_mesh(sol, (float)sol.com2_coeff);
+        orb1.set_as_gl_mesh(sol, (float)sol.integr.com1_coeff);
+        orb2.set_as_gl_mesh(sol, (float)sol.integr.com2_coeff);
         sol.integr.properties.poly1.set_as_gl_mesh();
         sol.integr.properties.poly2.set_as_gl_mesh();
         setup_depth_fbo();
@@ -152,13 +154,13 @@ public:
 
         glm::mat4 I = glm::mat4(1.0f);
 
-        glm::mat4 T1R1 = glm::translate(I, (float)sol.com1_coeff*glm::vec3(sol.x[i],sol.y[i],sol.z[i]))*
+        glm::mat4 T1R1 = glm::translate(I, (float)sol.integr.com1_coeff*glm::vec3(sol.x[i],sol.y[i],sol.z[i]))*
                          glm::rotate(I, glm::radians((float)sol.yaw1[i]),   glm::vec3(0.0f,0.0f,1.0f))*
                          glm::rotate(I, glm::radians((float)sol.pitch1[i]), glm::vec3(0.0f,1.0f,0.0f))*
                          glm::rotate(I, glm::radians((float)sol.roll1[i]),  glm::vec3(1.0f,0.0f,0.0f));
         glm::mat4 S1 = glm::scale(I, glm::vec3((float)sol.integr.brillouin1));
 
-        glm::mat4 T2R2 = glm::translate(I, (float)sol.com2_coeff*glm::vec3(sol.x[i],sol.y[i],sol.z[i]))*
+        glm::mat4 T2R2 = glm::translate(I, (float)sol.integr.com2_coeff*glm::vec3(sol.x[i],sol.y[i],sol.z[i]))*
                          glm::rotate(I, glm::radians((float)sol.yaw2[i]),   glm::vec3(0.0f,0.0f,1.0f))*
                          glm::rotate(I, glm::radians((float)sol.pitch2[i]), glm::vec3(0.0f,1.0f,0.0f))*
                          glm::rotate(I, glm::radians((float)sol.roll2[i]),  glm::vec3(1.0f,0.0f,0.0f));
@@ -225,6 +227,8 @@ public:
         sh_orb.set_vec3_uniform("mesh_col", orb2_col);
         if (render_orb2)
             orb2.render();
+        if (sol.integr.properties.spacecraft_checkbox)
+            orb_sp.render();
     }
 };
 
