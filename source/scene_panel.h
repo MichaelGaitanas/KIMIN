@@ -26,6 +26,7 @@ private:
     bvec plot_w1i, plot_w1b; //Buttons : [ω1ix, ω1iy, ω1iz] and [ω1bx, ω1by, ω1bz].
     bvec plot_w2i, plot_w2b; //Buttons : [ω2ix, ω2iy, ω2iz] and [ω2bx, ω2by, ω2bz].
     bvec plot_ener_mom_rel_err; //Buttons : [energy, momentum].
+    bvec plot_cart_sp; //Buttons : [xs, ys, zs].
     
     bool render_scene, play_pause_video, reset_essential;
     uint64_t zero_frame, current_frame, total_frames;
@@ -45,6 +46,7 @@ public:
                     plot_w2i({false,false,false}),
                     plot_w2b({false,false,false}),
                     plot_ener_mom_rel_err({false,false}),
+                    plot_cart_sp({false,false,false}),
                     render_scene(false),
                     play_pause_video(false),
                     reset_essential(false),
@@ -222,6 +224,18 @@ public:
 
             ImGui::TreePop();
         }
+
+        if (ImGui::TreeNodeEx("Spacecraft orbiter", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            ImGui::Dummy(ImVec2(0.0f,7.5f));
+            ImGui::Text("Position");
+            plot_cart_sp[0] = common_onoff_button("xs##37", ImVec2(50.0f, 20.0f), plot_cart_sp[0]); ImGui::SameLine();
+            plot_cart_sp[1] = common_onoff_button("ys##38", ImVec2(50.0f, 20.0f), plot_cart_sp[1]); ImGui::SameLine();
+            plot_cart_sp[2] = common_onoff_button("zs##39", ImVec2(50.0f, 20.0f), plot_cart_sp[2]); ImGui::SameLine();
+            ImGui::Dummy(ImVec2(0.0f,7.5f));
+
+            ImGui::TreePop();
+        }
         ImGui::PopStyleVar();
     }
 
@@ -229,7 +243,7 @@ public:
     {
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Text("Content state");
-        render_scene = common_onoff_button("Render##37", ImVec2(80.0f, 25.0f), render_scene);
+        render_scene = common_onoff_button("Render##40", ImVec2(80.0f, 25.0f), render_scene);
         ImGui::SameLine();
         total_frames = static_cast<uint64_t>(sol.t.size());
         uint64_t max_frame = (total_frames > 0) ? total_frames - 1 : 0;
@@ -254,12 +268,12 @@ public:
         ImGui::Text("Frame");
         ImGui::SameLine();
         ImGui::SetCursorPosX(50.0f);
-        ImGui::SliderScalar("##38", ImGuiDataType_U64, &current_frame, &zero_frame, &max_frame, "%llu");
+        ImGui::SliderScalar("##41", ImGuiDataType_U64, &current_frame, &zero_frame, &max_frame, "%llu");
 
         ImGui::Text("Rate");
         ImGui::SameLine();
         ImGui::SetCursorPosX(50.0f);
-        ImGui::SliderInt("[Hz]##39", &frame_rate, 0, 60, "%d");
+        ImGui::SliderInt("[Hz]##42", &frame_rate, 0, 60, "%d");
 
         if (sol.t.empty())
             ImGui::Text("Time : 0.00  [days]");
@@ -275,22 +289,22 @@ public:
         ImGui::Text("Dist");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[km]##40", &rend3D.cam.dist, rend3D.cam.min_dist, rend3D.cam.max_dist, "%.3f", ImGuiSliderFlags_Logarithmic);
+        ImGui::SliderFloat("[km]##43", &rend3D.cam.dist, rend3D.cam.min_dist, rend3D.cam.max_dist, "%.3f", ImGuiSliderFlags_Logarithmic);
 
         ImGui::Text("Lon");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##41", &rend3D.cam.lon, 0.0f, 360.0f);
+        ImGui::SliderFloat("[deg]##44", &rend3D.cam.lon, 0.0f, 360.0f);
 
         ImGui::Text("Lat");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##42", &rend3D.cam.lat, 0.0f, 180.0f);
+        ImGui::SliderFloat("[deg]##45", &rend3D.cam.lat, 0.0f, 180.0f);
 
         ImGui::Text("FoV");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##43", &rend3D.cam.fov, 1.0f, 179.0f, "%.0f");
+        ImGui::SliderFloat("[deg]##46", &rend3D.cam.fov, 1.0f, 179.0f, "%.0f");
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Separator();
@@ -301,12 +315,12 @@ public:
         ImGui::Text("Lon");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##44", &rend3D.sunlight.lon, 0.0f, 360.0f);
+        ImGui::SliderFloat("[deg]##47", &rend3D.sunlight.lon, 0.0f, 360.0f);
 
         ImGui::Text("Lat");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##45", &rend3D.sunlight.lat, 0.0f, 180.0f);
+        ImGui::SliderFloat("[deg]##48", &rend3D.sunlight.lat, 0.0f, 180.0f);
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Separator();
@@ -317,7 +331,7 @@ public:
         ImGui::Text("Reso");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        if (ImGui::SliderInt("[pix]##46", &rend3D.depth_reso, 1024, 8192))
+        if (ImGui::SliderInt("[pix]##49", &rend3D.depth_reso, 1024, 8192))
             rend3D.setup_depth_fbo();
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
@@ -329,22 +343,22 @@ public:
         ImGui::Text("Body 1");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##47", &rend3D.render_aster1);
+        ImGui::Checkbox("##50", &rend3D.render_aster1);
         ImGui::SameLine();
         ImGui::SetCursorPosX(100.0f);
         ImGui::Text("Axes 1");
         ImGui::SameLine();
-        ImGui::Checkbox("##48", &rend3D.render_axes1);
+        ImGui::Checkbox("##51", &rend3D.render_axes1);
 
         ImGui::Text("Body 2");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##49", &rend3D.render_aster2);
+        ImGui::Checkbox("##52", &rend3D.render_aster2);
         ImGui::SameLine();
         ImGui::SetCursorPosX(100.0f);
         ImGui::Text("Axes 2");
         ImGui::SameLine();
-        ImGui::Checkbox("##50", &rend3D.render_axes2);
+        ImGui::Checkbox("##53", &rend3D.render_axes2);
         ImGui::Dummy(ImVec2(0.0f,0.6f));
 
         ImGui::Text("Orbits");
@@ -354,13 +368,13 @@ public:
         ImGui::Text("Body 1");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##51", &rend3D.render_orb1);
+        ImGui::Checkbox("##54", &rend3D.render_orb1);
         ImGui::SameLine();
         ImGui::SetCursorPosX(100.0f);
         ImGui::SetNextItemWidth(100);
-        ImGui::SliderScalar("##52", ImGuiDataType_U64, &visible_last1, &zero_frame, &max_frame, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SliderScalar("##55", ImGuiDataType_U64, &visible_last1, &zero_frame, &max_frame, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
-        rend3D.orb1_match = common_onoff_button("Match##53", ImVec2(50.0f, 18.0f), rend3D.orb1_match);
+        rend3D.orb1_match = common_onoff_button("Match##56", ImVec2(50.0f, 18.0f), rend3D.orb1_match);
         rend3D.orb1.draw_count = static_cast<size_t>(visible_last1+1);
         if (rend3D.orb1_match)
             rend3D.orb1.draw_count = current_frame;
@@ -370,14 +384,14 @@ public:
         ImGui::Text("Body 2");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##54", &rend3D.render_orb2);
+        ImGui::Checkbox("##57", &rend3D.render_orb2);
         ImGui::SameLine();
         ImGui::SetCursorPosX(100.0f);
         ImGui::SetNextItemWidth(100);
-        ImGui::SliderScalar("##55", ImGuiDataType_U64, &visible_last2, &zero_frame, &max_frame, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SliderScalar("##58", ImGuiDataType_U64, &visible_last2, &zero_frame, &max_frame, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
         rend3D.orb2.draw_count = static_cast<size_t>(visible_last2+1);
-        rend3D.orb2_match = common_onoff_button("Match##56", ImVec2(50.0f, 18.0f), rend3D.orb2_match);
+        rend3D.orb2_match = common_onoff_button("Match##59", ImVec2(50.0f, 18.0f), rend3D.orb2_match);
         if (rend3D.orb2_match)
             rend3D.orb2.draw_count = current_frame;
 
@@ -390,21 +404,21 @@ public:
         ImGui::Text("Body 1");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::ColorEdit3("##57", glm::value_ptr(rend3D.aster1_col), ImGuiColorEditFlags_NoInputs);
+        ImGui::ColorEdit3("##60", glm::value_ptr(rend3D.aster1_col), ImGuiColorEditFlags_NoInputs);
         ImGui::SameLine();
         ImGui::SetCursorPosX(120.0f);
         ImGui::Text("Body 2");
         ImGui::SameLine();
-        ImGui::ColorEdit3("##58", glm::value_ptr(rend3D.aster2_col), ImGuiColorEditFlags_NoInputs);
+        ImGui::ColorEdit3("##61", glm::value_ptr(rend3D.aster2_col), ImGuiColorEditFlags_NoInputs);
         ImGui::Text("Orbit 1");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::ColorEdit3("##59", glm::value_ptr(rend3D.orb1_col), ImGuiColorEditFlags_NoInputs);
+        ImGui::ColorEdit3("##62", glm::value_ptr(rend3D.orb1_col), ImGuiColorEditFlags_NoInputs);
         ImGui::SameLine();
         ImGui::SetCursorPosX(120.0f);
         ImGui::Text("Orbit 2");
         ImGui::SameLine();
-        ImGui::ColorEdit3("##60", glm::value_ptr(rend3D.orb2_col), ImGuiColorEditFlags_NoInputs);
+        ImGui::ColorEdit3("##63", glm::value_ptr(rend3D.orb2_col), ImGuiColorEditFlags_NoInputs);
 
         if (disabled)
             ImGui::EndDisabled();
@@ -506,6 +520,10 @@ public:
 
                 if (plot_ener_mom_rel_err[0]) plot_ener_mom_rel_err[0] = common_plot("##135", "Energy relative error",             "| (E[i+1] - E[0])/E[0] |", plot_ener_mom_rel_err[0], sol2D.ener_rel_err);
                 if (plot_ener_mom_rel_err[1]) plot_ener_mom_rel_err[1] = common_plot("##136", "Momentum magnitude relative error", "| (L[i+1] - L[0])/L[0] |", plot_ener_mom_rel_err[1], sol2D.mom_rel_err);
+
+                if (plot_cart_sp[0]) plot_cart_sp[0] = common_plot("##137", "Spacecraft x",        "xs [km]",        plot_cart_sp[0], sol2D.x_sp);
+                if (plot_cart_sp[1]) plot_cart_sp[1] = common_plot("##138", "Spacecraft y",        "ys [km]",        plot_cart_sp[1], sol2D.y_sp);
+                if (plot_cart_sp[2]) plot_cart_sp[2] = common_plot("##139", "Spacecraft z",        "zs [km]",        plot_cart_sp[2], sol2D.z_sp);
 
             }
             ImGui::PopStyleColor();

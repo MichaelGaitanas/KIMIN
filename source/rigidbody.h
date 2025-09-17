@@ -36,7 +36,21 @@ dvec3 euler_rhs(const dvec3 &w, const dmat3 &I, const dvec3 &tau)
 //Sphere - sphere collision detection criterion.
 bool sphere_sphere_collision(const double distance, const double R1, const double R2)
 {
-    return distance <= (R1 + R2)? true : false;
+    return distance <= (R1 + R2) ? true : false;
+}
+
+//Sphere - point collision detection criterion.
+bool sphere_point_collision(const double distance, const double R)
+{
+    return (distance <= R) ? true : false;
+}
+
+//Polyhedron - point collision detection criterion.
+bool polyhedron_point_collision(const polyhedron &poly, const dmat3 &A, const dvec3 &r, const dvec3 &r_sp)
+{
+    //Transform spacecraft into the polyhedron's local (body) frame.
+    const dvec3 r_body_frame = dot(transpose(A), (r_sp - r));
+    return (poly.encloses_point(r_body_frame)) ? true : false;
 }
 
 //Triangle - triangle collision detection criterion.

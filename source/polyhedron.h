@@ -23,13 +23,14 @@ class polyhedron
 private:
     dmatnx3 verts;
     umatnx3 faces;
-    dmatnx3 norms;
+    mutable dmatnx3 norms;
     umatnx2 edges;
 
     double vol; //Polyhedron's total volume.
 
     //Boolean flags that track the state of the instance.
-    bool norms_exist, edges_exist, vol_exists;
+    mutable bool norms_exist;
+    bool edges_exist, vol_exists;
 
     //OpenGL related members. They are used after the numerical integration ends, in order to render the 3D scene.
     bool gl_ready; //Whether or not the mesh data are uploaded to the gpu.
@@ -121,7 +122,7 @@ public:
     }
 
     //Generate the polyhderon's (flat) normals.
-    void gen_norms()
+    void gen_norms() const
     {
         if (norms_exist) return; //Do not repeat the same shit...
 
@@ -390,11 +391,11 @@ public:
     //A ray is casted from the point of examination (r) up to a destination point (pdest), which must be outside the
     //polyhedron's surface. Then we count the number of intersections between the ray and the polyhedron. If the number of intersections
     //is odd, then r is inside the polyhedron. Otherwise it is outside.
-    bool encloses_point(const dvec3 &r)
+    bool encloses_point(const dvec3 &r) const
     {
         gen_norms();
 
-        //Ray's destination point. It is assumed to be very far away, aiming to be outside of the polyhedron.
+        //Ray's destination point. It is assumed to be very far away, aiming to be outside of the polyhedron. The irrational numbers help avoid degeneracies.
         dvec3 pdest = 10000000.0*dvec3{pi, exp(1.0), sqrt(2.0)};
         
         size_t intersections = 0;

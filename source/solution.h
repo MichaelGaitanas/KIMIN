@@ -19,7 +19,7 @@ class solution
 public:
     integrator integr;
 
-    //The following members are exactly the same (copies) with what the integrator evaluated, but stored in 1-D vectors (from t to w2bz).
+    //The following members are exactly the same (copies) with what the integrator evaluated, but stored in 1-D vectors (from t to vz_sp).
     dvec t;
     dvec x, y, z;
     dvec vx, vy, vz;
@@ -27,6 +27,8 @@ public:
     dvec w1bx, w1by, w1bz;
     dvec q20, q21, q22, q23;
     dvec w2bx, w2by, w2bz;
+    dvec x_sp, y_sp, z_sp;
+    dvec vx_sp, vy_sp, vz_sp;
 
     //The following members were NOT directly evaluated by the integrator. Instead, we use what the integrator evaluated to evaluate the following.
     dvec dist, vel; //Both are scalars. They are the corresponding magnitudes of (x,y,z) and (vx,vy,vz).
@@ -61,6 +63,8 @@ public:
         w1bx.resize(N); w1by.resize(N); w1bz.resize(N);
         q20.resize(N);  q21.resize(N);  q22.resize(N);  q23.resize(N);
         w2bx.resize(N); w2by.resize(N); w2bz.resize(N);
+        x_sp.resize(N); y_sp.resize(N); z_sp.resize(N);
+        vx_sp.resize(N); vy_sp.resize(N); vz_sp.resize(N);
 
         dist.resize(N);  vel.resize(N);
         roll1.resize(N); pitch1.resize(N); yaw1.resize(N), relyaw1.resize(N);
@@ -78,12 +82,14 @@ public:
         {
             //Extract the integr.orbit[][] matrix into temporary variables for readability (though one could operate directly on integr.orbit[][]).
             //Remember integr.orbit contains : (t, x,y,z, vx,vy,vz, q10,q11,q12,q13, w1bx,w1by,w1bz, q20,q21,q22,q23, w2bx,w2by,w2bz) at each line i.
-            dvec3  r   = dvec3{integr.orbit[i][1],  integr.orbit[i][2],  integr.orbit[i][3]};
-            dvec3  v   = dvec3{integr.orbit[i][4],  integr.orbit[i][5],  integr.orbit[i][6]};
-            dvec4  q1  = dvec4{integr.orbit[i][7],  integr.orbit[i][8],  integr.orbit[i][9],  integr.orbit[i][10]};
-            dvec3  w1b = dvec3{integr.orbit[i][11], integr.orbit[i][12], integr.orbit[i][13]};
-            dvec4  q2  = dvec4{integr.orbit[i][14], integr.orbit[i][15], integr.orbit[i][16], integr.orbit[i][17]};
-            dvec3  w2b = dvec3{integr.orbit[i][18], integr.orbit[i][19], integr.orbit[i][20]};
+            dvec3  r    = dvec3{integr.orbit[i][1],  integr.orbit[i][2],  integr.orbit[i][3]};
+            dvec3  v    = dvec3{integr.orbit[i][4],  integr.orbit[i][5],  integr.orbit[i][6]};
+            dvec4  q1   = dvec4{integr.orbit[i][7],  integr.orbit[i][8],  integr.orbit[i][9],  integr.orbit[i][10]};
+            dvec3  w1b  = dvec3{integr.orbit[i][11], integr.orbit[i][12], integr.orbit[i][13]};
+            dvec4  q2   = dvec4{integr.orbit[i][14], integr.orbit[i][15], integr.orbit[i][16], integr.orbit[i][17]};
+            dvec3  w2b  = dvec3{integr.orbit[i][18], integr.orbit[i][19], integr.orbit[i][20]};
+            dvec3  r_sp = dvec3{integr.orbit[i][21],  integr.orbit[i][22],  integr.orbit[i][23]};
+            dvec3  v_sp = dvec3{integr.orbit[i][24],  integr.orbit[i][25],  integr.orbit[i][26]};
 
             dmat3 A1   = quat2mat(q1);
             dmat3 A2   = quat2mat(q2);
@@ -145,6 +151,14 @@ public:
             w2bx[i] = w2b[0];
             w2by[i] = w2b[1];
             w2bz[i] = w2b[2];
+
+            x_sp[i] = r_sp[0];
+            y_sp[i] = r_sp[1];
+            z_sp[i] = r_sp[2];
+
+            vx_sp[i] = v_sp[0];
+            vy_sp[i] = v_sp[1];
+            vz_sp[i] = v_sp[2];
 
             dist[i] = rcyl[0];
             vel[i]  = length(v);
@@ -237,6 +251,12 @@ public:
         reduce_vector(w2bx,         final_size);
         reduce_vector(w2by,         final_size);
         reduce_vector(w2bz,         final_size);
+        reduce_vector(x_sp,         final_size);
+        reduce_vector(y_sp,         final_size);
+        reduce_vector(z_sp,         final_size);
+        reduce_vector(vx_sp,        final_size);
+        reduce_vector(vy_sp,        final_size);
+        reduce_vector(vz_sp,        final_size);
         reduce_vector(dist,         final_size);
         reduce_vector(vel,          final_size);
         reduce_vector(roll1,        final_size);

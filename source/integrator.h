@@ -24,11 +24,12 @@ public:
     bool maneuver1_applied, maneuver2_applied; //Whether or each beta-kick (equivalent maneuver) has been applied to the corresponding asteroid.
 
     double m; //Reduced binary mass ( m = M1*M2/(M1 + M2) ).
-    dmat3 I1, I2; //Moments of inetia.
+    dmat3 I1, I2; //Moments of inertia.
     dtens J1, J2; //Inertial integrals.
     double brillouin1, brillouin2; //Brillouin radii of the 2 bodies.
 
-    bool collision; //Collision detection flag.
+    bool collision; //Collision detection flag for the binary.
+    bool collision_sp; //Collision detection flag for the spacecraft.
 
     double t0, tmax, dt, init_guess_time_step; //Integration time.
 
@@ -47,9 +48,9 @@ public:
 
 private:
     //This function builds the right hand sides of the differential equations of motion. It is executed at each step of the integration.
-    void build_rhs(const boost::array<double, 20> &state, boost::array<double, 20> &dstate, double /*t*/)
+    void build_rhs(const boost::array<double, 26> &state, boost::array<double, 26> &dstate, double /*t*/)
     {
-        //Extract the current state vector into individual variables (for readability mostly).
+        //Extract the current state vector of the binary into individual variables (for readability mostly).
         dvec3 r  =  { state[0],  state[1],  state[2] };
         dvec3 v  =  { state[3],  state[4],  state[5] };
         dvec4 q1 =  { state[6],  state[7],  state[8],  state[9] };
@@ -122,6 +123,41 @@ private:
         dstate[17] = dw2b[0];
         dstate[18] = dw2b[1];
         dstate[19] = dw2b[2];
+
+        if (properties.spacecraft_checkbox)
+        {
+            //Spacecraft state (inertial frame).
+            dvec3 r_sp = { state[20], state[21], state[22] };
+            dvec3 v_sp = { state[23], state[24], state[25] };
+            //Body c.o.m. positions in barycentric inertial frame.
+            double c1 = -properties.M2/(properties.M1+properties.M2);
+            double c2 =  properties.M1/(properties.M1+properties.M2);
+            dvec3 r1 = c1*r;
+            dvec3 r2 = c2*r;
+            //Body -> spacecraft vectors.
+            dvec3 rho1 = r_sp - r1;
+            dvec3 rho2 = r_sp - r2;
+
+            dvec3 force_spacecraft; //Spacecraft's force due to the combined presence of the 2 rigid bodies.
+            if (properties.ord2_checkbox)
+                force_spacecraft = force_integrals_ord2(rho1, properties.M1, J1, A1) + force_integrals_ord2(rho2, properties.M2, J2, A2);
+            else if (properties.ord3_checkbox)
+                force_spacecraft = force_integrals_ord3(rho1, properties.M1, J1, A1) + force_integrals_ord3(rho2, properties.M2, J2, A2);
+            else //Only 'ord4_checkbox' remains...
+                force_spacecraft = force_integrals_ord4(rho1, properties.M1, J1, A1) + force_integrals_ord4(rho2, properties.M2, J2, A2);
+
+            //Spacecraft's position and velocity rhs.
+            dstate[20] = v_sp[0];
+            dstate[21] = v_sp[1];
+            dstate[22] = v_sp[2];
+            dstate[23] = force_spacecraft[0];
+            dstate[24] = force_spacecraft[1];
+            dstate[25] = force_spacecraft[2];
+        }
+        else //assign zero everywhere...
+        {
+            dstate[20] = dstate[21] = dstate[22] = dstate[23] = dstate[24] = dstate[25] = 0.0;
+        }
     }
 
 public:
@@ -242,7 +278,7 @@ public:
             }
         }
 
-        collision = false; //Assuming no collision when the simulation starts.
+        collision = collision_sp = false; //Assuming no collision when the simulation starts.
         orbit.clear();
 
         console.add_text("Done.\n");
@@ -254,19 +290,21 @@ public:
         progress.store(0.0f);
 
         //Initial conditions.
-        boost::array<double, 20> state = { properties.cart[0], properties.cart[1], properties.cart[2],
-                                           properties.cart[3], properties.cart[4], properties.cart[5],
-                                             properties.q1[0],   properties.q1[1],   properties.q1[2], properties.q1[3],
-                                            properties.w1b[0],  properties.w1b[1],  properties.w1b[2],
-                                             properties.q2[0],   properties.q2[1],   properties.q2[2], properties.q2[3],
-                                            properties.w2b[0],  properties.w2b[1],  properties.w2b[2] };
+        boost::array<double, 26> state = {  properties.cart[0], properties.cart[1], properties.cart[2],
+                                            properties.cart[3], properties.cart[4], properties.cart[5],
+                                              properties.q1[0],   properties.q1[1],   properties.q1[2], properties.q1[3],
+                                             properties.w1b[0],  properties.w1b[1],  properties.w1b[2],
+                                              properties.q2[0],   properties.q2[1],   properties.q2[2], properties.q2[3],
+                                             properties.w2b[0],  properties.w2b[1],  properties.w2b[2],
+                                            properties.r_sp[0], properties.r_sp[1], properties.r_sp[2],
+                                            properties.v_sp[0], properties.v_sp[1], properties.v_sp[2] };
         
         double t = t0; //Initialize time.
 
-        boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 20>> rkf78_const;
-        auto rkf78_adaptive = boost::numeric::odeint::make_controlled(properties.target_error, properties.target_error, boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 20>>());
-        boost::numeric::odeint::bulirsch_stoer<boost::array<double, 20>> bstoer_adaptive(properties.target_error, properties.target_error);
-        boost::numeric::odeint::adams_bashforth_moulton<5, boost::array<double, 20>> abm_const;
+        boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 26>> rkf78_const;
+        auto rkf78_adaptive = boost::numeric::odeint::make_controlled(properties.target_error, properties.target_error, boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 26>>());
+        boost::numeric::odeint::bulirsch_stoer<boost::array<double, 26>> bstoer_adaptive(properties.target_error, properties.target_error);
+        boost::numeric::odeint::adams_bashforth_moulton<5, boost::array<double, 26>> abm_const;
 
         if (properties.integration_method_var_choice == 3) //Seed Adams-Bashforth-Moulton only if this is the requested method of integration.
             abm_const.initialize(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, dt);
@@ -276,14 +314,17 @@ public:
         //Shoot it!!!
         while (t <= tmax)
         {
-            //Append the current state into the final 'orbit' matrix. No matter what, at least the initial condition is gonna be taken into account (provided that the user input properties are correct).
+            //1) Orbits : append the current state into the final 'orbit' matrix. No matter what, at least the initial condition is gonna be taken into account (provided that the user input properties are correct).
             orbit.push_back({t, state[0],  state[1],  state[2],
                                 state[3],  state[4],  state[5],
                                 state[6],  state[7],  state[8],  state[9],
                                 state[10], state[11], state[12],
                                 state[13], state[14], state[15], state[16],
-                                state[17], state[18], state[19]});
+                                state[17], state[18], state[19],
+                                state[20], state[21], state[22],
+                                state[23], state[24], state[25]});
 
+            //2) Kinetic impacts : apply corresponding maneuvers in case that kinetic impactors were assumed in the gui.
             if (properties.impactors_checkbox)
             {
                 if (!maneuver1_applied && t >= properties.t1_impact)
@@ -302,32 +343,88 @@ public:
                 }
             }
 
-            if (properties.collision_spheres) //Check for sphere-sphere collision detection between the 2 asteroids.
+            //3) Collisions : check for asteroid–asteroid and spacecraft–asteroid collisions.
+            if (properties.collision_spheres) //Spheres checkbox.
             {
+                //Sphere asteroid-asteroid collision.
                 if (sphere_sphere_collision(length(dvec3{state[0],state[1],state[2]}), brillouin1, brillouin2))
                 {
-                    sprintf(formatted_text,"< Collision detected at t = %5.2lf [days]. >\n", t/86400.0);
+                    sprintf(formatted_text,"< Collision (asteroid - asteroid) detected at t = %5.2lf [days]. >\n", t/86400.0);
                     console.add_text(formatted_text);
                     collision = true;
                     break;
                 }
-            }
-            else if (properties.collision_polyhedra) //Check for polyhedron-polyhedron collision detection between the 2 asteroids, but only after the sphere-sphere collision is true.
-            {
-                if (sphere_sphere_collision(length(dvec3{state[0],state[1],state[2]}), brillouin1, brillouin2))
+                
+                //Sphere spacecraft-asteroid (sphere-point test).
+                if (properties.spacecraft_checkbox)
                 {
-                    //Now apply the polyhedron-polyhedron test.
+                    const dvec3 r = dvec3{state[0],state[1],state[2]};
+                    const double c1 = -properties.M2/(properties.M1 + properties.M2);
+                    const double c2 =  properties.M1/(properties.M1 + properties.M2);
+                    const dvec3 r1 = c1*r;
+                    const dvec3 r2 = c2*r;
+                    const dvec3 r_sp = dvec3{state[20],state[21],state[22]};
+                    if (sphere_point_collision(length(r_sp - r1), brillouin1))
+                    {
+                        sprintf(formatted_text,"< Collision (asteroid - spacecraft) at t = %5.2lf [days]. >\n", t/86400.0);
+                        console.add_text(formatted_text);
+                        collision_sp = true;
+                        break;
+                    }
+                    if (sphere_point_collision(length(r_sp - r2), brillouin2))
+                    {
+                        sprintf(formatted_text,"< Collision (asteroid - spacecraft) at t = %5.2lf [days]. >\n", t/86400.0);
+                        console.add_text(formatted_text);
+                        collision_sp = true;
+                        break;
+                    }
+                }
+            }
+            else if (properties.collision_polyhedra) //Polyhedra checkbox, but with sphere gates.
+            {
+                const dvec3 r = dvec3{state[0],state[1],state[2]};
+                const double c1 = -properties.M2/(properties.M1 + properties.M2);
+                const double c2 =  properties.M1/(properties.M1 + properties.M2);
+                const dvec3 r1 = c1*r;
+                const dvec3 r2 = c2*r;
+                if (sphere_sphere_collision(length(r), brillouin1, brillouin2))
+                {
                     const dmat3 A1 = quat2mat(dvec4{state[6],state[7],state[8],state[9]});
                     const dmat3 A2 = quat2mat(dvec4{state[13],state[14],state[15],state[16]});
-                    const double coeff_M1 = -properties.M2/(properties.M1 + properties.M2);
-                    const double coeff_M2 =  properties.M1/(properties.M1 + properties.M2);
-                    const dvec3 r = dvec3{state[0],state[1],state[2]};
-                    if (polyhedron_polyhedron_collision(properties.poly1, A1, coeff_M1*r, properties.poly2, A2, coeff_M2*r ))
+                    if (polyhedron_polyhedron_collision(properties.poly1, A1, r1, properties.poly2, A2, r2))
                     {
-                        sprintf(formatted_text,"< Collision detected at t = %5.2lf [days]. >\n", t/86400.0);
+                        sprintf(formatted_text,"< Collision (asteroid - asteroid) at t = %5.2lf [days]. >\n", t/86400.0);
                         console.add_text(formatted_text);
                         collision = true;
                         break;
+                    }
+                }
+
+                //Polyhedron spacecraft-asteroid (sphere-point gate, then polyhedron-point).
+                if (properties.spacecraft_checkbox)
+                {
+                    const dvec3 r_sp = dvec3{state[20],state[21],state[22]};
+                    if (sphere_point_collision(length(r_sp - r1), brillouin1))
+                    {
+                        const dmat3 A1 = quat2mat(dvec4{state[6],state[7],state[8],state[9]});
+                        if (polyhedron_point_collision(properties.poly1, A1, r1, r_sp))
+                        {
+                            sprintf(formatted_text,"< Collision (spacecraft - asteroid) at t = %5.2lf [days]. >\n", t/86400.0);
+                            console.add_text(formatted_text);
+                            collision_sp = true;
+                            break;
+                        }
+                    }
+                    if (sphere_point_collision(length(r_sp - r2), brillouin2))
+                    {
+                        const dmat3 A2 = quat2mat(dvec4{state[13],state[14],state[15],state[16]});
+                        if (polyhedron_point_collision(properties.poly2, A2, r2, r_sp))
+                        {
+                            sprintf(formatted_text,"< Collision (spacecraft - asteroid, polyhedron) at t = %5.2lf [days]. >\n", t/86400.0);
+                            console.add_text(formatted_text);
+                            collision_sp = true;
+                            break;
+                        }
                     }
                 }
             }
@@ -361,7 +458,7 @@ public:
             progress.store((t-t0)/(tmax-t0));
         }
 
-        if (!abort_flag.load() && !collision)
+        if (!abort_flag.load() && !collision && !collision_sp)
         {
             progress.store(1.0f);
             console.add_text("Done.\n");
