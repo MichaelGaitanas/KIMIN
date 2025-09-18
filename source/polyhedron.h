@@ -311,6 +311,8 @@ public:
     //Render the polyhedral mesh.
     void render()
     {
+        if (!gl_ready) return; //Guard.
+        
         glBindVertexArray(gl_vao);
         glDrawArrays(GL_TRIANGLES, 0, (GLsizei)gl_vertex_count);
         glBindVertexArray(0);

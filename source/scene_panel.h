@@ -129,7 +129,7 @@ public:
             ImPlot::PlotScatter("Current frame", &sol2D.t[i_reduced], &plot_func[i_reduced], 1);
 
             //If there's a collision, highlight final point.
-            if (sol2D.integr.collision)
+            if (sol2D.integr.collision || sol2D.integr.collision_sp)
             {
                 ImPlot::SetNextMarkerStyle(ImPlotMarker_Down, 6.0f, ImColor(255, 100, 0, 255), 1.0f, ImColor(255, 100, 0, 255));
                 ImPlot::PlotScatter("Collision frame", &sol2D.t.back(), &plot_func.back(), 1); //Plot the final point as a scatter plot.
@@ -404,6 +404,22 @@ public:
         if (rend3D.orb2_match)
             rend3D.orb2.draw_count = current_frame;
 
+        uint64_t visible_last_sp = (rend3D.orb_sp.draw_count == 0) ? 0 : static_cast<uint64_t>(rend3D.orb_sp.draw_count - 1);
+
+        ImGui::Text("Orbiter");
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(60.0f);
+        ImGui::Checkbox("##60", &rend3D.render_orb_sp);
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(100.0f);
+        ImGui::SetNextItemWidth(100);
+        ImGui::SliderScalar("##61", ImGuiDataType_U64, &visible_last_sp, &zero_frame, &max_frame, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SameLine();
+        rend3D.orb_sp.draw_count = static_cast<size_t>(visible_last_sp+1);
+        rend3D.orb_sp_match = common_onoff_button("Match##62", ImVec2(50.0f, 18.0f), rend3D.orb_sp_match);
+        if (rend3D.orb_sp_match)
+            rend3D.orb_sp.draw_count = current_frame;
+
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
@@ -413,21 +429,21 @@ public:
         ImGui::Text("Body 1");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::ColorEdit3("##60", glm::value_ptr(rend3D.aster1_col), ImGuiColorEditFlags_NoInputs);
+        ImGui::ColorEdit3("##63", glm::value_ptr(rend3D.aster1_col), ImGuiColorEditFlags_NoInputs);
         ImGui::SameLine();
         ImGui::SetCursorPosX(120.0f);
         ImGui::Text("Body 2");
         ImGui::SameLine();
-        ImGui::ColorEdit3("##61", glm::value_ptr(rend3D.aster2_col), ImGuiColorEditFlags_NoInputs);
+        ImGui::ColorEdit3("##64", glm::value_ptr(rend3D.aster2_col), ImGuiColorEditFlags_NoInputs);
         ImGui::Text("Orbit 1");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::ColorEdit3("##62", glm::value_ptr(rend3D.orb1_col), ImGuiColorEditFlags_NoInputs);
+        ImGui::ColorEdit3("##65", glm::value_ptr(rend3D.orb1_col), ImGuiColorEditFlags_NoInputs);
         ImGui::SameLine();
         ImGui::SetCursorPosX(120.0f);
         ImGui::Text("Orbit 2");
         ImGui::SameLine();
-        ImGui::ColorEdit3("##63", glm::value_ptr(rend3D.orb2_col), ImGuiColorEditFlags_NoInputs);
+        ImGui::ColorEdit3("##66", glm::value_ptr(rend3D.orb2_col), ImGuiColorEditFlags_NoInputs);
 
         if (disabled)
             ImGui::EndDisabled();
@@ -440,7 +456,7 @@ public:
         {
             if (frame_rate == 0) //The slider is set to 0 => paused. Do not increment current_frame.
             {
-
+                //Pass.
             }
             else if (frame_rate < 60) //We do a time-based step to achieve the chosen frame_rate.
             {

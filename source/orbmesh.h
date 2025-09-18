@@ -5,7 +5,7 @@
 
 #include<vector>
 
-#include"solution.h"
+#include"typedef.h"
 
 class orbmesh
 {
@@ -40,23 +40,23 @@ public:
         gl_ready = false;
     }
 
-    void set_as_gl_mesh(const solution &sol, const float com_coeff)
+    void set_as_gl_mesh(const dvec &x, const dvec &y, const dvec &z, const float coeff)
     {
-        //If the orbital data [x(t),y(t),z(t)] have already been uploaded to the GPU, exit the function.
-        if (gl_ready) return;
+        if (gl_ready) return; //If the orbital data [x(t),y(t),z(t)] have already been uploaded to the GPU, just exit the function.
 
-        //Construct the 2 orbital meshes.
+        //Construct the orbital mesh.
         std::vector<float> interleaved_buffer; //Meant to contain {(x1,y1,z1), (z2,y2,z2), ..., (xn,yn,zn)}, meant to be connected via GL_LINE_STRIP.
-        interleaved_buffer.resize(3*sol.t.size()); //3 vertices per face, 6 floats each.
+        const size_t N = x.size();
+        interleaved_buffer.resize(3*N); //3 vertices per face, 6 floats each.
 
         size_t j = 0;
-        for (size_t i = 0; i < sol.t.size(); ++i)
+        for (size_t i = 0; i < N; ++i)
         {
-            interleaved_buffer[j++] = com_coeff*(float)sol.x[i];
-            interleaved_buffer[j++] = com_coeff*(float)sol.y[i];
-            interleaved_buffer[j++] = com_coeff*(float)sol.z[i];
+            interleaved_buffer[j++] = coeff*static_cast<float>(x[i]);
+            interleaved_buffer[j++] = coeff*static_cast<float>(y[i]);
+            interleaved_buffer[j++] = coeff*static_cast<float>(z[i]);
         }
-        draw_count = interleaved_buffer.size()/3; //Because each vertex has 3 float attributes bound.
+        draw_count = N;
 
         glGenVertexArrays(1, &vao);
         glBindVertexArray(vao);
@@ -76,6 +76,8 @@ public:
     //Draw the orbital mesh in the form of line strip.
     void render()
     {
+        if (!gl_ready) return; //Guard.
+
         glBindVertexArray(vao);
         glLineWidth(thickness);
         glDrawArrays(GL_LINE_STRIP, 0, draw_count);

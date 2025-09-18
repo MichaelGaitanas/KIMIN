@@ -497,7 +497,7 @@ public:
             fprintf(file_properties,"t2    := %.15g\n",integr.properties.t2_impact/86400.0);
         }
         else
-            fprintf(file_properties, "Kinetic impactors := \"No\"\n");
+            fprintf(file_properties, "Kinetic impactors := \"No\"\n\n");
 
         if (integr.properties.spacecraft_checkbox)
         {

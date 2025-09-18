@@ -34,12 +34,12 @@ public:
     {
         projection = glm::infinitePerspective(glm::radians(fov), win_aspect_ratio, 0.1f); //<<<<<<<<<<<< I need to fix the hard-coded 0.1f...
 
-        //Spherical to Cartesian...
+        //Spherical to Cartesian.
         pos = dist*glm::vec3(cos(glm::radians(lon))*sin(glm::radians(lat)),
                              sin(glm::radians(lon))*sin(glm::radians(lat)),
                              cos(glm::radians(lat)));
         
-        //The up vector is equal to the minus unit latitude basis vector (expressed as a function of the cartesian unit vectors) : up = -hat(θ(hat(x),hat(y),hat(z))).
+        //The up vector is equal to the minus unit latitude basis vector, but expressed as a function of the Cartesian unit vectors : up = -hat(θ(hat(x),hat(y),hat(z))).
         up = -glm::vec3(cos(glm::radians(lat))*cos(glm::radians(lon)),
                         cos(glm::radians(lat))*sin(glm::radians(lon)),
                        -sin(glm::radians(lat)));

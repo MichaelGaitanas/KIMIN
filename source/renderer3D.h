@@ -23,7 +23,7 @@ private:
     shader sh_depth, sh_dlight_shadow, sh_orb; //Shaders...
     unsigned int depth_fbo, depth_tex; //IDs to hold the depth fbo and the depth texture for the shadow map.
     glm::vec3 xaxis_col, yaxis_col, zaxis_col; //Colors of the body-frame axes (red, green, blue, respectively).
-    polyhedron xaxis, yaxis, zaxis;
+    polyhedron xaxis, yaxis, zaxis; //Body-frame axes models.
 
 public:
     camera cam;
@@ -36,8 +36,8 @@ public:
 
     bool render_aster1, render_aster2;
     bool render_axes1, render_axes2;
-    bool render_orb1, render_orb2;
-    bool orb1_match, orb2_match;
+    bool render_orb1, render_orb2, render_orb_sp;
+    bool orb1_match, orb2_match, orb_sp_match;
 
     int win_width, win_height;
     
@@ -62,14 +62,17 @@ public:
                    aster2_col(glm::vec3(1.0f)),
                    orb1_col(glm::vec3(0.0f,0.75f,0.75f)),
                    orb2_col(glm::vec3(0.0f,0.75f,0.75f)),
+                   orb_sp_col(glm::vec3(0.0f,0.75f,0.75f)),
                    render_aster1(true),
                    render_aster2(true),
                    render_axes1(false),
                    render_axes2(false),
                    render_orb1(false),
                    render_orb2(false),
+                   render_orb_sp(false),
                    orb1_match(false),
                    orb2_match(false),
+                   orb_sp_match(false),
                    win_width(1),
                    win_height(1)
     {
@@ -124,8 +127,10 @@ public:
         orb_sp.clear();
         sol.integr.properties.poly1.clear_gl_mesh();
         sol.integr.properties.poly2.clear_gl_mesh();
-        orb1.set_as_gl_mesh(sol, (float)sol.integr.com1_coeff);
-        orb2.set_as_gl_mesh(sol, (float)sol.integr.com2_coeff);
+        orb1.set_as_gl_mesh(sol.x, sol.y, sol.z, static_cast<float>(sol.integr.com1_coeff));
+        orb2.set_as_gl_mesh(sol.x, sol.y, sol.z, static_cast<float>(sol.integr.com2_coeff));
+        if (sol.integr.properties.spacecraft_checkbox)
+            orb_sp.set_as_gl_mesh(sol.x_sp, sol.y_sp, sol.z_sp, 1.0f);
         sol.integr.properties.poly1.set_as_gl_mesh();
         sol.integr.properties.poly2.set_as_gl_mesh();
         setup_depth_fbo();
@@ -227,7 +232,8 @@ public:
         sh_orb.set_vec3_uniform("mesh_col", orb2_col);
         if (render_orb2)
             orb2.render();
-        if (sol.integr.properties.spacecraft_checkbox)
+        sh_orb.set_vec3_uniform("mesh_col", orb_sp_col);
+        if (render_orb_sp)
             orb_sp.render();
     }
 };

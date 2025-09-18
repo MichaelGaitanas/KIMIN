@@ -4,15 +4,15 @@ Shape models := ".obj files"
 file 1 := "didymain2019_R04km.obj"
 file 2 := "dimorphos_ellipsoid_R01km.obj"
 
-Mutual potential order := 2
+Mutual potential order := 4
 
 M1 := 515041825125.529
 M2 := 3926933196.12399
 
-Numerical method := "BStoer (adaptive)"
+Numerical method := "RKF78 (adaptive)"
 Epoch := 0
-Duration := 31
-Target error := 1e-13
+Duration := 365
+Target error := 1e-14
 
 Relative position and velocity := "Cartesian"
 x  := 1.18
@@ -38,14 +38,14 @@ w2ix := 0
 w2iy := 0
 w2iz := 0.000146402
 
-Collision shapes := "Spheres"
+Collision shapes := "Polyhedra"
 
 Kinetic impactors := "No"
 
 Spacecraft orbiter := "Yes"
-xs  := 3.0
+xs  := 3
 ys  := 0
 zs  := 0
 vxs := 0
-vys := 0.00013
-vzs := 0
+vys := 0
+vzs := 0.00011
