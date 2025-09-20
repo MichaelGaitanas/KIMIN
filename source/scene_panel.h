@@ -257,8 +257,7 @@ public:
         total_frames = static_cast<uint64_t>(sol.t.size());
         uint64_t max_frame = (total_frames > 0) ? total_frames - 1 : 0;
 
-        bool disabled = !render_scene;
-        if (disabled)
+        if (!render_scene)
         {
             ImGui::BeginDisabled();
             ImGui::Button("Play/Pause", ImVec2(80.0f, 25.0f));
@@ -266,11 +265,18 @@ public:
         }
         else
         {
+            ImVec4 col = play_pause_video ? ImVec4(0.0f, 0.7f, 0.0f, 1.0f) : ImVec4(0.7f, 0.0f, 0.0f, 1.0f);
+            ImGui::PushStyleColor(ImGuiCol_Button,        col);
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(col.x+0.2f, col.y+0.2f, col.z+0.2f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(col.x*0.8f, col.y*0.8f, col.z*0.8f, 1.0f));
+
             if (ImGui::Button("Play/Pause", ImVec2(80.0f, 25.0f)))
                 play_pause_video = !play_pause_video;
+
+            ImGui::PopStyleColor(3);
         }
 
-        if (disabled)
+        if (!render_scene)
             ImGui::BeginDisabled();
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
@@ -303,17 +309,17 @@ public:
         ImGui::Text("Lon");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##44", &rend3D.cam.lon, 0.0f, 360.0f);
+        ImGui::SliderFloat("[deg]##44", &rend3D.cam.lon, 0.0f, 360.0f, "%.1f");
 
         ImGui::Text("Lat");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##45", &rend3D.cam.lat, 0.0f, 180.0f);
+        ImGui::SliderFloat("[deg]##45", &rend3D.cam.lat, 0.0f, 180.0f, "%.1f");
 
         ImGui::Text("FoV");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##46", &rend3D.cam.fov, 1.0f, 179.0f, "%.0f");
+        ImGui::SliderFloat("[deg]##46", &rend3D.cam.fov, rend3D.cam.min_fov, rend3D.cam.max_fov, "%.0f");
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Separator();
@@ -324,12 +330,12 @@ public:
         ImGui::Text("Lon");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##47", &rend3D.sunlight.lon, 0.0f, 360.0f);
+        ImGui::SliderFloat("[deg]##47", &rend3D.sunlight.lon, 0.0f, 360.0f, "%.1f");
 
         ImGui::Text("Lat");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##48", &rend3D.sunlight.lat, 0.0f, 180.0f);
+        ImGui::SliderFloat("[deg]##48", &rend3D.sunlight.lat, 0.0f, 180.0f, "%.1f");
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Separator();
@@ -406,6 +412,10 @@ public:
 
         uint64_t visible_last_sp = (rend3D.orb_sp.draw_count == 0) ? 0 : static_cast<uint64_t>(rend3D.orb_sp.draw_count - 1);
 
+
+        if (!sol.integr.properties.spacecraft_checkbox)
+                ImGui::BeginDisabled();
+
         ImGui::Text("Orbiter");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
@@ -419,6 +429,9 @@ public:
         rend3D.orb_sp_match = common_onoff_button("Match##62", ImVec2(50.0f, 18.0f), rend3D.orb_sp_match);
         if (rend3D.orb_sp_match)
             rend3D.orb_sp.draw_count = current_frame;
+
+        if (!sol.integr.properties.spacecraft_checkbox)
+                ImGui::EndDisabled();
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Separator();
@@ -445,14 +458,57 @@ public:
         ImGui::SameLine();
         ImGui::ColorEdit3("##66", glm::value_ptr(rend3D.orb2_col), ImGuiColorEditFlags_NoInputs);
 
-        if (disabled)
+
+        ImGui::SliderFloat("sun_ang_deg", &rend3D.sun_ang_deg, 0.0f, 5.0f, "%.1f");
+        ImGui::SliderFloat("sun_dist_factor", &rend3D.sun_dist_factor, 0.0f, 100.0f, "%.1f");
+        ImGui::SliderFloat("sun_disc_intensity", &rend3D.sun_disc_intensity, 0.0f, 60.0f, "%.1f");
+        ImGui::SliderFloat("sun_disc_edge_soft", &rend3D.sun_disc_edge_soft, 0.0f, 1.0f, "%.1f");
+        ImGui::SliderFloat("sun_limb_strength", &rend3D.sun_limb_strength, 0.0f, 1.0f, "%.1f");
+        ImGui::SliderFloat("sun_limb_power", &rend3D.sun_limb_power, 0.0f, 5.0f, "%.1f");
+
+        ImGui::SliderInt("sun_rays_count", &rend3D.sun_rays_count, 0, 100, "%d");
+        ImGui::SliderFloat("sun_rays_scale", &rend3D.sun_rays_scale, 0.0f, 20.0f, "%.1f");
+        ImGui::SliderFloat("sun_rays_intensity", &rend3D.sun_rays_intensity, 0.0f, 20.0f, "%.1f");
+        ImGui::SliderFloat("sun_rays_width_frac", &rend3D.sun_rays_width_frac, 0.0f, 10.0f, "%.1f");
+        ImGui::SliderFloat("sun_rays_sharpness", &rend3D.sun_rays_sharpness, 0.0f, 10.0f, "%.1f");
+        ImGui::SliderFloat("sun_rays_falloff", &rend3D.sun_rays_falloff, 0.0f, 10.0f, "%.1f");
+        ImGui::SliderFloat("sun_rays_rotation", &rend3D.sun_rays_rotation, 0.0f, 360.0f, "%.1f");
+        
+        ImGui::ColorEdit3("sun_color", glm::value_ptr(rend3D.sun_color), ImGuiColorEditFlags_NoInputs);
+
+
+
+
+
+
+        if (!render_scene)
             ImGui::EndDisabled();
 
-        if (!disabled)
-            rend3D.render_3D_content(sol, current_frame, reset_essential);
+        ImGuiIO &io = ImGui::GetIO();
+        if (render_scene && !io.WantCaptureMouse)
+        {
+            if (io.MouseWheel != 0.0f)
+            {
+                if (io.KeyCtrl)
+                    rend3D.cam.scroll_fov(io.MouseWheel);
+                else //Not pressing the ctrl key, hence change camera distance.
+                    rend3D.cam.scroll_dist(io.MouseWheel);
+            }
 
+            if (io.MouseDown[ImGuiMouseButton_Middle])
+            {
+                const ImVec2 d = io.MouseDelta;
+                if (d.x != 0.0f || d.y != 0.0f)
+                {
+                    if (io.KeyCtrl)
+                        rend3D.sunlight.rotate_lon_lat(d.x, d.y);
+                    else
+                        rend3D.cam.rotate_lon_lat(d.x, d.y);
+                }
+            }
+        }
 
-        if (play_pause_video && current_frame < total_frames - 1)
+        if (play_pause_video && render_scene && current_frame < total_frames - 1)
         {
             if (frame_rate == 0) //The slider is set to 0 => paused. Do not increment current_frame.
             {
@@ -473,6 +529,10 @@ public:
             else //frame_rate == 60 => let it play as fast as the machine can handle, i.e. increment every time we render.
                 current_frame++;
         }
+        
+        //As a final step, render the 3D content under the constraints implied by 'render_scene' variable.
+        if (render_scene)
+            rend3D.render_3D_content(sol, current_frame, reset_essential);
     }
     
     void render(const int win_width, const int win_height)

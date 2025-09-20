@@ -106,7 +106,7 @@ public:
         gui ui(wpointer); //Instantiate the user interface along with some settings defined in the corresponding contructor (gui.h).
         
         glEnable(GL_DEPTH_TEST);
-        glEnable(GL_CULL_FACE);
+        //glEnable(GL_CULL_FACE);
         glClearColor(0.06f,0.06f,0.06f,1.0f);
         while (!glfwWindowShouldClose(wpointer))
         {

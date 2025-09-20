@@ -1,6 +1,8 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
+#include<cmath>
+
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
 #include<glm/gtc/type_ptr.hpp>
@@ -8,7 +10,7 @@
 class camera
 {
 public:
-    float dist, lon, lat, fov, min_dist, max_dist;
+    float dist, lon, lat, fov, min_dist, max_dist, min_fov, max_fov;
     glm::vec3 pos, aim, up;
     glm::mat4 projection, view;
 
@@ -18,7 +20,9 @@ public:
                fov(60.0f),
                aim(glm::vec3(0.0f)),
                min_dist(0.0f),
-               max_dist(0.0f)
+               max_dist(0.0f),
+               min_fov(1.0f),
+               max_fov(179.0f)
     { }
 
     //This function runs one time after every simulation termination.
@@ -27,6 +31,32 @@ public:
         min_dist = 1.1f*brillouin_radii_sum;
         max_dist = 40.0f*binary_max_dist;
         dist = min_dist + 0.1f*(max_dist - min_dist);
+    }
+
+    //This function alters the camera's 'dist' memeber, based on how much the user scrolled the mouse wheel since the last frame.
+    void scroll_dist(const float mouse_delta_wheel)
+    {
+        dist *= pow(0.9f, mouse_delta_wheel);
+        if (dist < min_dist) dist = min_dist;
+        else if (dist > max_dist) dist = max_dist;
+    }
+
+    //This function alters the camera's 'fov' memeber, based on how much the user scrolled the mouse wheel + ctrl key since the last frame.
+    void scroll_fov(const float mouse_delta_wheel)
+    {
+        fov -= mouse_delta_wheel;
+        if (fov <= min_fov) fov = min_fov;
+        else if (fov >= max_fov) fov = max_fov;
+    }
+
+    void rotate_lon_lat(const float dx, const float dy, const float mouse_sensitivity = 0.3f)
+    {
+        lon = fmod(lon - dx*mouse_sensitivity, 360.0f);
+        if (lon < 0.0f) lon += 360.0f;
+
+        lat -= dy*mouse_sensitivity;
+        if (lat < 0.04f) lat = 0.04f;
+        if (lat > 179.96f) lat = 179.96f;
     }
 
     //This function computes the camera values of the variables that are passed as uniforms to the shaders in the render_3D_content().

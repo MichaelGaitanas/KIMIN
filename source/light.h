@@ -38,6 +38,16 @@ public:
         projection = glm::ortho(-fc*dist,fc*dist, -fc*dist,fc*dist, (fl-fc)*dist, 2.0f*fc*dist); //Directional light's projection matrix.
     }
 
+    void rotate_lon_lat(const float dx, const float dy, const float mouse_sensitivity = 0.3f)
+    {
+        lon = fmod(lon - dx*mouse_sensitivity, 360.0f);
+        if (lon < 0.0f) lon += 360.0f;
+
+        lat -= dy*mouse_sensitivity;
+        if (lat < 0.04f) lat = 0.04f;
+        if (lat > 179.96f) lat = 179.96f;
+    }
+
     //This function computes the light values of the variables that are passed as uniforms to the shaders in the render_3D_content().
     void set_geometry()
     {

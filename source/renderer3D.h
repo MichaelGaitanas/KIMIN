@@ -11,6 +11,8 @@
 #include"light.h"
 #include"camera.h"
 #include"orbmesh.h"
+#include"skybox.h"
+#include"quadbillboard.h"
 #include"solution.h"
 
 #include<glm/glm.hpp>
@@ -20,10 +22,12 @@
 class renderer3D
 {
 private:
-    shader sh_depth, sh_dlight_shadow, sh_orb; //Shaders...
+    shader sh_depth, sh_dlight_shadow, sh_orb, sh_skybox, sh_sun; //Shaders...
     unsigned int depth_fbo, depth_tex; //IDs to hold the depth fbo and the depth texture for the shadow map.
     glm::vec3 xaxis_col, yaxis_col, zaxis_col; //Colors of the body-frame axes (red, green, blue, respectively).
     polyhedron xaxis, yaxis, zaxis; //Body-frame axes models.
+    std::unique_ptr<skybox> sb;
+    quadbillboard sunquad;
 
 public:
     camera cam;
@@ -40,10 +44,30 @@ public:
     bool orb1_match, orb2_match, orb_sp_match;
 
     int win_width, win_height;
+
+    float sun_ang_deg      ;
+    float sun_dist_factor  ;
+    glm::vec3 sun_color    ;
+
+    // Disc params
+    float sun_disc_intensity;
+    float sun_disc_edge_soft;
+    float sun_limb_strength;
+    float sun_limb_power   ;
+
+    int   sun_rays_count     ;
+    float sun_rays_scale     ;
+    float sun_rays_intensity ;
+    float sun_rays_width_frac;
+    float sun_rays_sharpness  ;
+    float sun_rays_falloff    ;
+    float sun_rays_rotation   ;
     
     renderer3D() : sh_depth("../shaders/vertex/trans_dir_light_mvp.vert","../shaders/fragment/nothing.frag"),
                    sh_dlight_shadow("../shaders/vertex/trans_mvpn_shadow.vert","../shaders/fragment/dir_light_ad_shadow.frag"),
                    sh_orb("../shaders/vertex/trans_mvp.vert","../shaders/fragment/monochromatic.frag"),
+                   sh_skybox("../shaders/vertex/skybox.vert","../shaders/fragment/skybox.frag"),
+                   sh_sun("../shaders/vertex/sun.vert", "../shaders/fragment/sun.frag"),
                    depth_fbo(0),
                    depth_tex(0),
                    xaxis_col(glm::vec3(1.0f,0.0f,0.0f)),
@@ -52,16 +76,17 @@ public:
                    xaxis(),
                    yaxis(),
                    zaxis(),
+                   sb(nullptr),
                    cam(),
                    sunlight(),
                    orb1(),
                    orb2(),
                    orb_sp(),
                    depth_reso(2048),
-                   aster1_col(glm::vec3(1.0f)),
-                   aster2_col(glm::vec3(1.0f)),
-                   orb1_col(glm::vec3(0.0f,0.75f,0.75f)),
-                   orb2_col(glm::vec3(0.0f,0.75f,0.75f)),
+                   aster1_col(glm::vec3(0.8f)),
+                   aster2_col(glm::vec3(0.8f)),
+                   orb1_col(glm::vec3(0.7f,0.0f,0.0f)),
+                   orb2_col(glm::vec3(0.0f,0.7f,0.0f)),
                    orb_sp_col(glm::vec3(0.0f,0.75f,0.75f)),
                    render_aster1(true),
                    render_aster2(true),
@@ -74,7 +99,22 @@ public:
                    orb2_match(false),
                    orb_sp_match(false),
                    win_width(1),
-                   win_height(1)
+                   win_height(1),
+                   sun_ang_deg(0.27f),
+                   sun_dist_factor(5.0f),
+                   sun_color(glm::vec3(1.0f, 0.9f, 0.9f)),
+                   sun_disc_intensity(1.0f),
+                   sun_disc_edge_soft(0.03f),
+                   sun_limb_strength(0.6f),
+                   sun_limb_power(1.5f),
+                   sun_rays_count(8), 
+                   sun_rays_scale(3.5f),      
+                   sun_rays_intensity(0.8f),  
+                   sun_rays_width_frac(0.25f),
+                   sun_rays_sharpness(4.0f),  
+                   sun_rays_falloff(1.4f),    
+                   sun_rays_rotation(0.0f)   
+
     {
         xaxis.load_obj_file("../obj/axes/xaxis.obj"); xaxis.gen_norms(); xaxis.set_as_gl_mesh();
         yaxis.load_obj_file("../obj/axes/yaxis.obj"); yaxis.gen_norms(); yaxis.set_as_gl_mesh();
@@ -134,6 +174,13 @@ public:
         sol.integr.properties.poly1.set_as_gl_mesh();
         sol.integr.properties.poly2.set_as_gl_mesh();
         setup_depth_fbo();
+
+        if (!sb) sb = std::make_unique<skybox>("../skybox/starfield2k/right.jpg",
+                                               "../skybox/starfield2k/left.jpg",
+                                               "../skybox/starfield2k/top.jpg",
+                                               "../skybox/starfield2k/bottom.jpg",
+                                               "../skybox/starfield2k/front.jpg",
+                                               "../skybox/starfield2k/back.jpg");
     }
 
     //This function handles the rendering logic of the 3D content.
@@ -144,7 +191,7 @@ public:
         {
             reset_gpu_resources(sol);   
             reset_essential = false;
-        }
+        } 
 
         sunlight.set_geometry();
         cam.set_geometry(win_width/(float)win_height);
@@ -194,6 +241,79 @@ public:
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0,0, win_width,win_height);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        if (sb)
+        {
+            glDepthFunc(GL_LEQUAL);
+            glDisable(GL_CULL_FACE);
+            sh_skybox.use();
+            sh_skybox.set_int_uniform("skybox", 0);
+
+            glm::mat4 view_no_trans = glm::mat4(glm::mat3(cam.view));
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0,0,1));
+            model = glm::rotate(model, glm::radians( 90.0f), glm::vec3(1,0,0));
+
+            sh_skybox.set_mat4_uniform("projection", cam.projection);
+            sh_skybox.set_mat4_uniform("view",       view_no_trans);
+            sh_skybox.set_mat4_uniform("model",      model);
+
+            sb->draw_triangles();
+            glDepthFunc(GL_LESS);
+            glEnable(GL_CULL_FACE);
+        }
+
+        {
+            const float sun_distance           = std::max(cam.dist * sun_distance, 5.0f);
+
+            sh_sun.use();
+            sh_sun.set_mat4_uniform("projection",      cam.projection);
+            sh_sun.set_mat4_uniform("view",            cam.view);
+            sh_sun.set_vec3_uniform("light_dir_world", sunlight.dir);
+            sh_sun.set_vec3_uniform("sun_color",       sun_color);
+            sh_sun.set_float_uniform("sun_angular_radius_deg", sun_ang_deg);
+            sh_sun.set_float_uniform("sun_distance",   sun_distance);
+
+            // 1) Core disc — opaque, writes depth (so later geometry overdraws it)
+            glDisable(GL_CULL_FACE);
+            glDisable(GL_BLEND);
+            glDepthFunc(GL_LEQUAL);
+            glDepthMask(GL_TRUE);
+
+            sh_sun.set_int_uniform("u_mode", 0);
+            sh_sun.set_float_uniform("sun_scale", 1.0f);
+            sh_sun.set_float_uniform("sun_disc_intensity", sun_disc_intensity);
+            sh_sun.set_float_uniform("sun_disc_edge_soft", sun_disc_edge_soft);
+            sh_sun.set_float_uniform("sun_limb_strength",  sun_limb_strength);
+            sh_sun.set_float_uniform("sun_limb_power",     sun_limb_power);
+
+            sunquad.draw();
+
+            // 2) Rays — additive, no depth writes (but drawn before your meshes)
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_ONE, GL_ONE);
+            glDepthMask(GL_FALSE);
+
+            sh_sun.set_int_uniform("u_mode", 2);
+            sh_sun.set_float_uniform("sun_scale",        sun_rays_scale);
+            sh_sun.set_int_uniform  ("sun_rays_count",   sun_rays_count);
+            sh_sun.set_float_uniform("sun_rays_intensity",  sun_rays_intensity);
+            sh_sun.set_float_uniform("sun_rays_width_frac", sun_rays_width_frac);
+            sh_sun.set_float_uniform("sun_rays_sharpness",  sun_rays_sharpness);
+            sh_sun.set_float_uniform("sun_rays_falloff",    sun_rays_falloff);
+            sh_sun.set_float_uniform("sun_rays_rotation",   sun_rays_rotation);
+
+            sunquad.draw();
+
+            // Restore
+            glDepthMask(GL_TRUE);
+            glDisable(GL_BLEND);
+            glDepthFunc(GL_LESS);
+            glEnable(GL_CULL_FACE);
+        }
+
+        //End of Sun rendering pass.
+
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, depth_tex);
         sh_dlight_shadow.use();

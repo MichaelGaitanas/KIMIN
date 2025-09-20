@@ -130,6 +130,8 @@ public:
 
     void import_file(const char *path, console_panel &console)
     {
+        *this = properties_panel{}; //Reset the inputs. This command basically re-runs the constructor.
+
         FILE *fp = fopen(path,"r");
         if (!fp) //Safety check, though this should never happen. It is already verified by the top_bar_panel that the file exists, otherwise it would not appear as an available choice in the gui.
         {
@@ -145,7 +147,6 @@ public:
             for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&semiaxes1[i]);
             for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&semiaxes2[i]);
             ell_checkbox = ell_clicked_ok = true;
-            obj_checkbox = obj_clicked_ok = false;
         }
         else //".obj files"
         {
@@ -159,23 +160,17 @@ public:
                 fscanf(fp, " \"%[^\"]\"", buffer);
                 obj2_path = buffer;
             }
-            ell_checkbox = ell_clicked_ok = false;
             obj_checkbox = obj_clicked_ok = true;
         }
         int Vord;
         if (find_assignment_operator(fp)) fscanf(fp, "%d",&Vord);
         if (Vord <= 2)
-        {
-            ord2_checkbox = true; ord3_checkbox = false; ord4_checkbox = false;
-        }
+            ord2_checkbox = true;
         else if (Vord == 3)
-        {
-            ord2_checkbox = false; ord3_checkbox = true; ord4_checkbox = false;
-        }
+            ord3_checkbox = true;
         else
-        {
-            ord2_checkbox = false; ord3_checkbox = false; ord4_checkbox = true;
-        }
+            ord4_checkbox = true;
+
         if (find_assignment_operator(fp)) fscanf(fp, "%lf",&M1);
         if (find_assignment_operator(fp)) fscanf(fp, "%lf",&M2);
         if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", buffer);
@@ -246,17 +241,12 @@ public:
         }
         if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", buffer);
         if (strcmp(buffer, "No collision") == 0)
-        {
-            collision_no = true; collision_spheres = false; collision_polyhedra = false;
-        }
+            collision_no = true;
         else if (strcmp(buffer, "Spheres") == 0)
-        {
-            collision_no = false; collision_spheres = true; collision_polyhedra = false;
-        }
+            collision_spheres = true;
         else //Polyhedra.
-        {
-            collision_no = false; collision_spheres = false; collision_polyhedra = true;
-        }
+            collision_polyhedra = true;
+            
         if (find_assignment_operator(fp))
         {
             fscanf(fp, " \"%[^\"]\"", buffer);
@@ -275,10 +265,6 @@ public:
                 impactors_checkbox = true; impactors_clicked_ok = true;
             }
         }
-        else
-        {
-            impactors_checkbox = false; impactors_clicked_ok = false;
-        }
         if (find_assignment_operator(fp))
         {
             fscanf(fp, " \"%[^\"]\"", buffer);
@@ -288,10 +274,6 @@ public:
                 for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&v_sp[i]);
                 spacecraft_checkbox = true; spacecraft_clicked_ok = true;
             }
-        }
-        else
-        {
-            spacecraft_checkbox = false; spacecraft_clicked_ok = false;
         }
 
         fclose(fp);
