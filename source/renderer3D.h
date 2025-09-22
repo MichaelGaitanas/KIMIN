@@ -48,20 +48,10 @@ public:
     float sun_ang_deg      ;
     float sun_dist_factor  ;
     glm::vec3 sun_color    ;
-
-    // Disc params
     float sun_disc_intensity;
     float sun_disc_edge_soft;
     float sun_limb_strength;
     float sun_limb_power   ;
-
-    int   sun_rays_count     ;
-    float sun_rays_scale     ;
-    float sun_rays_intensity ;
-    float sun_rays_width_frac;
-    float sun_rays_sharpness  ;
-    float sun_rays_falloff    ;
-    float sun_rays_rotation   ;
     
     renderer3D() : sh_depth("../shaders/vertex/trans_dir_light_mvp.vert","../shaders/fragment/nothing.frag"),
                    sh_dlight_shadow("../shaders/vertex/trans_mvpn_shadow.vert","../shaders/fragment/dir_light_ad_shadow.frag"),
@@ -100,20 +90,13 @@ public:
                    orb_sp_match(false),
                    win_width(1),
                    win_height(1),
-                   sun_ang_deg(0.27f),
-                   sun_dist_factor(5.0f),
-                   sun_color(glm::vec3(1.0f, 0.9f, 0.9f)),
-                   sun_disc_intensity(1.0f),
-                   sun_disc_edge_soft(0.03f),
-                   sun_limb_strength(0.6f),
-                   sun_limb_power(1.5f),
-                   sun_rays_count(8), 
-                   sun_rays_scale(3.5f),      
-                   sun_rays_intensity(0.8f),  
-                   sun_rays_width_frac(0.25f),
-                   sun_rays_sharpness(4.0f),  
-                   sun_rays_falloff(1.4f),    
-                   sun_rays_rotation(0.0f)   
+                   sun_ang_deg(6.0f),
+                   sun_dist_factor(0.0f),
+                   sun_color(glm::vec3(1.0f)),
+                   sun_disc_intensity(10.0f),
+                   sun_disc_edge_soft(3.0f),
+                   sun_limb_strength(0.0f),
+                   sun_limb_power(0.0f)
 
     {
         xaxis.load_obj_file("../obj/axes/xaxis.obj"); xaxis.gen_norms(); xaxis.set_as_gl_mesh();
@@ -174,6 +157,12 @@ public:
         sol.integr.properties.poly1.set_as_gl_mesh();
         sol.integr.properties.poly2.set_as_gl_mesh();
         setup_depth_fbo();
+
+        // Start all orbit sliders at UI=1 (i.e., draw_count=1 -> no line yet)
+orb1.draw_count   = std::min<size_t>(1, sol.x.size());
+orb2.draw_count   = std::min<size_t>(1, sol.x.size());
+if (sol.integr.properties.spacecraft_checkbox)
+    orb_sp.draw_count = std::min<size_t>(1, sol.x_sp.size());
 
         if (!sb) sb = std::make_unique<skybox>("../skybox/starfield2k/right.jpg",
                                                "../skybox/starfield2k/left.jpg",
@@ -264,52 +253,39 @@ public:
         }
 
         {
-            const float sun_distance           = std::max(cam.dist * sun_distance, 5.0f);
+            // Put the sun comfortably "far" so scene can occlude it
+    const float sun_distance = std::max(cam.max_dist * 10.0f, cam.dist * sun_dist_factor);
+    const float halo_scale   = 3.0f; // outer radius ~3× disc (tweak if you like)
 
-            sh_sun.use();
-            sh_sun.set_mat4_uniform("projection",      cam.projection);
-            sh_sun.set_mat4_uniform("view",            cam.view);
-            sh_sun.set_vec3_uniform("light_dir_world", sunlight.dir);
-            sh_sun.set_vec3_uniform("sun_color",       sun_color);
-            sh_sun.set_float_uniform("sun_angular_radius_deg", sun_ang_deg);
-            sh_sun.set_float_uniform("sun_distance",   sun_distance);
+    // Common uniforms
+    sh_sun.use();
+    sh_sun.set_mat4_uniform("projection",      cam.projection);
+    sh_sun.set_mat4_uniform("view",            cam.view);
+    sh_sun.set_vec3_uniform("light_dir_world", sunlight.dir);
+    sh_sun.set_vec3_uniform("sun_color",       sun_color);
+    sh_sun.set_float_uniform("sun_angular_radius_deg", sun_ang_deg);
+    sh_sun.set_float_uniform("sun_distance",   sun_distance);
 
-            // 1) Core disc — opaque, writes depth (so later geometry overdraws it)
-            glDisable(GL_CULL_FACE);
-            glDisable(GL_BLEND);
-            glDepthFunc(GL_LEQUAL);
-            glDepthMask(GL_TRUE);
+    // --- 1) Core disc — opaque, depth writes ON (so later geometry overdraws it) ---
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_BLEND);
+    glDepthFunc(GL_LEQUAL);
+    glDepthMask(GL_TRUE);
 
-            sh_sun.set_int_uniform("u_mode", 0);
-            sh_sun.set_float_uniform("sun_scale", 1.0f);
-            sh_sun.set_float_uniform("sun_disc_intensity", sun_disc_intensity);
-            sh_sun.set_float_uniform("sun_disc_edge_soft", sun_disc_edge_soft);
-            sh_sun.set_float_uniform("sun_limb_strength",  sun_limb_strength);
-            sh_sun.set_float_uniform("sun_limb_power",     sun_limb_power);
+    sh_sun.set_int_uniform  ("u_mode", 0);
+    sh_sun.set_float_uniform("sun_scale", 1.0f);
+    sh_sun.set_float_uniform("sun_disc_intensity", sun_disc_intensity);
+    sh_sun.set_float_uniform("sun_disc_edge_soft", sun_disc_edge_soft);
+    sh_sun.set_float_uniform("sun_limb_strength",  sun_limb_strength);
+    sh_sun.set_float_uniform("sun_limb_power",     sun_limb_power);
 
-            sunquad.draw();
+    sunquad.draw();
 
-            // 2) Rays — additive, no depth writes (but drawn before your meshes)
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_ONE, GL_ONE);
-            glDepthMask(GL_FALSE);
-
-            sh_sun.set_int_uniform("u_mode", 2);
-            sh_sun.set_float_uniform("sun_scale",        sun_rays_scale);
-            sh_sun.set_int_uniform  ("sun_rays_count",   sun_rays_count);
-            sh_sun.set_float_uniform("sun_rays_intensity",  sun_rays_intensity);
-            sh_sun.set_float_uniform("sun_rays_width_frac", sun_rays_width_frac);
-            sh_sun.set_float_uniform("sun_rays_sharpness",  sun_rays_sharpness);
-            sh_sun.set_float_uniform("sun_rays_falloff",    sun_rays_falloff);
-            sh_sun.set_float_uniform("sun_rays_rotation",   sun_rays_rotation);
-
-            sunquad.draw();
-
-            // Restore
-            glDepthMask(GL_TRUE);
-            glDisable(GL_BLEND);
-            glDepthFunc(GL_LESS);
-            glEnable(GL_CULL_FACE);
+    // Restore state
+    glDepthMask(GL_TRUE);
+    glDisable(GL_BLEND);
+    glDepthFunc(GL_LESS);
+    glEnable(GL_CULL_FACE);
         }
 
         //End of Sun rendering pass.

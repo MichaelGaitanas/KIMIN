@@ -314,29 +314,6 @@ double mut_pot_masc(const dvec3 &r, const double M1, const dmatnx3 &masc1, const
     return -G*M1*M2*sum/((double)N1*N2);
 }
 
-//Potential of a rigid body upon a test particle at position r, assuming mascons distribution with constant density.
-double pot_masc(const dvec3 &r, const double M, const dmatnx3 &masc, const dmat3 &A)
-{
-    #ifdef _OPENMP
-        int total_threads = omp_get_max_threads();
-        int half_threads  = (total_threads > 1 ? total_threads/2 : 1);
-    #else
-        constexpr int half_threads = 1;
-    #endif
-    (void)half_threads;
-
-    size_t i, N = masc.size();
-    double sum = 0.0;
-    #ifdef _OPENMP
-        #pragma omp parallel for reduction(+:sum)\
-                                 schedule(dynamic)\
-                                 num_threads(half_threads)
-    #endif
-    for (i = 0; i < N; ++i)
-        sum += 1.0/length(r - dot(A, masc[i]));
-    return -G*M*sum/(double)N;
-}
-
 //Potential of a rigid body upon a test particle at position r, assuming integral expansion of order 2 approximation.
 double pot_integrals_ord2(const dvec3 &r, const double M, const dtens &J, const dmat3 &A)
 {
@@ -488,6 +465,29 @@ double pot_integrals_ord4(const dvec3 &r, const double M, const dtens &J, const 
 
     //V
     return V0 + V2 + V3 + V4;
+}
+
+//Potential of a rigid body upon a test particle at position r, assuming mascons distribution with constant density.
+double pot_masc(const dvec3 &r, const double M, const dmatnx3 &masc, const dmat3 &A)
+{
+    #ifdef _OPENMP
+        int total_threads = omp_get_max_threads();
+        int half_threads  = (total_threads > 1 ? total_threads/2 : 1);
+    #else
+        constexpr int half_threads = 1;
+    #endif
+    (void)half_threads;
+
+    size_t i, N = masc.size();
+    double sum = 0.0;
+    #ifdef _OPENMP
+        #pragma omp parallel for reduction(+:sum)\
+                                 schedule(dynamic)\
+                                 num_threads(half_threads)
+    #endif
+    for (i = 0; i < N; ++i)
+        sum += 1.0/length(r - dot(A, masc[i]));
+    return -G*M*sum/(double)N;
 }
 
 /* End of gravity potential expressions. */
@@ -930,37 +930,6 @@ dvec6 mut_force_tau1i_masc(const dvec3 &r, const double M1, const dmatnx3 &masc1
     return {-coeff*sumfx,-coeff*sumfy,-coeff*sumfz, coeff*sumtx,coeff*sumty,coeff*sumtz};
 }
 
-//Force of a rigid body upon a test particle at position r, assuming mascons distribution with constant density.
-dvec3 force_masc(const dvec3 &r, const double M, const dmatnx3 &masc, const dmat3 &A)
-{
-    #ifdef _OPENMP
-        int total_threads = omp_get_max_threads();
-        int half_threads  = (total_threads > 1 ? total_threads/2 : 1);
-    #else
-        constexpr int half_threads = 1;
-    #endif
-    (void)half_threads;
-
-
-    size_t i, N = masc.size();
-    double sumfx = 0.0, sumfy = 0.0, sumfz = 0.0;
-    #ifdef _OPENMP
-        #pragma omp parallel for reduction(+:sumfx,sumfy,sumfz)\
-                                 schedule(dynamic)\
-                                 num_threads(half_threads)
-    #endif
-    for (i = 0; i < N; ++i)
-    {
-        dvec3 ri = dot(A, masc[i]);
-        dvec3 fi = (r - ri)/pow(length(r - ri), 3.0);
-        sumfx += fi[0];
-        sumfy += fi[1];
-        sumfz += fi[2];
-
-    }
-    return -G*M*dvec3{sumfx,sumfy,sumfz}/(double)N;
-}
-
 //Force of a rigid body upon a test particle at position r, assuming inertial integral expansion of order 2 approximation.
 dvec3 force_integrals_ord2(const dvec3 &r, const double M, const dtens &J, const dmat3 &A)
 {
@@ -1139,6 +1108,37 @@ dvec3 force_integrals_ord4(const dvec3 &r, const double M, const dtens &J, const
     dvec3 dn_dr = (a3*d - r*n)/(d*d);
 
     return -(dV_dd*dd_dr + dV_dl*dl_dr + dV_dm*dm_dr + dV_dn*dn_dr);
+}
+
+//Force of a rigid body upon a test particle at position r, assuming mascons distribution with constant density.
+dvec3 force_masc(const dvec3 &r, const double M, const dmatnx3 &masc, const dmat3 &A)
+{
+    #ifdef _OPENMP
+        int total_threads = omp_get_max_threads();
+        int half_threads  = (total_threads > 1 ? total_threads/2 : 1);
+    #else
+        constexpr int half_threads = 1;
+    #endif
+    (void)half_threads;
+
+
+    size_t i, N = masc.size();
+    double sumfx = 0.0, sumfy = 0.0, sumfz = 0.0;
+    #ifdef _OPENMP
+        #pragma omp parallel for reduction(+:sumfx,sumfy,sumfz)\
+                                 schedule(dynamic)\
+                                 num_threads(half_threads)
+    #endif
+    for (i = 0; i < N; ++i)
+    {
+        dvec3 ri = dot(A, masc[i]);
+        dvec3 fi = (r - ri)/pow(length(r - ri), 3.0);
+        sumfx += fi[0];
+        sumfy += fi[1];
+        sumfz += fi[2];
+
+    }
+    return -G*M*dvec3{sumfx,sumfy,sumfz}/(double)N;
 }
 
 /* End of gravity force and torque expressions. */

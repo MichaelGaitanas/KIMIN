@@ -21,6 +21,7 @@
 #include"scene_panel.h"
 #include"integrator.h"
 #include"solution.h"
+#include"icons.h"
 
 class gui
 {
@@ -50,7 +51,7 @@ public:
     {
         //Query the OS/glfw for DPI scale.
         float xscale, yscale;
-        glfwGetWindowContentScale(wpointer, &xscale, &yscale); //Typically xscale = yscale on desktop, so we just rely on xscale.
+        glfwGetWindowContentScale(wpointer, &xscale, &yscale);
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
         ImPlot::CreateContext(); //Strictly AFTER Imgui::CreateContext();
@@ -63,14 +64,21 @@ public:
         ImGui::StyleColorsDark();
         ImGui_ImplGlfw_InitForOpenGL(wpointer, true);
         ImGui_ImplOpenGL3_Init("#version 450");
+        
         ImGuiStyle &imstyle = ImGui::GetStyle();
         imstyle.FrameRounding = 6.0f;
         imstyle.WindowRounding = 6.0f;
-        //imstyle.WindowMinSize = ImVec2(200.0f, 200.0f);
-        ImVec4 *colors = imstyle.Colors;
-        colors[ImGuiCol_WindowBg] = ImVec4(0.1f,0.1f,0.1f, 1.0f);
-        colors[ImGuiCol_FrameBg] = ImVec4(0.2f,0.2f,0.2f, 1.0f);
-        colors[ImGuiCol_Header] = ImVec4(0.2f,0.2f,0.2f, 1.0f);
+        imstyle.Colors[ImGuiCol_WindowBg]      = ImVec4(0.1f,0.1f,0.1f, 1.0f);
+        imstyle.Colors[ImGuiCol_FrameBg]       = ImVec4(0.2f,0.2f,0.2f, 1.0f);
+        imstyle.Colors[ImGuiCol_Header]        = ImVec4(0.2f,0.2f,0.2f, 1.0f);
+        imstyle.Colors[ImGuiCol_Border]        = ImVec4(0.15f,0.15f,0.15f, 1.0f);
+        imstyle.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.2f,0.2f,0.2f, 1.0f);
+
+        ImFontConfig cfg;
+        cfg.MergeMode = true;
+        cfg.PixelSnapH = true;
+        static const ImWchar icon_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+        io.Fonts->AddFontFromFileTTF("../fonts/Icons.otf", 15.0f, &cfg, icon_ranges);
     }
 
     //Free gui resources.

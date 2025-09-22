@@ -12,6 +12,7 @@
 #include"typedef.h"
 #include"solution.h"
 #include"renderer3D.h"
+#include "icons.h"
 
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
@@ -28,13 +29,26 @@ private:
     bvec plot_ener_mom_rel_err; //Buttons : [energy, momentum].
     bvec plot_cart_sp; //Buttons : [xs, ys, zs].
     
-    bool render_scene, play_pause_video, reset_essential;
+    bool render_scene, play_pause_video, reset_essential, auto_replay;
     uint64_t zero_frame, current_frame, total_frames;
     int frame_rate; //Frame updates per second.
     float frame_accumulator; //Accumulates fractional frames between updates.
 
     solution sol, sol2D; //The 'sol' contains all the orbital data and is used to render the 3D scene. The 'sol2D' is downsampled and used for the 2D plots.
     renderer3D rend3D;
+
+    inline void slider_frame_u64(const char* id, uint64_t& idx0, uint64_t N)
+{
+    // When N==0 we keep the slider inert.
+    uint64_t ui_min = (N > 0) ? 1 : 0;
+    uint64_t ui_max = N;
+    uint64_t ui_val = (N > 0) ? (idx0 + 1) : 0; // show 1-based
+
+    ImGui::SliderScalar(id, ImGuiDataType_U64, &ui_val, &ui_min, &ui_max, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+
+    // Back to 0-based
+    idx0 = (ui_val > 0) ? (ui_val - 1) : 0;
+}
 
 public:
     scene_panel() : plot_cart({false,false,false,false, false,false,false,false}),
@@ -48,6 +62,7 @@ public:
                     plot_ener_mom_rel_err({false,false}),
                     plot_cart_sp({false,false,false}),
                     render_scene(false),
+                    auto_replay(false),
                     play_pause_video(false),
                     reset_essential(false),
                     zero_frame(0),
@@ -261,6 +276,8 @@ public:
         {
             ImGui::BeginDisabled();
             ImGui::Button("Play/Pause", ImVec2(80.0f, 25.0f));
+            ImGui::SameLine();
+            auto_replay = common_onoff_button(ICON_FA_REDO " Auto", ImVec2(55.0f, 25.0f), auto_replay);
             ImGui::EndDisabled();
         }
         else
@@ -274,6 +291,13 @@ public:
                 play_pause_video = !play_pause_video;
 
             ImGui::PopStyleColor(3);
+
+            ImGui::SameLine();
+            auto_replay = common_onoff_button(ICON_FA_REDO " Auto", ImVec2(55.0f, 25.0f), auto_replay);
+            if (auto_replay && play_pause_video && current_frame == total_frames-1)
+            {
+                current_frame = 0;
+            }
         }
 
         if (!render_scene)
@@ -283,7 +307,7 @@ public:
         ImGui::Text("Frame");
         ImGui::SameLine();
         ImGui::SetCursorPosX(50.0f);
-        ImGui::SliderScalar("##41", ImGuiDataType_U64, &current_frame, &zero_frame, &max_frame, "%llu");
+        slider_frame_u64("##41", current_frame, total_frames);
 
         ImGui::Text("Rate");
         ImGui::SameLine();
@@ -354,23 +378,26 @@ public:
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
 
         ImGui::Text("Visible meshes");
+        ImGui::Indent();
+
+        ImGui::Text("Asteroids");
 
         ImGui::Text("Body 1");
         ImGui::SameLine();
-        ImGui::SetCursorPosX(60.0f);
+        ImGui::SetCursorPosX(80.0f);
         ImGui::Checkbox("##50", &rend3D.render_aster1);
         ImGui::SameLine();
-        ImGui::SetCursorPosX(100.0f);
+        ImGui::SetCursorPosX(120.0f);
         ImGui::Text("Axes 1");
         ImGui::SameLine();
         ImGui::Checkbox("##51", &rend3D.render_axes1);
 
         ImGui::Text("Body 2");
         ImGui::SameLine();
-        ImGui::SetCursorPosX(60.0f);
+        ImGui::SetCursorPosX(80.0f);
         ImGui::Checkbox("##52", &rend3D.render_aster2);
         ImGui::SameLine();
-        ImGui::SetCursorPosX(100.0f);
+        ImGui::SetCursorPosX(120.0f);
         ImGui::Text("Axes 2");
         ImGui::SameLine();
         ImGui::Checkbox("##53", &rend3D.render_axes2);
@@ -378,108 +405,89 @@ public:
 
         ImGui::Text("Orbits");
 
-        uint64_t visible_last1 = (rend3D.orb1.draw_count == 0) ? 0 : static_cast<uint64_t>(rend3D.orb1.draw_count - 1);
+        // Convert current draw_count (0…N) to UI (1…N). When draw_count==0 -> ui becomes 0 (disabled case).
+        uint64_t ui_last1 = (total_frames > 0) ? static_cast<uint64_t>(rend3D.orb1.draw_count) : 0; // 1..N
+        uint64_t ui_min   = (total_frames > 0) ? 1 : 0;
+        uint64_t ui_max   = total_frames;
 
         ImGui::Text("Body 1");
         ImGui::SameLine();
-        ImGui::SetCursorPosX(60.0f);
+        ImGui::SetCursorPosX(80.0f);
         ImGui::Checkbox("##54", &rend3D.render_orb1);
         ImGui::SameLine();
-        ImGui::SetCursorPosX(100.0f);
-        ImGui::SetNextItemWidth(100);
-        ImGui::SliderScalar("##55", ImGuiDataType_U64, &visible_last1, &zero_frame, &max_frame, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SetCursorPosX(110.0f);
+        ImGui::SetNextItemWidth(90);
+
+        // Slider shows 1..N
+        ImGui::SliderScalar("##55", ImGuiDataType_U64, &ui_last1, &ui_min, &ui_max, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
-        rend3D.orb1_match = common_onoff_button("Match##56", ImVec2(50.0f, 18.0f), rend3D.orb1_match);
-        rend3D.orb1.draw_count = static_cast<size_t>(visible_last1+1);
+        rend3D.orb1_match = common_onoff_button("Sync##56", ImVec2(50.0f, 18.0f), rend3D.orb1_match);
+
+        // Back to draw_count (0…N).  ui=1 -> draw_count=1 (no line yet), ui>=2 draws a line.
+        rend3D.orb1.draw_count = static_cast<size_t>(ui_last1);
+        // If matching, draw up to the current frame (inclusive in UI => +1 in internal)
         if (rend3D.orb1_match)
-            rend3D.orb1.draw_count = current_frame;
+            rend3D.orb1.draw_count = static_cast<size_t>(current_frame + 1);
         
-        uint64_t visible_last2 = (rend3D.orb2.draw_count == 0) ? 0 : static_cast<uint64_t>(rend3D.orb2.draw_count - 1);
+        uint64_t ui_last2 = (total_frames > 0) ? static_cast<uint64_t>(rend3D.orb2.draw_count) : 0; // 1..N
 
         ImGui::Text("Body 2");
         ImGui::SameLine();
-        ImGui::SetCursorPosX(60.0f);
+        ImGui::SetCursorPosX(80.0f);
         ImGui::Checkbox("##57", &rend3D.render_orb2);
         ImGui::SameLine();
-        ImGui::SetCursorPosX(100.0f);
-        ImGui::SetNextItemWidth(100);
-        ImGui::SliderScalar("##58", ImGuiDataType_U64, &visible_last2, &zero_frame, &max_frame, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
-        ImGui::SameLine();
-        rend3D.orb2.draw_count = static_cast<size_t>(visible_last2+1);
-        rend3D.orb2_match = common_onoff_button("Match##59", ImVec2(50.0f, 18.0f), rend3D.orb2_match);
-        if (rend3D.orb2_match)
-            rend3D.orb2.draw_count = current_frame;
+        ImGui::SetCursorPosX(110.0f);
+        ImGui::SetNextItemWidth(90);
 
-        uint64_t visible_last_sp = (rend3D.orb_sp.draw_count == 0) ? 0 : static_cast<uint64_t>(rend3D.orb_sp.draw_count - 1);
+        // Slider shows 1..N
+        ImGui::SliderScalar("##58", ImGuiDataType_U64, &ui_last2, &ui_min, &ui_max, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SameLine();
+        rend3D.orb2_match = common_onoff_button("Sync##59", ImVec2(50.0f, 18.0f), rend3D.orb2_match);
+
+        // Back to draw_count (0…N).  ui=1 -> draw_count=1 (no line yet), ui>=2 draws a line.
+        rend3D.orb2.draw_count = static_cast<size_t>(ui_last2);
+        // If matching, draw up to the current frame (inclusive in UI => +1 in internal)
+        if (rend3D.orb2_match)
+            rend3D.orb2.draw_count = static_cast<size_t>(current_frame + 1);
 
 
         if (!sol.integr.properties.spacecraft_checkbox)
                 ImGui::BeginDisabled();
 
+
+
+
+        uint64_t ui_last_sp = (total_frames > 0) ? static_cast<uint64_t>(rend3D.orb_sp.draw_count) : 0; // 1..N
+
         ImGui::Text("Orbiter");
         ImGui::SameLine();
-        ImGui::SetCursorPosX(60.0f);
+        ImGui::SetCursorPosX(80.0f);
         ImGui::Checkbox("##60", &rend3D.render_orb_sp);
         ImGui::SameLine();
-        ImGui::SetCursorPosX(100.0f);
-        ImGui::SetNextItemWidth(100);
-        ImGui::SliderScalar("##61", ImGuiDataType_U64, &visible_last_sp, &zero_frame, &max_frame, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SetCursorPosX(110.0f);
+        ImGui::SetNextItemWidth(90);
+
+        // Slider shows 1..N
+        ImGui::SliderScalar("##61", ImGuiDataType_U64, &ui_last_sp, &ui_min, &ui_max, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
-        rend3D.orb_sp.draw_count = static_cast<size_t>(visible_last_sp+1);
-        rend3D.orb_sp_match = common_onoff_button("Match##62", ImVec2(50.0f, 18.0f), rend3D.orb_sp_match);
+        rend3D.orb_sp_match = common_onoff_button("Sync##62", ImVec2(50.0f, 18.0f), rend3D.orb_sp_match);
+
+        ImGui::Unindent();
+
+        // Back to draw_count (0…N).  ui=1 -> draw_count=1 (no line yet), ui>=2 draws a line.
+        rend3D.orb_sp.draw_count = static_cast<size_t>(ui_last_sp);
+        // If matching, draw up to the current frame (inclusive in UI => +1 in internal)
         if (rend3D.orb_sp_match)
-            rend3D.orb_sp.draw_count = current_frame;
+            rend3D.orb_sp.draw_count = static_cast<size_t>(current_frame + 1);
+
+
+
 
         if (!sol.integr.properties.spacecraft_checkbox)
                 ImGui::EndDisabled();
 
-        ImGui::Dummy(ImVec2(0.0f, 7.5f));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f, 7.5f));
-
-        ImGui::Text("Colors");
-
-        ImGui::Text("Body 1");
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(60.0f);
-        ImGui::ColorEdit3("##63", glm::value_ptr(rend3D.aster1_col), ImGuiColorEditFlags_NoInputs);
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(120.0f);
-        ImGui::Text("Body 2");
-        ImGui::SameLine();
-        ImGui::ColorEdit3("##64", glm::value_ptr(rend3D.aster2_col), ImGuiColorEditFlags_NoInputs);
-        ImGui::Text("Orbit 1");
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(60.0f);
-        ImGui::ColorEdit3("##65", glm::value_ptr(rend3D.orb1_col), ImGuiColorEditFlags_NoInputs);
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(120.0f);
-        ImGui::Text("Orbit 2");
-        ImGui::SameLine();
-        ImGui::ColorEdit3("##66", glm::value_ptr(rend3D.orb2_col), ImGuiColorEditFlags_NoInputs);
-
-
-        ImGui::SliderFloat("sun_ang_deg", &rend3D.sun_ang_deg, 0.0f, 5.0f, "%.1f");
-        ImGui::SliderFloat("sun_dist_factor", &rend3D.sun_dist_factor, 0.0f, 100.0f, "%.1f");
-        ImGui::SliderFloat("sun_disc_intensity", &rend3D.sun_disc_intensity, 0.0f, 60.0f, "%.1f");
-        ImGui::SliderFloat("sun_disc_edge_soft", &rend3D.sun_disc_edge_soft, 0.0f, 1.0f, "%.1f");
-        ImGui::SliderFloat("sun_limb_strength", &rend3D.sun_limb_strength, 0.0f, 1.0f, "%.1f");
-        ImGui::SliderFloat("sun_limb_power", &rend3D.sun_limb_power, 0.0f, 5.0f, "%.1f");
-
-        ImGui::SliderInt("sun_rays_count", &rend3D.sun_rays_count, 0, 100, "%d");
-        ImGui::SliderFloat("sun_rays_scale", &rend3D.sun_rays_scale, 0.0f, 20.0f, "%.1f");
-        ImGui::SliderFloat("sun_rays_intensity", &rend3D.sun_rays_intensity, 0.0f, 20.0f, "%.1f");
-        ImGui::SliderFloat("sun_rays_width_frac", &rend3D.sun_rays_width_frac, 0.0f, 10.0f, "%.1f");
-        ImGui::SliderFloat("sun_rays_sharpness", &rend3D.sun_rays_sharpness, 0.0f, 10.0f, "%.1f");
-        ImGui::SliderFloat("sun_rays_falloff", &rend3D.sun_rays_falloff, 0.0f, 10.0f, "%.1f");
-        ImGui::SliderFloat("sun_rays_rotation", &rend3D.sun_rays_rotation, 0.0f, 360.0f, "%.1f");
+        ImGui::Dummy(ImVec2(0.0f,700.0f)); //Some extra y-space in order to be able to scroll down along scene panel.
         
-        ImGui::ColorEdit3("sun_color", glm::value_ptr(rend3D.sun_color), ImGuiColorEditFlags_NoInputs);
-
-
-
-
-
 
         if (!render_scene)
             ImGui::EndDisabled();

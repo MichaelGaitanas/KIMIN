@@ -37,7 +37,7 @@ public:
                     import_props_clicked = true;
                     properties_list = list_properties_files(); //List the files (once) right after the click to 'Import properties'. Remember, this will work even if u paste a new file while the app is running.
                 }
-                if (ImGui::MenuItem("Export solution", nullptr, false, export_is_enabled))
+                if (ImGui::MenuItem("Export active solution", nullptr, false, export_is_enabled))
                     export_sol_clicked = true;
                 ImGui::EndMenu();
             }
@@ -71,7 +71,7 @@ public:
             {
                 import_props_clicked = false; //This will close the window (encapsulated).
                 if (!properties_path.empty())
-                    import_props_confirm = true;  //And this is will communicate with gui::poll_topbar_events(), which then will communicate with properties::import_file().
+                    import_props_confirm = true; //And this is will communicate with gui::poll_topbar_events(), which then will communicate with properties::import_file().
             }
             ImGui::End();
         }
