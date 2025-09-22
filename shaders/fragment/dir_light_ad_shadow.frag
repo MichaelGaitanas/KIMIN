@@ -29,14 +29,14 @@ float get_shadow(float diffuse)
 
     float nearest_frag_depth = texture(sample_shadow, projected_coords.xy).r; //Sample depth from the shadow map.
     if (projected_coords.z - bias > nearest_frag_depth)
-        return 0.9f; //In shadow.
+        return 0.95f; //In shadow.
     return 0.0f; //Not in shadow.
 }
 
 void main()
 {
     //Ambient color component.
-    float ambient = 0.1f;
+    float ambient = 0.05f;
 
     //Diffuse + shadow color component.
     float diffuse = max(dot(normalize(normal), light_dir), 0.0f);

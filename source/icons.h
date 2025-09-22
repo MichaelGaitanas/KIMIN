@@ -1,3 +1,5 @@
+/* In this header we define icons (sprites) aliases, meant to be rendered on ImGui windows. */
+
 #ifndef ICONS_H
 #define ICONS_H
 

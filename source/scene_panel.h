@@ -12,7 +12,7 @@
 #include"typedef.h"
 #include"solution.h"
 #include"renderer3D.h"
-#include "icons.h"
+#include"icons.h"
 
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
@@ -29,26 +29,13 @@ private:
     bvec plot_ener_mom_rel_err; //Buttons : [energy, momentum].
     bvec plot_cart_sp; //Buttons : [xs, ys, zs].
     
-    bool render_scene, play_pause_video, reset_essential, auto_replay;
-    uint64_t zero_frame, current_frame, total_frames;
+    bool render_scene, play_pause_video, reset_gpu_essential, auto_replay;
+    uint64_t current_frame, total_frames;
     int frame_rate; //Frame updates per second.
     float frame_accumulator; //Accumulates fractional frames between updates.
 
     solution sol, sol2D; //The 'sol' contains all the orbital data and is used to render the 3D scene. The 'sol2D' is downsampled and used for the 2D plots.
     renderer3D rend3D;
-
-    inline void slider_frame_u64(const char* id, uint64_t& idx0, uint64_t N)
-{
-    // When N==0 we keep the slider inert.
-    uint64_t ui_min = (N > 0) ? 1 : 0;
-    uint64_t ui_max = N;
-    uint64_t ui_val = (N > 0) ? (idx0 + 1) : 0; // show 1-based
-
-    ImGui::SliderScalar(id, ImGuiDataType_U64, &ui_val, &ui_min, &ui_max, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
-
-    // Back to 0-based
-    idx0 = (ui_val > 0) ? (ui_val - 1) : 0;
-}
 
 public:
     scene_panel() : plot_cart({false,false,false,false, false,false,false,false}),
@@ -64,8 +51,7 @@ public:
                     render_scene(false),
                     auto_replay(false),
                     play_pause_video(false),
-                    reset_essential(false),
-                    zero_frame(0),
+                    reset_gpu_essential(false),
                     current_frame(0),
                     total_frames(0),
                     frame_rate(60),
@@ -73,24 +59,26 @@ public:
     { }
 
     //Reset essential stuff upon a new simulation termination.
-    //Note : apart from the following resets, we still have to reset OpenGL stuff. But this function is gonna run in
-    //the 'task_thread' thread defined in gui.h, NOT in the main thread. So any gl* commands that handle
-    //graphics resets must not happen here!
+    //Note : apart from the following resets, we still have to reset OpenGL stuff. But the following setup() function is gonna run in
+    //the 'task_thread' thread defined in gui.h, not in the main thread, where OpenGL runs. So any gl* commands that handle
+    //graphics resets must not happen here. For that, we have the messenger variable 'reset_gpu_essential' (see function render_3D_content() in the renderer3D.h).
     void setup(const solution &sol)
     {
         this->sol = sol; //Obtain a solution copy for the 3D rendering.
         this->sol2D = sol.get_reduced_solution(PLOT_POINTS_2D); //Then create a downsampled solution for the 2D plots.
 
-        if (!sol.integr.properties.spacecraft_checkbox)
-            plot_cart_sp = {false,false,false}; //Clear spacecraft toggles from the previous run.
-
         float binary_max_dist = *std::max_element(sol.dist.begin(), sol.dist.end());
         rend3D.sunlight.reset(sol.integr.brillouin1 + sol.integr.brillouin2 + binary_max_dist);
         rend3D.cam.reset(sol.integr.brillouin1 + sol.integr.brillouin2, binary_max_dist);
 
-        current_frame = 0; //Set the frame slider to 0.
+        //At every new simulation, if the user does not assume a 3rd body spacecraft, then any previous plots regarding the 3rd body shall disappear.
+        if (!sol.integr.properties.spacecraft_checkbox)
+            plot_cart_sp = {false,false,false};
+
+        current_frame = 0;
+        total_frames = static_cast<uint64_t>(sol.t.size());
         play_pause_video = false; //Set the video at paused state ('true' means playing, 'false' means paused).
-        reset_essential = true;
+        reset_gpu_essential = true;
     }
 
     //This function controls the on/off logic of a clickable button in the gui.
@@ -126,7 +114,7 @@ public:
         return i_reduced;
     }
 
-    //This function plots the data {t,f(t)}, where t is time and f(t) is the plot_func.
+    //This function plots the data {t,f(t)}.
     bool common_plot(const char *begin_id, const char *begin_plot_id, const char *yaxis_str, bool bool_plot_func, dvec &plot_func)
     {
         ImGui::SetNextWindowPos( ImVec2(0.6f*ImGui::GetIO().DisplaySize.x, 0.0f), ImGuiCond_FirstUseEver);
@@ -144,11 +132,17 @@ public:
             ImPlot::PlotScatter("Current frame", &sol2D.t[i_reduced], &plot_func[i_reduced], 1);
 
             //If there's a collision, highlight final point.
-            if (sol2D.integr.collision || sol2D.integr.collision_sp)
+            if (sol2D.integr.collision)
+            {
+                ImPlot::SetNextMarkerStyle(ImPlotMarker_Down, 6.0f, ImColor(255,0,0,255), 1.0f, ImColor(255,0,0,255));
+                ImPlot::PlotScatter("Collision frame", &sol2D.t.back(), &plot_func.back(), 1);
+            }
+            else if (sol2D.integr.collision_sp)
             {
                 ImPlot::SetNextMarkerStyle(ImPlotMarker_Down, 6.0f, ImColor(255, 100, 0, 255), 1.0f, ImColor(255, 100, 0, 255));
-                ImPlot::PlotScatter("Collision frame", &sol2D.t.back(), &plot_func.back(), 1); //Plot the final point as a scatter plot.
+                ImPlot::PlotScatter("Collision frame", &sol2D.t.back(), &plot_func.back(), 1);
             }
+
             ImPlot::EndPlot();
         }
         ImGui::End();
@@ -269,8 +263,6 @@ public:
         ImGui::Text("Content state");
         render_scene = common_onoff_button("Render##40", ImVec2(80.0f, 25.0f), render_scene);
         ImGui::SameLine();
-        total_frames = static_cast<uint64_t>(sol.t.size());
-        uint64_t max_frame = (total_frames > 0) ? total_frames - 1 : 0;
 
         if (!render_scene)
         {
@@ -282,22 +274,17 @@ public:
         }
         else
         {
-            ImVec4 col = play_pause_video ? ImVec4(0.0f, 0.7f, 0.0f, 1.0f) : ImVec4(0.7f, 0.0f, 0.0f, 1.0f);
-            ImGui::PushStyleColor(ImGuiCol_Button,        col);
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(col.x+0.2f, col.y+0.2f, col.z+0.2f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(col.x*0.8f, col.y*0.8f, col.z*0.8f, 1.0f));
-
+            ImVec4 play_pause_col = play_pause_video ? ImVec4(0.0f, 0.7f, 0.0f, 1.0f) : ImVec4(0.7f, 0.0f, 0.0f, 1.0f);
+            ImGui::PushStyleColor(ImGuiCol_Button,        play_pause_col);
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(play_pause_col.x+0.2f, play_pause_col.y+0.2f, play_pause_col.z+0.2f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(play_pause_col.x*0.8f, play_pause_col.y*0.8f, play_pause_col.z*0.8f, 1.0f));
             if (ImGui::Button("Play/Pause", ImVec2(80.0f, 25.0f)))
                 play_pause_video = !play_pause_video;
-
             ImGui::PopStyleColor(3);
-
             ImGui::SameLine();
             auto_replay = common_onoff_button(ICON_FA_REDO " Auto", ImVec2(55.0f, 25.0f), auto_replay);
-            if (auto_replay && play_pause_video && current_frame == total_frames-1)
-            {
+            if (auto_replay && play_pause_video && current_frame == total_frames - 1)
                 current_frame = 0;
-            }
         }
 
         if (!render_scene)
@@ -307,14 +294,18 @@ public:
         ImGui::Text("Frame");
         ImGui::SameLine();
         ImGui::SetCursorPosX(50.0f);
-        slider_frame_u64("##41", current_frame, total_frames);
+        uint64_t visible_min_frame = (total_frames > 0) ? 1 : 0;
+        //We don't need a 'visible_max_frame' variable, as this is equal to 'total_frames';
+        uint64_t visible_current_frame = (total_frames > 0) ? (current_frame + 1) : 0; //Show 1-based frame.
+        ImGui::SliderScalar("##41", ImGuiDataType_U64, &visible_current_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        //Rule is : the above slider controls the frames and then the 'current_frame' is updated accordingly.
+        current_frame = (visible_current_frame > 0) ? (visible_current_frame - 1) : 0; //Back to 0-based frame.
 
         ImGui::Text("Rate");
         ImGui::SameLine();
         ImGui::SetCursorPosX(50.0f);
         ImGui::SliderInt("[Hz]##42", &frame_rate, 0, 60, "%d");
-
-        if (sol.t.empty())
+        if (!sol.t.size())
             ImGui::Text("Time : 0.00  [days]");
         else
             ImGui::Text("Time : %.2f  [days]", (float)sol.t[current_frame]);
@@ -405,11 +396,6 @@ public:
 
         ImGui::Text("Orbits");
 
-        // Convert current draw_count (0…N) to UI (1…N). When draw_count==0 -> ui becomes 0 (disabled case).
-        uint64_t ui_last1 = (total_frames > 0) ? static_cast<uint64_t>(rend3D.orb1.draw_count) : 0; // 1..N
-        uint64_t ui_min   = (total_frames > 0) ? 1 : 0;
-        uint64_t ui_max   = total_frames;
-
         ImGui::Text("Body 1");
         ImGui::SameLine();
         ImGui::SetCursorPosX(80.0f);
@@ -417,17 +403,27 @@ public:
         ImGui::SameLine();
         ImGui::SetCursorPosX(110.0f);
         ImGui::SetNextItemWidth(90);
-
-        // Slider shows 1..N
-        ImGui::SliderScalar("##55", ImGuiDataType_U64, &ui_last1, &ui_min, &ui_max, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        uint64_t visible_orb1_frame = (total_frames > 0) ? static_cast<uint64_t>(rend3D.orb1.draw_count) : 0;
+        ImGui::SliderScalar("##55", ImGuiDataType_U64, &visible_orb1_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        //rend3D.orb1.draw_count = static_cast<size_t>(visible_orb1_frame);
+        rend3D.orb1.draw_count = (visible_orb1_frame > 0) ? (static_cast<size_t>(visible_orb1_frame) - 1) : 0; //Back to 0-based frame.
         ImGui::SameLine();
-        rend3D.orb1_match = common_onoff_button("Sync##56", ImVec2(50.0f, 18.0f), rend3D.orb1_match);
-
-        // Back to draw_count (0…N).  ui=1 -> draw_count=1 (no line yet), ui>=2 draws a line.
-        rend3D.orb1.draw_count = static_cast<size_t>(ui_last1);
-        // If matching, draw up to the current frame (inclusive in UI => +1 in internal)
-        if (rend3D.orb1_match)
+        rend3D.orb1_sync = common_onoff_button("Sync##56", ImVec2(50.0f, 18.0f), rend3D.orb1_sync);
+        if (rend3D.orb1_sync)
             rend3D.orb1.draw_count = static_cast<size_t>(current_frame + 1);
+
+
+
+
+
+
+
+
+
+
+
+
+
         
         uint64_t ui_last2 = (total_frames > 0) ? static_cast<uint64_t>(rend3D.orb2.draw_count) : 0; // 1..N
 
@@ -440,14 +436,14 @@ public:
         ImGui::SetNextItemWidth(90);
 
         // Slider shows 1..N
-        ImGui::SliderScalar("##58", ImGuiDataType_U64, &ui_last2, &ui_min, &ui_max, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SliderScalar("##58", ImGuiDataType_U64, &ui_last2, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
-        rend3D.orb2_match = common_onoff_button("Sync##59", ImVec2(50.0f, 18.0f), rend3D.orb2_match);
+        rend3D.orb2_sync = common_onoff_button("Sync##59", ImVec2(50.0f, 18.0f), rend3D.orb2_sync);
 
         // Back to draw_count (0…N).  ui=1 -> draw_count=1 (no line yet), ui>=2 draws a line.
         rend3D.orb2.draw_count = static_cast<size_t>(ui_last2);
         // If matching, draw up to the current frame (inclusive in UI => +1 in internal)
-        if (rend3D.orb2_match)
+        if (rend3D.orb2_sync)
             rend3D.orb2.draw_count = static_cast<size_t>(current_frame + 1);
 
 
@@ -468,16 +464,16 @@ public:
         ImGui::SetNextItemWidth(90);
 
         // Slider shows 1..N
-        ImGui::SliderScalar("##61", ImGuiDataType_U64, &ui_last_sp, &ui_min, &ui_max, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SliderScalar("##61", ImGuiDataType_U64, &ui_last_sp, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
-        rend3D.orb_sp_match = common_onoff_button("Sync##62", ImVec2(50.0f, 18.0f), rend3D.orb_sp_match);
+        rend3D.orb_sp_sync = common_onoff_button("Sync##62", ImVec2(50.0f, 18.0f), rend3D.orb_sp_sync);
 
         ImGui::Unindent();
 
         // Back to draw_count (0…N).  ui=1 -> draw_count=1 (no line yet), ui>=2 draws a line.
         rend3D.orb_sp.draw_count = static_cast<size_t>(ui_last_sp);
         // If matching, draw up to the current frame (inclusive in UI => +1 in internal)
-        if (rend3D.orb_sp_match)
+        if (rend3D.orb_sp_sync)
             rend3D.orb_sp.draw_count = static_cast<size_t>(current_frame + 1);
 
 
@@ -540,7 +536,7 @@ public:
         
         //As a final step, render the 3D content under the constraints implied by 'render_scene' variable.
         if (render_scene)
-            rend3D.render_3D_content(sol, current_frame, reset_essential);
+            rend3D.render_3D_content(sol, current_frame, reset_gpu_essential);
     }
     
     void render(const int win_width, const int win_height)
@@ -556,7 +552,7 @@ public:
         if (ImGui::CollapsingHeader("Plots 2D"))
         {
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f,0.2f,0.2f,1.0f));
-            if (!sol.dist.size()) //Criterion that applies when the simulation hasn't been performed.
+            if (!sol.t.size()) //Criterion that applies when the simulation hasn't been performed.
             {
                 ImGui::BeginDisabled();
                 render_plot_buttons();
@@ -625,7 +621,7 @@ public:
         ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
         if (ImGui::CollapsingHeader("Video 3D"))
         {
-            if (!sol.dist.size()) //Criterion that applies when the simulation hasn't been performed.
+            if (!sol.t.size()) //Criterion that applies when the simulation hasn't been performed.
             {
                 ImGui::BeginDisabled();
                 render_scene_buttons();

@@ -41,7 +41,7 @@ public:
     bool render_aster1, render_aster2;
     bool render_axes1, render_axes2;
     bool render_orb1, render_orb2, render_orb_sp;
-    bool orb1_match, orb2_match, orb_sp_match;
+    bool orb1_sync, orb2_sync, orb_sp_sync;
 
     int win_width, win_height;
 
@@ -85,9 +85,9 @@ public:
                    render_orb1(false),
                    render_orb2(false),
                    render_orb_sp(false),
-                   orb1_match(false),
-                   orb2_match(false),
-                   orb_sp_match(false),
+                   orb1_sync(false),
+                   orb2_sync(false),
+                   orb_sp_sync(false),
                    win_width(1),
                    win_height(1),
                    sun_ang_deg(6.0f),
@@ -97,7 +97,6 @@ public:
                    sun_disc_edge_soft(3.0f),
                    sun_limb_strength(0.0f),
                    sun_limb_power(0.0f)
-
     {
         xaxis.load_obj_file("../obj/axes/xaxis.obj"); xaxis.gen_norms(); xaxis.set_as_gl_mesh();
         yaxis.load_obj_file("../obj/axes/yaxis.obj"); yaxis.gen_norms(); yaxis.set_as_gl_mesh();
@@ -128,7 +127,7 @@ public:
         glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, depth_reso, depth_reso, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr); //Shadow mapping is highly sensitive to depth precision, hence the 32 bits.
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);  
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
         constexpr float border_col[] = {1.0f, 1.0f, 1.0f, 1.0f}; //Pure white that is, coz white corresponds to maximum depth.
         glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, &border_col[0]);
@@ -141,7 +140,7 @@ public:
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    //Reset all GPU resources that depend on a finished simulation. It is called from the render thread when reset_essential == true.
+    //Reset all GPU resources that depend on a finished simulation. It is called from the render thread when reset_gpu_essential == true.
     //This function is basically the continuation of the scene_panel::setup(const solution &sol), but unfortunately they run on different threads. Hence the separation.
     void reset_gpu_resources(solution &sol)
     {
@@ -173,13 +172,13 @@ if (sol.integr.properties.spacecraft_checkbox)
     }
 
     //This function handles the rendering logic of the 3D content.
-    void render_3D_content(solution &sol, const size_t i, bool &reset_essential)
+    void render_3D_content(solution &sol, const size_t i, bool &reset_gpu_essential)
     {
         //Prepare all the meshes for rendering, by running the appropriate CPU/GPU tasks.
-        if (reset_essential)
+        if (reset_gpu_essential)
         {
             reset_gpu_resources(sol);   
-            reset_essential = false;
+            reset_gpu_essential = false;
         } 
 
         sunlight.set_geometry();
