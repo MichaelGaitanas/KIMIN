@@ -41,7 +41,6 @@ public:
     bool render_aster1, render_aster2;
     bool render_axes1, render_axes2;
     bool render_orb1, render_orb2, render_orb_sp;
-    bool orb1_sync, orb2_sync, orb_sp_sync;
 
     int win_width, win_height;
 
@@ -85,9 +84,6 @@ public:
                    render_orb1(false),
                    render_orb2(false),
                    render_orb_sp(false),
-                   orb1_sync(false),
-                   orb2_sync(false),
-                   orb_sp_sync(false),
                    win_width(1),
                    win_height(1),
                    sun_ang_deg(6.0f),

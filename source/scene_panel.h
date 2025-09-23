@@ -29,7 +29,7 @@ private:
     bvec plot_ener_mom_rel_err; //Buttons : [energy, momentum].
     bvec plot_cart_sp; //Buttons : [xs, ys, zs].
     
-    bool render_scene, play_pause_video, reset_gpu_essential, auto_replay;
+    bool render_scene, play_pause_video, reset_gpu_essential, auto_replay, orb1_sync, orb2_sync, orb_sp_sync;
     uint64_t current_frame, total_frames;
     int frame_rate; //Frame updates per second.
     float frame_accumulator; //Accumulates fractional frames between updates.
@@ -49,9 +49,12 @@ public:
                     plot_ener_mom_rel_err({false,false}),
                     plot_cart_sp({false,false,false}),
                     render_scene(false),
-                    auto_replay(false),
                     play_pause_video(false),
                     reset_gpu_essential(false),
+                    auto_replay(false),
+                    orb1_sync(false),
+                    orb2_sync(false),
+                    orb_sp_sync(false),
                     current_frame(0),
                     total_frames(0),
                     frame_rate(60),
@@ -71,14 +74,23 @@ public:
         rend3D.sunlight.reset(sol.integr.brillouin1 + sol.integr.brillouin2 + binary_max_dist);
         rend3D.cam.reset(sol.integr.brillouin1 + sol.integr.brillouin2, binary_max_dist);
 
-        //At every new simulation, if the user does not assume a 3rd body spacecraft, then any previous plots regarding the 3rd body shall disappear.
-        if (!sol.integr.properties.spacecraft_checkbox)
-            plot_cart_sp = {false,false,false};
-
         current_frame = 0;
         total_frames = static_cast<uint64_t>(sol.t.size());
         play_pause_video = false; //Set the video at paused state ('true' means playing, 'false' means paused).
         reset_gpu_essential = true;
+
+        uint64_t init_orb_count = (total_frames > 0 ? 1 : 0);
+        rend3D.orb1.draw_count = rend3D.orb2.draw_count = init_orb_count;
+        //At every new simulation, if the user does not assume a 3rd body spacecraft, then any previous plots regarding the 3rd body shall disappear.
+        if (!sol.integr.properties.spacecraft_checkbox)
+        {
+            plot_cart_sp = {false,false,false};
+            rend3D.orb_sp.draw_count = 0;
+            orb_sp_sync = false;
+            rend3D.render_orb_sp = false;
+        }
+        else
+            rend3D.orb_sp.draw_count = init_orb_count;
     }
 
     //This function controls the on/off logic of a clickable button in the gui.
@@ -405,27 +417,11 @@ public:
         ImGui::SetNextItemWidth(90);
         uint64_t visible_orb1_frame = (total_frames > 0) ? static_cast<uint64_t>(rend3D.orb1.draw_count) : 0;
         ImGui::SliderScalar("##55", ImGuiDataType_U64, &visible_orb1_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
-        //rend3D.orb1.draw_count = static_cast<size_t>(visible_orb1_frame);
-        rend3D.orb1.draw_count = (visible_orb1_frame > 0) ? (static_cast<size_t>(visible_orb1_frame) - 1) : 0; //Back to 0-based frame.
         ImGui::SameLine();
-        rend3D.orb1_sync = common_onoff_button("Sync##56", ImVec2(50.0f, 18.0f), rend3D.orb1_sync);
-        if (rend3D.orb1_sync)
+        rend3D.orb1.draw_count = static_cast<size_t>(visible_orb1_frame);
+        orb1_sync = common_onoff_button("Sync##56", ImVec2(50.0f, 18.0f), orb1_sync);
+        if (orb1_sync)
             rend3D.orb1.draw_count = static_cast<size_t>(current_frame + 1);
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-        uint64_t ui_last2 = (total_frames > 0) ? static_cast<uint64_t>(rend3D.orb2.draw_count) : 0; // 1..N
 
         ImGui::Text("Body 2");
         ImGui::SameLine();
@@ -434,26 +430,17 @@ public:
         ImGui::SameLine();
         ImGui::SetCursorPosX(110.0f);
         ImGui::SetNextItemWidth(90);
-
-        // Slider shows 1..N
-        ImGui::SliderScalar("##58", ImGuiDataType_U64, &ui_last2, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        uint64_t visible_orb2_frame = (total_frames > 0) ? static_cast<uint64_t>(rend3D.orb2.draw_count) : 0;
+        ImGui::SliderScalar("##58", ImGuiDataType_U64, &visible_orb2_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
-        rend3D.orb2_sync = common_onoff_button("Sync##59", ImVec2(50.0f, 18.0f), rend3D.orb2_sync);
-
-        // Back to draw_count (0…N).  ui=1 -> draw_count=1 (no line yet), ui>=2 draws a line.
-        rend3D.orb2.draw_count = static_cast<size_t>(ui_last2);
-        // If matching, draw up to the current frame (inclusive in UI => +1 in internal)
-        if (rend3D.orb2_sync)
+        orb2_sync = common_onoff_button("Sync##59", ImVec2(50.0f, 18.0f), orb2_sync);
+        rend3D.orb2.draw_count = static_cast<size_t>(visible_orb2_frame);
+        if (orb2_sync)
             rend3D.orb2.draw_count = static_cast<size_t>(current_frame + 1);
 
 
         if (!sol.integr.properties.spacecraft_checkbox)
                 ImGui::BeginDisabled();
-
-
-
-
-        uint64_t ui_last_sp = (total_frames > 0) ? static_cast<uint64_t>(rend3D.orb_sp.draw_count) : 0; // 1..N
 
         ImGui::Text("Orbiter");
         ImGui::SameLine();
@@ -462,28 +449,21 @@ public:
         ImGui::SameLine();
         ImGui::SetCursorPosX(110.0f);
         ImGui::SetNextItemWidth(90);
-
-        // Slider shows 1..N
-        ImGui::SliderScalar("##61", ImGuiDataType_U64, &ui_last_sp, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        uint64_t visible_orb_sp_frame = (total_frames > 0) ? static_cast<uint64_t>(rend3D.orb_sp.draw_count) : 0;
+        ImGui::SliderScalar("##61", ImGuiDataType_U64, &visible_orb_sp_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
-        rend3D.orb_sp_sync = common_onoff_button("Sync##62", ImVec2(50.0f, 18.0f), rend3D.orb_sp_sync);
-
-        ImGui::Unindent();
-
-        // Back to draw_count (0…N).  ui=1 -> draw_count=1 (no line yet), ui>=2 draws a line.
-        rend3D.orb_sp.draw_count = static_cast<size_t>(ui_last_sp);
-        // If matching, draw up to the current frame (inclusive in UI => +1 in internal)
-        if (rend3D.orb_sp_sync)
+        orb_sp_sync = common_onoff_button("Sync##62", ImVec2(50.0f, 18.0f), orb_sp_sync);
+        rend3D.orb_sp.draw_count = static_cast<size_t>(visible_orb_sp_frame);
+        if (orb_sp_sync)
             rend3D.orb_sp.draw_count = static_cast<size_t>(current_frame + 1);
-
-
 
 
         if (!sol.integr.properties.spacecraft_checkbox)
                 ImGui::EndDisabled();
 
-        ImGui::Dummy(ImVec2(0.0f,700.0f)); //Some extra y-space in order to be able to scroll down along scene panel.
-        
+        ImGui::Unindent();
+
+        ImGui::Dummy(ImVec2(0.0f,700.0f)); //Some extra y-space in order to be able to scroll down along scene panel.        
 
         if (!render_scene)
             ImGui::EndDisabled();
