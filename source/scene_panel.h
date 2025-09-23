@@ -348,6 +348,8 @@ public:
         ImGui::SetCursorPosX(40.0f);
         ImGui::SliderFloat("[deg]##46", &rend3D.cam.fov, rend3D.cam.min_fov, rend3D.cam.max_fov, "%.0f");
 
+        ImGui::Checkbox("##9999", &rend3D.cam.lock_revo);
+
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f, 7.5f));

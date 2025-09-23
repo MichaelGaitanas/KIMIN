@@ -13,6 +13,7 @@ public:
     float dist, lon, lat, fov, min_dist, max_dist, min_fov, max_fov;
     glm::vec3 pos, aim, up;
     glm::mat4 projection, view;
+    bool lock_revo;
 
     camera() : dist(0.0f),
                lon(40.0f),
@@ -22,7 +23,8 @@ public:
                min_dist(0.0f),
                max_dist(0.0f),
                min_fov(1.0f),
-               max_fov(179.0f)
+               max_fov(179.0f),
+               lock_revo(false)
     { }
 
     //This function runs one time after every simulation termination.
