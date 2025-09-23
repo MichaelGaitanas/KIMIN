@@ -71,7 +71,7 @@ public:
                    orb1(),
                    orb2(),
                    orb_sp(),
-                   depth_reso(2048),
+                   depth_reso(4096),
                    aster1_col(glm::vec3(0.8f)),
                    aster2_col(glm::vec3(0.8f)),
                    orb1_col(glm::vec3(0.7f,0.0f,0.0f)),
@@ -153,11 +153,11 @@ public:
         sol.integr.properties.poly2.set_as_gl_mesh();
         setup_depth_fbo();
 
-        // Start all orbit sliders at UI=1 (i.e., draw_count=1 -> no line yet)
-orb1.draw_count   = std::min<size_t>(1, sol.x.size());
-orb2.draw_count   = std::min<size_t>(1, sol.x.size());
-if (sol.integr.properties.spacecraft_checkbox)
-    orb_sp.draw_count = std::min<size_t>(1, sol.x_sp.size());
+        //Start all orbit sliders at UI=1 (i.e., draw_count=1 -> no line yet)
+        orb1.draw_count   = std::min<size_t>(1, sol.x.size());
+        orb2.draw_count   = std::min<size_t>(1, sol.x.size());
+        if (sol.integr.properties.spacecraft_checkbox)
+            orb_sp.draw_count = std::min<size_t>(1, sol.x_sp.size());
 
         if (!sb) sb = std::make_unique<skybox>("../skybox/starfield2k/right.jpg",
                                                "../skybox/starfield2k/left.jpg",
@@ -175,10 +175,16 @@ if (sol.integr.properties.spacecraft_checkbox)
         {
             reset_gpu_resources(sol);   
             reset_gpu_essential = false;
-        } 
+        }
+
+        glm::vec3 pos1 = glm::vec3((float)sol.integr.com1_coeff*glm::vec3(sol.x[i],sol.y[i],sol.z[i]));
+        glm::vec3 pos2 = glm::vec3((float)sol.integr.com2_coeff*glm::vec3(sol.x[i],sol.y[i],sol.z[i]));
 
         sunlight.set_geometry();
-        cam.set_geometry(win_width/(float)win_height);
+        if (!cam.lock_revo)
+            cam.set_geometry_inertial(win_width/(float)win_height);
+        else
+            cam.set_geometry_body(win_width/(float)win_height, pos2, (float)sol.integr.brillouin2);
 
         sh_dlight_shadow.use();
         sh_dlight_shadow.set_mat4_uniform("projection", cam.projection);
@@ -190,13 +196,13 @@ if (sol.integr.properties.spacecraft_checkbox)
 
         glm::mat4 I = glm::mat4(1.0f);
 
-        glm::mat4 T1R1 = glm::translate(I, (float)sol.integr.com1_coeff*glm::vec3(sol.x[i],sol.y[i],sol.z[i]))*
+        glm::mat4 T1R1 = glm::translate(I, pos1)*
                          glm::rotate(I, glm::radians((float)sol.yaw1[i]),   glm::vec3(0.0f,0.0f,1.0f))*
                          glm::rotate(I, glm::radians((float)sol.pitch1[i]), glm::vec3(0.0f,1.0f,0.0f))*
                          glm::rotate(I, glm::radians((float)sol.roll1[i]),  glm::vec3(1.0f,0.0f,0.0f));
         glm::mat4 S1 = glm::scale(I, glm::vec3((float)sol.integr.brillouin1));
 
-        glm::mat4 T2R2 = glm::translate(I, (float)sol.integr.com2_coeff*glm::vec3(sol.x[i],sol.y[i],sol.z[i]))*
+        glm::mat4 T2R2 = glm::translate(I, pos2)*
                          glm::rotate(I, glm::radians((float)sol.yaw2[i]),   glm::vec3(0.0f,0.0f,1.0f))*
                          glm::rotate(I, glm::radians((float)sol.pitch2[i]), glm::vec3(0.0f,1.0f,0.0f))*
                          glm::rotate(I, glm::radians((float)sol.roll2[i]),  glm::vec3(1.0f,0.0f,0.0f));

@@ -62,7 +62,7 @@ public:
     }
 
     //This function computes the camera values of the variables that are passed as uniforms to the shaders in the render_3D_content().
-    void set_geometry(const float win_aspect_ratio)
+    void set_geometry_inertial(const float win_aspect_ratio)
     {
         projection = glm::infinitePerspective(glm::radians(fov), win_aspect_ratio, 0.1f); //<<<<<<<<<<<< I need to fix the hard-coded 0.1f...
 
@@ -75,6 +75,23 @@ public:
         up = -glm::vec3(cos(glm::radians(lat))*cos(glm::radians(lon)),
                         cos(glm::radians(lat))*sin(glm::radians(lon)),
                        -sin(glm::radians(lat)));
+
+        view = glm::lookAt(pos, aim, up);
+    }
+
+    void set_geometry_body(const float win_aspect_ratio, const glm::vec3 &body_pos, const float brillouin)
+    {
+        projection = glm::infinitePerspective(glm::radians(fov), win_aspect_ratio, 0.1f);
+
+        float rb = glm::length(body_pos);
+        float xc = (rb + 3.0f*brillouin)*body_pos.x/rb;
+        float yc = (rb + 3.0f*brillouin)*body_pos.y/rb;
+        float zc = (rb + 3.0f*brillouin)*body_pos.z/rb;
+        pos = glm::vec3(xc,yc,zc);
+
+        
+
+        up = glm::vec3(0.0f,0.0f,1.0f);
 
         view = glm::lookAt(pos, aim, up);
     }

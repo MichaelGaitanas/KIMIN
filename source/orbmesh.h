@@ -20,7 +20,7 @@ public:
     orbmesh() : gl_ready(false),
                 vao(0),
                 vbo(0),
-                thickness(0.2f),
+                thickness(0.5f),
                 draw_count(0)
     { }
 
