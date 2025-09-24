@@ -3,6 +3,9 @@
 
 #include<cmath>
 
+#include"constant.h"
+#include"typedef.h"
+
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
 #include<glm/gtc/type_ptr.hpp>
@@ -13,7 +16,8 @@ public:
     float dist, lon, lat, fov, min_dist, max_dist, min_fov, max_fov;
     glm::vec3 pos, aim, up;
     glm::mat4 projection, view;
-    bool lock_revo;
+    bool mount_body1, mount_body2;
+    float brillouin_scale;
 
     camera() : dist(0.0f),
                lon(40.0f),
@@ -24,8 +28,10 @@ public:
                max_dist(0.0f),
                min_fov(1.0f),
                max_fov(179.0f),
-               lock_revo(false)
-    { }
+               mount_body1(false),
+               mount_body2(false),
+               brillouin_scale(5.0f)
+{ }
 
     //This function runs one time after every simulation termination.
     void reset(const float brillouin_radii_sum, const float binary_max_dist)
@@ -70,6 +76,8 @@ public:
         pos = dist*glm::vec3(cos(glm::radians(lon))*sin(glm::radians(lat)),
                              sin(glm::radians(lon))*sin(glm::radians(lat)),
                              cos(glm::radians(lat)));
+
+        aim = glm::vec3(0.0f);
         
         //The up vector is equal to the minus unit latitude basis vector, but expressed as a function of the Cartesian unit vectors : up = -hat(θ(hat(x),hat(y),hat(z))).
         up = -glm::vec3(cos(glm::radians(lat))*cos(glm::radians(lon)),
@@ -79,17 +87,25 @@ public:
         view = glm::lookAt(pos, aim, up);
     }
 
-    void set_geometry_body(const float win_aspect_ratio, const glm::vec3 &body_pos, const float brillouin)
+    void set_geometry_body(const float win_aspect_ratio, const glm::vec3 &pos_body, const glm::vec3 &pos_other_body, const float brillouin)
     {
         projection = glm::infinitePerspective(glm::radians(fov), win_aspect_ratio, 0.1f);
 
-        float rb = glm::length(body_pos);
-        float xc = (rb + 3.0f*brillouin)*body_pos.x/rb;
-        float yc = (rb + 3.0f*brillouin)*body_pos.y/rb;
-        float zc = (rb + 3.0f*brillouin)*body_pos.z/rb;
+        //Camera's position.
+        
+        float rb = glm::length(pos_body);
+        float xc = (rb + brillouin_scale*brillouin)*pos_body.x/rb;
+        float yc = (rb + brillouin_scale*brillouin)*pos_body.y/rb;
+        float zc = (rb + brillouin_scale*brillouin)*pos_body.z/rb;
         pos = glm::vec3(xc,yc,zc);
 
+        dvec3 spher = cart2spher(dvec3{(double)xc, (double)yc, (double)zc});
+
+        dist = (float)spher[0];
+        lon  = (float)spher[1]*180.0f/pi;
+        lat  = (float)spher[2]*180.0f/pi;
         
+        aim = pos_other_body;
 
         up = glm::vec3(0.0f,0.0f,1.0f);
 

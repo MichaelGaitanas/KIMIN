@@ -181,10 +181,13 @@ public:
         glm::vec3 pos2 = glm::vec3((float)sol.integr.com2_coeff*glm::vec3(sol.x[i],sol.y[i],sol.z[i]));
 
         sunlight.set_geometry();
-        if (!cam.lock_revo)
+
+        if (cam.mount_body1)
+            cam.set_geometry_body(win_width/(float)win_height, pos1, pos2, (float)sol.integr.brillouin1);
+        else if (cam.mount_body2)
+            cam.set_geometry_body(win_width/(float)win_height, pos2, pos1, (float)sol.integr.brillouin2);
+        else //not in mount mode, hence the camera shall aim at the binary's C.O.M. (0,0,0) and the position shall be controlled netirely by the user in spherical coords (dist, lon, lat).
             cam.set_geometry_inertial(win_width/(float)win_height);
-        else
-            cam.set_geometry_body(win_width/(float)win_height, pos2, (float)sol.integr.brillouin2);
 
         sh_dlight_shadow.use();
         sh_dlight_shadow.set_mat4_uniform("projection", cam.projection);
