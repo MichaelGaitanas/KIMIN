@@ -437,14 +437,14 @@ public:
         ImGui::SetNextItemWidth(130);
         ImGui::SliderFloat("[Brillouin]##49", &rend3D.cam.brillouin_scale, -10.0f, 10.0f, "%.1f");
 
-        ImGui::Text("V - offset");
+        ImGui::Text("V - scale");
         ImGui::SameLine();
         ImGui::SetCursorPosX(70.0f);
         ImGui::SetNextItemWidth(130);
         ImGui::SliderFloat("[Brillouin]##50", &rend3D.cam.v_offset_scale, 0.0f, 5.0f, "%.1f");
 
         //2D joystick. Used to shift the mounted camera left-right-up-down from the radial direction so that the body in front does not block the view.
-        ImGuiSliderFloat2D("V - joystick", (ImVec2*)&rend3D.cam.v_offset_ndc, ImVec2(-1.0f,-1.0f), ImVec2(1.0f,1.0f));
+        ImGuiSliderFloat2D("V - offset", (ImVec2*)&rend3D.cam.v_offset_ndc, ImVec2(-1.0f,-1.0f), ImVec2(1.0f,1.0f));
 
         if (!rend3D.cam.mount_body1 && !rend3D.cam.mount_body2)
             ImGui::EndDisabled();
