@@ -1,26 +1,26 @@
-Simulation name := "KleopatraAndCube"
+Simulation name := "SyntheticBinaryMutualEscape"
 
 Shape models := ".obj files"
-file 1 := "kleopatra4k_R114km.obj"
-file 2 := "cube2x2x2_R1km.obj"
+file 1 := "eros196k_R17km.obj"
+file 2 := "procgen1_4k_R3km.obj"
 
 Mutual potential order := 2
 
-M1 := 1e+18
-M2 := 10000
+M1 := 6.687e+15
+M2 := 9982000000000
 
-Numerical method := "RKF78 (fixed)"
+Numerical method := "ABM5 (fixed)"
 Epoch := 0
-Duration := 30
-Step := 0.006
+Duration := 35
+Step := 0.001
 
 Relative position and velocity := "Keplerian"
-a  := 100
-e  := 0
-i  := 80
-Om := 90
+a  := 67
+e  := 0.4
+i  := 0
+Om := 0
 w  := 0
-M  := 90
+M  := 0
 
 Orientations := "Euler angles"
 roll 1  := 0
@@ -31,14 +31,14 @@ pitch 2 := 0
 yaw 2   := 0
 
 Angular velocities := "At inertial frame"
-w1ix := 2e-06
+w1ix := 0
 w1iy := 0
-w1iz := 0
+w1iz := 0.00015
 w2ix := 0
 w2iy := 0
 w2iz := 0
 
-Collision shapes := "Polyhedra"
+Collision shapes := "Spheres"
 
 Kinetic impactors := "No"
 

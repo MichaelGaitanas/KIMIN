@@ -1,18 +1,18 @@
-Simulation name := "DidymosDARTChaos"
+Simulation name := "DidymosDARTImpactChaos"
 
 Shape models := ".obj files"
 file 1 := "didymain2019_R04km.obj"
 file 2 := "dimorphos_ellipsoid_R01km.obj"
 
-Mutual potential order := 2
+Mutual potential order := 4
 
 M1 := 515041825125.529
 M2 := 3926933196.12399
 
-Numerical method := "BStoer (adaptive)"
+Numerical method := "RKF78 (fixed)"
 Epoch := 0
-Duration := 31
-Target error := 1e-13
+Duration := 100
+Step := 0.001
 
 Relative position and velocity := "Cartesian"
 x  := 1.18

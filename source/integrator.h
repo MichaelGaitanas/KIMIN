@@ -163,7 +163,7 @@ public:
     //Before the actual integration of the ODEs starts, we do some preparations.
     void prepare(console_panel &console)
     {
-        console.add_timed_text("[Shape] : Computing inertial integrals... ");
+        console.add_timed_text("[Polyhedron] : Computing inertial integrals... ");
 
         m = properties.M1*properties.M2/(properties.M1 + properties.M2);
         com1_coeff = -properties.M2/(properties.M1 + properties.M2);

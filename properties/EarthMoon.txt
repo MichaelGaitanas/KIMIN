@@ -8,15 +8,15 @@ a2 := 1737.6
 b2 := 1735.6
 c2 := 1735
 
-Mutual potential order := 4
+Mutual potential order := 2
 
 M1 := 5.97216787e+24
 M2 := 7.342e+22
 
 Numerical method := "RKF78 (adaptive)"
 Epoch := 0
-Duration := 500
-Target error := 1e-15
+Duration := 6000
+Target error := 1e-14
 
 Relative position and velocity := "Keplerian"
 a  := 384400

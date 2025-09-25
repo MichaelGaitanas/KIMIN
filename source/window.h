@@ -69,7 +69,7 @@ public:
         height = mode->height;
         //That being said, when the gui launches, it is in windowed-fullscreen mode.nIf the rescale button is clicked, the size remains, unless the user resizes it from the corners.
 
-        wpointer = glfwCreateWindow(width, height, "KIMIN", nullptr, nullptr);
+        wpointer = glfwCreateWindow(width, height, "KIMIN - Kinetic Impact Mission to NEO", nullptr, nullptr);
         if (wpointer == nullptr)
         {
             fprintf(stderr, "[Error] : window() constructor failed to create glfw window. Exiting...\n");

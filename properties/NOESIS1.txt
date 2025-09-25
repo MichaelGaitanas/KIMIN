@@ -1,4 +1,4 @@
-Simulation name := "StrongImpact"
+Simulation name := "NOESIS1"
 
 Shape models := ".obj files"
 file 1 := "ryugu196k_R05km.obj"
@@ -7,11 +7,11 @@ file 2 := "itokawa196k_R03km.obj"
 Mutual potential order := 3
 
 M1 := 450000000000
-M2 := 35000000000
+M2 := 3500000000
 
 Numerical method := "RKF78 (fixed)"
 Epoch := 0
-Duration := 50
+Duration := 100
 Step := 0.005
 
 Relative position and velocity := "Keplerian"
@@ -38,7 +38,7 @@ w2ix := 0
 w2iy := 0
 w2iz := 0
 
-Collision shapes := "Spheres"
+Collision shapes := "Polyhedra"
 
 Kinetic impactors := "Yes"
 m1    := 0
@@ -47,11 +47,17 @@ vy1   := 0
 vz1   := 0
 beta1 := 0
 t1    := 0
-m2    := 3000
-vx2   := 50
+m2    := 1000
+vx2   := -15
 vy2   := 0
-vz2   := 50
-beta2 := 5
+vz2   := 10
+beta2 := 3.6
 t2    := 25
 
-Spacecraft orbiter := "No"
+Spacecraft orbiter := "Yes"
+xs  := 7
+ys  := 0
+zs  := 0
+vxs := 0
+vys := 0
+vzs := 6e-05

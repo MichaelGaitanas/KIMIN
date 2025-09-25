@@ -355,7 +355,7 @@ public:
                 {console.add_timed_text("[Error] : No .obj file is selected for 'Body 1'.\n"); return false;}
             else
             {
-                console.add_timed_text("[Shape] : Loading .obj file 1... ");
+                console.add_timed_text("[Polyhedron] : Loading .obj file 1... ");
                 if (poly1.is_kimin_valid_obj(("../obj/polyhedra/" + obj1_path).c_str()))
                 {
                     poly1.load_obj_file(("../obj/polyhedra/" + obj1_path).c_str());
@@ -371,7 +371,7 @@ public:
                 {console.add_timed_text("[Error] : No .obj file is selected for 'Body 2'.\n"); return false;}
             else
             {
-                console.add_timed_text("[Shape] : Loading .obj file 2... ");
+                console.add_timed_text("[Polyhedron] : Loading .obj file 2... ");
                 if (poly2.is_kimin_valid_obj(("../obj/polyhedra/" + obj2_path).c_str()))
                 {
                     poly2.load_obj_file(("../obj/polyhedra/" + obj2_path).c_str());

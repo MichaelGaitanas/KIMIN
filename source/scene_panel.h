@@ -163,47 +163,46 @@ public:
         return bool_plot_func;
     }
 
-    bool ImGuiSliderFloat2D(const char *label, ImVec2 *value,
-                        ImVec2 min, ImVec2 max, ImVec2 size = ImVec2(100,100))
+    bool ImGuiSliderFloat2D(const char *label, ImVec2 *value, ImVec2 min, ImVec2 max, ImVec2 size = ImVec2(100.0f,100.0f))
     {
         ImGui::Text("%s", label);
+
+        //First we set it and then we get it.
         ImGui::SetCursorPosX(0.15f*ImGui::GetIO().DisplaySize.x/2.0f - size.x/2.0f);
         ImVec2 pos = ImGui::GetCursorScreenPos();
 
-        // Use a framed button so hover/disabled visuals match other controls
+        //Use a framed button so hover/disabled visuals match other controls.
         ImGui::InvisibleButton(label, size);
 
         bool changed = false;
         if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left, 0))
         {
             ImVec2 mouse = ImGui::GetIO().MousePos;
-            float x = (mouse.x - pos.x) / size.x;
-            float y = (mouse.y - pos.y) / size.y;
-            value->x = min.x + x * (max.x - min.x);
-            value->y = min.y + y * (max.y - min.y);
+            float x = (mouse.x - pos.x)/size.x;
+            float y = (mouse.y - pos.y)/size.y;
+            value->x = min.x + x*(max.x - min.x);
+            value->y = min.y + y*(max.y - min.y);
             changed = true;
         }
 
-        // Clamp
+        //Clamp
         value->x = std::clamp(value->x, min.x, max.x);
         value->y = std::clamp(value->y, min.y, max.y);
 
-        // Colors that respect BeginDisabled() dimming
+        //Colors that respect BeginDisabled() dimming.
         ImU32 col_bg     = ImGui::GetColorU32(ImGuiCol_FrameBg);
         ImU32 col_border = ImGui::GetColorU32(ImGuiCol_Border);
-        ImU32 col_handle = ImGui::GetColorU32(ImGui::IsItemActive()
-                                            ? ImGuiCol_SliderGrabActive
-                                            : ImGuiCol_SliderGrab);
+        ImU32 col_handle = ImGui::GetColorU32(ImGui::IsItemActive() ? ImGuiCol_SliderGrabActive : ImGuiCol_SliderGrab);
 
-        // Draw background & border
-        ImDrawList* draw_list = ImGui::GetWindowDrawList();
-        draw_list->AddRectFilled(pos, ImVec2(pos.x+size.x, pos.y+size.y), col_bg, 0.0f);
-        draw_list->AddRect(pos, ImVec2(pos.x+size.x, pos.y+size.y), col_border);
+        //Draw background & border.
+        ImDrawList *draw_list = ImGui::GetWindowDrawList();
+        draw_list->AddRectFilled(pos, ImVec2(pos.x + size.x, pos.y + size.y), col_bg, 0.0f); //Interior.
+        draw_list->AddRect(pos, ImVec2(pos.x + size.x, pos.y + size.y), col_border); //Border.
 
-        // Draw handle
-        float tx = (value->x - min.x) / (max.x - min.x);
-        float ty = (value->y - min.y) / (max.y - min.y);
-        ImVec2 handle = ImVec2(pos.x + tx * size.x, pos.y + ty * size.y);
+        //Draw handle.
+        float tx = (value->x - min.x)/(max.x - min.x);
+        float ty = (value->y - min.y)/(max.y - min.y);
+        ImVec2 handle = ImVec2(pos.x + tx*size.x, pos.y + ty*size.y);
         draw_list->AddCircleFilled(handle, 5.0f, col_handle);
 
         return changed;
@@ -444,7 +443,7 @@ public:
         ImGui::SetNextItemWidth(130);
         ImGui::SliderFloat("[Brillouin]##50", &rend3D.cam.v_offset_scale, 0.0f, 5.0f, "%.1f");
 
-        //2D joystick.
+        //2D joystick. Used to shift the mounted camera left-right-up-down from the radial direction so that the body in front does not block the view.
         ImGuiSliderFloat2D("V - joystick", (ImVec2*)&rend3D.cam.v_offset_ndc, ImVec2(-1.0f,-1.0f), ImVec2(1.0f,1.0f));
 
         if (!rend3D.cam.mount_body1 && !rend3D.cam.mount_body2)
@@ -459,12 +458,12 @@ public:
         ImGui::Text("Lon");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##52", &rend3D.sunlight.lon, 0.0f, 360.0f, "%.1f");
+        ImGui::SliderFloat("[deg]##51", &rend3D.sunlight.lon, 0.0f, 360.0f, "%.1f");
 
         ImGui::Text("Lat");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##53", &rend3D.sunlight.lat, 0.0f, 180.0f, "%.1f");
+        ImGui::SliderFloat("[deg]##52", &rend3D.sunlight.lat, 0.0f, 180.0f, "%.1f");
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Separator();
@@ -475,7 +474,7 @@ public:
         ImGui::Text("Reso");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        if (ImGui::SliderInt("[pix]##54", &rend3D.depth_reso, 1024, 16384))
+        if (ImGui::SliderInt("[pix]##53", &rend3D.depth_reso, 1024, 16384))
             rend3D.setup_depth_fbo();
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
@@ -491,22 +490,22 @@ public:
         ImGui::Text("Body 1");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##55", &rend3D.render_aster1);
+        ImGui::Checkbox("##54", &rend3D.render_aster1);
         ImGui::SameLine();
         ImGui::SetCursorPosX(100.0f);
         ImGui::Text("Axes 1");
         ImGui::SameLine();
-        ImGui::Checkbox("##56", &rend3D.render_axes1);
+        ImGui::Checkbox("##55", &rend3D.render_axes1);
 
         ImGui::Text("Body 2");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##57", &rend3D.render_aster2);
+        ImGui::Checkbox("##56", &rend3D.render_aster2);
         ImGui::SameLine();
         ImGui::SetCursorPosX(100.0f);
         ImGui::Text("Axes 2");
         ImGui::SameLine();
-        ImGui::Checkbox("##58", &rend3D.render_axes2);
+        ImGui::Checkbox("##57", &rend3D.render_axes2);
         ImGui::Dummy(ImVec2(0.0f,0.6f));
 
         ImGui::Text("Orbits");
@@ -515,29 +514,29 @@ public:
         ImGui::Text("Body 1");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##59", &rend3D.render_orb1);
+        ImGui::Checkbox("##58", &rend3D.render_orb1);
         ImGui::SameLine();
         ImGui::SetCursorPosX(90.0f);
         ImGui::SetNextItemWidth(100);
         uint64_t visible_orb1_frame = (total_frames > 0) ? static_cast<uint64_t>(rend3D.orb1.draw_count) : 0;
-        ImGui::SliderScalar("##60", ImGuiDataType_U64, &visible_orb1_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SliderScalar("##59", ImGuiDataType_U64, &visible_orb1_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
         rend3D.orb1.draw_count = static_cast<size_t>(visible_orb1_frame);
-        orb1_sync = common_onoff_button("Sync##61", ImVec2(50.0f, 18.0f), orb1_sync);
+        orb1_sync = common_onoff_button("Sync##60", ImVec2(50.0f, 18.0f), orb1_sync);
         if (orb1_sync)
             rend3D.orb1.draw_count = static_cast<size_t>(current_frame + 1);
 
         ImGui::Text("Body 2");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##62", &rend3D.render_orb2);
+        ImGui::Checkbox("##61", &rend3D.render_orb2);
         ImGui::SameLine();
         ImGui::SetCursorPosX(90.0f);
         ImGui::SetNextItemWidth(100);
         uint64_t visible_orb2_frame = (total_frames > 0) ? static_cast<uint64_t>(rend3D.orb2.draw_count) : 0;
-        ImGui::SliderScalar("##63", ImGuiDataType_U64, &visible_orb2_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SliderScalar("##62", ImGuiDataType_U64, &visible_orb2_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
-        orb2_sync = common_onoff_button("Sync##64", ImVec2(50.0f, 18.0f), orb2_sync);
+        orb2_sync = common_onoff_button("Sync##63", ImVec2(50.0f, 18.0f), orb2_sync);
         rend3D.orb2.draw_count = static_cast<size_t>(visible_orb2_frame);
         if (orb2_sync)
             rend3D.orb2.draw_count = static_cast<size_t>(current_frame + 1);
@@ -549,14 +548,14 @@ public:
         ImGui::Text("Orbiter");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##65", &rend3D.render_orb_sp);
+        ImGui::Checkbox("##64", &rend3D.render_orb_sp);
         ImGui::SameLine();
         ImGui::SetCursorPosX(90.0f);
         ImGui::SetNextItemWidth(100);
         uint64_t visible_orb_sp_frame = (total_frames > 0) ? static_cast<uint64_t>(rend3D.orb_sp.draw_count) : 0;
-        ImGui::SliderScalar("##66", ImGuiDataType_U64, &visible_orb_sp_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SliderScalar("##65", ImGuiDataType_U64, &visible_orb_sp_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
-        orb_sp_sync = common_onoff_button("Sync##67", ImVec2(50.0f, 18.0f), orb_sp_sync);
+        orb_sp_sync = common_onoff_button("Sync##66", ImVec2(50.0f, 18.0f), orb_sp_sync);
         rend3D.orb_sp.draw_count = static_cast<size_t>(visible_orb_sp_frame);
         if (orb_sp_sync)
             rend3D.orb_sp.draw_count = static_cast<size_t>(current_frame + 1);

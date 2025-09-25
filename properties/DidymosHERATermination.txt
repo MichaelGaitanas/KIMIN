@@ -14,13 +14,13 @@ Epoch := 0
 Duration := 365
 Target error := 1e-14
 
-Relative position and velocity := "Cartesian"
-x  := 1.18
-y  := 0
-z  := 0
-vx := 0
-vy := 0.000172754231527419
-vz := 0
+Relative position and velocity := "Keplerian"
+a  := 1.18
+e  := 0.04
+i  := 0
+Om := 0
+w  := 0
+M  := 0
 
 Orientations := "Euler angles"
 roll 1  := 0

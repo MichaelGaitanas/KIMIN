@@ -489,12 +489,12 @@ public:
             fprintf(file_properties,"beta1 := %.15g\n",integr.properties.beta1);
             fprintf(file_properties,"t1    := %.15g\n",integr.properties.t1_impact/86400.0);
 
-            fprintf(file_properties,"m2    := %.15g\n",integr.properties.M2_impact);
-            fprintf(file_properties,"vx2   := %.15g\n",integr.properties.v2_impact[0]);
-            fprintf(file_properties,"vy2   := %.15g\n",integr.properties.v2_impact[1]);
-            fprintf(file_properties,"vz2   := %.15g\n",integr.properties.v2_impact[2]);
-            fprintf(file_properties,"beta2 := %.15g\n",integr.properties.beta2);
-            fprintf(file_properties,"t2    := %.15g\n",integr.properties.t2_impact/86400.0);
+            fprintf(file_properties,"m2    := %.15g\n",  integr.properties.M2_impact);
+            fprintf(file_properties,"vx2   := %.15g\n",  integr.properties.v2_impact[0]);
+            fprintf(file_properties,"vy2   := %.15g\n",  integr.properties.v2_impact[1]);
+            fprintf(file_properties,"vz2   := %.15g\n",  integr.properties.v2_impact[2]);
+            fprintf(file_properties,"beta2 := %.15g\n",  integr.properties.beta2);
+            fprintf(file_properties,"t2    := %.15g\n\n",integr.properties.t2_impact/86400.0);
         }
         else
             fprintf(file_properties, "Kinetic impactors := \"No\"\n\n");
