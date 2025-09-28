@@ -5,6 +5,7 @@
 
 #include"constant.h"
 #include"typedef.h"
+#include"conversion.h"
 
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
@@ -17,25 +18,26 @@ public:
     glm::vec3 pos, aim, up;
     glm::mat4 projection, view;
     bool mount_body1, mount_body2;
-    float brillouin_scale;
-    glm::vec2 v_offset_ndc;   // in [-1,1]^2 coming from the ImGui quad (x=right, y=up)
-    float     v_offset_scale; // world scale factor (in "Brillouin radii" units)
+    float rscale, vscale;
+    glm::vec2 voffset_ndc;
 
     camera() : dist(0.0f),
                lon(40.0f),
                lat(60.0f),
                fov(60.0f),
-               aim(glm::vec3(0.0f)),
                min_dist(0.0f),
                max_dist(0.0f),
                min_fov(1.0f),
                max_fov(179.0f),
+               pos(glm::vec3(0.0f)),
+               aim(glm::vec3(0.0f)),
+               up(glm::vec3(0.0f)),
                mount_body1(false),
                mount_body2(false),
-               brillouin_scale(5.0f),
-               v_offset_ndc(0.0f, 0.0f),
-               v_offset_scale(1.0f)
-{ }
+               rscale(5.0f),
+               vscale(1.0f),
+               voffset_ndc(glm::vec2(0.0f))
+    { }
 
     //This function runs one time after every simulation termination.
     void reset(const float brillouin_radii_sum, const float binary_max_dist)
@@ -63,7 +65,7 @@ public:
 
     void rotate_lon_lat(const float dx, const float dy, const float mouse_sensitivity = 0.3f)
     {
-        lon = fmod(lon - dx*mouse_sensitivity, 360.0f);
+        lon = fmodf(lon - dx*mouse_sensitivity, 360.0f);
         if (lon < 0.0f) lon += 360.0f;
 
         lat -= dy*mouse_sensitivity;
@@ -74,7 +76,7 @@ public:
     //This function computes the camera values of the variables that are passed as uniforms to the shaders in the render_3D_content().
     void set_geometry_inertial(const float win_aspect_ratio)
     {
-        projection = glm::infinitePerspective(glm::radians(fov), win_aspect_ratio, 0.1f); //<<<<<<<<<<<< I need to fix the hard-coded 0.1f...
+        projection = glm::infinitePerspective(glm::radians(fov), win_aspect_ratio, 0.1f);
 
         //Spherical to Cartesian.
         pos = dist*glm::vec3(cos(glm::radians(lon))*sin(glm::radians(lat)),
@@ -91,56 +93,34 @@ public:
         view = glm::lookAt(pos, aim, up);
     }
 
-    void set_geometry_body(const float win_aspect_ratio,
-                       const glm::vec3 &pos_body,
-                       const glm::vec3 &pos_other_body,
-                       const float brillouin)
-{
-    projection = glm::infinitePerspective(glm::radians(fov), win_aspect_ratio, 0.1f);
+    void set_geometry_body(const float win_aspect_ratio, const glm::vec3 &pos_body, const glm::vec3 &pos_other_body, const float brillouin)
+    {
+        projection = glm::infinitePerspective(glm::radians(fov), win_aspect_ratio, 0.1f);
 
-    // --- Base position along body radial + Brillouin offset ---
-    const float rb = glm::length(pos_body);
-    const float eps = 1e-6f;
-    const glm::vec3 dir_body = (rb > eps) ? (pos_body / rb) : glm::vec3(1,0,0);
-    glm::vec3 pos_base = pos_body + (brillouin_scale * brillouin) * dir_body;
+        aim = pos_other_body; //Aim is always "the other body".
 
-    // Aim is always "the other body"
-    glm::vec3 aim_target = pos_other_body;
+        glm::vec3 pos_base = ( 1.0f + rscale*brillouin/glm::length(pos_body) )*pos_body;
 
-    // --- Build view basis at the base position ---
-    glm::vec3 f = glm::normalize(aim_target - pos_base); // forward
-    glm::vec3 worldUp(0.0f, 0.0f, 1.0f);
-    if (std::abs(glm::dot(f, worldUp)) > 0.999f)
-        worldUp = glm::vec3(1.0f, 0.0f, 0.0f);
+        dvec3 spher = cart2spher(dvec3{pos_base.x, pos_base.y, pos_base.z});
+        dist = (float)spher[0];
+        lon  = (float)wrap_to_2pi(spher[1])*180.0f/pi;
+        lat  = (float)spher[2]*180.0f/pi;
 
-    glm::vec3 r = glm::normalize(glm::cross(f, worldUp)); // right
-    glm::vec3 u = glm::normalize(glm::cross(r, f));       // up (corrected)
+        up = -glm::vec3(cos(glm::radians(lat))*cos(glm::radians(lon)),
+                        cos(glm::radians(lat))*sin(glm::radians(lon)),
+                       -sin(glm::radians(lat)));
+        glm::vec3 front = glm::normalize(aim - pos_base);
+        glm::vec3 right = glm::cross(front, up);
 
-    // --- Apply joystick V-offset on the (r,u) plane ---
-    // The ImGui quad currently maps top→-1 and bottom→+1; flip Y so "up on widget" = +up in world:
-    glm::vec2 v = glm::vec2(v_offset_ndc.x, -v_offset_ndc.y);
-    const float v_range = v_offset_scale * brillouin; // world units (km) for joystick radius
-    glm::vec3 offset_world = r * (v.x * v_range) + u * (v.y * v_range);
+        //Apply joystick V-offset on the (right - up) plane.
+        //The ImGui quad currently maps top to -1 and bottom to +1, so flip y.
+        glm::vec2 v = glm::vec2(voffset_ndc.x, -voffset_ndc.y);
+        glm::vec3 offset = (v.x*vscale*brillouin)*right + (v.y*vscale*brillouin)*up;
 
-    pos = pos_base + offset_world;
-    aim = aim_target;
+        pos = pos_base + offset; //Final camera's position.
 
-    // --- Robust up again for final pos (tiny change after offset) ---
-    f = glm::normalize(aim - pos);
-    if (std::abs(glm::dot(f, worldUp)) > 0.999f)
-        worldUp = glm::vec3(1.0f, 0.0f, 0.0f);
-    r = glm::normalize(glm::cross(f, worldUp));
-    up = glm::normalize(glm::cross(r, f));
-
-    view = glm::lookAt(pos, aim, up);
-
-    // --- Update sliders from FINAL pos (for UI readout) ---
-    dvec3 spher = cart2spher(dvec3{ pos.x, pos.y, pos.z }, true);
-    auto wrap_deg360 = [](float a){ a = fmodf(a, 360.0f); return (a < 0.0f) ? a + 360.0f : a; };
-    dist = (float)spher[0];
-    lon  = wrap_deg360((float)(spher[1] * 180.0 / M_PI));
-    lat  = glm::clamp((float)(spher[2] * 180.0 / M_PI), 0.04f, 179.96f);
-}
+        view = glm::lookAt(pos, aim, up);
+    }
 };
 
 

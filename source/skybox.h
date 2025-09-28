@@ -11,7 +11,7 @@ private:
     unsigned int vao, vbo, ebo, tex; //Vertex array object, vertex buffer object, element (index) buffer object and texture ID.
 
 public:
-    //Construct the mesh procedurally (i.e. no geometry data like vertices or uvs are read from a file), setup the mesh in the gpu memory, load the 6 images and tell how to wrap them.
+    //Construct the mesh procedurally (i.e. no geometry data like vertices or UVs are read from a file), setup the mesh in the gpu memory, load the 6 images and tell how to wrap them.
     //Note : Make sure that all 6 images have the same size in pixels (e.g. 2048x2048, 500x500, etc...) AND the same type of extensions (e.g. jpg, png, bmp, ...).
     skybox(const char *right_img_path, const char *left_img_path, const char *top_img_path, const char *bottom_img_path, const char *front_img_path, const char *back_img_path)
     {   
@@ -91,6 +91,7 @@ public:
                 format = GL_RGB; //Classical 3-channel image (e.g. jpg).
             else if (img_channels[i] == 4)
                 format = GL_RGBA; //4-channel image, i.e. RGB + alpha channel for opacity (e.g. png).
+            else { } //We hope not...
 
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format, img_widths[i], img_heights[i], 0, format, GL_UNSIGNED_BYTE, data);
             stbi_image_free(data);
@@ -125,7 +126,7 @@ public:
         glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, tex);
         glBindVertexArray(vao);
-        glDepthFunc(GL_LEQUAL); //Ensures that the skybox fragments will render behind everything else. (A bit dangerous to place it here. Be cautious.)
+        glDepthFunc(GL_LEQUAL); //Ensures that the skybox fragments will render behind everything else. (A bit dangerous to place it here though...)
 		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
         glDepthFunc(GL_LESS); //Restore the default depth test function for rendering the rest of the scene.
 		glBindVertexArray(0);

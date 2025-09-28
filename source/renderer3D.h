@@ -154,8 +154,8 @@ public:
         setup_depth_fbo();
 
         //Start all orbit sliders at UI=1 (i.e., draw_count=1 -> no line yet)
-        orb1.draw_count   = std::min<size_t>(1, sol.x.size());
-        orb2.draw_count   = std::min<size_t>(1, sol.x.size());
+        orb1.draw_count = std::min<size_t>(1, sol.x.size());
+        orb2.draw_count = std::min<size_t>(1, sol.x.size());
         if (sol.integr.properties.spacecraft_checkbox)
             orb_sp.draw_count = std::min<size_t>(1, sol.x_sp.size());
 

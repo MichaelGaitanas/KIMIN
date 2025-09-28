@@ -199,7 +199,7 @@ public:
         draw_list->AddRectFilled(pos, ImVec2(pos.x + size.x, pos.y + size.y), col_bg, 0.0f); //Interior.
         draw_list->AddRect(pos, ImVec2(pos.x + size.x, pos.y + size.y), col_border); //Border.
 
-        //Draw handle.
+        //Handle.
         float tx = (value->x - min.x)/(max.x - min.x);
         float ty = (value->y - min.y)/(max.y - min.y);
         ImVec2 handle = ImVec2(pos.x + tx*size.x, pos.y + ty*size.y);
@@ -415,7 +415,7 @@ public:
         if (ImGui::Checkbox("##47", &rend3D.cam.mount_body1))
         {
             rend3D.cam.mount_body2 = false;
-            rend3D.cam.v_offset_ndc = glm::vec2(0.0f); //Recenter peek offset.
+            rend3D.cam.voffset_ndc = glm::vec2(0.0f); //Recenter peek offset.
         }
         ImGui::SameLine();
         ImGui::SetCursorPosX(140.0f);
@@ -424,7 +424,7 @@ public:
         if (ImGui::Checkbox("##48", &rend3D.cam.mount_body2))
         {
             rend3D.cam.mount_body1 = false;
-            rend3D.cam.v_offset_ndc = glm::vec2(0.0f); //Recenter peek offset.
+            rend3D.cam.voffset_ndc = glm::vec2(0.0f); //Recenter peek offset.
         }
         ImGui::Dummy(ImVec2(0.0f, 3.0f));
 
@@ -435,16 +435,16 @@ public:
         ImGui::SameLine();
         ImGui::SetCursorPosX(70.0f);
         ImGui::SetNextItemWidth(130);
-        ImGui::SliderFloat("[Brillouin]##49", &rend3D.cam.brillouin_scale, -10.0f, 10.0f, "%.1f");
+        ImGui::SliderFloat("[Brillouin]##49", &rend3D.cam.rscale, 2.0f, 10.0f, "%.1f");
 
         ImGui::Text("V - scale");
         ImGui::SameLine();
         ImGui::SetCursorPosX(70.0f);
         ImGui::SetNextItemWidth(130);
-        ImGui::SliderFloat("[Brillouin]##50", &rend3D.cam.v_offset_scale, 0.0f, 5.0f, "%.1f");
+        ImGui::SliderFloat("[Brillouin]##50", &rend3D.cam.vscale, 0.0f, 5.0f, "%.1f");
 
         //2D joystick. Used to shift the mounted camera left-right-up-down from the radial direction so that the body in front does not block the view.
-        ImGuiSliderFloat2D("V - offset", (ImVec2*)&rend3D.cam.v_offset_ndc, ImVec2(-1.0f,-1.0f), ImVec2(1.0f,1.0f));
+        ImGuiSliderFloat2D("V - offset", (ImVec2*)&rend3D.cam.voffset_ndc, ImVec2(-1.0f,-1.0f), ImVec2(1.0f,1.0f));
 
         if (!rend3D.cam.mount_body1 && !rend3D.cam.mount_body2)
             ImGui::EndDisabled();
