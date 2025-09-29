@@ -403,7 +403,7 @@ public:
         ImGui::Text("FoV");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##46", &rend3D.cam.fov, rend3D.cam.min_fov, rend3D.cam.max_fov, "%.0f");
+        ImGui::SliderFloat("[deg]##46", &rend3D.cam.fov, 1.0f, 179.0f, "%.0f");
 
         ImGui::Dummy(ImVec2(0.0f, 6.0f));
         ImGui::Text("Revolving view");

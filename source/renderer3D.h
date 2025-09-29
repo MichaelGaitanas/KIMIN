@@ -276,7 +276,6 @@ public:
     glDepthFunc(GL_LEQUAL);
     glDepthMask(GL_TRUE);
 
-    sh_sun.set_int_uniform  ("u_mode", 0);
     sh_sun.set_float_uniform("sun_scale", 1.0f);
     sh_sun.set_float_uniform("sun_disc_intensity", sun_disc_intensity);
     sh_sun.set_float_uniform("sun_disc_edge_soft", sun_disc_edge_soft);
