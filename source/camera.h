@@ -85,6 +85,17 @@ public:
         else if (lat > 179.96f) lat = 179.96f;
     }
 
+    void translate_on_vplane(const float dx, const float dy, const int win_width, const int win_height, const float mouse_sensitivity = 1.0f)
+    {
+        if (win_width <= 0 || win_height <= 0) return;
+
+        float ndc_step = 2.0f/static_cast<float>(win_height);
+        voffset_ndc.x -= dx*ndc_step*mouse_sensitivity;
+        voffset_ndc.y -= dy*ndc_step*mouse_sensitivity;
+        voffset_ndc.x = std::clamp(voffset_ndc.x, -1.0f, 1.0f);
+        voffset_ndc.y = std::clamp(voffset_ndc.y, -1.0f, 1.0f);
+    }
+
 private:
     //The 'up' vector is equal to the minus unit latitude basis vector, but expressed as a function of the Cartesian unit vectors : up = -hat(θ(hat(x),hat(y),hat(z))).
     glm::vec3 get_up_vector()

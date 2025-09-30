@@ -406,7 +406,7 @@ public:
         ImGui::SliderFloat("[deg]##46", &rend3D.cam.fov, 1.0f, 179.0f, "%.0f");
 
         ImGui::Dummy(ImVec2(0.0f, 6.0f));
-        ImGui::Text("Revolving view");
+        ImGui::Text("Revolving frame view");
         ImGui::Dummy(ImVec2(0.0f, 4.0f));
 
         ImGui::Text("Mount Body 1");
@@ -591,6 +591,8 @@ public:
                         rend3D.sunlight.rotate_lon_lat(d.x, d.y);
                     else if (!rend3D.cam.mount_body1 && !rend3D.cam.mount_body2)
                         rend3D.cam.rotate_lon_lat(d.x, d.y);
+                    else if (rend3D.cam.mount_body1 || rend3D.cam.mount_body2)
+                        rend3D.cam.translate_on_vplane(d.x, d.y, rend3D.win_width, rend3D.win_height);
                 }
             }
         }
