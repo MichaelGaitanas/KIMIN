@@ -578,6 +578,8 @@ public:
                     rend3D.cam.scroll_fov(io.MouseWheel);
                 else if (!rend3D.cam.mount_body1 && !rend3D.cam.mount_body2)
                     rend3D.cam.scroll_dist(io.MouseWheel);
+                else if (rend3D.cam.mount_body1 || rend3D.cam.mount_body2)
+                    rend3D.cam.scroll_dist_body(io.MouseWheel);
             }
 
             if (io.MouseDown[ImGuiMouseButton_Middle])

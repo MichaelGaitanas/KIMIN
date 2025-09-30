@@ -259,7 +259,6 @@ public:
         {
             // Put the sun comfortably "far" so scene can occlude it
     const float sun_distance = std::max(cam.max_dist * 10.0f, cam.dist * sun_dist_factor);
-    const float halo_scale   = 3.0f; // outer radius ~3× disc (tweak if you like)
 
     // Common uniforms
     sh_sun.use();

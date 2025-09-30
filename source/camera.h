@@ -51,7 +51,15 @@ public:
         dist = min_dist + 0.1f*(max_dist - min_dist);
     }
 
-    //This function alters the camera's 'dist' memeber, based on how much the user scrolled the mouse wheel since the last frame.
+    //This function alters the camera's 'fov' memeber, based on how much the user scrolled the mouse wheel (+ ctrl key) since the last frame.
+    void scroll_fov(const float mouse_delta_wheel)
+    {
+        fov -= mouse_delta_wheel;
+        if (fov <= 1.0f) fov = 1.0f;
+        else if (fov >= 179.0f) fov = 179.0f;
+    }
+
+    //This function alters the camera's 'dist' memeber, based on how much the user scrolled the mouse wheel since the last frame, but when the camera is in inertial frame mode.
     void scroll_dist(const float mouse_delta_wheel)
     {
         dist *= pow(0.9f, mouse_delta_wheel);
@@ -59,12 +67,12 @@ public:
         else if (dist > max_dist) dist = max_dist;
     }
 
-    //This function alters the camera's 'fov' memeber, based on how much the user scrolled the mouse wheel (+ ctrl key) since the last frame.
-    void scroll_fov(const float mouse_delta_wheel)
+    //This function alters the camera's 'dist' memeber, based on how much the user scrolled the mouse wheel since the last frame, but when the camera is in mount/body frame mode.
+    void scroll_dist_body(const float mouse_delta_wheel)
     {
-        fov -= mouse_delta_wheel;
-        if (fov <= 1.0f) fov = 1.0f;
-        else if (fov >= 179.0f) fov = 179.0f;
+        rscale -= 0.2f*mouse_delta_wheel;
+        if (rscale < 2.0f) rscale = 2.0f;
+        else if (rscale > 10.0f) rscale = 10.0f;
     }
 
     void rotate_lon_lat(const float dx, const float dy, const float mouse_sensitivity = 0.3f)

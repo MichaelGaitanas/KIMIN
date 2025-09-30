@@ -81,17 +81,25 @@ public:
         {
             unsigned char *data = stbi_load(paths[i].c_str(), &img_widths[i], &img_heights[i], &img_channels[i], 0);
             if (!data)
+            {
                 fprintf(stderr, "[Warning] : In skybox::skybox(), failed to load texture '%s'\n", paths[i].c_str());
+                continue;
+            }
 
             //Determine the correct format for glTexImage2D based on the number of channels (img_channels).
-            GLenum format;
+            GLenum format = 0;
             if (img_channels[i] == 1)
                 format = GL_RED; //Single-channel grayscale image.
             else if (img_channels[i] == 3)
                 format = GL_RGB; //Classical 3-channel image (e.g. jpg).
             else if (img_channels[i] == 4)
                 format = GL_RGBA; //4-channel image, i.e. RGB + alpha channel for opacity (e.g. png).
-            else { } //We hope not...
+            else //We hope not...
+            {
+                fprintf(stderr, "[Warning] : Unsupported channel count (%d) for texture '%s'\n", img_channels[i], paths[i].c_str());
+                stbi_image_free(data);
+                continue;
+            }
 
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format, img_widths[i], img_heights[i], 0, format, GL_UNSIGNED_BYTE, data);
             stbi_image_free(data);
