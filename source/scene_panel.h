@@ -16,10 +16,6 @@
 
 #include<algorithm>
 
-#include<glm/glm.hpp>
-#include<glm/gtc/matrix_transform.hpp>
-#include<glm/gtc/type_ptr.hpp>
-
 class scene_panel
 {
 private:
@@ -63,10 +59,10 @@ public:
                     frame_accumulator(0.0f)
     { }
 
-    //Reset essential stuff upon a new simulation termination.
+    //Reset essential stuff upon a simulation termination.
     //Note : apart from the following resets, we still have to reset OpenGL stuff. But the following setup() function is gonna run in
     //the 'task_thread' thread defined in gui.h, not in the main thread, where OpenGL runs. So any gl* commands that handle
-    //graphics resets must not happen here. For that, we have the messenger variable 'reset_gpu_essential' (see function render_3D_content() in the renderer3D.h).
+    //gpu resets must not happen here. For that, we have the messenger variable 'reset_gpu_essential' (see function render_3D_content() in the renderer3D.h).
     void setup(const solution &sol)
     {
         this->sol = sol; //Obtain a solution copy for the 3D rendering.
@@ -79,7 +75,7 @@ public:
         current_frame = 0;
         total_frames = static_cast<uint64_t>(sol.t.size());
         play_pause_video = false; //Set the video at paused state ('true' means playing, 'false' means paused).
-        reset_gpu_essential = true;
+        reset_gpu_essential = true; //This will inform the renderer3D::reset_gpu_resources() to run, but only once.
 
         uint64_t init_orb_count = (total_frames > 0 ? 1 : 0);
         rend3D.orb1.draw_count = rend3D.orb2.draw_count = init_orb_count;
@@ -95,6 +91,7 @@ public:
             rend3D.orb_sp.draw_count = init_orb_count;
     }
 
+private:
     //This function controls the on/off logic of a clickable button in the gui.
     bool common_onoff_button(const char *label, const ImVec2 &dimensions, bool state)
     {
@@ -110,25 +107,25 @@ public:
         return state;
     }
 
-    inline size_t map_frame_to_reduced_sol(const size_t frame, const size_t original_size, const size_t reduced_size)
+    //Because the 'sol2D' (the one used for 2D plotting) is reduced in size compared to the 'sol' (the one used for exporting or 3D rendering), we have to map
+    //the 'current_frame' index to another index ('i_reduce'), so that the scatter point of the current frame corresponds to the correct time.
+    //This function serves the aforementioned purpose. 
+    inline size_t map_frame_to_reduced_sol(const size_t current_frame, const size_t original_size, const size_t reduced_size)
     {
         //Edge cases.
         if (reduced_size == 0 || original_size <= 1 || reduced_size <= 1)
             return 0;
         
         double step = (original_size - 1.0)/(reduced_size - 1.0);
-        double val = (double)frame/step;
-        
-        //Round to nearest integer.
-        size_t i_reduced = (size_t)std::floor(val + 0.5);
-        //Clamp to [0, reduced_size - 1].
+        double val = (double)current_frame/step;
+        size_t i_reduced = (size_t)std::floor(val + 0.5); //Round to nearest integer.
         if (i_reduced >= reduced_size)
-            i_reduced = reduced_size - 1;
+            i_reduced = reduced_size - 1; //Clamp to [0, reduced_size - 1].
     
         return i_reduced;
     }
 
-    //This function plots the data {t,f(t)}.
+    //This function plots the data {t, plot_func(t)}.
     bool common_plot(const char *begin_id, const char *begin_plot_id, const char *yaxis_str, bool bool_plot_func, dvec &plot_func)
     {
         ImGui::SetNextWindowPos( ImVec2(0.6f*ImGui::GetIO().DisplaySize.x, 0.0f), ImGuiCond_FirstUseEver);
@@ -137,6 +134,7 @@ public:
         ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
         if (ImPlot::BeginPlot(begin_plot_id, plot_win_size))
         {
+            //Line logic :
             ImPlot::SetupAxes("time [days]", yaxis_str);
             ImPlot::PlotLine("", &sol2D.t[0], &plot_func[0], sol2D.t.size());
             
@@ -145,13 +143,13 @@ public:
             ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 6.0f, ImColor(0, 255, 0, 255), 1.0f, ImColor(0, 255, 0, 255));
             ImPlot::PlotScatter("Current frame", &sol2D.t[i_reduced], &plot_func[i_reduced], 1);
 
-            //If there's a collision, highlight final point.
-            if (sol2D.integr.collision)
+            //Collision frame marker logic :
+            if (sol2D.integr.collision) //Asteroid-asteroid collision.
             {
                 ImPlot::SetNextMarkerStyle(ImPlotMarker_Down, 6.0f, ImColor(255,0,0,255), 1.0f, ImColor(255,0,0,255));
                 ImPlot::PlotScatter("Collision frame", &sol2D.t.back(), &plot_func.back(), 1);
             }
-            else if (sol2D.integr.collision_sp)
+            else if (sol2D.integr.collision_sp) //Asteroid-spacecraft collision.
             {
                 ImPlot::SetNextMarkerStyle(ImPlotMarker_Down, 6.0f, ImColor(255, 100, 0, 255), 1.0f, ImColor(255, 100, 0, 255));
                 ImPlot::PlotScatter("Collision frame", &sol2D.t.back(), &plot_func.back(), 1);
@@ -163,16 +161,13 @@ public:
         return bool_plot_func;
     }
 
-    bool ImGuiSliderFloat2D(const char *label, ImVec2 *value, ImVec2 min, ImVec2 max, ImVec2 size = ImVec2(100.0f,100.0f))
+    //Since imgui does not provide a 2D slider - joystick, we emulate one ourselves.
+    bool imgui_slider_float_2D(const char *label, ImVec2 *value, ImVec2 min, ImVec2 max, ImVec2 size = ImVec2(100.0f,100.0f))
     {
         ImGui::Text("%s", label);
-
-        //First we set it and then we get it.
         ImGui::SetCursorPosX(0.15f*ImGui::GetIO().DisplaySize.x/2.0f - size.x/2.0f);
         ImVec2 pos = ImGui::GetCursorScreenPos();
-
-        //Use a framed button so hover/disabled visuals match other controls.
-        ImGui::InvisibleButton(label, size);
+        ImGui::InvisibleButton(label, size); //We use a framed button so hover/disabled visuals match other controls.
 
         bool changed = false;
         if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left, 0))
@@ -184,8 +179,6 @@ public:
             value->y = min.y + y*(max.y - min.y);
             changed = true;
         }
-
-        //Clamp
         value->x = std::clamp(value->x, min.x, max.x);
         value->y = std::clamp(value->y, min.y, max.y);
 
@@ -199,7 +192,7 @@ public:
         draw_list->AddRectFilled(pos, ImVec2(pos.x + size.x, pos.y + size.y), col_bg, 0.0f); //Interior.
         draw_list->AddRect(pos, ImVec2(pos.x + size.x, pos.y + size.y), col_border); //Border.
 
-        //Handle.
+        //Circular handle logic :
         float tx = (value->x - min.x)/(max.x - min.x);
         float ty = (value->y - min.y)/(max.y - min.y);
         ImVec2 handle = ImVec2(pos.x + tx*size.x, pos.y + ty*size.y);
@@ -208,10 +201,10 @@ public:
         return changed;
     }
     
-    //Draw the 2D plot buttons in the gui.
+    //Render on the gui the 2D plot buttons.
     void render_plot_buttons()
     {
-        ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f); //This disables the indentation for what comes next.
         if (ImGui::TreeNodeEx("Mutual", ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::Dummy(ImVec2(0.0f,7.5f));
@@ -364,7 +357,7 @@ public:
         ImGui::SameLine();
         ImGui::SetCursorPosX(50.0f);
         ImGui::SliderInt("[Hz]##42", &frame_rate, 0, 60, "%d");
-        if (!sol.t.size())
+        if (sol.t.empty())
             ImGui::Text("Time : 0.00  [days]");
         else
             ImGui::Text("Time : %.2f  [days]", (float)sol.t[current_frame]);
@@ -415,7 +408,7 @@ public:
         if (ImGui::Checkbox("##47", &rend3D.cam.mount_body1))
         {
             rend3D.cam.mount_body2 = false;
-            rend3D.cam.voffset_ndc = glm::vec2(0.0f); //Recenter peek offset.
+            rend3D.cam.voffset_ndc.x = rend3D.cam.voffset_ndc.y = 0.0f; //Recenter peek offset.
         }
         ImGui::SameLine();
         ImGui::SetCursorPosX(140.0f);
@@ -424,7 +417,7 @@ public:
         if (ImGui::Checkbox("##48", &rend3D.cam.mount_body2))
         {
             rend3D.cam.mount_body1 = false;
-            rend3D.cam.voffset_ndc = glm::vec2(0.0f); //Recenter peek offset.
+            rend3D.cam.voffset_ndc.x = rend3D.cam.voffset_ndc.y = 0.0f; //Recenter peek offset.
         }
         ImGui::Dummy(ImVec2(0.0f, 3.0f));
 
@@ -444,7 +437,7 @@ public:
         ImGui::SliderFloat("[Brillouin]##50", &rend3D.cam.vscale, 0.0f, 5.0f, "%.1f");
 
         //2D joystick. Used to shift the mounted camera left-right-up-down from the radial direction so that the body in front does not block the view.
-        ImGuiSliderFloat2D("V - offset", (ImVec2*)&rend3D.cam.voffset_ndc, ImVec2(-1.0f,-1.0f), ImVec2(1.0f,1.0f));
+        imgui_slider_float_2D("V - offset", (ImVec2*)&rend3D.cam.voffset_ndc, ImVec2(-1.0f,-1.0f), ImVec2(1.0f,1.0f));
 
         if (!rend3D.cam.mount_body1 && !rend3D.cam.mount_body2)
             ImGui::EndDisabled();
@@ -577,9 +570,9 @@ public:
                 if (io.KeyCtrl)
                     rend3D.cam.scroll_fov(io.MouseWheel);
                 else if (!rend3D.cam.mount_body1 && !rend3D.cam.mount_body2)
-                    rend3D.cam.scroll_dist(io.MouseWheel);
+                    rend3D.cam.scroll_dist_barycenter(io.MouseWheel);
                 else if (rend3D.cam.mount_body1 || rend3D.cam.mount_body2)
-                    rend3D.cam.scroll_dist_body(io.MouseWheel);
+                    rend3D.cam.scroll_dist_mount(io.MouseWheel);
             }
 
             if (io.MouseDown[ImGuiMouseButton_Middle])
@@ -590,9 +583,9 @@ public:
                     if (io.KeyCtrl)
                         rend3D.sunlight.rotate_lon_lat(d.x, d.y);
                     else if (!rend3D.cam.mount_body1 && !rend3D.cam.mount_body2)
-                        rend3D.cam.rotate_lon_lat(d.x, d.y);
+                        rend3D.cam.rotate_lon_lat_barycenter(d.x, d.y);
                     else if (rend3D.cam.mount_body1 || rend3D.cam.mount_body2)
-                        rend3D.cam.translate_on_vplane(d.x, d.y, rend3D.win_width, rend3D.win_height);
+                        rend3D.cam.move_upon_vplane(d.x, d.y, rend3D.win_width, rend3D.win_height);
                 }
             }
         }
@@ -623,21 +616,24 @@ public:
         if (render_scene)
             rend3D.render_3D_content(sol, current_frame, reset_gpu_essential);
     }
-    
+
+public:
+    //In this function, all the above *private* functions are called and render the scene panel gui. The *public* function reset() is only one called from gui.h and does not render anything.
     void render(const int win_width, const int win_height)
     {
-        //Copy the window's dimensions to the renderer3D's members. We need them at each frame to compute the camera's projection matrix.
-        rend3D.win_width = win_width;
+        //Copy the window's dimensions to the renderer3D's members. We need them at each frame to compute the camera's projection matrix (see renderer3D.h).
+        rend3D.win_width  = win_width;
         rend3D.win_height = win_height;
 
         ImGui::SetNextWindowPos( ImVec2(0.85f*ImGui::GetIO().DisplaySize.x, 21.0f), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(0.15f*ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y - 21.0f), ImGuiCond_FirstUseEver);
         ImGui::Begin("Scene", nullptr);
+
         ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
         if (ImGui::CollapsingHeader("Plots 2D"))
         {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f,0.2f,0.2f,1.0f));
-            if (!sol.t.size()) //Criterion that applies when the simulation hasn't been performed.
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f,0.2f,0.2f,1.0f)); //Make all the plot buttons' off state gray.
+            if (sol.t.empty())
             {
                 ImGui::BeginDisabled();
                 render_plot_buttons();
@@ -703,10 +699,11 @@ public:
             }
             ImGui::PopStyleColor();
         }
+
         ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
         if (ImGui::CollapsingHeader("Video 3D"))
         {
-            if (!sol.t.size()) //Criterion that applies when the simulation hasn't been performed.
+            if (sol.t.empty())
             {
                 ImGui::BeginDisabled();
                 render_scene_buttons();

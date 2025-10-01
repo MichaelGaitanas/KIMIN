@@ -66,6 +66,9 @@ public:
             }
             ImGui::Dummy(ImVec2(0.0f,15.0f));
 
+            if (properties_path.empty())
+                ImGui::BeginDisabled();
+
             //Final "Import file" button. This must be pressed, otherwise the properties pannel will not be updated.
             if (ImGui::Button("Import file", ImVec2(70.0f,30.0f)))
             {
@@ -73,6 +76,10 @@ public:
                 if (!properties_path.empty())
                     import_props_confirm = true; //And this is will communicate with gui::poll_topbar_events(), which then will communicate with properties::import_file().
             }
+
+            if (properties_path.empty())
+                ImGui::EndDisabled();
+
             ImGui::End();
         }
 

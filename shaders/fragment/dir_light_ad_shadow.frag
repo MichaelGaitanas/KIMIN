@@ -24,7 +24,7 @@ float get_shadow(float diffuse)
     }
 
     //Shadow acne fix : Balance between shadow acne (self-shadowing) and Peter-shitty-Panning.
-    float min_bias = 0.0007f, amplifier = 0.007f;
+    float min_bias = 0.0005f, amplifier = 0.005f;
     float bias = max(amplifier*(1.0f - diffuse), min_bias);
 
     float nearest_frag_depth = texture(sample_shadow, projected_coords.xy).r; //Sample depth from the shadow map.

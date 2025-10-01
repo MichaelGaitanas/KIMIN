@@ -33,13 +33,14 @@ public:
               pv(glm::mat4(0.0f))
     { }
 
-    //This function runs one time after every simulation termination. It resets some of the members, depending on the scales (sizes) of the new simulation.
+    //This function runs once each time a simulation terminates. It resets some of the members, depending on the scales (sizes) of the simulation that just ran.
     void reset(const float dist_sum)
     {
         dist = fl*dist_sum; //Directional light's 'dummy' distance.
         projection = glm::ortho(-fc*dist,fc*dist, -fc*dist,fc*dist, (fl-fc)*dist, 2.0f*fc*dist); //Directional light's projection matrix.
     }
 
+    //This function alters the light's 'lon' and 'lat' members, based on how much the user moved the mouse (+ middle click + ctrl key) since the last frame.
     void rotate_lon_lat(const float dx, const float dy, const float mouse_sensitivity = 0.3f)
     {
         lon = fmodf(lon - dx*mouse_sensitivity, 360.0f);

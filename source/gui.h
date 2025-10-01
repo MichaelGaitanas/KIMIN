@@ -49,16 +49,11 @@ public:
                                 task_was_aborted(false),
                                 task_progress(0.0f)
     {
-        //Query the OS/glfw for DPI scale.
-        float xscale, yscale;
-        glfwGetWindowContentScale(wpointer, &xscale, &yscale);
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
         ImPlot::CreateContext(); //Strictly AFTER Imgui::CreateContext();
         ImGuiIO &io = ImGui::GetIO();
         io.IniFilename = nullptr;
-        io.FontGlobalScale = xscale;
-        ImGui::GetStyle().ScaleAllSizes(xscale); //Scale padding, spacing, PushItemWidth, etc.
         io.Fonts->AddFontFromFileTTF("../fonts/RobotoRegular.ttf", 15.0f, nullptr, io.Fonts->GetGlyphRangesGreek()); //Dangerous...
         (void)io;
         ImGui::StyleColorsDark();
@@ -77,7 +72,7 @@ public:
         ImFontConfig cfg;
         cfg.MergeMode = true;
         cfg.PixelSnapH = true;
-        static const ImWchar icon_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+        static const ImWchar icon_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
         io.Fonts->AddFontFromFileTTF("../fonts/Icons.otf", 15.0f, &cfg, icon_ranges);
     }
 
