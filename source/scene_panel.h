@@ -117,7 +117,7 @@ private:
             return 0;
         
         double step = (original_size - 1.0)/(reduced_size - 1.0);
-        double val = (double)current_frame/step;
+        double val = current_frame/step;
         size_t i_reduced = (size_t)std::floor(val + 0.5); //Round to nearest integer.
         if (i_reduced >= reduced_size)
             i_reduced = reduced_size - 1; //Clamp to [0, reduced_size - 1].
@@ -204,7 +204,9 @@ private:
     //Render on the gui the 2D plot buttons.
     void render_plot_buttons()
     {
-        ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f); //This disables the indentation for what comes next.
+        ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f); //Disable the indentation for what comes next.
+
+        //Binary's (mutual) plots.
         if (ImGui::TreeNodeEx("Mutual", ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::Dummy(ImVec2(0.0f,7.5f));
@@ -239,6 +241,7 @@ private:
             ImGui::TreePop();
         }
 
+        //Body 1 plots.
         if (ImGui::TreeNodeEx("Body 1", ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::Dummy(ImVec2(0.0f,7.5f));
@@ -264,6 +267,7 @@ private:
             ImGui::TreePop();
         }
 
+        //Body 2 plots.
         if (ImGui::TreeNodeEx("Body 2", ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::Dummy(ImVec2(0.0f,7.5f));
@@ -289,6 +293,7 @@ private:
             ImGui::TreePop();
         }
 
+        //Spacecraft's plots.
         if (ImGui::TreeNodeEx("Spacecraft orbiter", ImGuiTreeNodeFlags_DefaultOpen))
         {
             if (!sol.integr.properties.spacecraft_checkbox)
@@ -309,8 +314,11 @@ private:
         ImGui::PopStyleVar();
     }
 
+    //Render on the gui the buttons that correspond to the 3D scene.
     void render_scene_buttons()
     {
+        //Content state logic :
+
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Text("Content state");
         render_scene = common_onoff_button("Render##40", ImVec2(80.0f, 25.0f), render_scene);
@@ -319,9 +327,9 @@ private:
         if (!render_scene)
         {
             ImGui::BeginDisabled();
-            ImGui::Button("Play/Pause", ImVec2(80.0f, 25.0f));
+            ImGui::Button("Play/Pause##41", ImVec2(80.0f, 25.0f));
             ImGui::SameLine();
-            auto_replay = common_onoff_button(ICON_FA_REDO " Auto", ImVec2(55.0f, 25.0f), auto_replay);
+            auto_replay = common_onoff_button(ICON_FA_REDO" Auto##42", ImVec2(55.0f, 25.0f), auto_replay);
             ImGui::EndDisabled();
         }
         else
@@ -330,12 +338,12 @@ private:
             ImGui::PushStyleColor(ImGuiCol_Button,        play_pause_col);
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(play_pause_col.x+0.2f, play_pause_col.y+0.2f, play_pause_col.z+0.2f, 1.0f));
             ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(play_pause_col.x*0.8f, play_pause_col.y*0.8f, play_pause_col.z*0.8f, 1.0f));
-            if (ImGui::Button("Play/Pause", ImVec2(80.0f, 25.0f)))
+            if (ImGui::Button("Play/Pause##41", ImVec2(80.0f, 25.0f)))
                 play_pause_video = !play_pause_video;
             ImGui::PopStyleColor(3);
             ImGui::SameLine();
-            auto_replay = common_onoff_button(ICON_FA_REDO " Auto", ImVec2(55.0f, 25.0f), auto_replay);
-            if (auto_replay && play_pause_video && current_frame == total_frames - 1)
+            auto_replay = common_onoff_button(ICON_FA_REDO" Auto##42", ImVec2(55.0f, 25.0f), auto_replay);
+            if (auto_replay && play_pause_video && current_frame >= total_frames - 1)
                 current_frame = 0;
         }
 
@@ -347,24 +355,23 @@ private:
         ImGui::SameLine();
         ImGui::SetCursorPosX(50.0f);
         uint64_t visible_min_frame = (total_frames > 0) ? 1 : 0;
-        //We don't need a 'visible_max_frame' variable, as this is equal to 'total_frames';
-        uint64_t visible_current_frame = (total_frames > 0) ? (current_frame + 1) : 0; //Show 1-based frame.
-        ImGui::SliderScalar("##41", ImGuiDataType_U64, &visible_current_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
-        //Rule is : the above slider controls the frames and then the 'current_frame' is updated accordingly.
-        current_frame = (visible_current_frame > 0) ? (visible_current_frame - 1) : 0; //Back to 0-based frame.
-
+        uint64_t visible_current_frame = (total_frames > 0) ? (current_frame + 1) : 0; //Display in the gui 1-based frame (instead of 0-based, which is used in the arrays as index).
+        ImGui::SliderScalar("##43", ImGuiDataType_U64, &visible_current_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        //Rule is : the above slider controls the frames and then the 'current_frame' is updated accordingly, but into 0-based frame, because it is an index.
+        current_frame = (visible_current_frame > 0) ? (visible_current_frame - 1) : 0;
         ImGui::Text("Rate");
         ImGui::SameLine();
         ImGui::SetCursorPosX(50.0f);
-        ImGui::SliderInt("[Hz]##42", &frame_rate, 0, 60, "%d");
+        ImGui::SliderInt("[Hz]##44", &frame_rate, 0, 60, "%d");
         if (sol.t.empty())
             ImGui::Text("Time : 0.00  [days]");
         else
-            ImGui::Text("Time : %.2f  [days]", (float)sol.t[current_frame]);
-
+            ImGui::Text("Time : %.2f  [days]", static_cast<float>(sol.t[current_frame]));
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
+
+        //Camera setup logic :
 
         ImGui::Text("Camera setup");
         ImGui::Dummy(ImVec2(0.0f, 4.0f));
@@ -372,23 +379,24 @@ private:
         ImGui::Text("Barycentric frame view");
         ImGui::Dummy(ImVec2(0.0f, 4.0f));
 
+        //Gray out camera's Dist, Lon, Lat in case of mount mode.
         if (rend3D.cam.mount_body1 || rend3D.cam.mount_body2)
             ImGui::BeginDisabled();
 
         ImGui::Text("Dist");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[km]##43", &rend3D.cam.dist, rend3D.cam.min_dist, rend3D.cam.max_dist, "%.3f", ImGuiSliderFlags_Logarithmic);
+        ImGui::SliderFloat("[km]##45", &rend3D.cam.dist, rend3D.cam.min_dist, rend3D.cam.max_dist, "%.3f", ImGuiSliderFlags_Logarithmic);
 
         ImGui::Text("Lon");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##44", &rend3D.cam.lon, 0.0f, 360.0f, "%.1f");
+        ImGui::SliderFloat("[deg]##46", &rend3D.cam.lon, 0.0f, 360.0f, "%.1f");
 
         ImGui::Text("Lat");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##45", &rend3D.cam.lat, 0.0f, 180.0f, "%.1f");
+        ImGui::SliderFloat("[deg]##47", &rend3D.cam.lat, 0.0f, 180.0f, "%.1f");
 
         if (rend3D.cam.mount_body1 || rend3D.cam.mount_body2)
             ImGui::EndDisabled();
@@ -396,7 +404,7 @@ private:
         ImGui::Text("FoV");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##46", &rend3D.cam.fov, 1.0f, 179.0f, "%.0f");
+        ImGui::SliderFloat("[deg]##48", &rend3D.cam.fov, 1.0f, 179.0f, "%.0f");
 
         ImGui::Dummy(ImVec2(0.0f, 6.0f));
         ImGui::Text("Revolving frame view");
@@ -405,19 +413,19 @@ private:
         ImGui::Text("Mount Body 1");
         ImGui::SameLine();
         ImGui::SetCursorPosX(100.0f);
-        if (ImGui::Checkbox("##47", &rend3D.cam.mount_body1))
+        if (ImGui::Checkbox("##49", &rend3D.cam.mount_body1))
         {
             rend3D.cam.mount_body2 = false;
-            rend3D.cam.voffset_ndc.x = rend3D.cam.voffset_ndc.y = 0.0f; //Recenter peek offset.
+            rend3D.cam.voffset_ndc.x = rend3D.cam.voffset_ndc.y = 0.0f; //Recenter joystick.
         }
         ImGui::SameLine();
         ImGui::SetCursorPosX(140.0f);
         ImGui::Text("Mount Body 2");
         ImGui::SameLine();
-        if (ImGui::Checkbox("##48", &rend3D.cam.mount_body2))
+        if (ImGui::Checkbox("##50", &rend3D.cam.mount_body2))
         {
             rend3D.cam.mount_body1 = false;
-            rend3D.cam.voffset_ndc.x = rend3D.cam.voffset_ndc.y = 0.0f; //Recenter peek offset.
+            rend3D.cam.voffset_ndc.x = rend3D.cam.voffset_ndc.y = 0.0f; //Recenter joystick.
         }
         ImGui::Dummy(ImVec2(0.0f, 3.0f));
 
@@ -428,15 +436,15 @@ private:
         ImGui::SameLine();
         ImGui::SetCursorPosX(70.0f);
         ImGui::SetNextItemWidth(130);
-        ImGui::SliderFloat("[Brillouin]##49", &rend3D.cam.rscale, 2.0f, 10.0f, "%.1f");
+        ImGui::SliderFloat("[Brillouin]##51", &rend3D.cam.rscale, 3.0f, 10.0f, "%.1f");
 
         ImGui::Text("V - scale");
         ImGui::SameLine();
         ImGui::SetCursorPosX(70.0f);
         ImGui::SetNextItemWidth(130);
-        ImGui::SliderFloat("[Brillouin]##50", &rend3D.cam.vscale, 0.0f, 5.0f, "%.1f");
+        ImGui::SliderFloat("[Brillouin]##52", &rend3D.cam.vscale, 0.0f, 5.0f, "%.1f");
 
-        //2D joystick. Used to shift the mounted camera left-right-up-down from the radial direction so that the body in front does not block the view.
+        //This is a 2D joystick, used to shift the mounted camera left-right-up-down from the radial direction so that the body in front does not block the view.
         imgui_slider_float_2D("V - offset", (ImVec2*)&rend3D.cam.voffset_ndc, ImVec2(-1.0f,-1.0f), ImVec2(1.0f,1.0f));
 
         if (!rend3D.cam.mount_body1 && !rend3D.cam.mount_body2)
@@ -446,33 +454,39 @@ private:
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
 
+        //Sun setup logic :
+
         ImGui::Text("Sun direction");
 
         ImGui::Text("Lon");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##51", &rend3D.sunlight.lon, 0.0f, 360.0f, "%.1f");
+        ImGui::SliderFloat("[deg]##53", &rend3D.sunlight.lon, 0.0f, 360.0f, "%.1f");
 
         ImGui::Text("Lat");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##52", &rend3D.sunlight.lat, 0.0f, 180.0f, "%.1f");
+        ImGui::SliderFloat("[deg]##54", &rend3D.sunlight.lat, 0.0f, 180.0f, "%.1f");
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
+
+        //Shadow setup logic :
 
         ImGui::Text("Shadow map");
 
         ImGui::Text("Reso");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        if (ImGui::SliderInt("[pix]##53", &rend3D.depth_reso, 1024, 16384))
+        if (ImGui::SliderInt("[pix]##55", &rend3D.depth_reso, 1024, 8192))
             rend3D.setup_depth_fbo();
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
+
+        //Meshes to render logic :
 
         ImGui::Text("Visible meshes");
         ImGui::Dummy(ImVec2(0.0f, 4.0f));
@@ -483,23 +497,23 @@ private:
         ImGui::Text("Body 1");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##54", &rend3D.render_aster1);
+        ImGui::Checkbox("##56", &rend3D.render_aster1);
         ImGui::SameLine();
         ImGui::SetCursorPosX(100.0f);
         ImGui::Text("Axes 1");
         ImGui::SameLine();
-        ImGui::Checkbox("##55", &rend3D.render_axes1);
+        ImGui::Checkbox("##57", &rend3D.render_axes1);
 
         ImGui::Text("Body 2");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##56", &rend3D.render_aster2);
+        ImGui::Checkbox("##58", &rend3D.render_aster2);
         ImGui::SameLine();
         ImGui::SetCursorPosX(100.0f);
         ImGui::Text("Axes 2");
         ImGui::SameLine();
-        ImGui::Checkbox("##57", &rend3D.render_axes2);
-        ImGui::Dummy(ImVec2(0.0f,0.6f));
+        ImGui::Checkbox("##59", &rend3D.render_axes2);
+        ImGui::Dummy(ImVec2(0.0f,4.0f));
 
         ImGui::Text("Orbits");
         ImGui::Dummy(ImVec2(0.0f, 4.0f));
@@ -507,29 +521,29 @@ private:
         ImGui::Text("Body 1");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##58", &rend3D.render_orb1);
+        ImGui::Checkbox("##60", &rend3D.render_orb1);
         ImGui::SameLine();
         ImGui::SetCursorPosX(90.0f);
         ImGui::SetNextItemWidth(100);
         uint64_t visible_orb1_frame = (total_frames > 0) ? static_cast<uint64_t>(rend3D.orb1.draw_count) : 0;
-        ImGui::SliderScalar("##59", ImGuiDataType_U64, &visible_orb1_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SliderScalar("##61", ImGuiDataType_U64, &visible_orb1_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
         rend3D.orb1.draw_count = static_cast<size_t>(visible_orb1_frame);
-        orb1_sync = common_onoff_button("Sync##60", ImVec2(50.0f, 18.0f), orb1_sync);
+        orb1_sync = common_onoff_button("Sync##62", ImVec2(50.0f, 18.0f), orb1_sync);
         if (orb1_sync)
             rend3D.orb1.draw_count = static_cast<size_t>(current_frame + 1);
 
         ImGui::Text("Body 2");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##61", &rend3D.render_orb2);
+        ImGui::Checkbox("##63", &rend3D.render_orb2);
         ImGui::SameLine();
         ImGui::SetCursorPosX(90.0f);
         ImGui::SetNextItemWidth(100);
         uint64_t visible_orb2_frame = (total_frames > 0) ? static_cast<uint64_t>(rend3D.orb2.draw_count) : 0;
-        ImGui::SliderScalar("##62", ImGuiDataType_U64, &visible_orb2_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SliderScalar("##64", ImGuiDataType_U64, &visible_orb2_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
-        orb2_sync = common_onoff_button("Sync##63", ImVec2(50.0f, 18.0f), orb2_sync);
+        orb2_sync = common_onoff_button("Sync##65", ImVec2(50.0f, 18.0f), orb2_sync);
         rend3D.orb2.draw_count = static_cast<size_t>(visible_orb2_frame);
         if (orb2_sync)
             rend3D.orb2.draw_count = static_cast<size_t>(current_frame + 1);
@@ -541,14 +555,14 @@ private:
         ImGui::Text("Orbiter");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##64", &rend3D.render_orb_sp);
+        ImGui::Checkbox("##66", &rend3D.render_orb_sp);
         ImGui::SameLine();
         ImGui::SetCursorPosX(90.0f);
         ImGui::SetNextItemWidth(100);
         uint64_t visible_orb_sp_frame = (total_frames > 0) ? static_cast<uint64_t>(rend3D.orb_sp.draw_count) : 0;
-        ImGui::SliderScalar("##65", ImGuiDataType_U64, &visible_orb_sp_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SliderScalar("##67", ImGuiDataType_U64, &visible_orb_sp_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
-        orb_sp_sync = common_onoff_button("Sync##66", ImVec2(50.0f, 18.0f), orb_sp_sync);
+        orb_sp_sync = common_onoff_button("Sync##68", ImVec2(50.0f, 18.0f), orb_sp_sync);
         rend3D.orb_sp.draw_count = static_cast<size_t>(visible_orb_sp_frame);
         if (orb_sp_sync)
             rend3D.orb_sp.draw_count = static_cast<size_t>(current_frame + 1);
@@ -588,6 +602,10 @@ private:
                         rend3D.cam.move_upon_vplane(d.x, d.y, rend3D.win_width, rend3D.win_height);
                 }
             }
+
+            //Toggle play/pause state via spacebar key.
+            if (ImGui::IsKeyReleased(ImGuiKey_Space))
+                play_pause_video = !play_pause_video;
         }
 
         if (play_pause_video && render_scene && current_frame < total_frames - 1)
@@ -612,7 +630,8 @@ private:
                 current_frame++;
         }
         
-        //As a final step, render the 3D content under the constraints implied by 'render_scene' variable.
+        
+        //Finally, render the 3D content.
         if (render_scene)
             rend3D.render_3D_content(sol, current_frame, reset_gpu_essential);
     }

@@ -32,7 +32,7 @@ bool render_logo(const char *img_path, const float seconds)
     GLFWmonitor *monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode *mode = glfwGetVideoMode(monitor);
     int win_width = mode->width, win_height = mode->height;
-    float win_aspect_ratio = win_width/(float)win_height;
+    float win_aspect_ratio = win_width/static_cast<float>(win_height);
 
     //Create the (transparent) window.
     GLFWwindow *window = glfwCreateWindow(win_width, win_height, "Logo", nullptr, nullptr);
@@ -66,7 +66,7 @@ bool render_logo(const char *img_path, const float seconds)
         glfwTerminate();
         return false;
     }
-    img_aspect_ratio = img_width/(float)img_height;
+    img_aspect_ratio = img_width/static_cast<float>(img_height);
 
     //Determine the correct format based on the number of channels (img_channels).
     GLenum format;

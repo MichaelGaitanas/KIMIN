@@ -279,13 +279,13 @@ public:
             {
                 const dvec3 &v = verts[faces[i][k]];
 
-                interleaved_buffer[j++] = (float)v[0];
-                interleaved_buffer[j++] = (float)v[1];
-                interleaved_buffer[j++] = (float)v[2];
+                interleaved_buffer[j++] = static_cast<float>(v[0]);
+                interleaved_buffer[j++] = static_cast<float>(v[1]);
+                interleaved_buffer[j++] = static_cast<float>(v[2]);
 
-                interleaved_buffer[j++] = (float)n[0];
-                interleaved_buffer[j++] = (float)n[1];
-                interleaved_buffer[j++] = (float)n[2];
+                interleaved_buffer[j++] = static_cast<float>(n[0]);
+                interleaved_buffer[j++] = static_cast<float>(n[1]);
+                interleaved_buffer[j++] = static_cast<float>(n[2]);
             }
         }
         gl_vertex_count = interleaved_buffer.size()/6; //Because each vertex has 6 float attributes bound.
