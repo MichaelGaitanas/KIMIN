@@ -297,9 +297,11 @@ public:
         glBindBuffer(GL_ARRAY_BUFFER, gl_vbo);
         glBufferData(GL_ARRAY_BUFFER, interleaved_buffer.size()*sizeof(float), interleaved_buffer.data(), GL_STATIC_DRAW);
 
+        //layout (location = 0) in vec3 pos;
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)0);
         glEnableVertexAttribArray(0);
 
+        //layout (location = 1) in vec3 norm;
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)(3*sizeof(float)));
         glEnableVertexAttribArray(1);
 

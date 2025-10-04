@@ -72,7 +72,7 @@ public:
     void scroll_dist_mount(const float mouse_delta_wheel)
     {
         rscale -= 0.2f*mouse_delta_wheel;
-        if (rscale < 2.0f) rscale = 2.0f;
+        if (rscale < 3.0f) rscale = 3.0f;
         else if (rscale > 10.0f) rscale = 10.0f;
     }
 

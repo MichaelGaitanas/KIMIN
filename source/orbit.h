@@ -1,5 +1,7 @@
-#ifndef ORBMESH_H
-#define ORBMESH_H
+/* This class handles the logic of the orbital meshes (3D curves) that are displayed. */
+
+#ifndef ORBIT_H
+#define ORBIT_H
 
 #include<GL/glew.h>
 
@@ -7,7 +9,7 @@
 
 #include"typedef.h"
 
-class orbmesh
+class orbit
 {
 private:
     bool gl_ready;
@@ -17,11 +19,11 @@ private:
 public:
     size_t draw_count;
 
-    orbmesh() : gl_ready(false),
-                vao(0),
-                vbo(0),
-                thickness(0.5f),
-                draw_count(0)
+    orbit() : gl_ready(false),
+              vao(0),
+              vbo(0),
+              thickness(0.5f),
+              draw_count(0)
     { }
 
     void clear()
@@ -40,11 +42,11 @@ public:
         gl_ready = false;
     }
 
-    void set_as_gl_mesh(const dvec &x, const dvec &y, const dvec &z, const float coeff)
+    void set_as_gl_mesh(const dvec &x, const dvec &y, const dvec &z, const float coeff = 1.0f)
     {
         if (gl_ready) return; //If the orbital data [x(t),y(t),z(t)] have already been uploaded to the GPU, just exit the function.
 
-        //Construct the orbital mesh.
+        //Construct the orbital mesh in the CPU.
         std::vector<float> interleaved_buffer; //Meant to contain {(x1,y1,z1), (z2,y2,z2), ..., (xn,yn,zn)}, meant to be connected via GL_LINE_STRIP.
         const size_t N = x.size();
         interleaved_buffer.resize(3*N); //3 vertices per face, 6 floats each.
@@ -58,6 +60,8 @@ public:
         }
         draw_count = N;
 
+        //Now send it to the GPU :
+
         glGenVertexArrays(1, &vao);
         glBindVertexArray(vao);
 
@@ -65,6 +69,7 @@ public:
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, interleaved_buffer.size()*sizeof(float), interleaved_buffer.data(), GL_STATIC_DRAW);
 
+        //layout(location = 0) in vec3 pos;
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0);
         glEnableVertexAttribArray(0);
 

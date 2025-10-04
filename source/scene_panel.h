@@ -293,24 +293,22 @@ private:
             ImGui::TreePop();
         }
 
-        //Spacecraft's plots.
-        if (ImGui::TreeNodeEx("Spacecraft orbiter", ImGuiTreeNodeFlags_DefaultOpen))
+        //Spacecraft's plots : only render the correspinding buttons if it was assumed in the properties.
+        if (sol.integr.properties.spacecraft_checkbox)
         {
-            if (!sol.integr.properties.spacecraft_checkbox)
-                ImGui::BeginDisabled();
-            
-            ImGui::Dummy(ImVec2(0.0f,7.5f));
-            ImGui::Text("Position");
-            plot_cart_sp[0] = common_onoff_button("xs##37", ImVec2(50.0f, 20.0f), plot_cart_sp[0]); ImGui::SameLine();
-            plot_cart_sp[1] = common_onoff_button("ys##38", ImVec2(50.0f, 20.0f), plot_cart_sp[1]); ImGui::SameLine();
-            plot_cart_sp[2] = common_onoff_button("zs##39", ImVec2(50.0f, 20.0f), plot_cart_sp[2]);
-            ImGui::Dummy(ImVec2(0.0f,7.5f));
+            if (ImGui::TreeNodeEx("Spacecraft orbiter", ImGuiTreeNodeFlags_DefaultOpen))
+            {    
+                ImGui::Dummy(ImVec2(0.0f,7.5f));
+                ImGui::Text("Position");
+                plot_cart_sp[0] = common_onoff_button("xs##37", ImVec2(50.0f, 20.0f), plot_cart_sp[0]); ImGui::SameLine();
+                plot_cart_sp[1] = common_onoff_button("ys##38", ImVec2(50.0f, 20.0f), plot_cart_sp[1]); ImGui::SameLine();
+                plot_cart_sp[2] = common_onoff_button("zs##39", ImVec2(50.0f, 20.0f), plot_cart_sp[2]);
+                ImGui::Dummy(ImVec2(0.0f,7.5f));
 
-            if (!sol.integr.properties.spacecraft_checkbox)
-                ImGui::EndDisabled();
-
-            ImGui::TreePop();
+                ImGui::TreePop();
+            }
         }
+
         ImGui::PopStyleVar();
     }
 
@@ -327,7 +325,7 @@ private:
         if (!render_scene)
         {
             ImGui::BeginDisabled();
-            ImGui::Button("Play/Pause##41", ImVec2(80.0f, 25.0f));
+            play_pause_video = common_onoff_button("Play/Pause##41", ImVec2(80.0f, 25.0f), play_pause_video);
             ImGui::SameLine();
             auto_replay = common_onoff_button(ICON_FA_REDO" Auto##42", ImVec2(55.0f, 25.0f), auto_replay);
             ImGui::EndDisabled();
@@ -338,11 +336,15 @@ private:
             ImGui::PushStyleColor(ImGuiCol_Button,        play_pause_col);
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(play_pause_col.x+0.2f, play_pause_col.y+0.2f, play_pause_col.z+0.2f, 1.0f));
             ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(play_pause_col.x*0.8f, play_pause_col.y*0.8f, play_pause_col.z*0.8f, 1.0f));
-            if (ImGui::Button("Play/Pause##41", ImVec2(80.0f, 25.0f)))
-                play_pause_video = !play_pause_video;
+            play_pause_video = common_onoff_button("Play/Pause##41", ImVec2(80.0f, 25.0f), play_pause_video);
             ImGui::PopStyleColor(3);
             ImGui::SameLine();
+            ImVec4 auto_replay_col = auto_replay ? ImVec4(0.0f, 0.7f, 0.0f, 1.0f) : ImVec4(0.7f, 0.0f, 0.0f, 1.0f);
+            ImGui::PushStyleColor(ImGuiCol_Button,        auto_replay_col);
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(auto_replay_col.x+0.2f, auto_replay_col.y+0.2f, auto_replay_col.z+0.2f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(auto_replay_col.x*0.8f, auto_replay_col.y*0.8f, auto_replay_col.z*0.8f, 1.0f));
             auto_replay = common_onoff_button(ICON_FA_REDO" Auto##42", ImVec2(55.0f, 25.0f), auto_replay);
+            ImGui::PopStyleColor(3);
             if (auto_replay && play_pause_video && current_frame >= total_frames - 1)
                 current_frame = 0;
         }
@@ -491,13 +493,13 @@ private:
         ImGui::Text("Visible meshes");
         ImGui::Dummy(ImVec2(0.0f, 4.0f));
 
-        ImGui::Text("Asteroids");
+        ImGui::Text("Bodies");
         ImGui::Dummy(ImVec2(0.0f, 4.0f));
 
         ImGui::Text("Body 1");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##56", &rend3D.render_aster1);
+        ImGui::Checkbox("##56", &rend3D.render_body1);
         ImGui::SameLine();
         ImGui::SetCursorPosX(100.0f);
         ImGui::Text("Axes 1");
@@ -507,7 +509,7 @@ private:
         ImGui::Text("Body 2");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##58", &rend3D.render_aster2);
+        ImGui::Checkbox("##58", &rend3D.render_body2);
         ImGui::SameLine();
         ImGui::SetCursorPosX(100.0f);
         ImGui::Text("Axes 2");
@@ -517,6 +519,7 @@ private:
 
         ImGui::Text("Orbits");
         ImGui::Dummy(ImVec2(0.0f, 4.0f));
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f,0.2f,0.2f,1.0f)); //Make all the plot buttons' off state gray.
 
         ImGui::Text("Body 1");
         ImGui::SameLine();
@@ -526,12 +529,23 @@ private:
         ImGui::SetCursorPosX(90.0f);
         ImGui::SetNextItemWidth(100);
         uint64_t visible_orb1_frame = (total_frames > 0) ? static_cast<uint64_t>(rend3D.orb1.draw_count) : 0;
+        
+        if (!rend3D.render_orb1)
+        {
+            ImGui::BeginDisabled();
+            if (orb1_sync)
+                orb1_sync = false;
+        }
+        
         ImGui::SliderScalar("##61", ImGuiDataType_U64, &visible_orb1_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
         rend3D.orb1.draw_count = static_cast<size_t>(visible_orb1_frame);
         orb1_sync = common_onoff_button("Sync##62", ImVec2(50.0f, 18.0f), orb1_sync);
         if (orb1_sync)
             rend3D.orb1.draw_count = static_cast<size_t>(current_frame + 1);
+
+        if (!rend3D.render_orb1)
+            ImGui::EndDisabled();
 
         ImGui::Text("Body 2");
         ImGui::SameLine();
@@ -541,6 +555,14 @@ private:
         ImGui::SetCursorPosX(90.0f);
         ImGui::SetNextItemWidth(100);
         uint64_t visible_orb2_frame = (total_frames > 0) ? static_cast<uint64_t>(rend3D.orb2.draw_count) : 0;
+
+        if (!rend3D.render_orb2)
+        {
+            ImGui::BeginDisabled();
+            if (orb2_sync)
+                orb2_sync = false;
+        }
+
         ImGui::SliderScalar("##64", ImGuiDataType_U64, &visible_orb2_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
         orb2_sync = common_onoff_button("Sync##65", ImVec2(50.0f, 18.0f), orb2_sync);
@@ -548,33 +570,47 @@ private:
         if (orb2_sync)
             rend3D.orb2.draw_count = static_cast<size_t>(current_frame + 1);
 
+        if (!rend3D.render_orb2)
+            ImGui::EndDisabled();
 
-        if (!sol.integr.properties.spacecraft_checkbox)
+
+        if (sol.integr.properties.spacecraft_checkbox) //Display the spacecraft's widgets only if it was assumed in the properties panel.
+        {
+            ImGui::Text("Orbiter");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(60.0f);
+            ImGui::Checkbox("##66", &rend3D.render_orb_sp);
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(90.0f);
+            ImGui::SetNextItemWidth(100);
+            uint64_t visible_orb_sp_frame = (total_frames > 0) ? static_cast<uint64_t>(rend3D.orb_sp.draw_count) : 0;
+
+            if (!rend3D.render_orb_sp)
+            {
                 ImGui::BeginDisabled();
+                if (orb_sp_sync)
+                    orb_sp_sync = false;
+            }
 
-        ImGui::Text("Orbiter");
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##66", &rend3D.render_orb_sp);
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(90.0f);
-        ImGui::SetNextItemWidth(100);
-        uint64_t visible_orb_sp_frame = (total_frames > 0) ? static_cast<uint64_t>(rend3D.orb_sp.draw_count) : 0;
-        ImGui::SliderScalar("##67", ImGuiDataType_U64, &visible_orb_sp_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
-        ImGui::SameLine();
-        orb_sp_sync = common_onoff_button("Sync##68", ImVec2(50.0f, 18.0f), orb_sp_sync);
-        rend3D.orb_sp.draw_count = static_cast<size_t>(visible_orb_sp_frame);
-        if (orb_sp_sync)
-            rend3D.orb_sp.draw_count = static_cast<size_t>(current_frame + 1);
+            ImGui::SliderScalar("##67", ImGuiDataType_U64, &visible_orb_sp_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+            ImGui::SameLine();
+            orb_sp_sync = common_onoff_button("Sync##68", ImVec2(50.0f, 18.0f), orb_sp_sync);
+            rend3D.orb_sp.draw_count = static_cast<size_t>(visible_orb_sp_frame);
+            if (orb_sp_sync)
+                rend3D.orb_sp.draw_count = static_cast<size_t>(current_frame + 1);
 
-
-        if (!sol.integr.properties.spacecraft_checkbox)
+            if (!rend3D.render_orb_sp)
                 ImGui::EndDisabled();
+        }
+
+        ImGui::PopStyleColor();
 
         ImGui::Dummy(ImVec2(0.0f,700.0f)); //Some extra y-space in order to be able to scroll down along scene panel.        
 
         if (!render_scene)
             ImGui::EndDisabled();
+
+        //Hardware logic :
 
         ImGuiIO &io = ImGui::GetIO();
         if (render_scene && !io.WantCaptureMouse)
@@ -603,10 +639,12 @@ private:
                 }
             }
 
-            //Toggle play/pause state via spacebar key.
+            //Toggle play/pause state via spacebar key, but only when the cursor is in the 3D viewport region.
             if (ImGui::IsKeyReleased(ImGuiKey_Space))
                 play_pause_video = !play_pause_video;
         }
+
+        //Frame increment logic :
 
         if (play_pause_video && render_scene && current_frame < total_frames - 1)
         {
@@ -618,8 +656,7 @@ private:
             {
                 frame_accumulator += ImGui::GetIO().DeltaTime;
                 float step = 1.0f/static_cast<float>(frame_rate);
-
-                //In case dt is large (e.g. if the user drags the window), use a while() so we don't 'miss' increments.
+                //In case DeltaTime is large (e.g. if the user drags the window), use a while() so we don't 'miss' increments.
                 while (frame_accumulator >= step && current_frame < total_frames - 1)
                 {
                     current_frame++;

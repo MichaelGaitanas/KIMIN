@@ -1,3 +1,5 @@
+/* Here I have some functions regarding some dynamical characteristics of an ellipsoid. */
+
 #ifndef ELLIPSOID_H
 #define ELLIPSOID_H
 
@@ -20,7 +22,7 @@ dmat3 ell_inertia(const double M, const dvec3 &semiaxes)
              {0.0,0.0,Izz}}};
 }
 
-//Non normalized inertial integral tensor of arbitrary order a triaxial ellipsoid with constant density.
+//Non normalized inertial integral tensor of arbitrary order a triaxial ellipsoid.
 dtens ell_integrals(const double M, const dvec3 &semiaxes, const int ord)
 {
     double a = semiaxes[0], b = semiaxes[1], c = semiaxes[2];

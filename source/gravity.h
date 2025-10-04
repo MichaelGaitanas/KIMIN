@@ -1,3 +1,6 @@
+/* Here we have the expressions of : 1) potentials, 2) forces, 3) torques for a couple of physics modeling assumptions.
+   I know that they are not in the most optimized form, but for know I account for correctness and clarity. :)  */
+
 #ifndef GRAVITY_H
 #define GRAVITY_H
 
@@ -48,7 +51,7 @@ double mut_pot_integrals_ord2(const dvec3 &r, const double M1, const dtens &J1, 
     double V0 = -G*M1*M2/d;
 
     //Order 1.
-    //V1 = 0 (by default)
+    //V1 = 0
 
     //Order 2.
     double V2 = -(G*M2/(2*d*d*d))*( (1 - 3*l1*l1)*I1x + (1 - 3*m1*m1)*I1y + (1 - 3*n1*n1)*I1z ) +
@@ -115,7 +118,7 @@ double mut_pot_integrals_ord3(const dvec3 &r, const double M1, const dtens &J1, 
     double V0 = -G*M1*M2/d;
 
     //Order 1.
-    //V1 = 0 (by default).
+    //V1 = 0
 
     //Order 2.
     double V2 = -(G*M2/(2*d*d*d))*( (1 - 3*l1*l1)*I1x + (1 - 3*m1*m1)*I1y + (1 - 3*n1*n1)*I1z ) +
@@ -239,7 +242,7 @@ double mut_pot_integrals_ord4(const dvec3 &r, const double M1, const dtens &J1, 
     double V0 = -G*M1*M2/d;
 
     //Order 1.
-    //V1 = 0 (by default)
+    //V1 = 0
 
     //Order 2.
     double V2 = -(G*M2/(2*d*d*d))*( (1 - 3*l1*l1)*I1x + (1 - 3*m1*m1)*I1y + (1 - 3*n1*n1)*I1z ) +
@@ -336,7 +339,7 @@ double pot_integrals_ord2(const dvec3 &r, const double M, const dtens &J, const 
     double V0 = -G*M/d;
 
     //Order 1.
-    //V1 = 0 (by default)
+    //V1 = 0
 
     //Order 2.
     double V2 = -(G/(2*d*d*d))*( (1 - 3*l*l)*Ix + (1 - 3*m*m)*Iy + (1 - 3*n*n)*Iz );
@@ -378,7 +381,7 @@ double pot_integrals_ord3(const dvec3 &r, const double M, const dtens &J, const 
     double V0 = -G*M/d;
 
     //Order 1.
-    //V1 = 0 (by default)
+    //V1 = 0
 
     //Order 2.
     double V2 = -(G/(2*d*d*d))*( (1 - 3*l*l)*Ix + (1 - 3*m*m)*Iy + (1 - 3*n*n)*Iz );
@@ -442,7 +445,7 @@ double pot_integrals_ord4(const dvec3 &r, const double M, const dtens &J, const 
     double V0 = -G*M/d;
 
     //Order 1.
-    //V1 = 0 (by default)
+    //V1 = 0
 
     //Order 2.
     double V2 = -(G/(2*d*d*d))*( (1 - 3*l*l)*Ix + (1 - 3*m*m)*Iy + (1 - 3*n*n)*Iz );
@@ -531,7 +534,7 @@ dvec6 mut_force_tau1i_integrals_ord2(const dvec3 &r, const double M1, const dten
     double V0 = -G*M1*M2/d;
 
     //order 1
-    //V1 = 0 (by default)
+    //V1 = 0
 
     //order 2
     double V2 = -(G*M2/(2*d*d*d))*( (1 - 3*l1*l1)*I1x + (1 - 3*m1*m1)*I1y + (1 - 3*n1*n1)*I1z ) +
@@ -625,7 +628,7 @@ dvec6 mut_force_tau1i_integrals_ord3(const dvec3 &r, const double M1, const dten
     double V0 = -G*M1*M2/d;
 
     //Order 1.
-    //V1 = 0 (by default)
+    //V1 = 0
 
     //Order 2.
     double V2 = -(G*M2/(2*d*d*d))*( (1 - 3*l1*l1)*I1x + (1 - 3*m1*m1)*I1y + (1 - 3*n1*n1)*I1z ) +
@@ -776,7 +779,7 @@ dvec6 mut_force_tau1i_integrals_ord4(const dvec3 &r, const double M1, const dten
     double V0 = -G*M1*M2/d;
 
     //Order 1.
-    //V1 = 0 (by default)
+    //V1 = 0
 
     //Order 2.
     double V2 = -(G*M2/(2*d*d*d))*( (1 - 3*l1*l1)*I1x + (1 - 3*m1*m1)*I1y + (1 - 3*n1*n1)*I1z ) +
@@ -952,7 +955,7 @@ dvec3 force_integrals_ord2(const dvec3 &r, const double M, const dtens &J, const
     double V0 = -G*M/d;
 
     //Order 1.
-    //V1 = 0 (by default)
+    //V1 = 0
 
     //Order 2.
     double V2 = -(G/(2*d*d*d))*( (1 - 3*l*l)*Ix + (1 - 3*m*m)*Iy + (1 - 3*n*n)*Iz );
@@ -1003,7 +1006,7 @@ dvec3 force_integrals_ord3(const dvec3 &r, const double M, const dtens &J, const
     double V0 = -G*M/d;
 
     //Order 1.
-    //V1 = 0 (by default)
+    //V1 = 0
 
     //Order 2.
     double V2 = -(G/(2*d*d*d))*( (1 - 3*l*l)*Ix + (1 - 3*m*m)*Iy + (1 - 3*n*n)*Iz );
@@ -1076,7 +1079,7 @@ dvec3 force_integrals_ord4(const dvec3 &r, const double M, const dtens &J, const
     double V0 = -G*M/d;
 
     //Order 1.
-    //V1 = 0 (by default)
+    //V1 = 0
 
     //Order 2.
     double V2 = -(G/(2*d*d*d))*( (1 - 3*l*l)*Ix + (1 - 3*m*m)*Iy + (1 - 3*n*n)*Iz );
