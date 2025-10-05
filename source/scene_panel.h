@@ -293,20 +293,21 @@ private:
             ImGui::TreePop();
         }
 
-        //Spacecraft's plots : only render the correspinding buttons if it was assumed in the properties.
-        if (sol.integr.properties.spacecraft_checkbox)
+        //Spacecraft's plots.
+        if (ImGui::TreeNodeEx("Spacecraft orbiter", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            if (ImGui::TreeNodeEx("Spacecraft orbiter", ImGuiTreeNodeFlags_DefaultOpen))
-            {    
-                ImGui::Dummy(ImVec2(0.0f,7.5f));
-                ImGui::Text("Position");
-                plot_cart_sp[0] = common_onoff_button("xs##37", ImVec2(50.0f, 20.0f), plot_cart_sp[0]); ImGui::SameLine();
-                plot_cart_sp[1] = common_onoff_button("ys##38", ImVec2(50.0f, 20.0f), plot_cart_sp[1]); ImGui::SameLine();
-                plot_cart_sp[2] = common_onoff_button("zs##39", ImVec2(50.0f, 20.0f), plot_cart_sp[2]);
-                ImGui::Dummy(ImVec2(0.0f,7.5f));
+            if (!sol.integr.properties.spacecraft_checkbox)
+                ImGui::BeginDisabled();
+            ImGui::Dummy(ImVec2(0.0f,7.5f));
+            ImGui::Text("Position");
+            plot_cart_sp[0] = common_onoff_button("xs##37", ImVec2(50.0f, 20.0f), plot_cart_sp[0]); ImGui::SameLine();
+            plot_cart_sp[1] = common_onoff_button("ys##38", ImVec2(50.0f, 20.0f), plot_cart_sp[1]); ImGui::SameLine();
+            plot_cart_sp[2] = common_onoff_button("zs##39", ImVec2(50.0f, 20.0f), plot_cart_sp[2]);
+            ImGui::Dummy(ImVec2(0.0f,7.5f));
+            if (!sol.integr.properties.spacecraft_checkbox)
+                ImGui::EndDisabled();
 
-                ImGui::TreePop();
-            }
+            ImGui::TreePop();
         }
 
         ImGui::PopStyleVar();
@@ -519,6 +520,7 @@ private:
 
         ImGui::Text("Orbits");
         ImGui::Dummy(ImVec2(0.0f, 4.0f));
+
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f,0.2f,0.2f,1.0f)); //Make all the plot buttons' off state gray.
 
         ImGui::Text("Body 1");
@@ -574,36 +576,49 @@ private:
             ImGui::EndDisabled();
 
 
-        if (sol.integr.properties.spacecraft_checkbox) //Display the spacecraft's widgets only if it was assumed in the properties panel.
+        if (!sol.integr.properties.spacecraft_checkbox)
+            ImGui::BeginDisabled();
+
+        ImGui::Text("Orbiter");
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(60.0f);
+        ImGui::Checkbox("##66", &rend3D.render_orb_sp);
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(90.0f);
+        ImGui::SetNextItemWidth(100);
+        uint64_t visible_orb_sp_frame = (total_frames > 0) ? static_cast<uint64_t>(rend3D.orb_sp.draw_count) : 0;
+
+        if (!rend3D.render_orb_sp)
         {
-            ImGui::Text("Orbiter");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(60.0f);
-            ImGui::Checkbox("##66", &rend3D.render_orb_sp);
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(90.0f);
-            ImGui::SetNextItemWidth(100);
-            uint64_t visible_orb_sp_frame = (total_frames > 0) ? static_cast<uint64_t>(rend3D.orb_sp.draw_count) : 0;
-
-            if (!rend3D.render_orb_sp)
-            {
-                ImGui::BeginDisabled();
-                if (orb_sp_sync)
-                    orb_sp_sync = false;
-            }
-
-            ImGui::SliderScalar("##67", ImGuiDataType_U64, &visible_orb_sp_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
-            ImGui::SameLine();
-            orb_sp_sync = common_onoff_button("Sync##68", ImVec2(50.0f, 18.0f), orb_sp_sync);
-            rend3D.orb_sp.draw_count = static_cast<size_t>(visible_orb_sp_frame);
+            ImGui::BeginDisabled();
             if (orb_sp_sync)
-                rend3D.orb_sp.draw_count = static_cast<size_t>(current_frame + 1);
-
-            if (!rend3D.render_orb_sp)
-                ImGui::EndDisabled();
+                orb_sp_sync = false;
         }
 
+        ImGui::SliderScalar("##67", ImGuiDataType_U64, &visible_orb_sp_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SameLine();
+        orb_sp_sync = common_onoff_button("Sync##68", ImVec2(50.0f, 18.0f), orb_sp_sync);
+        rend3D.orb_sp.draw_count = static_cast<size_t>(visible_orb_sp_frame);
+        if (orb_sp_sync)
+            rend3D.orb_sp.draw_count = static_cast<size_t>(current_frame + 1);
+
+        if (!rend3D.render_orb_sp)
+            ImGui::EndDisabled();
+
+        if (!sol.integr.properties.spacecraft_checkbox)
+            ImGui::EndDisabled();
+
         ImGui::PopStyleColor();
+
+        ImGui::Dummy(ImVec2(0.0f,4.0f));
+
+        ImGui::Text("Infinite grid");
+        ImGui::Dummy(ImVec2(0.0f, 4.0f));
+        ImGui::Text("Grid");
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(60.0f);
+        static bool infgrid = false;
+        ImGui::Checkbox("##69", &infgrid);
 
         ImGui::Dummy(ImVec2(0.0f,700.0f)); //Some extra y-space in order to be able to scroll down along scene panel.        
 
