@@ -617,8 +617,12 @@ private:
         ImGui::Text("Grid");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        static bool infgrid = false;
-        ImGui::Checkbox("##69", &infgrid);
+        ImGui::Checkbox("##69", &rend3D.render_grid);
+
+        ImGui::SliderFloat("[cell]##70", &rend3D.infgrid.cell, -5.0f, 5.0f, "%.1f");
+        ImGui::SliderFloat("[px]##71", &rend3D.infgrid.px, -5.0f, 5.0f, "%.1f");
+        ImGui::SliderFloat("[fade start]##72", &rend3D.infgrid.fade_start, 0.0f, 5000.0f, "%.1f");
+        ImGui::SliderFloat("[fade end]##73", &rend3D.infgrid.fade_end, 0.0f, 5000.0f, "%.1f");
 
         ImGui::Dummy(ImVec2(0.0f,700.0f)); //Some extra y-space in order to be able to scroll down along scene panel.        
 

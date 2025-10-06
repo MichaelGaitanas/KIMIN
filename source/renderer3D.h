@@ -13,6 +13,7 @@
 #include"camera.h"
 #include"orbit.h"
 #include"skybox.h"
+#include"grid.h"
 #include"sun.h"
 
 #include<memory>
@@ -24,7 +25,7 @@
 class renderer3D
 {
 private:
-    shader sh_depth, sh_dlight_shadow, sh_orb, sh_skybox, sh_sun; //These are all the shaders that are used throughout the 3D scene.
+    shader sh_depth, sh_dlight_shadow, sh_orb, sh_skybox, sh_sun, sh_grid; //These are all the shaders that are used throughout the 3D scene.
     glm::vec3 body1_col, body2_col, xaxis_col, yaxis_col, zaxis_col, orb1_col, orb2_col, orb_sp_col, sun_col; //Colors of whatever is rendered.
     polyhedron xaxis, yaxis, zaxis; //Body-frame axes meshes.
     std::unique_ptr<skybox> sky; //Skybox (does NOT include the sun).
@@ -36,9 +37,10 @@ public:
     camera cam;
     light sunlight;
     orbit orb1, orb2, orb_sp;
+    grid infgrid;
     
     int depth_reso; //Depth image resolution in pixels.
-    bool render_body1, render_body2, render_axes1, render_axes2, render_orb1, render_orb2, render_orb_sp; //These correspond to the GUI checkboxes state : what to render and what not to.
+    bool render_body1, render_body2, render_axes1, render_axes2, render_orb1, render_orb2, render_orb_sp, render_grid; //These correspond to the GUI checkboxes state : what to render and what not to.
 
     int win_width, win_height;
     
@@ -47,6 +49,7 @@ public:
                    sh_orb("../shaders/vertex/trans_mvp.vert","../shaders/fragment/monochromatic.frag"),
                    sh_skybox("../shaders/vertex/skybox.vert","../shaders/fragment/skybox.frag"),
                    sh_sun("../shaders/vertex/sun.vert", "../shaders/fragment/sun.frag"),
+                   sh_grid("../shaders/vertex/grid.vert", "../shaders/fragment/grid.frag"),
                    body1_col(glm::vec3(0.8f)),
                    body2_col(glm::vec3(0.8f)),
                    xaxis_col(glm::vec3(1.0f,0.0f,0.0f)),
@@ -68,6 +71,7 @@ public:
                    orb1(),
                    orb2(),
                    orb_sp(),
+                   infgrid(),
                    depth_reso(4096),
                    render_body1(true),
                    render_body2(true),
@@ -76,6 +80,7 @@ public:
                    render_orb1(false),
                    render_orb2(false),
                    render_orb_sp(false),
+                   render_grid(false),
                    win_width(1),
                    win_height(1)
     {
@@ -311,6 +316,31 @@ public:
                 sh_orb.set_vec3_uniform("mesh_col", orb_sp_col);
                 orb_sp.render();
             }
+        }
+
+        //Grid rendering pass :
+        if (render_grid)
+        {
+            glDepthFunc(GL_LEQUAL);
+            glDepthMask(GL_FALSE);
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+            sh_grid.use();
+            sh_grid.set_mat4_uniform("uProj", cam.projection);
+            sh_grid.set_mat4_uniform("uView", cam.view);
+
+            sh_grid.set_vec3_uniform("uColor", infgrid.col);
+            sh_grid.set_float_uniform("uCell",  infgrid.cell);
+            sh_grid.set_float_uniform("uPx",    infgrid.px);
+            sh_grid.set_float_uniform("uFadeStart", infgrid.fade_start);
+            sh_grid.set_float_uniform("uFadeEnd",   infgrid.fade_end);
+
+            infgrid.render();
+
+            glDisable(GL_BLEND);
+            glDepthMask(GL_TRUE);
+            glDepthFunc(GL_LESS);
         }
     }
 };
