@@ -1,4 +1,4 @@
-/* This class handles the CPU logic (memory assignment) of the infinite grid. The actual 'infinite grid' operations happen in the shader grid.vert and grid.frag. */
+/* This class handles the CPU logic (memory assignment) of the 'infinite' grid. The actual grid operations happen in the shader grid.vert and grid.frag. */
 
 #ifndef GRID_H
 #define GRID_H
@@ -16,15 +16,15 @@ private:
 
 public:
     float cell, px, fade_start, fade_end;
-    glm::vec3 col;
+    glm::vec3 color;
 
     grid() : vao(0),
              vbo(0),
              cell(1.0f),
              px(1.0f),
-             fade_start(50.0f),
-             fade_end(150.0f),
-             col(glm::vec3(0.3f))
+             fade_start(0.0f),
+             fade_end(0.0f),
+             color(glm::vec3(0.3f))
     {
         //Fullscreen quad in clip space (xy in [-1,1])
         float verts[] = { -1.0f, -1.0f, 
@@ -53,7 +53,6 @@ public:
     {
         if (vbo) glDeleteBuffers(1, &vbo);
         if (vao) glDeleteVertexArrays(1, &vao);
-        printf("Grid destructed!\n");
     }
 
     void render()

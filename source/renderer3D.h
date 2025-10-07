@@ -257,7 +257,7 @@ public:
         sh_sun.set_vec3_uniform("light_dir_world", sunlight.dir);
         sh_sun.set_vec3_uniform("sun_color",       sun_col);
         sh_sun.set_float_uniform("sun_angular_radius_deg", sunquad.ang_deg);
-        sh_sun.set_float_uniform("sun_distance", 10.0f*cam.max_dist); //Put the Sun comfortably 'far' it can be occluded.
+        sh_sun.set_float_uniform("sun_distance", 10.0f*cam.max_dist); //Put the Sun comfortably 'far'. The aim is to make occlude only the skybox but no other mesh.
         sh_sun.set_float_uniform("sun_scale", 1.0f);
         sh_sun.set_float_uniform("sun_disc_intensity", sunquad.disc_intensity);
         sh_sun.set_float_uniform("sun_disc_edge_soft", sunquad.disc_edge_soft);
@@ -330,11 +330,11 @@ public:
             sh_grid.set_mat4_uniform("uProj", cam.projection);
             sh_grid.set_mat4_uniform("uView", cam.view);
 
-            sh_grid.set_vec3_uniform("uColor", infgrid.col);
+            sh_grid.set_vec3_uniform("uColor", infgrid.color);
             sh_grid.set_float_uniform("uCell",  infgrid.cell);
             sh_grid.set_float_uniform("uPx",    infgrid.px);
-            sh_grid.set_float_uniform("uFadeStart", infgrid.fade_start);
-            sh_grid.set_float_uniform("uFadeEnd",   infgrid.fade_end);
+            sh_grid.set_float_uniform("uFadeStart", 0.0f);
+            sh_grid.set_float_uniform("uFadeEnd",   cam.max_dist);
 
             infgrid.render();
 

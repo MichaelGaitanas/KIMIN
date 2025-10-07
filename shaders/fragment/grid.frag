@@ -2,74 +2,87 @@
 in vec2 v_ndc;
 layout(location=0) out vec4 frag_col;
 
-uniform mat4 uProj;        // camera projection
-uniform mat4 uView;        // camera view
+uniform mat4 uProj;          // same uniforms you already set
+uniform mat4 uView;
 
-uniform vec3 uColor;  // grid line color
-uniform float uCell;        // world units per cell
-uniform float uPx;        // line thickness in pixels
-uniform float uFadeStart;   // world radius where fade begins
-uniform float uFadeEnd;  // world radius where fully faded
+uniform vec3  uColor;        // grid color
+uniform float uCell;         // world-units per cell
+uniform float uPx;           // line thickness in SCREEN pixels
+uniform float uFadeStart;    // fade starts at radius
+uniform float uFadeEnd;      // fade ends at radius
 
-// Reconstruct world-space camera origin and a view ray from ndc
-vec3 getCamPos(){
-    mat4 invView = inverse(uView);
-    return vec3(invView[3]); // translation column
-}
-vec3 ndcToWorldDir(vec2 ndc){
-    // view-space point on the far plane at ndc (x,y,1)
-    vec4 vFar  = inverse(uProj) * vec4(ndc, 1.0, 1.0);
-    vec3 dirVS = normalize(vFar.xyz / vFar.w);
-    // to world
-    mat3 invR = mat3(inverse(uView)); // rotation only
-    return normalize(invR * dirVS);
+// --- derive camera world pos and view->world rotation WITHOUT inverse() ---
+vec3 cameraWorldPos()
+{
+    // For a rigid view matrix V = [ R  t ; 0 1 ] (world->view),
+    // camera position C = -R^T * t
+    mat3 R = mat3(uView);
+    vec3 t = vec3(uView[3]);
+    return -transpose(R) * t;
 }
 
-void main(){
-    vec3 camPos = getCamPos();
-    vec3 dir    = ndcToWorldDir(v_ndc);
+vec3 viewToWorld(vec3 v)
+{
+    // inverse rotation = transpose(R)
+    return transpose(mat3(uView)) * v;
+}
 
-    // Intersect ray (camPos + t*dir) with z=0 plane
-    float denom = dir.z;
-    // If ray parallel or points away and camera on plane → discard
-    if (abs(denom) < 1e-6) discard;
+// --- build view-space ray dir without inverse(uProj) ---
+vec3 ndcToViewDir(vec2 ndc)
+{
+    // For standard perspective: dirVS ~ (ndc.x / P00, ndc.y / P11, -1)
+    float invFx = 1.0 / uProj[0][0];
+    float invFy = 1.0 / uProj[1][1];
+    return normalize(vec3(ndc.x * invFx, ndc.y * invFy, -1.0));
+}
 
-    float t = -camPos.z / denom;
-    if (t <= 0.0) discard; // behind the camera
+void main()
+{
+    vec3 camPos = cameraWorldPos();
 
-    vec3 P = camPos + t*dir;    // world hit point on the XY plane
+    // ray in world
+    vec3 dirVS = ndcToViewDir(v_ndc);
+    vec3 dirWS = normalize(viewToWorld(dirVS));
 
-    // Compute correct depth so grid is occluded by scene
-    vec4 clip = uProj * uView * vec4(P,1.0);
+    // intersect with plane z = 0 (z-up)
+    float dz = dirWS.z;
+    if (abs(dz) < 1e-6) discard;
+    float t = -camPos.z / dz;
+    if (t <= 0.0) discard;
+
+    vec3 P = camPos + t * dirWS;   // world hit point
+
+    // correct depth so grid is occluded properly
+    vec4 clip = uProj * uView * vec4(P, 1.0);
     float ndcZ = clip.z / clip.w;
-    gl_FragDepth = ndcZ * 0.5 + 0.5; // map [-1,1] -> [0,1]
+    gl_FragDepth = ndcZ * 0.5 + 0.5;
 
-    // --- world-space distances to nearest vertical/horizontal lines
-    float gx = abs(fract(P.x / uCell) - 0.5) * uCell;
-    float gy = abs(fract(P.y / uCell) - 0.5) * uCell;
+    // grid distances in world units (XY plane)
+    float c = max(uCell, 1e-6);
+    float gx = abs(fract(P.x / c) - 0.5) * c;
+    float gy = abs(fract(P.y / c) - 0.5) * c;
 
-    // per-axis "world units per pixel"
+    // world-units per pixel around this fragment
     float wpx = length(vec2(dFdx(P.x), dFdy(P.x)));
     float wpy = length(vec2(dFdx(P.y), dFdy(P.y)));
 
-    // desired half thickness in world units, per axis
+    // half thickness in world units per axis (pixel-true thickness)
     float halfX = max(1e-6, 0.5 * uPx * wpx);
     float halfY = max(1e-6, 0.5 * uPx * wpy);
 
-    // anti-alias width per axis
+    // AA widths
     float aax = fwidth(gx);
     float aay = fwidth(gy);
 
-    // line masks per axis
     float lineX = 1.0 - smoothstep(halfX, halfX + aax, gx);
     float lineY = 1.0 - smoothstep(halfY, halfY + aay, gy);
+    float line  = max(lineX, lineY);
 
-    // combine: a grid cell edge is present if either axis hits
-    float line = max(lineX, lineY);
-
-    // Distance-based fade to feel "infinite"
-    float r = length(P.xy);
-    float fade = 1.0 - smoothstep(uFadeStart, uFadeEnd, r);
+    // distance fade (on plane)
+    float fs = min(uFadeStart, uFadeEnd);
+    float fe = max(uFadeStart, uFadeEnd);
+    float r   = length(P.xy);
+    float fade = 1.0 - smoothstep(fs, fe, r);
 
     float alpha = line * fade;
     if (alpha <= 0.001) discard;
