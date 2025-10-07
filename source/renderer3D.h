@@ -321,26 +321,18 @@ public:
         //Grid rendering pass :
         if (render_grid)
         {
-            glDepthFunc(GL_LEQUAL);
-            glDepthMask(GL_FALSE);
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
             sh_grid.use();
             sh_grid.set_mat4_uniform("uProj", cam.projection);
             sh_grid.set_mat4_uniform("uView", cam.view);
-
-            sh_grid.set_vec3_uniform("uColor", infgrid.color);
-            sh_grid.set_float_uniform("uCell",  infgrid.cell);
-            sh_grid.set_float_uniform("uPx",    infgrid.px);
-            sh_grid.set_float_uniform("uFadeStart", 0.0f);
-            sh_grid.set_float_uniform("uFadeEnd",   cam.max_dist);
-
+            sh_grid.set_float_uniform("uFadeEnd",   2.0f*cam.dist);
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glDepthFunc(GL_LEQUAL);
+            glDepthMask(GL_FALSE);
             infgrid.render();
-
-            glDisable(GL_BLEND);
             glDepthMask(GL_TRUE);
             glDepthFunc(GL_LESS);
+            glDisable(GL_BLEND);
         }
     }
 };

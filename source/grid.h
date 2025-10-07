@@ -5,26 +5,15 @@
 
 #include<GL/glew.h>
 
-#include<glm/glm.hpp>
-#include<glm/gtc/matrix_transform.hpp>
-#include<glm/gtc/type_ptr.hpp>
-
 class grid
 {
 private:
     unsigned int vao, vbo;
 
 public:
-    float cell, px, fade_start, fade_end;
-    glm::vec3 color;
 
     grid() : vao(0),
-             vbo(0),
-             cell(1.0f),
-             px(1.0f),
-             fade_start(0.0f),
-             fade_end(0.0f),
-             color(glm::vec3(0.3f))
+             vbo(0)
     {
         //Fullscreen quad in clip space (xy in [-1,1])
         float verts[] = { -1.0f, -1.0f, 
@@ -42,6 +31,7 @@ public:
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
 
+        //layout(location = 0) in vec2 pos;
         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2*sizeof(float), (void*)0);
         glEnableVertexAttribArray(0);
 

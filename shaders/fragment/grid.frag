@@ -2,90 +2,113 @@
 in vec2 v_ndc;
 layout(location=0) out vec4 frag_col;
 
-uniform mat4 uProj;          // same uniforms you already set
-uniform mat4 uView;
+uniform mat4 uProj;         // projection
+uniform mat4 uView;         // view
+uniform float uFadeEnd;     // fade-out radius on plane (e.g., 2*cam.dist)
 
-uniform vec3  uColor;        // grid color
-uniform float uCell;         // world-units per cell
-uniform float uPx;           // line thickness in SCREEN pixels
-uniform float uFadeStart;    // fade starts at radius
-uniform float uFadeEnd;      // fade ends at radius
+// look
+const float LINE_PX    = 1.0;       // exact pixel thickness (tune 1.5–2.0)
+const float TARGET_PX  = 224.0;      // bigger => fewer lines (try 224/256)
 
-// --- derive camera world pos and view->world rotation WITHOUT inverse() ---
-vec3 cameraWorldPos()
-{
-    // For a rigid view matrix V = [ R  t ; 0 1 ] (world->view),
-    // camera position C = -R^T * t
+// ===== helpers (no inverse()) =====
+vec3 cameraWorldPos() {
     mat3 R = mat3(uView);
     vec3 t = vec3(uView[3]);
     return -transpose(R) * t;
 }
-
-vec3 viewToWorld(vec3 v)
-{
-    // inverse rotation = transpose(R)
-    return transpose(mat3(uView)) * v;
-}
-
-// --- build view-space ray dir without inverse(uProj) ---
-vec3 ndcToViewDir(vec2 ndc)
-{
-    // For standard perspective: dirVS ~ (ndc.x / P00, ndc.y / P11, -1)
+vec3 viewToWorld(vec3 v) { return transpose(mat3(uView)) * v; }
+vec3 ndcToViewDir(vec2 ndc) {
     float invFx = 1.0 / uProj[0][0];
     float invFy = 1.0 / uProj[1][1];
     return normalize(vec3(ndc.x * invFx, ndc.y * invFy, -1.0));
 }
+float nice12(float x){
+    float lx=log(max(x,1e-12)), e=floor(lx/log(10.0));
+    float m=x/pow(10.0,e);
+    float n=(m<1.5)?1.0: (m<6.0)?2.0: 10.0;
+    return n*pow(10.0,e);
+}
+float next12(float a){
+    float lx=log(max(a,1e-12)), e=floor(lx/log(10.0));
+    float m=a/pow(10.0,e);
+    float n=(m<1.5)?2.0:10.0;
+    if(n>=10.0-1e-6){ e+=1.0; n=1.0; }
+    return n*pow(10.0,e);
+}
 
-void main()
-{
+void main() {
+    // ---- world-space hit on z=0 plane
     vec3 camPos = cameraWorldPos();
-
-    // ray in world
-    vec3 dirVS = ndcToViewDir(v_ndc);
-    vec3 dirWS = normalize(viewToWorld(dirVS));
-
-    // intersect with plane z = 0 (z-up)
-    float dz = dirWS.z;
+    vec3 dirWS  = normalize(viewToWorld(ndcToViewDir(v_ndc)));
+    float dz    = dirWS.z;
     if (abs(dz) < 1e-6) discard;
     float t = -camPos.z / dz;
     if (t <= 0.0) discard;
+    vec3 P = camPos + t * dirWS;
 
-    vec3 P = camPos + t * dirWS;   // world hit point
-
-    // correct depth so grid is occluded properly
+    // correct depth
     vec4 clip = uProj * uView * vec4(P, 1.0);
-    float ndcZ = clip.z / clip.w;
-    gl_FragDepth = ndcZ * 0.5 + 0.5;
+    gl_FragDepth = (clip.z / clip.w) * 0.5 + 0.5;
 
-    // grid distances in world units (XY plane)
-    float c = max(uCell, 1e-6);
-    float gx = abs(fract(P.x / c) - 0.5) * c;
-    float gy = abs(fract(P.y / c) - 0.5) * c;
+    // ---- view-angle aware LOD (constant per draw) using center ray
+    vec3 dirC   = normalize(viewToWorld(ndcToViewDir(vec2(0.0))));
+    float tC    = abs(camPos.z) / max(abs(dirC.z), 1e-6);
 
-    // world-units per pixel around this fragment
-    float wpx = length(vec2(dFdx(P.x), dFdy(P.x)));
-    float wpy = length(vec2(dFdx(P.y), dFdy(P.y)));
+    // NDC pixel size is constant for full-screen quad
+    float ndcPxX = fwidth(v_ndc.x);
+    float ndcPxY = fwidth(v_ndc.y);
 
-    // half thickness in world units per axis (pixel-true thickness)
-    float halfX = max(1e-6, 0.5 * uPx * wpx);
-    float halfY = max(1e-6, 0.5 * uPx * wpy);
+    // world-units per pixel at center
+    float invFx = 1.0 / uProj[0][0];
+    float invFy = 1.0 / uProj[1][1];
+    float wpp_center = max(tC * invFx * ndcPxX, tC * invFy * ndcPxY);
 
-    // AA widths
-    float aax = fwidth(gx);
-    float aay = fwidth(gy);
+    // two adjacent pleasant spacings and smooth crossfade
+    float raw    = wpp_center * TARGET_PX;
+    float cellA  = nice12(raw);
+    float cellB  = next12(cellA);
+    float logRaw = log(raw), logA = log(cellA), logB = log(cellB);
+    float k      = clamp((logRaw - logA) / max(logB - logA, 1e-12), 0.0, 1.0);
+    k            = smoothstep(0.75, 1.0, k);
 
-    float lineX = 1.0 - smoothstep(halfX, halfX + aax, gx);
-    float lineY = 1.0 - smoothstep(halfY, halfY + aay, gy);
-    float line  = max(lineX, lineY);
+    // ===== per-axis coverage with per-axis gradients (keeps px thickness) =====
+    // For a vertical line family (x = const):
+    // distance field dX = distance to nearest vertical line in world units.
+    // ∂dX/∂P.x ≈ ±1 piecewise -> |∇dX| in screen space ≈ |∇P.x|.
+    float dXA = abs(fract(P.x / cellA) - 0.5) * cellA;
+    float dYA = abs(fract(P.y / cellA) - 0.5) * cellA;
+    float dXB = abs(fract(P.x / cellB) - 0.5) * cellB;
+    float dYB = abs(fract(P.y / cellB) - 0.5) * cellB;
 
-    // distance fade (on plane)
-    float fs = min(uFadeStart, uFadeEnd);
-    float fe = max(uFadeStart, uFadeEnd);
-    float r   = length(P.xy);
-    float fade = 1.0 - smoothstep(fs, fe, r);
+    // screen-space gradient magnitudes per axis
+    float gradPx = length(vec2(dFdx(P.x), dFdy(P.x))) + 1e-12;
+    float gradPy = length(vec2(dFdx(P.y), dFdy(P.y))) + 1e-12;
 
-    float alpha = line * fade;
+    // exact pixel widths
+    float halfX = 0.5 * LINE_PX * gradPx;
+    float halfY = 0.5 * LINE_PX * gradPy;
+    float aaX   = gradPx;   // ~1 px AA
+    float aaY   = gradPy;
+
+    // coverage for spacing A (vertical and horizontal families)
+    float covXA = 1.0 - smoothstep(halfX, halfX + aaX, dXA);
+    float covYA = 1.0 - smoothstep(halfY, halfY + aaY, dYA);
+    // combine families without over-brightening
+    float covA  = covXA + covYA - covXA * covYA; // “or” in coverage space
+
+    // coverage for spacing B
+    float covXB = 1.0 - smoothstep(halfX, halfX + aaX, dXB);
+    float covYB = 1.0 - smoothstep(halfY, halfY + aaY, dYB);
+    float covB  = covXB + covYB - covXB * covYB;
+
+    // crossfade between LODs
+    float cov = mix(covA, covB, k);
+
+    // radial fade 0 → uFadeEnd
+    float fade = 1.0 - smoothstep(0.0, max(uFadeEnd, 1e-6), length(P.xy));
+
+    float alpha = cov * fade;
     if (alpha <= 0.001) discard;
 
-    frag_col = vec4(uColor, alpha);
+    frag_col = vec4(vec3(0.30), alpha);
 }

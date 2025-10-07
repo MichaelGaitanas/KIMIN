@@ -619,8 +619,6 @@ private:
         ImGui::SetCursorPosX(60.0f);
         ImGui::Checkbox("##69", &rend3D.render_grid);
 
-        ImGui::SliderFloat("[cell]##70", &rend3D.infgrid.cell, 0.1f, 500.0f, "%.1f");
-
         ImGui::Dummy(ImVec2(0.0f,700.0f)); //Some extra y-space in order to be able to scroll down along scene panel.        
 
         if (!render_scene)
