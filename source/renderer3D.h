@@ -263,7 +263,11 @@ public:
         sh_sun.set_float_uniform("sun_disc_edge_soft", sunquad.disc_edge_soft);
         sh_sun.set_float_uniform("sun_limb_strength",  sunquad.limb_strength);
         sh_sun.set_float_uniform("sun_limb_power",     sunquad.limb_power);
+        glDepthFunc(GL_LEQUAL);
+        glDepthMask(GL_FALSE);
         sunquad.render();
+        glDepthMask(GL_TRUE);
+        glDepthFunc(GL_LESS);
 
         //Polyhedra rendering pass :
         glActiveTexture(GL_TEXTURE0);

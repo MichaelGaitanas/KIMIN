@@ -62,6 +62,7 @@ public:
         glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
         glfwWindowHint(GLFW_REFRESH_RATE, 60);
         glfwWindowHint(GLFW_SAMPLES, 4); //Anti-aliasing samples.
+        glfwWindowHint(GLFW_DEPTH_BITS, 32);
 
         GLFWmonitor *monitor = glfwGetPrimaryMonitor();
         const GLFWvidmode *mode = glfwGetVideoMode(monitor);
@@ -105,8 +106,10 @@ public:
     {   
         gui ui(wpointer); //Instantiate the user interface along with some settings defined in the corresponding contructor (gui.h).
         
-        glEnable(GL_DEPTH_TEST);
         glClearColor(0.06f,0.06f,0.06f,1.0f);
+        glEnable(GL_DEPTH_TEST);
+        glDepthMask(GL_TRUE);
+        glDepthFunc(GL_LESS);
         while (!glfwWindowShouldClose(wpointer))
         {
             glClear(GL_COLOR_BUFFER_BIT);
