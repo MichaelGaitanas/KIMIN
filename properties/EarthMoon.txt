@@ -13,10 +13,10 @@ Mutual potential order := 2
 M1 := 5.97216787e+24
 M2 := 7.342e+22
 
-Numerical method := "RKF78 (adaptive)"
+Numerical method := "RKF78 (fixed)"
 Epoch := 0
-Duration := 6000
-Target error := 1e-14
+Duration := 5000
+Step := 0.06
 
 Relative position and velocity := "Keplerian"
 a  := 384400

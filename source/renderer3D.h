@@ -198,6 +198,10 @@ public:
         
         //Shadow rendering pass : render the meshes that account for shadow, but do so from the light's (orthographic) view. Shadow pass must always happen first.
         glBindFramebuffer(GL_FRAMEBUFFER, depth_fbo);
+        //glEnable(GL_POLYGON_OFFSET_FILL);
+        //glPolygonOffset(1.1f, 2.0f);
+        //glEnable(GL_CULL_FACE);
+        //glCullFace(GL_FRONT);
         glViewport(0,0, depth_reso,depth_reso);
         glClear(GL_DEPTH_BUFFER_BIT);
         sh_dlight_shadow.use();
@@ -223,6 +227,9 @@ public:
             sh_depth.set_mat4_uniform("model", T2R2*S2);
             xaxis.render(); yaxis.render(); zaxis.render();
         }
+        //glCullFace(GL_BACK);
+        //glDisable(GL_CULL_FACE);
+        //glDisable(GL_POLYGON_OFFSET_FILL);
         
         //Rest of the meshes rendering pass : now we render the meshes from the camera's (perspective) view.
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -328,7 +335,7 @@ public:
             sh_grid.use();
             sh_grid.set_mat4_uniform("uProj", cam.projection);
             sh_grid.set_mat4_uniform("uView", cam.view);
-            sh_grid.set_float_uniform("uFadeEnd",   2.0f*cam.dist);
+            sh_grid.set_float_uniform("uFadeEnd", 2.0f*cam.dist);
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             glDepthFunc(GL_LEQUAL);
