@@ -42,7 +42,7 @@ float get_shadow(float diffuse)
         projected_coords.y < 0.0 || projected_coords.y > 1.0 ||
         projected_coords.z > 1.0)
     {
-        return 0.0f; //Not in shadow. Fully lit.
+        return 0.0; //Not in shadow. Fully lit.
     }
 
     //Shadow test + percentage closer filtering (pcf) with Poisson sampling + pseudo-random jittering : What we do is that we sample the
