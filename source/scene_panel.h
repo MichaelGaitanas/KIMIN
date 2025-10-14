@@ -381,93 +381,95 @@ private:
         ImGui::Text("Camera setup");
         ImGui::Dummy(ImVec2(0.0f, 4.0f));
 
-        ImGui::Text("Frame view");
-        ImGui::Dummy(ImVec2(0.0f, 4.0f));
-
         //Frame view (World, Barycentric, Body 1, Body 2).
-        int id = 0;
-        ImGui::PushItemWidth(200.0f);
-            ImGui::PushID(id++);
-                static const char *frame_var[4] = {"World", "Barycentric", "Body 1", "Body 2"};
-                ImGui::Combo("  ", &frame_var_choice, frame_var, IM_ARRAYSIZE(frame_var));
-            ImGui::PopID();
+        ImGui::Text("Frame view");
+        ImGui::PushItemWidth(250.0f);
+        static const char *frame_var[4] = {"World", "Barycentric", "Body 1", "Body 2"};
+        ImGui::Combo("##cam_frame", &frame_var_choice, frame_var, IM_ARRAYSIZE(frame_var));
         ImGui::PopItemWidth();
 
         if (frame_var_choice == 0) //World
         {
-            
+            ImGui::Text("Dist");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(40.0f);
+            ImGui::SliderFloat("[km]##45", &rend3D.cam.dist, rend3D.cam.min_dist, rend3D.cam.max_dist, "%.3f", ImGuiSliderFlags_Logarithmic);
+
+            ImGui::Text("Lon");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(40.0f);
+            ImGui::SliderFloat("[deg]##46", &rend3D.cam.lon, 0.0f, 360.0f, "%.1f");
+
+            ImGui::Text("Lat");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(40.0f);
+            ImGui::SliderFloat("[deg]##47", &rend3D.cam.lat, 0.0f, 180.0f, "%.1f");
         }
+        else if (frame_var_choice == 1) //Barycentric
+        {
+            ImGui::Text("Dist");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(40.0f);
+            ImGui::SliderFloat("[km]##45", &rend3D.cam.dist, rend3D.cam.min_dist, rend3D.cam.max_dist, "%.3f", ImGuiSliderFlags_Logarithmic);
 
-        //Gray out camera's Dist, Lon, Lat in case of mount mode.
-        if (rend3D.cam.mount_body1 || rend3D.cam.mount_body2)
-            ImGui::BeginDisabled();
+            ImGui::Text("Lon");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(40.0f);
+            ImGui::SliderFloat("[deg]##46", &rend3D.cam.lon, 0.0f, 360.0f, "%.1f");
 
-        ImGui::Text("Dist");
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[km]##45", &rend3D.cam.dist, rend3D.cam.min_dist, rend3D.cam.max_dist, "%.3f", ImGuiSliderFlags_Logarithmic);
+            ImGui::Text("Lat");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(40.0f);
+            ImGui::SliderFloat("[deg]##47", &rend3D.cam.lat, 0.0f, 180.0f, "%.1f");
+        }
+        else if (frame_var_choice == 2) //Mount body 1
+        {
+            rend3D.cam.mount_body1 = true;
+            rend3D.cam.mount_body2 = false;
+            rend3D.cam.voffset_ndc.x = rend3D.cam.voffset_ndc.y = 0.0f; //Recenter joystick.
+            
+            ImGui::Text("R - offset");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(70.0f);
+            ImGui::SetNextItemWidth(130);
+            ImGui::SliderFloat("[Brillouin]##48", &rend3D.cam.rscale, 3.0f, 10.0f, "%.1f");
 
-        ImGui::Text("Lon");
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##46", &rend3D.cam.lon, 0.0f, 360.0f, "%.1f");
+            ImGui::Text("V - scale");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(70.0f);
+            ImGui::SetNextItemWidth(130);
+            ImGui::SliderFloat("[Brillouin]##49", &rend3D.cam.vscale, 0.0f, 5.0f, "%.1f");
 
-        ImGui::Text("Lat");
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##47", &rend3D.cam.lat, 0.0f, 180.0f, "%.1f");
+            //This is a 2D joystick, used to shift the mounted camera left-right-up-down from the radial direction so that the body in front does not block the view.
+            imgui_slider_float_2D("V - offset", (ImVec2*)&rend3D.cam.voffset_ndc, ImVec2(-1.0f,-1.0f), ImVec2(1.0f,1.0f));
+        }
+        else //frame_var_choice = 3, i.e. Mount body 2
+        {
+            rend3D.cam.mount_body2 = true;
+            rend3D.cam.mount_body1 = false;
+            rend3D.cam.voffset_ndc.x = rend3D.cam.voffset_ndc.y = 0.0f; //Recenter joystick.
 
-        if (rend3D.cam.mount_body1 || rend3D.cam.mount_body2)
-            ImGui::EndDisabled();
+            ImGui::Text("R - offset");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(70.0f);
+            ImGui::SetNextItemWidth(130);
+            ImGui::SliderFloat("[Brillouin]##48", &rend3D.cam.rscale, 3.0f, 10.0f, "%.1f");
+
+            ImGui::Text("V - scale");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(70.0f);
+            ImGui::SetNextItemWidth(130);
+            ImGui::SliderFloat("[Brillouin]##49", &rend3D.cam.vscale, 0.0f, 5.0f, "%.1f");
+
+            //This is a 2D joystick, used to shift the mounted camera left-right-up-down from the radial direction so that the body in front does not block the view.
+            imgui_slider_float_2D("V - offset", (ImVec2*)&rend3D.cam.voffset_ndc, ImVec2(-1.0f,-1.0f), ImVec2(1.0f,1.0f));
+        }
+        ImGui::Dummy(ImVec2(0.0f, 4.0f));
 
         ImGui::Text("FoV");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##48", &rend3D.cam.fov, 1.0f, 179.0f, "%.0f");
-
-        ImGui::Dummy(ImVec2(0.0f, 6.0f));
-        ImGui::Text("Revolving frame view");
-        ImGui::Dummy(ImVec2(0.0f, 4.0f));
-
-        ImGui::Text("Mount Body 1");
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(100.0f);
-        if (ImGui::Checkbox("##49", &rend3D.cam.mount_body1))
-        {
-            rend3D.cam.mount_body2 = false;
-            rend3D.cam.voffset_ndc.x = rend3D.cam.voffset_ndc.y = 0.0f; //Recenter joystick.
-        }
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(140.0f);
-        ImGui::Text("Mount Body 2");
-        ImGui::SameLine();
-        if (ImGui::Checkbox("##50", &rend3D.cam.mount_body2))
-        {
-            rend3D.cam.mount_body1 = false;
-            rend3D.cam.voffset_ndc.x = rend3D.cam.voffset_ndc.y = 0.0f; //Recenter joystick.
-        }
-        ImGui::Dummy(ImVec2(0.0f, 3.0f));
-
-        if (!rend3D.cam.mount_body1 && !rend3D.cam.mount_body2)
-            ImGui::BeginDisabled();
-
-        ImGui::Text("R - offset");
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(70.0f);
-        ImGui::SetNextItemWidth(130);
-        ImGui::SliderFloat("[Brillouin]##51", &rend3D.cam.rscale, 3.0f, 10.0f, "%.1f");
-
-        ImGui::Text("V - scale");
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(70.0f);
-        ImGui::SetNextItemWidth(130);
-        ImGui::SliderFloat("[Brillouin]##52", &rend3D.cam.vscale, 0.0f, 5.0f, "%.1f");
-
-        //This is a 2D joystick, used to shift the mounted camera left-right-up-down from the radial direction so that the body in front does not block the view.
-        imgui_slider_float_2D("V - offset", (ImVec2*)&rend3D.cam.voffset_ndc, ImVec2(-1.0f,-1.0f), ImVec2(1.0f,1.0f));
-
-        if (!rend3D.cam.mount_body1 && !rend3D.cam.mount_body2)
-            ImGui::EndDisabled();
+        ImGui::SliderFloat("[deg]##50", &rend3D.cam.fov, 1.0f, 179.0f, "%.0f");
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Separator();
@@ -480,12 +482,12 @@ private:
         ImGui::Text("Lon");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##53", &rend3D.sunlight.lon, 0.0f, 360.0f, "%.1f");
+        ImGui::SliderFloat("[deg]##51", &rend3D.sunlight.lon, 0.0f, 360.0f, "%.1f");
 
         ImGui::Text("Lat");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##54", &rend3D.sunlight.lat, 0.0f, 180.0f, "%.1f");
+        ImGui::SliderFloat("[deg]##52", &rend3D.sunlight.lat, 0.0f, 180.0f, "%.1f");
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Separator();
@@ -498,7 +500,7 @@ private:
         ImGui::Text("Reso");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        if (ImGui::SliderInt("[pix]##55", &rend3D.depth_reso, 1024, 8192))
+        if (ImGui::SliderInt("[pix]##53", &rend3D.depth_reso, 1024, 8192))
             rend3D.setup_depth_fbo();
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
@@ -516,22 +518,22 @@ private:
         ImGui::Text("Body 1");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##56", &rend3D.render_body1);
+        ImGui::Checkbox("##54", &rend3D.render_body1);
         ImGui::SameLine();
         ImGui::SetCursorPosX(100.0f);
         ImGui::Text("Axes 1");
         ImGui::SameLine();
-        ImGui::Checkbox("##57", &rend3D.render_axes1);
+        ImGui::Checkbox("##55", &rend3D.render_axes1);
 
         ImGui::Text("Body 2");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##58", &rend3D.render_body2);
+        ImGui::Checkbox("##56", &rend3D.render_body2);
         ImGui::SameLine();
         ImGui::SetCursorPosX(100.0f);
         ImGui::Text("Axes 2");
         ImGui::SameLine();
-        ImGui::Checkbox("##59", &rend3D.render_axes2);
+        ImGui::Checkbox("##57", &rend3D.render_axes2);
         ImGui::Dummy(ImVec2(0.0f,4.0f));
 
         ImGui::Text("Orbits");
@@ -542,7 +544,7 @@ private:
         ImGui::Text("Body 1");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##60", &rend3D.render_orb1);
+        ImGui::Checkbox("##58", &rend3D.render_orb1);
         ImGui::SameLine();
         ImGui::SetCursorPosX(90.0f);
         ImGui::SetNextItemWidth(100);
@@ -555,10 +557,10 @@ private:
                 orb1_sync = false;
         }
         
-        ImGui::SliderScalar("##61", ImGuiDataType_U64, &visible_orb1_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SliderScalar("##59", ImGuiDataType_U64, &visible_orb1_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
         rend3D.orb1.draw_count = static_cast<size_t>(visible_orb1_frame);
-        orb1_sync = common_onoff_button("Sync##62", ImVec2(50.0f, 18.0f), orb1_sync);
+        orb1_sync = common_onoff_button("Sync##60", ImVec2(50.0f, 18.0f), orb1_sync);
         if (orb1_sync)
             rend3D.orb1.draw_count = static_cast<size_t>(current_frame + 1);
 
@@ -568,7 +570,7 @@ private:
         ImGui::Text("Body 2");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##63", &rend3D.render_orb2);
+        ImGui::Checkbox("##61", &rend3D.render_orb2);
         ImGui::SameLine();
         ImGui::SetCursorPosX(90.0f);
         ImGui::SetNextItemWidth(100);
@@ -581,9 +583,9 @@ private:
                 orb2_sync = false;
         }
 
-        ImGui::SliderScalar("##64", ImGuiDataType_U64, &visible_orb2_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SliderScalar("##62", ImGuiDataType_U64, &visible_orb2_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
-        orb2_sync = common_onoff_button("Sync##65", ImVec2(50.0f, 18.0f), orb2_sync);
+        orb2_sync = common_onoff_button("Sync##63", ImVec2(50.0f, 18.0f), orb2_sync);
         rend3D.orb2.draw_count = static_cast<size_t>(visible_orb2_frame);
         if (orb2_sync)
             rend3D.orb2.draw_count = static_cast<size_t>(current_frame + 1);
@@ -598,7 +600,7 @@ private:
         ImGui::Text("Orbiter");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##66", &rend3D.render_orb_sp);
+        ImGui::Checkbox("##64", &rend3D.render_orb_sp);
         ImGui::SameLine();
         ImGui::SetCursorPosX(90.0f);
         ImGui::SetNextItemWidth(100);
@@ -611,9 +613,9 @@ private:
                 orb_sp_sync = false;
         }
 
-        ImGui::SliderScalar("##67", ImGuiDataType_U64, &visible_orb_sp_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SliderScalar("##65", ImGuiDataType_U64, &visible_orb_sp_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
-        orb_sp_sync = common_onoff_button("Sync##68", ImVec2(50.0f, 18.0f), orb_sp_sync);
+        orb_sp_sync = common_onoff_button("Sync##66", ImVec2(50.0f, 18.0f), orb_sp_sync);
         rend3D.orb_sp.draw_count = static_cast<size_t>(visible_orb_sp_frame);
         if (orb_sp_sync)
             rend3D.orb_sp.draw_count = static_cast<size_t>(current_frame + 1);
@@ -633,7 +635,7 @@ private:
         ImGui::Text("Grid");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##69", &rend3D.render_grid);
+        ImGui::Checkbox("##67", &rend3D.render_grid);
 
         ImGui::Dummy(ImVec2(0.0f,700.0f)); //Some extra y-space in order to be able to scroll down along scene panel.        
 
