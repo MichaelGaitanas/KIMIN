@@ -349,7 +349,7 @@ public:
                 }
             }
 
-            //3) Collisions : check for asteroid–asteroid and spacecraft–asteroid collisions.
+            //3) Collisions : check for asteroid-asteroid and spacecraft-asteroid collisions.
             if (properties.collision_spheres) //Spheres checkbox.
             {
                 //Sphere asteroid-asteroid collision.

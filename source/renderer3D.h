@@ -120,6 +120,8 @@ public:
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_tex, 0);
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
             fprintf(stderr, "[Warning] : In renderer3D::setup_depth_fbo(), the depth framebuffer is not completed.\n");
+        //Since shadow mapping only requires depth information and needs no colors, the following commnads make sure that
+        //OpenGL avoids any (unnecessary) color buffer operations.
         glDrawBuffer(GL_NONE);
         glReadBuffer(GL_NONE);
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -147,11 +149,11 @@ public:
 
         //This will run only once no matter how many times the reset_gpu_resources() is called.
         if (!sky) sky = std::make_unique<skybox>("../skybox/starfield2k/right.jpg",
-                                               "../skybox/starfield2k/left.jpg",
-                                               "../skybox/starfield2k/top.jpg",
-                                               "../skybox/starfield2k/bottom.jpg",
-                                               "../skybox/starfield2k/front.jpg",
-                                               "../skybox/starfield2k/back.jpg");
+                                                 "../skybox/starfield2k/left.jpg",
+                                                 "../skybox/starfield2k/top.jpg",
+                                                 "../skybox/starfield2k/bottom.jpg",
+                                                 "../skybox/starfield2k/front.jpg",
+                                                 "../skybox/starfield2k/back.jpg");
 
         //Wtf? Is this necessary to be here?
         orb1.draw_count = std::min<size_t>(1, sol.t.size());
@@ -170,17 +172,21 @@ public:
             reset_gpu_essential = false;
         }
 
-        glm::vec3 pos1 = glm::vec3((float)sol.integr.com1_coeff*glm::vec3(sol.x[i],sol.y[i],sol.z[i]));
-        glm::vec3 pos2 = glm::vec3((float)sol.integr.com2_coeff*glm::vec3(sol.x[i],sol.y[i],sol.z[i]));
+        float pos_comx = sol.integr.properties.r_com[0] + sol.integr.properties.v_com[0]*(sol.t[i] - sol.t[0]);
+        float pos_comy = sol.integr.properties.r_com[1] + sol.integr.properties.v_com[1]*(sol.t[i] - sol.t[0]);
+        float pos_comz = sol.integr.properties.r_com[2] + sol.integr.properties.v_com[2]*(sol.t[i] - sol.t[0]);
+        glm::vec3 pos_com = glm::vec3(pos_comx, pos_comy, pos_comz);
+        glm::vec3 pos1 = glm::vec3((float)sol.integr.com1_coeff*glm::vec3(sol.x[i],sol.y[i],sol.z[i])) + pos_com;
+        glm::vec3 pos2 = glm::vec3((float)sol.integr.com2_coeff*glm::vec3(sol.x[i],sol.y[i],sol.z[i])) + pos_com;
 
-        sunlight.set_geometry();
+        sunlight.set_geometry((float)sol.integr.brillouin1 + (float)sol.integr.brillouin1 + (float)sol.dist[i]);
 
         if (cam.mount_body1)
             cam.set_geometry_mount(win_width/(float)win_height, pos1, pos2, (float)sol.integr.brillouin1);
         else if (cam.mount_body2)
             cam.set_geometry_mount(win_width/(float)win_height, pos2, pos1, (float)sol.integr.brillouin2);
         else //not in mount mode, hence the camera shall aim at the binary's C.O.M. (0,0,0) and the position shall be controlled by the user in spherical coords (dist, lon, lat).
-            cam.set_geometry_barycenter(win_width/(float)win_height);
+            cam.set_geometry_barycenter(win_width/(float)win_height, pos_com);
 
         glm::mat4 I = glm::mat4(1.0f);
 

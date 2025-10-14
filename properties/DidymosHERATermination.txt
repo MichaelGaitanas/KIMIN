@@ -49,3 +49,5 @@ zs  := 0
 vxs := 0
 vys := 0
 vzs := 0.00011
+
+Account for C.O.M. motion := "No"

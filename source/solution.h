@@ -482,19 +482,19 @@ public:
         {
             fprintf(file_properties,"Kinetic impactors := \"Yes\"\n");
 
-            fprintf(file_properties,"m1    := %.15g\n",integr.properties.M1_impact);
-            fprintf(file_properties,"vx1   := %.15g\n",integr.properties.v1_impact[0]);
-            fprintf(file_properties,"vy1   := %.15g\n",integr.properties.v1_impact[1]);
-            fprintf(file_properties,"vz1   := %.15g\n",integr.properties.v1_impact[2]);
-            fprintf(file_properties,"beta1 := %.15g\n",integr.properties.beta1);
-            fprintf(file_properties,"t1    := %.15g\n",integr.properties.t1_impact/86400.0);
+            fprintf(file_properties,"m1    := %.15g\n", integr.properties.M1_impact);
+            fprintf(file_properties,"vx1   := %.15g\n", integr.properties.v1_impact[0]);
+            fprintf(file_properties,"vy1   := %.15g\n", integr.properties.v1_impact[1]);
+            fprintf(file_properties,"vz1   := %.15g\n", integr.properties.v1_impact[2]);
+            fprintf(file_properties,"beta1 := %.15g\n", integr.properties.beta1);
+            fprintf(file_properties,"t1    := %.15g\n", integr.properties.t1_impact/86400.0);
 
-            fprintf(file_properties,"m2    := %.15g\n",  integr.properties.M2_impact);
-            fprintf(file_properties,"vx2   := %.15g\n",  integr.properties.v2_impact[0]);
-            fprintf(file_properties,"vy2   := %.15g\n",  integr.properties.v2_impact[1]);
-            fprintf(file_properties,"vz2   := %.15g\n",  integr.properties.v2_impact[2]);
-            fprintf(file_properties,"beta2 := %.15g\n",  integr.properties.beta2);
-            fprintf(file_properties,"t2    := %.15g\n\n",integr.properties.t2_impact/86400.0);
+            fprintf(file_properties,"m2    := %.15g\n",   integr.properties.M2_impact);
+            fprintf(file_properties,"vx2   := %.15g\n",   integr.properties.v2_impact[0]);
+            fprintf(file_properties,"vy2   := %.15g\n",   integr.properties.v2_impact[1]);
+            fprintf(file_properties,"vz2   := %.15g\n",   integr.properties.v2_impact[2]);
+            fprintf(file_properties,"beta2 := %.15g\n",   integr.properties.beta2);
+            fprintf(file_properties,"t2    := %.15g\n\n", integr.properties.t2_impact/86400.0);
         }
         else
             fprintf(file_properties, "Kinetic impactors := \"No\"\n\n");
@@ -503,16 +503,31 @@ public:
         {
             fprintf(file_properties,"Spacecraft orbiter := \"Yes\"\n");
 
-            fprintf(file_properties,"xs  := %.15g\n",integr.properties.r_sp[0]);
-            fprintf(file_properties,"ys  := %.15g\n",integr.properties.r_sp[1]);
-            fprintf(file_properties,"zs  := %.15g\n",integr.properties.r_sp[2]);
+            fprintf(file_properties,"xs  := %.15g\n", integr.properties.r_sp[0]);
+            fprintf(file_properties,"ys  := %.15g\n", integr.properties.r_sp[1]);
+            fprintf(file_properties,"zs  := %.15g\n", integr.properties.r_sp[2]);
 
-            fprintf(file_properties,"vxs := %.15g\n",integr.properties.v_sp[0]);
-            fprintf(file_properties,"vys := %.15g\n",integr.properties.v_sp[1]);
-            fprintf(file_properties,"vzs := %.15g\n",integr.properties.v_sp[2]);
+            fprintf(file_properties,"vxs := %.15g\n",   integr.properties.v_sp[0]);
+            fprintf(file_properties,"vys := %.15g\n",   integr.properties.v_sp[1]);
+            fprintf(file_properties,"vzs := %.15g\n\n", integr.properties.v_sp[2]);
         }
         else
-            fprintf(file_properties,"Spacecraft orbiter := \"No\"\n");
+            fprintf(file_properties,"Spacecraft orbiter := \"No\"\n\n");
+
+        if (integr.properties.com_checkbox)
+        {
+            fprintf(file_properties,"Account for C.O.M. motion := \"Yes\"\n");
+
+            fprintf(file_properties,"xcom  := %.15g\n", integr.properties.r_com[0]);
+            fprintf(file_properties,"ycom  := %.15g\n", integr.properties.r_com[1]);
+            fprintf(file_properties,"zcom  := %.15g\n", integr.properties.r_com[2]);
+
+            fprintf(file_properties,"vxcom := %.15g\n",   integr.properties.v_com[0]);
+            fprintf(file_properties,"vycom := %.15g\n",   integr.properties.v_com[1]);
+            fprintf(file_properties,"vzcom := %.15g\n\n", integr.properties.v_com[2]);
+        }
+        else
+            fprintf(file_properties,"Account for C.O.M. motion := \"No\"\n\n");
 
         fclose(file_properties);
 

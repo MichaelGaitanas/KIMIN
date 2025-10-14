@@ -55,3 +55,5 @@ beta2 := 5
 t2    := 25
 
 Spacecraft orbiter := "No"
+
+Account for C.O.M. motion := "No"

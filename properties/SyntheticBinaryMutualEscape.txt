@@ -43,3 +43,5 @@ Collision shapes := "Spheres"
 Kinetic impactors := "No"
 
 Spacecraft orbiter := "No"
+
+Account for C.O.M. motion := "No"

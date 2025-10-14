@@ -32,6 +32,8 @@ private:
     int frame_rate; //Frame updates per second.
     float frame_accumulator; //Accumulates fractional frames between updates.
 
+    int frame_var_choice; //Initial choice is 0, meaning 'World' view. 1 means 'Barycentric' view , 2 means 'Body 1' view and 3 means 'Body 2' view.
+
     solution sol, sol2D; //The 'sol' contains all the orbital data and is used to render the 3D scene. The 'sol2D' is downsampled and used for the 2D plots.
     renderer3D rend3D;
 
@@ -56,7 +58,8 @@ public:
                     current_frame(0),
                     total_frames(0),
                     frame_rate(60),
-                    frame_accumulator(0.0f)
+                    frame_accumulator(0.0f),
+                    frame_var_choice(0)
     { }
 
     //Reset essential stuff upon a simulation termination.
@@ -69,7 +72,6 @@ public:
         this->sol2D = sol.get_reduced_solution(PLOT_POINTS_2D); //Then create a downsampled solution for the 2D plots.
 
         float binary_max_dist = *std::max_element(sol.dist.begin(), sol.dist.end());
-        rend3D.sunlight.reset(sol.integr.brillouin1 + sol.integr.brillouin2 + binary_max_dist);
         rend3D.cam.reset(sol.integr.brillouin1 + sol.integr.brillouin2, binary_max_dist);
 
         current_frame = 0;
@@ -207,7 +209,7 @@ private:
         ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f); //Disable the indentation for what comes next.
 
         //Binary's (mutual) plots.
-        if (ImGui::TreeNodeEx("Mutual", ImGuiTreeNodeFlags_DefaultOpen))
+        if (ImGui::TreeNodeEx("Mutual"))
         {
             ImGui::Dummy(ImVec2(0.0f,7.5f));
             ImGui::Text("Position");
@@ -242,7 +244,7 @@ private:
         }
 
         //Body 1 plots.
-        if (ImGui::TreeNodeEx("Body 1", ImGuiTreeNodeFlags_DefaultOpen))
+        if (ImGui::TreeNodeEx("Body 1"))
         {
             ImGui::Dummy(ImVec2(0.0f,7.5f));
             ImGui::Text("Euler angles (XYZ)");
@@ -268,7 +270,7 @@ private:
         }
 
         //Body 2 plots.
-        if (ImGui::TreeNodeEx("Body 2", ImGuiTreeNodeFlags_DefaultOpen))
+        if (ImGui::TreeNodeEx("Body 2"))
         {
             ImGui::Dummy(ImVec2(0.0f,7.5f));
             ImGui::Text("Euler angles (XYZ)");
@@ -294,7 +296,7 @@ private:
         }
 
         //Spacecraft's plots.
-        if (ImGui::TreeNodeEx("Spacecraft orbiter", ImGuiTreeNodeFlags_DefaultOpen))
+        if (ImGui::TreeNodeEx("Spacecraft orbiter"))
         {
             if (!sol.integr.properties.spacecraft_checkbox)
                 ImGui::BeginDisabled();
@@ -379,8 +381,22 @@ private:
         ImGui::Text("Camera setup");
         ImGui::Dummy(ImVec2(0.0f, 4.0f));
 
-        ImGui::Text("Barycentric frame view");
+        ImGui::Text("Frame view");
         ImGui::Dummy(ImVec2(0.0f, 4.0f));
+
+        //Frame view (World, Barycentric, Body 1, Body 2).
+        int id = 0;
+        ImGui::PushItemWidth(200.0f);
+            ImGui::PushID(id++);
+                static const char *frame_var[4] = {"World", "Barycentric", "Body 1", "Body 2"};
+                ImGui::Combo("  ", &frame_var_choice, frame_var, IM_ARRAYSIZE(frame_var));
+            ImGui::PopID();
+        ImGui::PopItemWidth();
+
+        if (frame_var_choice == 0) //World
+        {
+            
+        }
 
         //Gray out camera's Dist, Lon, Lat in case of mount mode.
         if (rend3D.cam.mount_body1 || rend3D.cam.mount_body2)

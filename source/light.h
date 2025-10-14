@@ -22,8 +22,8 @@ public:
     glm::mat4 pv; //projection*view (premultiplied to avoid doing it in the GPU per vertex).
 
     light() : dist(0.0f),
-              fc(1.1f),
-              fl(1.2f),
+              fc(1.01f),
+              fl(1.02f),
               up(glm::vec3(0.0f)),
               projection(glm::mat4(0.0f)),
               view(glm::mat4(0.0f)),
@@ -32,13 +32,6 @@ public:
               dir(glm::vec3(0.0f)),
               pv(glm::mat4(0.0f))
     { }
-
-    //This function runs once each time a simulation terminates. It resets some of the members, depending on the scales (sizes) of the simulation that just ran.
-    void reset(const float dist_sum)
-    {
-        dist = fl*dist_sum; //Directional light's 'dummy' distance.
-        projection = glm::ortho(-fc*dist,fc*dist, -fc*dist,fc*dist, (fl-fc)*dist, 2.0f*fc*dist); //Directional light's projection matrix.
-    }
 
     //This function alters the light's 'lon' and 'lat' members, based on how much the user moved the mouse (+ middle click + ctrl key) since the last frame.
     void rotate_lon_lat(const float dx, const float dy, const float mouse_sensitivity = 0.3f)
@@ -52,8 +45,11 @@ public:
     }
 
     //This function computes the light values of the variables that are passed as uniforms to the shaders in the render_3D_content().
-    void set_geometry()
+    void set_geometry(const float dist_sum)
     {
+        dist = fl*dist_sum; //Directional light's 'dummy' distance.
+        projection = glm::ortho(-fc*dist_sum,fc*dist_sum, -fc*dist_sum,fc*dist_sum, (fl-fc)*dist_sum, 2.0f*fc*dist_sum); //Directional light's projection matrix.
+
         //Back to Cartesian coords.
         dir = glm::vec3(cos(glm::radians(lon))*sin(glm::radians(lat)),
                         sin(glm::radians(lon))*sin(glm::radians(lat)),

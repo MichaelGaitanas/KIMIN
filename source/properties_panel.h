@@ -42,8 +42,8 @@ public:
     double target_error; //'Target error' double field (if an adaptive method is chosen).
 
     int cart_kep_var_choice; //Initial choice is 0, meaning that relative Cartesian elements are chosen as inputs. 1 means mutual Keplerian elements.
-    dvec6 cart; //'x', 'y', 'z', 'υx', 'υy', 'υz' double fields.
-    dvec6 kep; //'a', 'e', 'i', 'Ω', 'ω', 'M' double fields.
+    dvec6 cart; //'x', 'y', 'z', 'υx', 'υy', 'υz' double fields of the relative state.
+    dvec6 kep; //'a', 'e', 'i', 'Ω', 'ω', 'M' double fields of the relative state.
 
     int orient_var_choice; //Initial choice is 0, meaning Euler angles (roll, pitch, yaw) are chosen as inputs. 1 means quaternions.
     dvec3 rpy1, rpy2; //'roll 1', 'pitch 1', 'yaw 1', 'roll 2', 'pitch 2', 'yaw 2' double fields.
@@ -66,7 +66,11 @@ public:
 
     bool spacecraft_checkbox; //'Spacecraft orbiter' checkbox state.
     bool spacecraft_clicked_ok; //'OK' button in the spacecraft orbiter window.
-    dvec3 r_sp, v_sp; //Spacecraft's 'x', 'y', 'z' and 'vx', 'vy', 'vz'.
+    dvec3 r_sp, v_sp; //Spacecraft's 'x', 'y', 'z' and 'υxs', 'υys', 'υzs'.
+
+    bool com_checkbox; //'Account for C.O.M. motion' checkbox state.
+    bool com_clicked_ok; //'OK' button in the C.O.M. motion window.
+    dvec3 r_com, v_com; //'x', 'y', 'z', 'υx', 'υy', 'υz' double fields of the center of mass.
 
     bool run_pressed; //Whether or not the 'Run' button has been pressed.
     bool abort_pressed; //Whether or not the 'Abort' button has been pressed.
@@ -122,12 +126,17 @@ public:
                          spacecraft_clicked_ok(false),
                          r_sp(dvec3{0.0,0.0,0.0}),
                          v_sp(dvec3{0.0,0.0,0.0}),
+                         com_checkbox(false),
+                         com_clicked_ok(false),
+                         r_com(dvec3{0.0,0.0,0.0}),
+                         v_com(dvec3{0.0,0.0,0.0}),
                          run_pressed(false),
                          abort_pressed(false),
                          poly1(),
                          poly2()
     { }
 
+    //This function parses the user-chosen input file regarding the properties.
     void import_file(const char *path, console_panel &console)
     {
         *this = properties_panel{}; //Reset the inputs. This command basically re-runs the constructor.
@@ -139,13 +148,17 @@ public:
             return;
         }
 
+        //Parse the simulation name.
         if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", sim_name);
+
         char buffer[128];
+
+        //Parse the shape model.
         if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", buffer);
         if (strcmp(buffer, "Ellipsoids") == 0)
         {
-            for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&semiaxes1[i]);
-            for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&semiaxes2[i]);
+            for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &semiaxes1[i]);
+            for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &semiaxes2[i]);
             ell_checkbox = ell_clicked_ok = true;
         }
         else //".obj files"
@@ -162,8 +175,10 @@ public:
             }
             obj_checkbox = obj_clicked_ok = true;
         }
+
+        //Parse the mutual potential order.
         int Vord;
-        if (find_assignment_operator(fp)) fscanf(fp, "%d",&Vord);
+        if (find_assignment_operator(fp)) fscanf(fp, "%d", &Vord);
         if (Vord <= 2)
             ord2_checkbox = true;
         else if (Vord == 3)
@@ -171,74 +186,85 @@ public:
         else
             ord4_checkbox = true;
 
-        if (find_assignment_operator(fp)) fscanf(fp, "%lf",&M1);
-        if (find_assignment_operator(fp)) fscanf(fp, "%lf",&M2);
+        //Parse the masses.
+        if (find_assignment_operator(fp)) fscanf(fp, "%lf", &M1);
+        if (find_assignment_operator(fp)) fscanf(fp, "%lf", &M2);
+
+        //Parse the numerical method of integration.
         if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", buffer);
         if (strcmp(buffer, "RKF78 (fixed)") == 0)
         {
             integration_method_var_choice = 0;
-            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&epoch);
-            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&dur);
-            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&step);
+            if (find_assignment_operator(fp)) fscanf(fp, "%lf", &epoch);
+            if (find_assignment_operator(fp)) fscanf(fp, "%lf", &dur);
+            if (find_assignment_operator(fp)) fscanf(fp, "%lf", &step);
         }
         else if (strcmp(buffer, "RKF78 (adaptive)") == 0)
         {
             integration_method_var_choice = 1;
-            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&epoch);
-            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&dur);
-            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&target_error);
+            if (find_assignment_operator(fp)) fscanf(fp, "%lf", &epoch);
+            if (find_assignment_operator(fp)) fscanf(fp, "%lf", &dur);
+            if (find_assignment_operator(fp)) fscanf(fp, "%lf", &target_error);
         }
         else if (strcmp(buffer, "BStoer (adaptive)") == 0)
         {
             integration_method_var_choice = 2;
-            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&epoch);
-            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&dur);
-            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&target_error);
+            if (find_assignment_operator(fp)) fscanf(fp, "%lf", &epoch);
+            if (find_assignment_operator(fp)) fscanf(fp, "%lf", &dur);
+            if (find_assignment_operator(fp)) fscanf(fp, "%lf", &target_error);
         }
         else //ABM5 (fixed).
         {
             integration_method_var_choice = 3;
-            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&epoch);
-            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&dur);
-            if (find_assignment_operator(fp)) fscanf(fp, "%lf",&step);
+            if (find_assignment_operator(fp)) fscanf(fp, "%lf", &epoch);
+            if (find_assignment_operator(fp)) fscanf(fp, "%lf", &dur);
+            if (find_assignment_operator(fp)) fscanf(fp, "%lf", &step);
         }
+
+        //Parse the binary's initial position/velocity.
         if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", buffer);
         if (strcmp(buffer, "Cartesian") == 0)
         {
             cart_kep_var_choice = 0;
-            for (int i = 0; i < 6; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&cart[i]);
+            for (int i = 0; i < 6; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &cart[i]);
         }
         else //Keplerian.
         {
             cart_kep_var_choice = 1;
-            for (int i = 0; i < 6; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&kep[i]);
+            for (int i = 0; i < 6; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &kep[i]);
         }
+
+        //Parse the binary's initial orientation.
         if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", buffer);
         if (strcmp(buffer, "Euler angles") == 0)
         {
             orient_var_choice = 0;
-            for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&rpy1[i]);
-            for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&rpy2[i]);
+            for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &rpy1[i]);
+            for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &rpy2[i]);
         }
         else //Quaternions.
         {
             orient_var_choice = 1;
-            for (int i = 0; i < 4; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&q1[i]);
-            for (int i = 0; i < 4; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&q2[i]);
+            for (int i = 0; i < 4; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &q1[i]);
+            for (int i = 0; i < 4; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &q2[i]);
         }
+
+        //Parse the binary's initial angular velocity.
         if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", buffer);
         if (strcmp(buffer, "At inertial frame") == 0)
         {
             frame_type_choice = 0;
-            for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&w1i[i]);
-            for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&w2i[i]);
+            for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &w1i[i]);
+            for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &w2i[i]);
         }
         else //Body frames.
         {
             frame_type_choice = 1;
-            for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&w1b[i]);
-            for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&w2b[i]);
+            for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &w1b[i]);
+            for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &w2b[i]);
         }
+
+        //Parse the collision shapes.
         if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", buffer);
         if (strcmp(buffer, "No collision") == 0)
             collision_no = true;
@@ -246,39 +272,55 @@ public:
             collision_spheres = true;
         else //Polyhedra.
             collision_polyhedra = true;
-            
+        
+        //Parse the kinetic impactors.
         if (find_assignment_operator(fp))
         {
             fscanf(fp, " \"%[^\"]\"", buffer);
             if (strcmp(buffer, "Yes") == 0)
             {
-                if (find_assignment_operator(fp)) fscanf(fp, "%lf",&M1_impact);
-                for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&v1_impact[i]);
-                if (find_assignment_operator(fp)) fscanf(fp, "%lf",&beta1);
-                if (find_assignment_operator(fp)) fscanf(fp, "%lf",&t1_impact);
+                if (find_assignment_operator(fp)) fscanf(fp, "%lf", &M1_impact);
+                for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &v1_impact[i]);
+                if (find_assignment_operator(fp)) fscanf(fp, "%lf", &beta1);
+                if (find_assignment_operator(fp)) fscanf(fp, "%lf", &t1_impact);
 
                 if (find_assignment_operator(fp)) fscanf(fp, "%lf",&M2_impact);
-                for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&v2_impact[i]);
-                if (find_assignment_operator(fp)) fscanf(fp, "%lf",&beta2);
-                if (find_assignment_operator(fp)) fscanf(fp, "%lf",&t2_impact);
+                for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &v2_impact[i]);
+                if (find_assignment_operator(fp)) fscanf(fp, "%lf", &beta2);
+                if (find_assignment_operator(fp)) fscanf(fp, "%lf", &t2_impact);
 
-                impactors_checkbox = true; impactors_clicked_ok = true;
+                impactors_checkbox = impactors_clicked_ok = true;
             }
         }
+
+        //Parse the spacecraft orbiter's initial state.
         if (find_assignment_operator(fp))
         {
             fscanf(fp, " \"%[^\"]\"", buffer);
             if (strcmp(buffer, "Yes") == 0)
             {
-                for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&r_sp[i]);
-                for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf",&v_sp[i]);
-                spacecraft_checkbox = true; spacecraft_clicked_ok = true;
+                for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &r_sp[i]);
+                for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &v_sp[i]);
+                spacecraft_checkbox = spacecraft_clicked_ok = true;
+            }
+        }
+
+        //Parse the C.O.M. initial state.
+        if (find_assignment_operator(fp))
+        {
+            fscanf(fp, " \"%[^\"]\"", buffer);
+            if (strcmp(buffer, "Yes") == 0)
+            {
+                for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &r_com[i]);
+                for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &v_com[i]);
+                com_checkbox = com_clicked_ok = true;
             }
         }
 
         fclose(fp);
     }
 
+private:
     //This function receives as input a 'path' to a directory and as a result it returns a vector of paths, corresponding
     //to all the .obj files found inside 'path'.
     std::vector<std::filesystem::path> list_obj_files(const char *path)
@@ -290,6 +332,7 @@ public:
         return paths;
     }
 
+public:
     //This function automates common double inputs via the keyboard. It creates a rectangle, inside of which the user may enter a double.
     //'label' is a string written on the left of the rectangle. 'item_width' is the horizontal legth (space) of the rectangle. 'id' is a unique
     //int via which the computer identifies which variable to affect. 'unit' is a string written on the right of the rectangle (acting as unit of measurement).
@@ -306,8 +349,8 @@ public:
         ImGui::PopItemWidth();
     }
 
-    //This member function processes all the user inputs and checks if they are valid, assuming some rules.
-    //If not, corresponding errors are displayed in the console and the simulation will not run, until fixed.
+    //This member function processes all the user inputs and checks if they are valid, assuming some rules, defined by me.
+    //If at least 1 rule is not satisfied, the corresponding errors are displayed in the console and the simulation will not run, until fixed.
     bool validate(console_panel &console)
     {   
         //Possible error 1 : Simulation name (empty, pure spaces, begin with space, illegal characters).
@@ -454,15 +497,16 @@ public:
         if (spacecraft_checkbox && !spacecraft_clicked_ok)
             {console.add_timed_text("[Error] : 'OK' button must be pressed in the 'Orbiter's initial state' window.\n"); return false;}
 
+        //Possible error 18 : 'OK' button in the C.O.M. parameters window (it must be clicked so that the C.O.M. i.c. are taken into account).
+        if (com_checkbox && !com_clicked_ok)
+            {console.add_timed_text("[Error] : 'OK' button must be pressed in the 'C.O.M. initial state' window.\n"); return false;}
+
         return true;
     }
 
     //This is the function that draws the properties panel and processes the corresponding logic.
     void render(std::atomic<bool> task_is_running, std::atomic<bool> task_was_aborted, std::atomic<float> task_progress)
     {
-        //Reinitialized every frame at 0. Making it static, will also work, but if the app's total frames (glfw while loop) exceed the
-        //maximum int value (or unsigned, or long, or whatever the variable type of id is), then we will have an overflow, which means
-        //unexpected behavior or crash or wrap around to the negative side...
         int id = 0;
 
         //Properties panel "main" window.
@@ -611,7 +655,7 @@ public:
         double_field("Epoch ",     100.0f, 105.0f, id, "[days]", epoch);
         double_field("Duration ",  100.0f, 105.0f, id, "[days]", dur);
         if (integration_method_var_choice == 0 || integration_method_var_choice == 3)
-            double_field("Step ",      100.0f, 105.0f, id, "[days]", step);
+            double_field("Step ",  100.0f, 105.0f, id, "[days]", step);
         else //integration_method_var_choice is 1 or 2, thus render the 'Target error' input field.
             double_field("Target error ", 100.0f, 105.0f, id, "[    ]", target_error);
         ImGui::Dummy(ImVec2(0.0f,7.5f));
@@ -756,7 +800,7 @@ public:
                 ImGui::Text("Mass (dry + fuel)");
                 double_field("m1 ", 100.0f, 40.0f, id, "[kg]", M1_impact);
                 ImGui::Dummy(ImVec2(0.0f,15.0f));
-                ImGui::Text("Velocity (inertial)");
+                ImGui::Text("Velocity (world)");
                 double_field("υx1 ", 100.0f, 40.0f, id, "[km/sec]", v1_impact[0]);
                 double_field("υy1 ", 100.0f, 40.0f, id, "[km/sec]", v1_impact[1]);
                 double_field("υz1 ", 100.0f, 40.0f, id, "[km/sec]", v1_impact[2]);
@@ -772,7 +816,7 @@ public:
                 ImGui::Text("Mass (dry + fuel)");
                 double_field("m2 ", 100.0f, 40.0f, id, "[kg]", M2_impact);
                 ImGui::Dummy(ImVec2(0.0f,15.0f));
-                ImGui::Text("Velocity (inertial)");
+                ImGui::Text("Velocity (world)");
                 double_field("υx2 ", 100.0f, 40.0f, id, "[km/sec]", v2_impact[0]);
                 double_field("υy2 ", 100.0f, 40.0f, id, "[km/sec]", v2_impact[1]);
                 double_field("υz2 ", 100.0f, 40.0f, id, "[km/sec]", v2_impact[2]);
@@ -805,12 +849,12 @@ public:
             ImGui::SetNextWindowSize(ImVec2(0.15f*ImGui::GetIO().DisplaySize.x, 0.4f*ImGui::GetIO().DisplaySize.y), ImGuiCond_FirstUseEver); 
             ImGui::Begin("Orbiter's initial state", &spacecraft_checkbox);
 
-            ImGui::Text("Position (inertial)");
+            ImGui::Text("Position (world)");
             double_field("xs ", 100.0f, 40.0f, id, "[km]", r_sp[0]);
             double_field("ys ", 100.0f, 40.0f, id, "[km]", r_sp[1]);
             double_field("zs ", 100.0f, 40.0f, id, "[km]", r_sp[2]);
             ImGui::Dummy(ImVec2(0.0f,15.0f));
-            ImGui::Text("Velocity (inertial)");
+            ImGui::Text("Velocity (world)");
             double_field("υxs ", 100.0f, 40.0f, id, "[km/sec]", v_sp[0]);
             double_field("υys ", 100.0f, 40.0f, id, "[km/sec]", v_sp[1]);
             double_field("υzs ", 100.0f, 40.0f, id, "[km/sec]", v_sp[2]);
@@ -821,6 +865,40 @@ public:
             //Final "OK" button. This must be pressed, otherwise the spacecraft's i.c. will not be taken into account.
             if (ImGui::Button("OK", ImVec2(50.0f,30.0f)))
                 spacecraft_clicked_ok = true;
+
+            ImGui::End();
+        }
+
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0.0f,7.5f));
+
+        //C.O.M. motion logic.
+        ImGui::Text("C.O.M. motion");
+        if (ImGui::Checkbox("Account for C.O.M. motion", &com_checkbox) && com_checkbox)
+            com_clicked_ok = false;
+        if (com_checkbox && !com_clicked_ok)
+        {
+            ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, 0.0f), ImGuiCond_FirstUseEver); 
+            ImGui::SetNextWindowSize(ImVec2(0.15f*ImGui::GetIO().DisplaySize.x, 0.4f*ImGui::GetIO().DisplaySize.y), ImGuiCond_FirstUseEver); 
+            ImGui::Begin("C.O.M. initial state", &com_checkbox);
+
+            ImGui::Text("Position (world)");
+            double_field("x ", 100.0f, 40.0f, id, "[km]", r_com[0]);
+            double_field("y ", 100.0f, 40.0f, id, "[km]", r_com[1]);
+            double_field("z ", 100.0f, 40.0f, id, "[km]", r_com[2]);
+            ImGui::Dummy(ImVec2(0.0f,15.0f));
+            ImGui::Text("Velocity (world)");
+            double_field("υx ", 100.0f, 40.0f, id, "[km/sec]", v_com[0]);
+            double_field("υy ", 100.0f, 40.0f, id, "[km/sec]", v_com[1]);
+            double_field("υz ", 100.0f, 40.0f, id, "[km/sec]", v_com[2]);
+            ImGui::Dummy(ImVec2(0.0f,15.0f));
+
+            ImGui::Dummy(ImVec2(0.0f,15.0f));
+
+            //Final "OK" button. This must be pressed, otherwise the spacecraft's i.c. will not be taken into account.
+            if (ImGui::Button("OK", ImVec2(50.0f,30.0f)))
+                com_clicked_ok = true;
 
             ImGui::End();
         }
@@ -859,7 +937,8 @@ public:
             ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.0f,0.7f,0.0f, 1.0f)); //Green.
         ImGui::ProgressBar(task_progress.load(), ImVec2(150.0f,17.0f));
         ImGui::PopStyleColor();
-        ImGui::Dummy(ImVec2(0.0f,700.0f)); //Some extra y-space in order to be able to scroll down along properties panel.
+
+        ImGui::Dummy(ImVec2(0.0f,700.0f)); //Some extra y-space in order to be able to scroll down comfortably along the properties panel.
 
         ImGui::End();
     }
