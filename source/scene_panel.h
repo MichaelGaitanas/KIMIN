@@ -32,7 +32,7 @@ private:
     int frame_rate; //Frame updates per second.
     float frame_accumulator; //Accumulates fractional frames between updates.
 
-    int frame_var_choice; //Initial choice is 0, meaning 'World' view. 1 means 'Barycentric' view , 2 means 'Body 1' view and 3 means 'Body 2' view.
+    int view_var_choice; //Initial choice is 0, meaning 'World' view. 1 means 'Barycentric' view , 2 means 'Body 1' view and 3 means 'Body 2' view.
 
     solution sol, sol2D; //The 'sol' contains all the orbital data and is used to render the 3D scene. The 'sol2D' is downsampled and used for the 2D plots.
     renderer3D rend3D;
@@ -59,7 +59,7 @@ public:
                     total_frames(0),
                     frame_rate(60),
                     frame_accumulator(0.0f),
-                    frame_var_choice(0)
+                    view_var_choice(0)
     { }
 
     //Reset essential stuff upon a simulation termination.
@@ -110,7 +110,7 @@ private:
     }
 
     //Because the 'sol2D' (the one used for 2D plotting) is reduced in size compared to the 'sol' (the one used for exporting or 3D rendering), we have to map
-    //the 'current_frame' index to another index ('i_reduce'), so that the scatter point of the current frame corresponds to the correct time.
+    //the 'current_frame' index to another index 'i_reduce', so that the scatter point of the current frame corresponds to the correct time.
     //This function serves the aforementioned purpose. 
     inline size_t map_frame_to_reduced_sol(const size_t current_frame, const size_t original_size, const size_t reduced_size)
     {
@@ -127,49 +127,49 @@ private:
         return i_reduced;
     }
 
-    //This function plots the data {t, plot_func(t)}.
-    bool common_plot(const char *begin_id, const char *begin_plot_id, const char *yaxis_str, bool bool_plot_func, dvec &plot_func)
+    //This function plots the data {t, data(t)}.
+    bool common_plot(const char *imgui_id, const char *implot_id, const char *yaxis_str, bool plot_status, dvec &data)
     {
         ImGui::SetNextWindowPos( ImVec2(0.6f*ImGui::GetIO().DisplaySize.x, 0.0f), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(0.25f*ImGui::GetIO().DisplaySize.x, 0.4f*ImGui::GetIO().DisplaySize.y), ImGuiCond_FirstUseEver);
-        ImGui::Begin(begin_id, &bool_plot_func);
+        ImGui::Begin(imgui_id, &plot_status);
         ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
-        if (ImPlot::BeginPlot(begin_plot_id, plot_win_size))
+        if (ImPlot::BeginPlot(implot_id, plot_win_size))
         {
             //Line logic :
             ImPlot::SetupAxes("time [days]", yaxis_str);
-            ImPlot::PlotLine("", &sol2D.t[0], &plot_func[0], sol2D.t.size());
+            ImPlot::PlotLine("", &sol2D.t[0], &data[0], sol2D.t.size());
             
             //Current frame marker logic :
             size_t i_reduced = map_frame_to_reduced_sol(current_frame, sol.t.size(), sol2D.t.size());
             ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 6.0f, ImColor(0, 255, 0, 255), 1.0f, ImColor(0, 255, 0, 255));
-            ImPlot::PlotScatter("Current frame", &sol2D.t[i_reduced], &plot_func[i_reduced], 1);
+            ImPlot::PlotScatter("Current frame", &sol2D.t[i_reduced], &data[i_reduced], 1);
 
             //Collision frame marker logic :
             if (sol2D.integr.collision) //Asteroid-asteroid collision.
             {
                 ImPlot::SetNextMarkerStyle(ImPlotMarker_Down, 6.0f, ImColor(255,0,0,255), 1.0f, ImColor(255,0,0,255));
-                ImPlot::PlotScatter("Collision frame", &sol2D.t.back(), &plot_func.back(), 1);
+                ImPlot::PlotScatter("Collision frame", &sol2D.t.back(), &data.back(), 1);
             }
             else if (sol2D.integr.collision_sp) //Asteroid-spacecraft collision.
             {
                 ImPlot::SetNextMarkerStyle(ImPlotMarker_Down, 6.0f, ImColor(255, 100, 0, 255), 1.0f, ImColor(255, 100, 0, 255));
-                ImPlot::PlotScatter("Collision frame", &sol2D.t.back(), &plot_func.back(), 1);
+                ImPlot::PlotScatter("Collision frame", &sol2D.t.back(), &data.back(), 1);
             }
 
             ImPlot::EndPlot();
         }
         ImGui::End();
-        return bool_plot_func;
+        return plot_status;
     }
 
     //Since imgui does not provide a 2D slider - joystick, we emulate one ourselves.
-    bool imgui_slider_float_2D(const char *label, ImVec2 *value, ImVec2 min, ImVec2 max, ImVec2 size = ImVec2(100.0f,100.0f))
+    bool imgui_slider_float_2D(const char *label, const char *hash, ImVec2 *value, ImVec2 min, ImVec2 max, ImVec2 size = ImVec2(100.0f,100.0f))
     {
         ImGui::Text("%s", label);
         ImGui::SetCursorPosX(0.15f*ImGui::GetIO().DisplaySize.x/2.0f - size.x/2.0f);
         ImVec2 pos = ImGui::GetCursorScreenPos();
-        ImGui::InvisibleButton(label, size); //We use a framed button so hover/disabled visuals match other controls.
+        ImGui::InvisibleButton(hash, size); //We use a framed button so hover/disabled visuals match other controls.
 
         bool changed = false;
         if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left, 0))
@@ -213,31 +213,31 @@ private:
         {
             ImGui::Dummy(ImVec2(0.0f,7.5f));
             ImGui::Text("Position");
-            plot_cart[0] = common_onoff_button("x##1", ImVec2(50.0f, 20.0f), plot_cart[0]); ImGui::SameLine();
-            plot_cart[1] = common_onoff_button("y##2", ImVec2(50.0f, 20.0f), plot_cart[1]); ImGui::SameLine();
-            plot_cart[2] = common_onoff_button("z##3", ImVec2(50.0f, 20.0f), plot_cart[2]); ImGui::SameLine();
-            plot_cart[3] = common_onoff_button("r##4", ImVec2(50.0f, 20.0f), plot_cart[3]);
+            plot_cart[0] = common_onoff_button("x##plot_cart[0]", ImVec2(50.0f, 20.0f), plot_cart[0]); ImGui::SameLine();
+            plot_cart[1] = common_onoff_button("y##plot_cart[1]", ImVec2(50.0f, 20.0f), plot_cart[1]); ImGui::SameLine();
+            plot_cart[2] = common_onoff_button("z##plot_cart[2]", ImVec2(50.0f, 20.0f), plot_cart[2]); ImGui::SameLine();
+            plot_cart[3] = common_onoff_button("r##plot_cart[3]", ImVec2(50.0f, 20.0f), plot_cart[3]);
             ImGui::Dummy(ImVec2(0.0f,7.5f));
 
             ImGui::Text("Velocity");
-            plot_cart[4] = common_onoff_button("υx##5", ImVec2(50.0f, 20.0f), plot_cart[4]); ImGui::SameLine();
-            plot_cart[5] = common_onoff_button("υy##6", ImVec2(50.0f, 20.0f), plot_cart[5]); ImGui::SameLine();
-            plot_cart[6] = common_onoff_button("υz##7", ImVec2(50.0f, 20.0f), plot_cart[6]); ImGui::SameLine();
-            plot_cart[7] = common_onoff_button("υ##8" , ImVec2(50.0f, 20.0f), plot_cart[7]);
+            plot_cart[4] = common_onoff_button("υx##plot_cart[4]", ImVec2(50.0f, 20.0f), plot_cart[4]); ImGui::SameLine();
+            plot_cart[5] = common_onoff_button("υy##plot_cart[5]", ImVec2(50.0f, 20.0f), plot_cart[5]); ImGui::SameLine();
+            plot_cart[6] = common_onoff_button("υz##plot_cart[6]", ImVec2(50.0f, 20.0f), plot_cart[6]); ImGui::SameLine();
+            plot_cart[7] = common_onoff_button("υ##plot_cart[7]" , ImVec2(50.0f, 20.0f), plot_cart[7]);
             ImGui::Dummy(ImVec2(0.0f,7.5f));
 
             ImGui::Text("Keplerian elements");
-            plot_kep[0] = common_onoff_button("a##9",  ImVec2(35.0f, 20.0f), plot_kep[0]); ImGui::SameLine();
-            plot_kep[1] = common_onoff_button("e##10", ImVec2(35.0f, 20.0f), plot_kep[1]); ImGui::SameLine();
-            plot_kep[2] = common_onoff_button("i##11", ImVec2(35.0f, 20.0f), plot_kep[2]); ImGui::SameLine();
-            plot_kep[3] = common_onoff_button("Ω##12", ImVec2(35.0f, 20.0f), plot_kep[3]); ImGui::SameLine();
-            plot_kep[4] = common_onoff_button("ω##13", ImVec2(35.0f, 20.0f), plot_kep[4]); ImGui::SameLine();
-            plot_kep[5] = common_onoff_button("M##14", ImVec2(35.0f, 20.0f), plot_kep[5]);
+            plot_kep[0] = common_onoff_button("a##plot_kep[0]", ImVec2(35.0f, 20.0f), plot_kep[0]); ImGui::SameLine();
+            plot_kep[1] = common_onoff_button("e##plot_kep[1]", ImVec2(35.0f, 20.0f), plot_kep[1]); ImGui::SameLine();
+            plot_kep[2] = common_onoff_button("i##plot_kep[2]", ImVec2(35.0f, 20.0f), plot_kep[2]); ImGui::SameLine();
+            plot_kep[3] = common_onoff_button("Ω##plot_kep[3]", ImVec2(35.0f, 20.0f), plot_kep[3]); ImGui::SameLine();
+            plot_kep[4] = common_onoff_button("ω##plot_kep[4]", ImVec2(35.0f, 20.0f), plot_kep[4]); ImGui::SameLine();
+            plot_kep[5] = common_onoff_button("M##plot_kep[5]", ImVec2(35.0f, 20.0f), plot_kep[5]);
             ImGui::Dummy(ImVec2(0.0f,7.5f));
 
             ImGui::Text("Energy and momentum errors");
-            plot_ener_mom_rel_err[0] = common_onoff_button("energy##15",   ImVec2(80.0f, 25.0f), plot_ener_mom_rel_err[0]); ImGui::SameLine();
-            plot_ener_mom_rel_err[1] = common_onoff_button("momentum##16", ImVec2(80.0f, 25.0f), plot_ener_mom_rel_err[1]);
+            plot_ener_mom_rel_err[0] = common_onoff_button("energy##plot_ener_mom_rel_err[0]",   ImVec2(80.0f, 25.0f), plot_ener_mom_rel_err[0]); ImGui::SameLine();
+            plot_ener_mom_rel_err[1] = common_onoff_button("momentum##plot_ener_mom_rel_err[1]", ImVec2(80.0f, 25.0f), plot_ener_mom_rel_err[1]);
             ImGui::Dummy(ImVec2(0.0f,7.5f));
 
             ImGui::TreePop();
@@ -248,22 +248,22 @@ private:
         {
             ImGui::Dummy(ImVec2(0.0f,7.5f));
             ImGui::Text("Euler angles (XYZ)");
-            plot_rpy1[0] = common_onoff_button("roll##17",        ImVec2(50.0f, 20.0f), plot_rpy1[0]); ImGui::SameLine();
-            plot_rpy1[1] = common_onoff_button("pitch##18",       ImVec2(50.0f, 20.0f), plot_rpy1[1]); ImGui::SameLine();
-            plot_rpy1[2] = common_onoff_button("yaw##19",         ImVec2(50.0f, 20.0f), plot_rpy1[2]); ImGui::SameLine();
-            plot_rpy1[3] = common_onoff_button("libration##20",   ImVec2(60.0f, 20.0f), plot_rpy1[3]);
+            plot_rpy1[0] = common_onoff_button("roll##plot_rpy1[0]",      ImVec2(50.0f, 20.0f), plot_rpy1[0]); ImGui::SameLine();
+            plot_rpy1[1] = common_onoff_button("pitch##plot_rpy1[1]",     ImVec2(50.0f, 20.0f), plot_rpy1[1]); ImGui::SameLine();
+            plot_rpy1[2] = common_onoff_button("yaw##plot_rpy1[2]",       ImVec2(50.0f, 20.0f), plot_rpy1[2]); ImGui::SameLine();
+            plot_rpy1[3] = common_onoff_button("libration##plot_rpy1[3]", ImVec2(60.0f, 20.0f), plot_rpy1[3]);
             ImGui::Dummy(ImVec2(0.0f,7.5f));
 
             ImGui::Text("Angular velocity (inertial frame)");
-            plot_w1i[0] = common_onoff_button("ωx##21", ImVec2(50.0f, 20.0f), plot_w1i[0]); ImGui::SameLine();
-            plot_w1i[1] = common_onoff_button("ωy##22", ImVec2(50.0f, 20.0f), plot_w1i[1]); ImGui::SameLine();
-            plot_w1i[2] = common_onoff_button("ωz##23", ImVec2(50.0f, 20.0f), plot_w1i[2]);
+            plot_w1i[0] = common_onoff_button("ωx##plot_w1i[0]", ImVec2(50.0f, 20.0f), plot_w1i[0]); ImGui::SameLine();
+            plot_w1i[1] = common_onoff_button("ωy##plot_w1i[1]", ImVec2(50.0f, 20.0f), plot_w1i[1]); ImGui::SameLine();
+            plot_w1i[2] = common_onoff_button("ωz##plot_w1i[2]", ImVec2(50.0f, 20.0f), plot_w1i[2]);
             ImGui::Dummy(ImVec2(0.0f,7.5f));
             
             ImGui::Text("Angular velocity (body frame)");
-            plot_w1b[0] = common_onoff_button("ω1##24", ImVec2(50.0f, 20.0f), plot_w1b[0]); ImGui::SameLine();
-            plot_w1b[1] = common_onoff_button("ω2##25", ImVec2(50.0f, 20.0f), plot_w1b[1]); ImGui::SameLine();
-            plot_w1b[2] = common_onoff_button("ω3##26", ImVec2(50.0f, 20.0f), plot_w1b[2]);
+            plot_w1b[0] = common_onoff_button("ω1##plot_w1b[0]", ImVec2(50.0f, 20.0f), plot_w1b[0]); ImGui::SameLine();
+            plot_w1b[1] = common_onoff_button("ω2##plot_w1b[1]", ImVec2(50.0f, 20.0f), plot_w1b[1]); ImGui::SameLine();
+            plot_w1b[2] = common_onoff_button("ω3##plot_w1b[2]", ImVec2(50.0f, 20.0f), plot_w1b[2]);
             ImGui::Dummy(ImVec2(0.0f,7.5f));
 
             ImGui::TreePop();
@@ -274,22 +274,22 @@ private:
         {
             ImGui::Dummy(ImVec2(0.0f,7.5f));
             ImGui::Text("Euler angles (XYZ)");
-            plot_rpy2[0] = common_onoff_button("roll##27",        ImVec2(50.0f, 20.0f), plot_rpy2[0]); ImGui::SameLine();
-            plot_rpy2[1] = common_onoff_button("pitch##28",       ImVec2(50.0f, 20.0f), plot_rpy2[1]); ImGui::SameLine();
-            plot_rpy2[2] = common_onoff_button("yaw##29",         ImVec2(50.0f, 20.0f), plot_rpy2[2]); ImGui::SameLine();
-            plot_rpy2[3] = common_onoff_button("libration##30",   ImVec2(60.0f, 20.0f), plot_rpy2[3]);
+            plot_rpy2[0] = common_onoff_button("roll##plot_rpy2[0]",      ImVec2(50.0f, 20.0f), plot_rpy2[0]); ImGui::SameLine();
+            plot_rpy2[1] = common_onoff_button("pitch##plot_rpy2[1]",     ImVec2(50.0f, 20.0f), plot_rpy2[1]); ImGui::SameLine();
+            plot_rpy2[2] = common_onoff_button("yaw##plot_rpy2[2]",       ImVec2(50.0f, 20.0f), plot_rpy2[2]); ImGui::SameLine();
+            plot_rpy2[3] = common_onoff_button("libration##plot_rpy2[3]", ImVec2(60.0f, 20.0f), plot_rpy2[3]);
             ImGui::Dummy(ImVec2(0.0f,7.5f));
 
             ImGui::Text("Angular velocity (inertial frame)");
-            plot_w2i[0] = common_onoff_button("ωx##31", ImVec2(50.0f, 20.0f), plot_w2i[0]); ImGui::SameLine();
-            plot_w2i[1] = common_onoff_button("ωy##32", ImVec2(50.0f, 20.0f), plot_w2i[1]); ImGui::SameLine();
-            plot_w2i[2] = common_onoff_button("ωz##33", ImVec2(50.0f, 20.0f), plot_w2i[2]);
+            plot_w2i[0] = common_onoff_button("ωx##plot_w2i[0]", ImVec2(50.0f, 20.0f), plot_w2i[0]); ImGui::SameLine();
+            plot_w2i[1] = common_onoff_button("ωy##plot_w2i[1]", ImVec2(50.0f, 20.0f), plot_w2i[1]); ImGui::SameLine();
+            plot_w2i[2] = common_onoff_button("ωz##plot_w2i[2]", ImVec2(50.0f, 20.0f), plot_w2i[2]);
             ImGui::Dummy(ImVec2(0.0f,7.5f));
             
             ImGui::Text("Angular velocity (body frame)");
-            plot_w2b[0] = common_onoff_button("ω1##34", ImVec2(50.0f, 20.0f), plot_w2b[0]); ImGui::SameLine();
-            plot_w2b[1] = common_onoff_button("ω2##35", ImVec2(50.0f, 20.0f), plot_w2b[1]); ImGui::SameLine();
-            plot_w2b[2] = common_onoff_button("ω3##36", ImVec2(50.0f, 20.0f), plot_w2b[2]);
+            plot_w2b[0] = common_onoff_button("ω1##plot_w2b[0]", ImVec2(50.0f, 20.0f), plot_w2b[0]); ImGui::SameLine();
+            plot_w2b[1] = common_onoff_button("ω2##plot_w2b[1]", ImVec2(50.0f, 20.0f), plot_w2b[1]); ImGui::SameLine();
+            plot_w2b[2] = common_onoff_button("ω3##plot_w2b[2]", ImVec2(50.0f, 20.0f), plot_w2b[2]);
             ImGui::Dummy(ImVec2(0.0f,7.5f));
 
             ImGui::TreePop();
@@ -302,9 +302,9 @@ private:
                 ImGui::BeginDisabled();
             ImGui::Dummy(ImVec2(0.0f,7.5f));
             ImGui::Text("Position");
-            plot_cart_sp[0] = common_onoff_button("xs##37", ImVec2(50.0f, 20.0f), plot_cart_sp[0]); ImGui::SameLine();
-            plot_cart_sp[1] = common_onoff_button("ys##38", ImVec2(50.0f, 20.0f), plot_cart_sp[1]); ImGui::SameLine();
-            plot_cart_sp[2] = common_onoff_button("zs##39", ImVec2(50.0f, 20.0f), plot_cart_sp[2]);
+            plot_cart_sp[0] = common_onoff_button("xs##plot_cart_sp[0]", ImVec2(50.0f, 20.0f), plot_cart_sp[0]); ImGui::SameLine();
+            plot_cart_sp[1] = common_onoff_button("ys##plot_cart_sp[1]", ImVec2(50.0f, 20.0f), plot_cart_sp[1]); ImGui::SameLine();
+            plot_cart_sp[2] = common_onoff_button("zs##plot_cart_sp[2]", ImVec2(50.0f, 20.0f), plot_cart_sp[2]);
             ImGui::Dummy(ImVec2(0.0f,7.5f));
             if (!sol.integr.properties.spacecraft_checkbox)
                 ImGui::EndDisabled();
@@ -322,15 +322,15 @@ private:
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Text("Content state");
-        render_scene = common_onoff_button("Render##40", ImVec2(80.0f, 25.0f), render_scene);
+        render_scene = common_onoff_button("Render##render_scene", ImVec2(80.0f, 25.0f), render_scene);
         ImGui::SameLine();
 
         if (!render_scene)
         {
             ImGui::BeginDisabled();
-            play_pause_video = common_onoff_button("Play/Pause##41", ImVec2(80.0f, 25.0f), play_pause_video);
+            play_pause_video = common_onoff_button("Play/Pause##play_pause_video", ImVec2(80.0f, 25.0f), play_pause_video);
             ImGui::SameLine();
-            auto_replay = common_onoff_button(ICON_FA_REDO" Auto##42", ImVec2(55.0f, 25.0f), auto_replay);
+            auto_replay = common_onoff_button(ICON_FA_REDO" Auto##auto_replay", ImVec2(55.0f, 25.0f), auto_replay);
             ImGui::EndDisabled();
         }
         else
@@ -339,14 +339,14 @@ private:
             ImGui::PushStyleColor(ImGuiCol_Button,        play_pause_col);
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(play_pause_col.x+0.2f, play_pause_col.y+0.2f, play_pause_col.z+0.2f, 1.0f));
             ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(play_pause_col.x*0.8f, play_pause_col.y*0.8f, play_pause_col.z*0.8f, 1.0f));
-            play_pause_video = common_onoff_button("Play/Pause##41", ImVec2(80.0f, 25.0f), play_pause_video);
+            play_pause_video = common_onoff_button("Play/Pause##play_pause_video", ImVec2(80.0f, 25.0f), play_pause_video);
             ImGui::PopStyleColor(3);
             ImGui::SameLine();
             ImVec4 auto_replay_col = auto_replay ? ImVec4(0.0f, 0.7f, 0.0f, 1.0f) : ImVec4(0.7f, 0.0f, 0.0f, 1.0f);
             ImGui::PushStyleColor(ImGuiCol_Button,        auto_replay_col);
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(auto_replay_col.x+0.2f, auto_replay_col.y+0.2f, auto_replay_col.z+0.2f, 1.0f));
             ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(auto_replay_col.x*0.8f, auto_replay_col.y*0.8f, auto_replay_col.z*0.8f, 1.0f));
-            auto_replay = common_onoff_button(ICON_FA_REDO" Auto##42", ImVec2(55.0f, 25.0f), auto_replay);
+            auto_replay = common_onoff_button(ICON_FA_REDO" Auto##auto_replay", ImVec2(55.0f, 25.0f), auto_replay);
             ImGui::PopStyleColor(3);
             if (auto_replay && play_pause_video && current_frame >= total_frames - 1)
                 current_frame = 0;
@@ -361,13 +361,13 @@ private:
         ImGui::SetCursorPosX(50.0f);
         uint64_t visible_min_frame = (total_frames > 0) ? 1 : 0;
         uint64_t visible_current_frame = (total_frames > 0) ? (current_frame + 1) : 0; //Display in the gui 1-based frame (instead of 0-based, which is used in the arrays as index).
-        ImGui::SliderScalar("##43", ImGuiDataType_U64, &visible_current_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SliderScalar("##visible_current_frame", ImGuiDataType_U64, &visible_current_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         //Rule is : the above slider controls the frames and then the 'current_frame' is updated accordingly, but into 0-based frame, because it is an index.
         current_frame = (visible_current_frame > 0) ? (visible_current_frame - 1) : 0;
         ImGui::Text("Rate");
         ImGui::SameLine();
         ImGui::SetCursorPosX(50.0f);
-        ImGui::SliderInt("[Hz]##44", &frame_rate, 0, 60, "%d");
+        ImGui::SliderInt("[Hz]##frame_rate", &frame_rate, 0, 60, "%d");
         if (sol.t.empty())
             ImGui::Text("Time : 0.00  [days]");
         else
@@ -384,45 +384,45 @@ private:
         //Frame view (World, Barycentric, Body 1, Body 2).
         ImGui::Text("Frame view");
         ImGui::PushItemWidth(250.0f);
-        static const char *frame_var[4] = {"World", "Barycentric", "Body 1", "Body 2"};
-        ImGui::Combo("##cam_frame", &frame_var_choice, frame_var, IM_ARRAYSIZE(frame_var));
+        static const char *view_var[4] = {"World", "Barycentric", "Body 1", "Body 2"};
+        ImGui::Combo("##view_var_choice", &view_var_choice, view_var, IM_ARRAYSIZE(view_var));
         ImGui::PopItemWidth();
 
-        if (frame_var_choice == 0) //World
+        if (view_var_choice == 0) //World
         {
             ImGui::Text("Dist");
             ImGui::SameLine();
             ImGui::SetCursorPosX(40.0f);
-            ImGui::SliderFloat("[km]##45", &rend3D.cam.dist, rend3D.cam.min_dist, rend3D.cam.max_dist, "%.3f", ImGuiSliderFlags_Logarithmic);
+            ImGui::SliderFloat("[km]##rend3D.cam.dist", &rend3D.cam.dist, rend3D.cam.min_dist, rend3D.cam.max_dist, "%.3f", ImGuiSliderFlags_Logarithmic);
 
             ImGui::Text("Lon");
             ImGui::SameLine();
             ImGui::SetCursorPosX(40.0f);
-            ImGui::SliderFloat("[deg]##46", &rend3D.cam.lon, 0.0f, 360.0f, "%.1f");
+            ImGui::SliderFloat("[deg]##rend3D.cam.lon", &rend3D.cam.lon, 0.0f, 360.0f, "%.1f");
 
             ImGui::Text("Lat");
             ImGui::SameLine();
             ImGui::SetCursorPosX(40.0f);
-            ImGui::SliderFloat("[deg]##47", &rend3D.cam.lat, 0.0f, 180.0f, "%.1f");
+            ImGui::SliderFloat("[deg]##rend3D.cam.lat", &rend3D.cam.lat, 0.0f, 180.0f, "%.1f");
         }
-        else if (frame_var_choice == 1) //Barycentric
+        else if (view_var_choice == 1) //Barycentric
         {
             ImGui::Text("Dist");
             ImGui::SameLine();
             ImGui::SetCursorPosX(40.0f);
-            ImGui::SliderFloat("[km]##45", &rend3D.cam.dist, rend3D.cam.min_dist, rend3D.cam.max_dist, "%.3f", ImGuiSliderFlags_Logarithmic);
+            ImGui::SliderFloat("[km]##rend3D.cam.dist", &rend3D.cam.dist, rend3D.cam.min_dist, rend3D.cam.max_dist, "%.3f", ImGuiSliderFlags_Logarithmic);
 
             ImGui::Text("Lon");
             ImGui::SameLine();
             ImGui::SetCursorPosX(40.0f);
-            ImGui::SliderFloat("[deg]##46", &rend3D.cam.lon, 0.0f, 360.0f, "%.1f");
+            ImGui::SliderFloat("[deg]##rend3D.cam.lon", &rend3D.cam.lon, 0.0f, 360.0f, "%.1f");
 
             ImGui::Text("Lat");
             ImGui::SameLine();
             ImGui::SetCursorPosX(40.0f);
-            ImGui::SliderFloat("[deg]##47", &rend3D.cam.lat, 0.0f, 180.0f, "%.1f");
+            ImGui::SliderFloat("[deg]##rend3D.cam.lat", &rend3D.cam.lat, 0.0f, 180.0f, "%.1f");
         }
-        else if (frame_var_choice == 2) //Mount body 1
+        else if (view_var_choice == 2) //Mount body 1
         {
             rend3D.cam.mount_body1 = true;
             rend3D.cam.mount_body2 = false;
@@ -432,18 +432,18 @@ private:
             ImGui::SameLine();
             ImGui::SetCursorPosX(70.0f);
             ImGui::SetNextItemWidth(130);
-            ImGui::SliderFloat("[Brillouin]##48", &rend3D.cam.rscale, 3.0f, 10.0f, "%.1f");
+            ImGui::SliderFloat("[Brillouin]##rend3D.cam.rscale", &rend3D.cam.rscale, 3.0f, 10.0f, "%.1f");
 
             ImGui::Text("V - scale");
             ImGui::SameLine();
             ImGui::SetCursorPosX(70.0f);
             ImGui::SetNextItemWidth(130);
-            ImGui::SliderFloat("[Brillouin]##49", &rend3D.cam.vscale, 0.0f, 5.0f, "%.1f");
+            ImGui::SliderFloat("[Brillouin]##rend3D.cam.vscale", &rend3D.cam.vscale, 0.0f, 5.0f, "%.1f");
 
             //This is a 2D joystick, used to shift the mounted camera left-right-up-down from the radial direction so that the body in front does not block the view.
-            imgui_slider_float_2D("V - offset", (ImVec2*)&rend3D.cam.voffset_ndc, ImVec2(-1.0f,-1.0f), ImVec2(1.0f,1.0f));
+            imgui_slider_float_2D("V - offset", "##rend3D.cam.voffset_ndc", (ImVec2*)&rend3D.cam.voffset_ndc, ImVec2(-1.0f,-1.0f), ImVec2(1.0f,1.0f));
         }
-        else //frame_var_choice = 3, i.e. Mount body 2
+        else //view_var_choice = 3, i.e. Mount body 2
         {
             rend3D.cam.mount_body2 = true;
             rend3D.cam.mount_body1 = false;
@@ -453,23 +453,23 @@ private:
             ImGui::SameLine();
             ImGui::SetCursorPosX(70.0f);
             ImGui::SetNextItemWidth(130);
-            ImGui::SliderFloat("[Brillouin]##48", &rend3D.cam.rscale, 3.0f, 10.0f, "%.1f");
+            ImGui::SliderFloat("[Brillouin]##rend3D.cam.rscale", &rend3D.cam.rscale, 3.0f, 10.0f, "%.1f");
 
             ImGui::Text("V - scale");
             ImGui::SameLine();
             ImGui::SetCursorPosX(70.0f);
             ImGui::SetNextItemWidth(130);
-            ImGui::SliderFloat("[Brillouin]##49", &rend3D.cam.vscale, 0.0f, 5.0f, "%.1f");
+            ImGui::SliderFloat("[Brillouin]##rend3D.cam.vscale", &rend3D.cam.vscale, 0.0f, 5.0f, "%.1f");
 
             //This is a 2D joystick, used to shift the mounted camera left-right-up-down from the radial direction so that the body in front does not block the view.
-            imgui_slider_float_2D("V - offset", (ImVec2*)&rend3D.cam.voffset_ndc, ImVec2(-1.0f,-1.0f), ImVec2(1.0f,1.0f));
+            imgui_slider_float_2D("V - offset", "##rend3D.cam.voffset_ndc", (ImVec2*)&rend3D.cam.voffset_ndc, ImVec2(-1.0f,-1.0f), ImVec2(1.0f,1.0f));
         }
         ImGui::Dummy(ImVec2(0.0f, 4.0f));
 
         ImGui::Text("FoV");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##50", &rend3D.cam.fov, 1.0f, 179.0f, "%.0f");
+        ImGui::SliderFloat("[deg]##rend3D.cam.fov", &rend3D.cam.fov, 1.0f, 179.0f, "%.0f");
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Separator();
@@ -482,12 +482,12 @@ private:
         ImGui::Text("Lon");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##51", &rend3D.sunlight.lon, 0.0f, 360.0f, "%.1f");
+        ImGui::SliderFloat("[deg]##rend3D.sunlight.lon", &rend3D.sunlight.lon, 0.0f, 360.0f, "%.1f");
 
         ImGui::Text("Lat");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##52", &rend3D.sunlight.lat, 0.0f, 180.0f, "%.1f");
+        ImGui::SliderFloat("[deg]##rend3D.sunlight.lat", &rend3D.sunlight.lat, 0.0f, 180.0f, "%.1f");
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Separator();
@@ -500,7 +500,7 @@ private:
         ImGui::Text("Reso");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        if (ImGui::SliderInt("[pix]##53", &rend3D.depth_reso, 1024, 8192))
+        if (ImGui::SliderInt("[pix]##rend3D.depth_reso", &rend3D.depth_reso, 1024, 8192))
             rend3D.setup_depth_fbo();
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
@@ -518,22 +518,22 @@ private:
         ImGui::Text("Body 1");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##54", &rend3D.render_body1);
+        ImGui::Checkbox("##rend3D.render_body1", &rend3D.render_body1);
         ImGui::SameLine();
         ImGui::SetCursorPosX(100.0f);
         ImGui::Text("Axes 1");
         ImGui::SameLine();
-        ImGui::Checkbox("##55", &rend3D.render_axes1);
+        ImGui::Checkbox("##rend3D.render_axes1", &rend3D.render_axes1);
 
         ImGui::Text("Body 2");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##56", &rend3D.render_body2);
+        ImGui::Checkbox("##rend3D.render_body2", &rend3D.render_body2);
         ImGui::SameLine();
         ImGui::SetCursorPosX(100.0f);
         ImGui::Text("Axes 2");
         ImGui::SameLine();
-        ImGui::Checkbox("##57", &rend3D.render_axes2);
+        ImGui::Checkbox("##rend3D.render_axes2", &rend3D.render_axes2);
         ImGui::Dummy(ImVec2(0.0f,4.0f));
 
         ImGui::Text("Orbits");
@@ -544,7 +544,7 @@ private:
         ImGui::Text("Body 1");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##58", &rend3D.render_orb1);
+        ImGui::Checkbox("##rend3D.render_orb1", &rend3D.render_orb1);
         ImGui::SameLine();
         ImGui::SetCursorPosX(90.0f);
         ImGui::SetNextItemWidth(100);
@@ -557,10 +557,10 @@ private:
                 orb1_sync = false;
         }
         
-        ImGui::SliderScalar("##59", ImGuiDataType_U64, &visible_orb1_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SliderScalar("##visible_orb1_frame", ImGuiDataType_U64, &visible_orb1_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
         rend3D.orb1.draw_count = static_cast<size_t>(visible_orb1_frame);
-        orb1_sync = common_onoff_button("Sync##60", ImVec2(50.0f, 18.0f), orb1_sync);
+        orb1_sync = common_onoff_button("Sync##orb1_sync", ImVec2(50.0f, 18.0f), orb1_sync);
         if (orb1_sync)
             rend3D.orb1.draw_count = static_cast<size_t>(current_frame + 1);
 
@@ -570,7 +570,7 @@ private:
         ImGui::Text("Body 2");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##61", &rend3D.render_orb2);
+        ImGui::Checkbox("##rend3D.render_orb2", &rend3D.render_orb2);
         ImGui::SameLine();
         ImGui::SetCursorPosX(90.0f);
         ImGui::SetNextItemWidth(100);
@@ -583,9 +583,9 @@ private:
                 orb2_sync = false;
         }
 
-        ImGui::SliderScalar("##62", ImGuiDataType_U64, &visible_orb2_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SliderScalar("##visible_orb2_frame", ImGuiDataType_U64, &visible_orb2_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
-        orb2_sync = common_onoff_button("Sync##63", ImVec2(50.0f, 18.0f), orb2_sync);
+        orb2_sync = common_onoff_button("Sync##visible_orb2_frame", ImVec2(50.0f, 18.0f), orb2_sync);
         rend3D.orb2.draw_count = static_cast<size_t>(visible_orb2_frame);
         if (orb2_sync)
             rend3D.orb2.draw_count = static_cast<size_t>(current_frame + 1);
@@ -600,7 +600,7 @@ private:
         ImGui::Text("Orbiter");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##64", &rend3D.render_orb_sp);
+        ImGui::Checkbox("##rend3D.render_orb_sp", &rend3D.render_orb_sp);
         ImGui::SameLine();
         ImGui::SetCursorPosX(90.0f);
         ImGui::SetNextItemWidth(100);
@@ -613,9 +613,9 @@ private:
                 orb_sp_sync = false;
         }
 
-        ImGui::SliderScalar("##65", ImGuiDataType_U64, &visible_orb_sp_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SliderScalar("##visible_orb_sp_frame", ImGuiDataType_U64, &visible_orb_sp_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
-        orb_sp_sync = common_onoff_button("Sync##66", ImVec2(50.0f, 18.0f), orb_sp_sync);
+        orb_sp_sync = common_onoff_button("Sync##orb_sp_sync", ImVec2(50.0f, 18.0f), orb_sp_sync);
         rend3D.orb_sp.draw_count = static_cast<size_t>(visible_orb_sp_frame);
         if (orb_sp_sync)
             rend3D.orb_sp.draw_count = static_cast<size_t>(current_frame + 1);
@@ -635,7 +635,7 @@ private:
         ImGui::Text("Grid");
         ImGui::SameLine();
         ImGui::SetCursorPosX(60.0f);
-        ImGui::Checkbox("##67", &rend3D.render_grid);
+        ImGui::Checkbox("##rend3D.render_grid", &rend3D.render_grid);
 
         ImGui::Dummy(ImVec2(0.0f,700.0f)); //Some extra y-space in order to be able to scroll down along scene panel.        
 
@@ -731,57 +731,57 @@ public:
             {
                 render_plot_buttons();
 
-                if (plot_cart[0]) plot_cart[0] = common_plot("##101", "Relative x",        "x [km]",        plot_cart[0], sol2D.x);
-                if (plot_cart[1]) plot_cart[1] = common_plot("##102", "Relative y",        "y [km]",        plot_cart[1], sol2D.y);
-                if (plot_cart[2]) plot_cart[2] = common_plot("##103", "Relative z",        "z [km]",        plot_cart[2], sol2D.z);
-                if (plot_cart[3]) plot_cart[3] = common_plot("##104", "Relative distance", "distance [km]", plot_cart[3], sol2D.dist);
+                if (plot_cart[0]) plot_cart[0] = common_plot("##plot_cart[0]", "Relative x",        "x [km]",        plot_cart[0], sol2D.x);
+                if (plot_cart[1]) plot_cart[1] = common_plot("##plot_cart[1]", "Relative y",        "y [km]",        plot_cart[1], sol2D.y);
+                if (plot_cart[2]) plot_cart[2] = common_plot("##plot_cart[2]", "Relative z",        "z [km]",        plot_cart[2], sol2D.z);
+                if (plot_cart[3]) plot_cart[3] = common_plot("##plot_cart[3]", "Relative distance", "distance [km]", plot_cart[3], sol2D.dist);
 
-                if (plot_cart[4]) plot_cart[4] = common_plot("##105", "Relative υx",          "υx [km/sec]",          plot_cart[4], sol2D.vx);
-                if (plot_cart[5]) plot_cart[5] = common_plot("##106", "Relative υy",          "υy [km/sec]",          plot_cart[5], sol2D.vy);
-                if (plot_cart[6]) plot_cart[6] = common_plot("##107", "Relative υz",          "υz [km/sec]",          plot_cart[6], sol2D.vz);
-                if (plot_cart[7]) plot_cart[7] = common_plot("##108", "Relative υ magnitude", "υ magnitude [km/sec]", plot_cart[7], sol2D.vel);
+                if (plot_cart[4]) plot_cart[4] = common_plot("##plot_cart[4]", "Relative υx",          "υx [km/sec]",          plot_cart[4], sol2D.vx);
+                if (plot_cart[5]) plot_cart[5] = common_plot("##plot_cart[5]", "Relative υy",          "υy [km/sec]",          plot_cart[5], sol2D.vy);
+                if (plot_cart[6]) plot_cart[6] = common_plot("##plot_cart[6]", "Relative υz",          "υz [km/sec]",          plot_cart[6], sol2D.vz);
+                if (plot_cart[7]) plot_cart[7] = common_plot("##plot_cart[7]", "Relative υ magnitude", "υ magnitude [km/sec]", plot_cart[7], sol2D.vel);
 
-                if (plot_kep[0]) plot_kep[0] = common_plot("##109",  "Semi-major axis",            "a [km]",  plot_kep[0], sol2D.sma);
-                if (plot_kep[1]) plot_kep[1] = common_plot("##110", "Eccentricity",                "e [  ]",  plot_kep[1], sol2D.ecc);
-                if (plot_kep[2]) plot_kep[2] = common_plot("##111", "Inclination",                 "i [deg]", plot_kep[2], sol2D.inc);
-                if (plot_kep[3]) plot_kep[3] = common_plot("##112", "Longitude of ascending node", "Ω [deg]", plot_kep[3], sol2D.raan);
-                if (plot_kep[4]) plot_kep[4] = common_plot("##113", "Argument of periapsis",       "ω [deg]", plot_kep[4], sol2D.argper);
-                if (plot_kep[5]) plot_kep[5] = common_plot("##114", "Mean anomaly",                "M [deg]", plot_kep[5], sol2D.manom);
+                if (plot_kep[0]) plot_kep[0] = common_plot("##plot_kep[0]", "Semi-major axis",             "a [km]",  plot_kep[0], sol2D.sma);
+                if (plot_kep[1]) plot_kep[1] = common_plot("##plot_kep[1]", "Eccentricity",                "e [  ]",  plot_kep[1], sol2D.ecc);
+                if (plot_kep[2]) plot_kep[2] = common_plot("##plot_kep[2]", "Inclination",                 "i [deg]", plot_kep[2], sol2D.inc);
+                if (plot_kep[3]) plot_kep[3] = common_plot("##plot_kep[3]", "Longitude of ascending node", "Ω [deg]", plot_kep[3], sol2D.raan);
+                if (plot_kep[4]) plot_kep[4] = common_plot("##plot_kep[4]", "Argument of periapsis",       "ω [deg]", plot_kep[4], sol2D.argper);
+                if (plot_kep[5]) plot_kep[5] = common_plot("##plot_kep[5]", "Mean anomaly",                "M [deg]", plot_kep[5], sol2D.manom);
 
-                if (plot_rpy1[0]) plot_rpy1[0] = common_plot("##115", "Body 1 roll",        "roll 1 [deg]", plot_rpy1[0], sol2D.roll1);
-                if (plot_rpy1[1]) plot_rpy1[1] = common_plot("##116", "Body 1 pitch",       "pitch 1 [deg]", plot_rpy1[1], sol2D.pitch1);
-                if (plot_rpy1[2]) plot_rpy1[2] = common_plot("##117", "Body 1 yaw",         "yaw 1 [deg]", plot_rpy1[2], sol2D.yaw1);
-                if (plot_rpy1[3]) plot_rpy1[3] = common_plot("##118", "Body 1 libration",   "rel.  yaw 1 [deg]", plot_rpy1[3], sol2D.relyaw1);
+                if (plot_rpy1[0]) plot_rpy1[0] = common_plot("##plot_rpy1[0]", "Body 1 roll",        "roll 1 [deg]",      plot_rpy1[0], sol2D.roll1);
+                if (plot_rpy1[1]) plot_rpy1[1] = common_plot("##plot_rpy1[1]", "Body 1 pitch",       "pitch 1 [deg]",     plot_rpy1[1], sol2D.pitch1);
+                if (plot_rpy1[2]) plot_rpy1[2] = common_plot("##plot_rpy1[2]", "Body 1 yaw",         "yaw 1 [deg]",       plot_rpy1[2], sol2D.yaw1);
+                if (plot_rpy1[3]) plot_rpy1[3] = common_plot("##plot_rpy1[3]", "Body 1 libration",   "rel.  yaw 1 [deg]", plot_rpy1[3], sol2D.relyaw1);
 
-                if (plot_rpy2[0]) plot_rpy2[0] = common_plot("##119", "Body 2 roll",        "roll 2  [deg]", plot_rpy2[0], sol2D.roll2);
-                if (plot_rpy2[1]) plot_rpy2[1] = common_plot("##120", "Body 2 pitch",       "pitch 2 [deg]", plot_rpy2[1], sol2D.pitch2);
-                if (plot_rpy2[2]) plot_rpy2[2] = common_plot("##121", "Body 2 yaw",         "yaw 2 [deg]", plot_rpy2[2], sol2D.yaw2);
-                if (plot_rpy2[3]) plot_rpy2[3] = common_plot("##122", "Body 2 libration",   "rel.  yaw 2 [deg]", plot_rpy2[3], sol2D.relyaw2);
+                if (plot_rpy2[0]) plot_rpy2[0] = common_plot("##plot_rpy2[0]", "Body 2 roll",        "roll 2  [deg]",     plot_rpy2[0], sol2D.roll2);
+                if (plot_rpy2[1]) plot_rpy2[1] = common_plot("##plot_rpy2[1]", "Body 2 pitch",       "pitch 2 [deg]",     plot_rpy2[1], sol2D.pitch2);
+                if (plot_rpy2[2]) plot_rpy2[2] = common_plot("##plot_rpy2[2]", "Body 2 yaw",         "yaw 2 [deg]",       plot_rpy2[2], sol2D.yaw2);
+                if (plot_rpy2[3]) plot_rpy2[3] = common_plot("##plot_rpy2[3]", "Body 2 libration",   "rel.  yaw 2 [deg]", plot_rpy2[3], sol2D.relyaw2);
 
-                if (plot_w1i[0]) plot_w1i[0] = common_plot("##123", "Body 1 ωx (inertial frame)", "ω1ix [rad/sec]", plot_w1i[0], sol2D.w1ix);
-                if (plot_w1i[1]) plot_w1i[1] = common_plot("##124", "Body 1 ωy (inertial frame)", "ω1iy [rad/sec]", plot_w1i[1], sol2D.w1iy);
-                if (plot_w1i[2]) plot_w1i[2] = common_plot("##125", "Body 1 ωz (inertial frame)", "ω1iz [rad/sec]", plot_w1i[2], sol2D.w1iz);
+                if (plot_w1i[0]) plot_w1i[0] = common_plot("##plot_w1i[0]", "Body 1 ωx (inertial frame)", "ω1ix [rad/sec]", plot_w1i[0], sol2D.w1ix);
+                if (plot_w1i[1]) plot_w1i[1] = common_plot("##plot_w1i[1]", "Body 1 ωy (inertial frame)", "ω1iy [rad/sec]", plot_w1i[1], sol2D.w1iy);
+                if (plot_w1i[2]) plot_w1i[2] = common_plot("##plot_w1i[2]", "Body 1 ωz (inertial frame)", "ω1iz [rad/sec]", plot_w1i[2], sol2D.w1iz);
 
-                if (plot_w1b[0]) plot_w1b[0] = common_plot("##126", "Body 1 ωx (body frame)", "ω1bx [rad/sec]", plot_w1b[0], sol2D.w1bx);
-                if (plot_w1b[1]) plot_w1b[1] = common_plot("##127", "Body 1 ωy (body frame)", "ω1by [rad/sec]", plot_w1b[1], sol2D.w1by);
-                if (plot_w1b[2]) plot_w1b[2] = common_plot("##128", "Body 1 ωz (body frame)", "ω1bz [rad/sec]", plot_w1b[2], sol2D.w1bz);
+                if (plot_w1b[0]) plot_w1b[0] = common_plot("##plot_w1b[0]", "Body 1 ωx (body frame)", "ω1bx [rad/sec]", plot_w1b[0], sol2D.w1bx);
+                if (plot_w1b[1]) plot_w1b[1] = common_plot("##plot_w1b[1]", "Body 1 ωy (body frame)", "ω1by [rad/sec]", plot_w1b[1], sol2D.w1by);
+                if (plot_w1b[2]) plot_w1b[2] = common_plot("##plot_w1b[2]", "Body 1 ωz (body frame)", "ω1bz [rad/sec]", plot_w1b[2], sol2D.w1bz);
 
-                if (plot_w2i[0]) plot_w2i[0] = common_plot("##129", "Body 2 ωx (inertial frame)", "ω2ix [rad/sec]", plot_w2i[0], sol2D.w2ix);
-                if (plot_w2i[1]) plot_w2i[1] = common_plot("##130", "Body 2 ωy (inertial frame)", "ω2iy [rad/sec]", plot_w2i[1], sol2D.w2iy);
-                if (plot_w2i[2]) plot_w2i[2] = common_plot("##131", "Body 2 ωz (inertial frame)", "ω2iz [rad/sec]", plot_w2i[2], sol2D.w2iz);
+                if (plot_w2i[0]) plot_w2i[0] = common_plot("##plot_w2i[0]", "Body 2 ωx (inertial frame)", "ω2ix [rad/sec]", plot_w2i[0], sol2D.w2ix);
+                if (plot_w2i[1]) plot_w2i[1] = common_plot("##plot_w2i[1]", "Body 2 ωy (inertial frame)", "ω2iy [rad/sec]", plot_w2i[1], sol2D.w2iy);
+                if (plot_w2i[2]) plot_w2i[2] = common_plot("##plot_w2i[2]", "Body 2 ωz (inertial frame)", "ω2iz [rad/sec]", plot_w2i[2], sol2D.w2iz);
 
-                if (plot_w2b[0]) plot_w2b[0] = common_plot("##132", "Body 2 ωx (body frame)", "ω2bx [rad/sec]", plot_w2b[0], sol2D.w2bx);
-                if (plot_w2b[1]) plot_w2b[1] = common_plot("##133", "Body 2 ωy (body frame)", "ω2by [rad/sec]", plot_w2b[1], sol2D.w2by);
-                if (plot_w2b[2]) plot_w2b[2] = common_plot("##134", "Body 2 ωz (body frame)", "ω2bz [rad/sec]", plot_w2b[2], sol2D.w2bz);
+                if (plot_w2b[0]) plot_w2b[0] = common_plot("##plot_w2b[0]", "Body 2 ωx (body frame)", "ω2bx [rad/sec]", plot_w2b[0], sol2D.w2bx);
+                if (plot_w2b[1]) plot_w2b[1] = common_plot("##plot_w2b[1]", "Body 2 ωy (body frame)", "ω2by [rad/sec]", plot_w2b[1], sol2D.w2by);
+                if (plot_w2b[2]) plot_w2b[2] = common_plot("##plot_w2b[2]", "Body 2 ωz (body frame)", "ω2bz [rad/sec]", plot_w2b[2], sol2D.w2bz);
 
-                if (plot_ener_mom_rel_err[0]) plot_ener_mom_rel_err[0] = common_plot("##135", "Energy relative error",             "| (E[i+1] - E[0])/E[0] |", plot_ener_mom_rel_err[0], sol2D.ener_rel_err);
-                if (plot_ener_mom_rel_err[1]) plot_ener_mom_rel_err[1] = common_plot("##136", "Momentum magnitude relative error", "| (L[i+1] - L[0])/L[0] |", plot_ener_mom_rel_err[1], sol2D.mom_rel_err);
+                if (plot_ener_mom_rel_err[0]) plot_ener_mom_rel_err[0] = common_plot("##plot_ener_mom_rel_err[0]", "Energy relative error",             "| (E[i+1] - E[0])/E[0] |", plot_ener_mom_rel_err[0], sol2D.ener_rel_err);
+                if (plot_ener_mom_rel_err[1]) plot_ener_mom_rel_err[1] = common_plot("##plot_ener_mom_rel_err[1]", "Momentum magnitude relative error", "| (L[i+1] - L[0])/L[0] |", plot_ener_mom_rel_err[1], sol2D.mom_rel_err);
 
                 if (sol.integr.properties.spacecraft_checkbox)
                 {
-                    if (plot_cart_sp[0]) plot_cart_sp[0] = common_plot("##137", "Spacecraft x", "xs [km]", plot_cart_sp[0], sol2D.x_sp);
-                    if (plot_cart_sp[1]) plot_cart_sp[1] = common_plot("##138", "Spacecraft y", "ys [km]", plot_cart_sp[1], sol2D.y_sp);
-                    if (plot_cart_sp[2]) plot_cart_sp[2] = common_plot("##139", "Spacecraft z", "zs [km]", plot_cart_sp[2], sol2D.z_sp);
+                    if (plot_cart_sp[0]) plot_cart_sp[0] = common_plot("##plot_cart_sp[0]", "Spacecraft x", "xs [km]", plot_cart_sp[0], sol2D.x_sp);
+                    if (plot_cart_sp[1]) plot_cart_sp[1] = common_plot("##plot_cart_sp[1]", "Spacecraft y", "ys [km]", plot_cart_sp[1], sol2D.y_sp);
+                    if (plot_cart_sp[2]) plot_cart_sp[2] = common_plot("##plot_cart_sp[2]", "Spacecraft z", "zs [km]", plot_cart_sp[2], sol2D.z_sp);
                 }
 
             }
