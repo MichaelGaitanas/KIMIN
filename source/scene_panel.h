@@ -32,8 +32,6 @@ private:
     int frame_rate; //Frame updates per second.
     float frame_accumulator; //Accumulates fractional frames between updates.
 
-    int view_var_choice; //Initial choice is 0, meaning 'World' view. 1 means 'Barycentric' view , 2 means 'Body 1' view and 3 means 'Body 2' view.
-
     solution sol, sol2D; //The 'sol' contains all the orbital data and is used to render the 3D scene. The 'sol2D' is downsampled and used for the 2D plots.
     renderer3D rend3D;
 
@@ -58,8 +56,7 @@ public:
                     current_frame(0),
                     total_frames(0),
                     frame_rate(60),
-                    frame_accumulator(0.0f),
-                    view_var_choice(0)
+                    frame_accumulator(0.0f)
     { }
 
     //Reset essential stuff upon a simulation termination.
@@ -384,11 +381,11 @@ private:
         //Frame view (World, Barycentric, Body 1, Body 2).
         ImGui::Text("Frame view");
         ImGui::PushItemWidth(250.0f);
-        static const char *view_var[4] = {"World", "Barycentric", "Body 1", "Body 2"};
-        ImGui::Combo("##view_var_choice", &view_var_choice, view_var, IM_ARRAYSIZE(view_var));
+        static const char *items[4] = {"World", "Barycentric", "Body 1", "Body 2"};
+        ImGui::Combo("##rend3D.cam.frame_of_ref", reinterpret_cast<int*>(&rend3D.cam.frame_of_ref), items, IM_ARRAYSIZE(items));
         ImGui::PopItemWidth();
 
-        if (view_var_choice == 0) //World
+        if (rend3D.cam.frame_of_ref == camera::world)
         {
             ImGui::Text("Dist");
             ImGui::SameLine();
@@ -405,7 +402,7 @@ private:
             ImGui::SetCursorPosX(40.0f);
             ImGui::SliderFloat("[deg]##rend3D.cam.lat", &rend3D.cam.lat, 0.0f, 180.0f, "%.1f");
         }
-        else if (view_var_choice == 1) //Barycentric
+        else if (rend3D.cam.frame_of_ref == camera::barycentric)
         {
             ImGui::Text("Dist");
             ImGui::SameLine();
@@ -422,7 +419,7 @@ private:
             ImGui::SetCursorPosX(40.0f);
             ImGui::SliderFloat("[deg]##rend3D.cam.lat", &rend3D.cam.lat, 0.0f, 180.0f, "%.1f");
         }
-        else if (view_var_choice == 2) //Mount body 1
+        else if (rend3D.cam.frame_of_ref == camera::body1)
         {
             rend3D.cam.mount_body1 = true;
             rend3D.cam.mount_body2 = false;
@@ -443,7 +440,7 @@ private:
             //This is a 2D joystick, used to shift the mounted camera left-right-up-down from the radial direction so that the body in front does not block the view.
             imgui_slider_float_2D("V - offset", "##rend3D.cam.voffset_ndc", (ImVec2*)&rend3D.cam.voffset_ndc, ImVec2(-1.0f,-1.0f), ImVec2(1.0f,1.0f));
         }
-        else //view_var_choice = 3, i.e. Mount body 2
+        else //rend3D.cam.frame_of_ref = camera::body2
         {
             rend3D.cam.mount_body2 = true;
             rend3D.cam.mount_body1 = false;

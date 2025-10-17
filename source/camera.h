@@ -22,9 +22,11 @@ private:
 public:
     glm::mat4 projection, view;
     float dist, lon, lat, fov, min_dist, max_dist;    
-    bool mount_body1, mount_body2;
     float rscale, vscale;
     glm::vec2 voffset_ndc;
+
+    enum frame_of_reference {world, barycentric, body1, body2};
+    frame_of_reference frame_of_ref;
 
     camera() : pos(glm::vec3(0.0f)),
                aim(glm::vec3(0.0f)),
@@ -37,11 +39,10 @@ public:
                fov(60.0f),
                min_dist(0.0f),
                max_dist(0.0f),
-               mount_body1(false),
-               mount_body2(false),
                rscale(5.0f),
                vscale(1.0f),
-               voffset_ndc(glm::vec2(0.0f))
+               voffset_ndc(glm::vec2(0.0f)),
+               frame_of_ref(world)
     { }
 
     //This function runs once each time a simulation terminates. It resets some of the members, depending on the scales (sizes) of the simulation that just ran.
@@ -109,8 +110,8 @@ private:
     }
 
 public:
-    //This function computes the camera values of the variables that are passed as uniforms to the shaders in the render_3D_content(), but when the camera is in BARYCENTER frame mode.
-    void set_geometry_barycenter(const float win_aspect_ratio, const glm::vec3 &pos_com)
+    //This function computes the camera values of the variables that are passed as uniforms to the shaders in the render_3D_content(), but when the camera is in WORLD frame mode.
+    void set_geometry_barycenter(const float win_aspect_ratio)
     {
         float near_plane = std::max(0.001f*dist, 0.1f);
         projection = glm::infinitePerspective(glm::radians(fov), win_aspect_ratio, near_plane);
@@ -118,7 +119,22 @@ public:
         //Spherical to Cartesian.
         pos = dist*glm::vec3(cos(glm::radians(lon))*sin(glm::radians(lat)),
                              sin(glm::radians(lon))*sin(glm::radians(lat)),
-                             cos(glm::radians(lat))) + pos_com;
+                             cos(glm::radians(lat)))
+        aim = glm::vec3(0.0f);
+        up = get_up_vector();
+        view = glm::lookAt(pos, aim, up);
+    }
+
+    //This function computes the camera values of the variables that are passed as uniforms to the shaders in the render_3D_content(), but when the camera is in BARYCENTER frame mode.
+    void set_geometry_barycenter(const float win_aspect_ratio, const glm::vec3 &pos_com)
+    {
+        float near_plane = std::max(0.001f*dist, 0.1f);
+        projection = glm::infinitePerspective(glm::radians(fov), win_aspect_ratio, near_plane);
+
+        //Spherical to Cartesian.
+        pos = pos_com + dist*glm::vec3(cos(glm::radians(lon))*sin(glm::radians(lat)),
+                                       sin(glm::radians(lon))*sin(glm::radians(lat)),
+                                       cos(glm::radians(lat)));
         aim = pos_com;
         up = get_up_vector();
         view = glm::lookAt(pos, aim, up);

@@ -181,12 +181,14 @@ public:
 
         sunlight.set_geometry((float)sol.integr.brillouin1 + (float)sol.integr.brillouin1 + (float)sol.dist[i]);
 
-        if (cam.mount_body1)
-            cam.set_geometry_mount(win_width/(float)win_height, pos1, pos2, (float)sol.integr.brillouin1);
-        else if (cam.mount_body2)
-            cam.set_geometry_mount(win_width/(float)win_height, pos2, pos1, (float)sol.integr.brillouin2);
-        else //not in mount mode, hence the camera shall aim at the binary's C.O.M. (0,0,0) and the position shall be controlled by the user in spherical coords (dist, lon, lat).
+        if (cam.frame_of_ref == camera::world)
+            cam.set_geometry_world(...);
+        else if (cam.frame_of_ref == camera::barycentric)
             cam.set_geometry_barycenter(win_width/(float)win_height, pos_com);
+        else if (cam.frame_of_ref == camera::body1)
+            cam.set_geometry_mount(win_width/(float)win_height, pos1, pos2, (float)sol.integr.brillouin1);
+        else //cam.frame_of_ref == camera::body2
+            cam.set_geometry_mount(win_width/(float)win_height, pos2, pos1, (float)sol.integr.brillouin2);
 
         glm::mat4 I = glm::mat4(1.0f);
 
