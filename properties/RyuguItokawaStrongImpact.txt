@@ -38,6 +38,13 @@ w2ix := 0
 w2iy := 0
 w2iz := 0
 
+x  com := 0.0
+y  com := 0.0
+z  com := 0.0
+vx com := 0.0
+vy com := 0.0
+vz com := 0.0
+
 Collision shapes := "Spheres"
 
 Kinetic impactors := "Yes"
@@ -55,5 +62,3 @@ beta2 := 5
 t2    := 25
 
 Spacecraft orbiter := "No"
-
-Account for C.O.M. motion := "No"

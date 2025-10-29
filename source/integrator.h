@@ -20,12 +20,11 @@
 class integrator
 {
 public:
-    properties_panel properties; //A copy of the user's choice of inputs in the gui.
+    properties_panel properties; //This is meant to be copy of the user's choice of inputs in the gui.
     bool maneuver1_applied, maneuver2_applied; //Whether or each beta-kick (equivalent maneuver) has been applied to the corresponding asteroid.
 
     double m; //Reduced binary mass ( m = M1*M2/(M1 + M2) ).
     double com1_coeff, com2_coeff; //These are the coefficients that when multiplied with the relative position, yield each body's aboslute position in the inertial frame, i.e. com1_coeff = -M2/(M1+M2), com2_coeff = M1/(M1+M2).
-
     dmat3 I1, I2; //Moments of inertia.
     dtens J1, J2; //Inertial integrals.
     double brillouin1, brillouin2; //Brillouin radii of the 2 bodies.
@@ -171,7 +170,7 @@ public:
 
         //Preparation 1 : If the user chose Keplerian elements as initial position/velocity, then, transform
         //them to Cartesian coords because the F2BP odes are written in Cartesian form.
-        if (properties.cart_kep_var_choice == 1)
+        if (properties.pos_vel_var == properties_panel::KEPLERIAN)
             properties.cart = kep2cart(dvec6{properties.kep[0],
                                              properties.kep[1],
                                              properties.kep[2]*pi/180.0,
@@ -181,7 +180,7 @@ public:
         
         //Preparation 2 : If the user chose Euler angles as initial orientations, then, transform them to
         //quaternions because the F2BP odes are written in quaternion form.
-        if (properties.orient_var_choice == 0)
+        if (properties.orient_var == properties_panel::EULER_XYZ)
         {
             //Note : ang2quat() ensures that the returned quaternion is normalized, so we don't need to apply quat2unit().
             properties.q1 = ang2quat(properties.rpy1*pi/180.0);
@@ -190,7 +189,7 @@ public:
 
         //Preparation 3 : If the user chose to input the angular velocities in the inertial frame, then, transform them
         //to the corresponding body frames because the Euler equations of rotation are written in body frame form.
-        if (properties.frame_type_choice == 0)
+        if (properties.angvel_frame == properties_panel::INERTIAL)
         {
             //In this case, the user chose angular velocities to be in the inertial/world frame, so we convert them to the body frames.
             properties.w1b = iner2body(properties.w1i, quat2mat(properties.q1));
@@ -253,7 +252,7 @@ public:
         //Preparation 5 : Convert the time in [sec]
         t0 = properties.epoch*86400.0; //[sec]
         tmax = t0 + properties.dur*86400.0; //[sec]
-        if (properties.integration_method_var_choice == 0 || properties.integration_method_var_choice == 3)
+        if (properties.integration_method == properties_panel::RKF78_FIXED || properties.integration_method == properties_panel::ABM5_FIXED)
             dt = properties.step*86400.0; //[sec]
         else
             init_guess_time_step = 1.0; //[sec]
@@ -313,7 +312,7 @@ public:
         boost::numeric::odeint::bulirsch_stoer<boost::array<double, 26>> bstoer_adaptive(properties.target_error, properties.target_error);
         boost::numeric::odeint::adams_bashforth_moulton<5, boost::array<double, 26>> abm_const;
 
-        if (properties.integration_method_var_choice == 3) //Seed Adams-Bashforth-Moulton only if this is the requested method of integration.
+        if (properties.integration_method == properties_panel::ABM5_FIXED) //Seed Adams-Bashforth-Moulton only if this is the requested method of integration.
             abm_const.initialize(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, dt);
         
         char formatted_text[128];
@@ -440,16 +439,16 @@ public:
             }
             
             //Update the state vector by doing 1 step of the numerical method.
-            if (properties.integration_method_var_choice == 0)
+            if (properties.integration_method == properties_panel::RKF78_FIXED)
             {
                 rkf78_const.do_step(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, dt);
                 t += dt;
             }
-            else if (properties.integration_method_var_choice == 1)
+            else if (properties.integration_method == properties_panel::RKF78_ADAPTIVE)
                 rkf78_adaptive.try_step(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, init_guess_time_step);
-            else if (properties.integration_method_var_choice == 2)
+            else if (properties.integration_method == properties_panel::BSTOER_ADAPTIVE)
                 bstoer_adaptive.try_step(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, init_guess_time_step);
-            else
+            else //properties_panel::ABM5_FIXED
             {
                 abm_const.do_step(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, dt);
                 t += dt;

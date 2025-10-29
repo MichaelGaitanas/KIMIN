@@ -7,27 +7,15 @@
 
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
-#include<glm/gtc/type_ptr.hpp>
 
 class light
 {
-private:
-    float dist, fc, fl; //These determine the size of the orthographic box of the directional light.
-    glm::vec3 up;
-    glm::mat4 projection, view;
-
 public:
     float lon, lat;
     glm::vec3 dir;
     glm::mat4 pv; //projection*view (premultiplied to avoid doing it in the GPU per vertex).
 
-    light() : dist(0.0f),
-              fc(1.01f),
-              fl(1.02f),
-              up(glm::vec3(0.0f)),
-              projection(glm::mat4(0.0f)),
-              view(glm::mat4(0.0f)),
-              lon(0.0f),
+    light() : lon(0.0f),
               lat(90.0f),
               dir(glm::vec3(0.0f)),
               pv(glm::mat4(0.0f))
@@ -44,22 +32,24 @@ public:
         else if (lat > 179.96f) lat = 179.96f;
     }
 
-    //This function computes the light values of the variables that are passed as uniforms to the shaders in the render_3D_content().
-    void set_geometry(const float dist_sum)
+    //This function computes the light's projection and view matrix that are passed as uniforms to the shaders in the renderer3D.h.
+    void set_geometry(const float shadow_extent, const glm::vec3 &pos_com)
     {
-        dist = fl*dist_sum; //Directional light's 'dummy' distance.
-        projection = glm::ortho(-fc*dist_sum,fc*dist_sum, -fc*dist_sum,fc*dist_sum, (fl-fc)*dist_sum, 2.0f*fc*dist_sum); //Directional light's projection matrix.
+        const float fc = 1.01f, fl = 1.02f; //Scale factors that are used to scale the size of the orthographic box of the directional light.
+        const float lon_rad = glm::radians(lon), lat_rad = glm::radians(lat);
+        dir = glm::vec3(cos(lon_rad)*sin(lat_rad),
+                        sin(lon_rad)*sin(lat_rad),
+                        cos(lat_rad));
+        const float light_dist = fl*shadow_extent; //Directional light's 'dummy' distance.
 
-        //Back to Cartesian coords.
-        dir = glm::vec3(cos(glm::radians(lon))*sin(glm::radians(lat)),
-                        sin(glm::radians(lon))*sin(glm::radians(lat)),
-                        cos(glm::radians(lat)));
+        const glm::vec3 up = (glm::abs(dir.z) > 0.999f) ? glm::vec3(0.0f,1.0f,0.0f) : glm::vec3(0.0f,0.0f,1.0f);
 
-        up = (glm::abs(dir).z > 0.999f) ? glm::vec3(0.0f,1.0f,0.0f) : glm::vec3(0.0f,0.0f,1.0f);
-        view = glm::lookAt(dist*dir, glm::vec3(0.0f), up);
+        const glm::mat4 projection = glm::ortho(-fc*shadow_extent,fc*shadow_extent,
+                                                -fc*shadow_extent,fc*shadow_extent,
+                                                (fl-fc)*shadow_extent, 2.0f*fc*shadow_extent);
+        const glm::mat4 view = glm::lookAt(pos_com + light_dist*dir, pos_com, up);
         pv = projection*view;
     }
-
 };
 
 #endif

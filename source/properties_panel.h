@@ -23,54 +23,69 @@
 class properties_panel
 {
 public:
-    char sim_name[128]; //'Simulation name' text field. 127 characters available (plus the mandatory '\0' terminating character).
+    char sim_name[128]; //'Simulation name' text field.
     
     bool ell_checkbox; //'Ellipsoids' checkbox state.
-    dvec3 semiaxes1, semiaxes2; //Ellipsoids 'a1', 'b1', 'c1', 'a2', 'b2', 'c2' double fields.
+    dvec3 semiaxes1, semiaxes2; //'a1', 'b1', 'c1', 'a2', 'b2', 'c2' double fields.
     bool ell_clicked_ok; //Ellipsoids 'OK' button.
 
     bool obj_checkbox; //'.obj file' checkbox state.
     std::string obj1_path, obj2_path; //Relative paths to the 2 .obj models.
     bool obj_clicked_ok; //.obj 'OK' button.
 
-    bool ord2_checkbox, ord3_checkbox, ord4_checkbox; //'Mutual potential' available options. Only one of them may be chosen (or none, but it will produce an error in the console :P).
+    bool ord2_checkbox, ord3_checkbox, ord4_checkbox; //'Mutual potential' available checkboxes.
 
-    double M1, M2; //'M1', 'M2' double fields (referring to 'Body 1' and 'Body 2' respectively).
+    double M1, M2; //'M1', 'M2' double fields.
 
-    int integration_method_var_choice; //Initial choice is 0, meaning RKF78 constant. 1 means RKF78 adaptive, 2 means BStoer adaptive and 3 means ABM5 constant.
-    double epoch, dur, step; //'Epoch', 'Duration', 'Step' double fields.
+    enum
+    {
+        RKF78_FIXED,
+        RKF78_ADAPTIVE,
+        BSTOER_ADAPTIVE,
+        ABM5_FIXED
+    } integration_method;
+    double epoch, dur; //'Epoch', 'Duration' double fields.
+    double step; //'Step' double field (if a fixed-step method is chosen).
     double target_error; //'Target error' double field (if an adaptive method is chosen).
 
-    int cart_kep_var_choice; //Initial choice is 0, meaning that relative Cartesian elements are chosen as inputs. 1 means mutual Keplerian elements.
+    enum
+    {
+        CARTESIAN,
+        KEPLERIAN
+    } pos_vel_var;
     dvec6 cart; //'x', 'y', 'z', 'υx', 'υy', 'υz' double fields of the relative state.
     dvec6 kep; //'a', 'e', 'i', 'Ω', 'ω', 'M' double fields of the relative state.
 
-    int orient_var_choice; //Initial choice is 0, meaning Euler angles (roll, pitch, yaw) are chosen as inputs. 1 means quaternions.
+    enum
+    {
+        EULER_XYZ,
+        QUATERNION
+    } orient_var;
     dvec3 rpy1, rpy2; //'roll 1', 'pitch 1', 'yaw 1', 'roll 2', 'pitch 2', 'yaw 2' double fields.
     dvec4 q1, q2; //'q10', 'q11', 'q12', 'q13', 'q20', 'q21', 'q22', 'q23' double fields.
 
-    int frame_type_choice; //Initial choice is 0, meaning that the angular velocities are set (as inputs) in the global inertial frame. 1 corresponds to body frames.
-    dvec3 w1i, w2i, w1b, w2b; //'ω1ix', 'ω1iy', 'ω1iz', 'ω2bx', 'ω2by, 'ω2bz' double fields (nature of the frame depends on 'frame_type_choice').
+    enum
+    {
+        INERTIAL, //Either WORLD or COM frame.
+        BODY
+    } angvel_frame;
+    dvec3 w1i, w2i; //'ω1ix', 'ω1iy', 'ω1iz', 'ω2ix', 'ω2iy, 'ω2iz' double fields.
+    dvec3 w1b, w2b; //'ω1bx', 'ω1by', 'ω1bz', 'ω2bx', 'ω2by, 'ω2bz' double fields.
+
+    dvec3 r_com, v_com; //'x', 'y', 'z', 'υx', 'υy', 'υz' double fields of the center of mass.
 
     bool collision_no, collision_spheres, collision_polyhedra; //Which type of collision criterion to apply in the simulation.
-    //Note that in the 'collision_no' case, there WILL be a singularity when the mutual distance r between the asteroids approaches zero. The integrator will break then.
-    //'collision_spheres' causes almost zero bottleneck for the integrator performance.
-    //'collision_polyhedra' is accurate, but it is slow, as it contains a double for-loop over the triangles of the polyhedra per integration step. Do not use when high-res meshes are loaded.
 
     bool impactors_checkbox; //'Kinetic impactors' checkbox state.
-    bool impactors_clicked_ok; //'OK' button in the kinetic impactors' parameters window.
-    double M1_impact, M2_impact; //Impactors' 1 and 2 total masses.
-    dvec3 v1_impact, v2_impact; //Impactors' 1 and 2 velocity vectors.
-    double beta1, beta2; //Momentum enhancement factors β1 and β2 (due to the assumed recoiled ejecta).
-    double t1_impact, t2_impact; //Times of impacts.
+    double M1_impact, M2_impact; //'m1', 'm2' double fields.
+    dvec3 v1_impact, v2_impact; //'υx1', 'υy1', 'υz1', 'υx2', 'υy2', 'υz2' double fields.
+    double beta1, beta2; //'β1', 'β2' double fields.
+    double t1_impact, t2_impact; //'t1', 't2' double fields.
+    bool impactors_clicked_ok; //Impactors 'OK' button.
 
     bool spacecraft_checkbox; //'Spacecraft orbiter' checkbox state.
-    bool spacecraft_clicked_ok; //'OK' button in the spacecraft orbiter window.
-    dvec3 r_sp, v_sp; //Spacecraft's 'x', 'y', 'z' and 'υxs', 'υys', 'υzs'.
-
-    bool com_checkbox; //'Account for C.O.M. motion' checkbox state.
-    bool com_clicked_ok; //'OK' button in the C.O.M. motion window.
-    dvec3 r_com, v_com; //'x', 'y', 'z', 'υx', 'υy', 'υz' double fields of the center of mass.
+    dvec3 r_sp, v_sp; //Spacecraft's 'xs', 'ys', 'zs' and 'υxs', 'υys', 'υzs' double fields.
+    bool spacecraft_clicked_ok; //Spacecraft's 'OK' button.
 
     bool run_pressed; //Whether or not the 'Run' button has been pressed.
     bool abort_pressed; //Whether or not the 'Abort' button has been pressed.
@@ -91,29 +106,30 @@ public:
                          ord4_checkbox(false),
                          M1(0.0),
                          M2(0.0),
-                         integration_method_var_choice(0),
+                         integration_method(RKF78_FIXED),
                          epoch(0.0),
                          dur(0.0),
                          step(0.0),
                          target_error(1.0e-12),
-                         cart_kep_var_choice(0),
+                         pos_vel_var(CARTESIAN),
                          cart(dvec6{0.0,0.0,0.0,0.0,0.0,0.0}),
                          kep(dvec6{0.0,0.0,0.0,0.0,0.0,0.0}),
-                         orient_var_choice(0),
+                         orient_var(EULER_XYZ),
                          rpy1(dvec3{0.0,0.0,0.0}),
                          rpy2(dvec3{0.0,0.0,0.0}),
                          q1(dvec4{1.0,0.0,0.0,0.0}),
                          q2(dvec4{1.0,0.0,0.0,0.0}),
-                         frame_type_choice(0),
+                         angvel_frame(INERTIAL),
                          w1i(dvec3{0.0,0.0,0.0}),
                          w2i(dvec3{0.0,0.0,0.0}),
                          w1b(dvec3{0.0,0.0,0.0}),
                          w2b(dvec3{0.0,0.0,0.0}),
+                         r_com(dvec3{0.0,0.0,0.0}),
+                         v_com(dvec3{0.0,0.0,0.0}),
                          collision_no(false),
                          collision_spheres(false),
                          collision_polyhedra(false),
                          impactors_checkbox(false),
-                         impactors_clicked_ok(false),
                          M1_impact(0.0),
                          M2_impact(0.0),
                          v1_impact(dvec3{0.0,0.0,0.0}),
@@ -122,14 +138,11 @@ public:
                          beta2(0.0),
                          t1_impact(0.0),
                          t2_impact(0.0),
+                         impactors_clicked_ok(false),
                          spacecraft_checkbox(false),
-                         spacecraft_clicked_ok(false),
                          r_sp(dvec3{0.0,0.0,0.0}),
                          v_sp(dvec3{0.0,0.0,0.0}),
-                         com_checkbox(false),
-                         com_clicked_ok(false),
-                         r_com(dvec3{0.0,0.0,0.0}),
-                         v_com(dvec3{0.0,0.0,0.0}),
+                         spacecraft_clicked_ok(false),
                          run_pressed(false),
                          abort_pressed(false),
                          poly1(),
@@ -194,28 +207,28 @@ public:
         if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", buffer);
         if (strcmp(buffer, "RKF78 (fixed)") == 0)
         {
-            integration_method_var_choice = 0;
+            integration_method = RKF78_FIXED;
             if (find_assignment_operator(fp)) fscanf(fp, "%lf", &epoch);
             if (find_assignment_operator(fp)) fscanf(fp, "%lf", &dur);
             if (find_assignment_operator(fp)) fscanf(fp, "%lf", &step);
         }
         else if (strcmp(buffer, "RKF78 (adaptive)") == 0)
         {
-            integration_method_var_choice = 1;
+            integration_method = RKF78_ADAPTIVE;
             if (find_assignment_operator(fp)) fscanf(fp, "%lf", &epoch);
             if (find_assignment_operator(fp)) fscanf(fp, "%lf", &dur);
             if (find_assignment_operator(fp)) fscanf(fp, "%lf", &target_error);
         }
         else if (strcmp(buffer, "BStoer (adaptive)") == 0)
         {
-            integration_method_var_choice = 2;
+            integration_method = BSTOER_ADAPTIVE;
             if (find_assignment_operator(fp)) fscanf(fp, "%lf", &epoch);
             if (find_assignment_operator(fp)) fscanf(fp, "%lf", &dur);
             if (find_assignment_operator(fp)) fscanf(fp, "%lf", &target_error);
         }
-        else //ABM5 (fixed).
+        else
         {
-            integration_method_var_choice = 3;
+            integration_method = ABM5_FIXED;
             if (find_assignment_operator(fp)) fscanf(fp, "%lf", &epoch);
             if (find_assignment_operator(fp)) fscanf(fp, "%lf", &dur);
             if (find_assignment_operator(fp)) fscanf(fp, "%lf", &step);
@@ -225,26 +238,26 @@ public:
         if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", buffer);
         if (strcmp(buffer, "Cartesian") == 0)
         {
-            cart_kep_var_choice = 0;
+            pos_vel_var = CARTESIAN;
             for (int i = 0; i < 6; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &cart[i]);
         }
-        else //Keplerian.
+        else
         {
-            cart_kep_var_choice = 1;
+            pos_vel_var = KEPLERIAN;
             for (int i = 0; i < 6; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &kep[i]);
         }
 
-        //Parse the binary's initial orientation.
+        //Parse the bodies' initial orientations.
         if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", buffer);
         if (strcmp(buffer, "Euler angles") == 0)
         {
-            orient_var_choice = 0;
+            orient_var = EULER_XYZ;
             for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &rpy1[i]);
             for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &rpy2[i]);
         }
-        else //Quaternions.
+        else
         {
-            orient_var_choice = 1;
+            orient_var = QUATERNION;
             for (int i = 0; i < 4; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &q1[i]);
             for (int i = 0; i < 4; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &q2[i]);
         }
@@ -253,16 +266,20 @@ public:
         if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", buffer);
         if (strcmp(buffer, "At inertial frame") == 0)
         {
-            frame_type_choice = 0;
+            angvel_frame = INERTIAL;
             for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &w1i[i]);
             for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &w2i[i]);
         }
-        else //Body frames.
+        else
         {
-            frame_type_choice = 1;
+            angvel_frame = BODY;
             for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &w1b[i]);
             for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &w2b[i]);
         }
+
+        //Parse the C.O.M. initial state.
+        for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &r_com[i]);
+        for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &v_com[i]);
 
         //Parse the collision shapes.
         if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", buffer);
@@ -270,7 +287,7 @@ public:
             collision_no = true;
         else if (strcmp(buffer, "Spheres") == 0)
             collision_spheres = true;
-        else //Polyhedra.
+        else
             collision_polyhedra = true;
         
         //Parse the kinetic impactors.
@@ -302,18 +319,6 @@ public:
                 for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &r_sp[i]);
                 for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &v_sp[i]);
                 spacecraft_checkbox = spacecraft_clicked_ok = true;
-            }
-        }
-
-        //Parse the C.O.M. initial state.
-        if (find_assignment_operator(fp))
-        {
-            fscanf(fp, " \"%[^\"]\"", buffer);
-            if (strcmp(buffer, "Yes") == 0)
-            {
-                for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &r_com[i]);
-                for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &v_com[i]);
-                com_checkbox = com_clicked_ok = true;
             }
         }
 
@@ -437,7 +442,7 @@ public:
             {console.add_timed_text("[Error] : 'M1', 'M2' must be positive numbers.\n"); return false;}
 
         //Possible error 9 : Time parameters ('Epoch' and 'Duration' must be >= 0, 'Step' must be <= 'Duration' and 'Target error' must be > 0).
-        if (integration_method_var_choice == 0 || integration_method_var_choice == 3)
+        if (integration_method == RKF78_FIXED || integration_method == ABM5_FIXED)
         {
             if (!(epoch >= 0.0 && dur > 0.0 && step <= dur && step > 0.0))
                 {console.add_timed_text("[Error] : Invalid set of 'Epoch', 'Duration', 'Step'.\n"); return false;}
@@ -449,11 +454,11 @@ public:
         }
 
         //Possible error 10 : Relative position/velocity (mutual distance must be > 0).
-        if (cart_kep_var_choice == 0 && length(dvec3{cart[0], cart[1], cart[2]}) <= 0.0)
+        if (pos_vel_var == CARTESIAN && length(dvec3{cart[0], cart[1], cart[2]}) <= 0.0)
             {console.add_timed_text("[Error] : Invalid set of 'x', 'y', 'z' (mutual distance must be positive).\n"); return false;}
 
         //Possible error 11 : Relative Keplerian elements ( 'a' must be > 0, 'e' must be in [0,1)U(1,inf) )
-        if (cart_kep_var_choice == 1)
+        if (pos_vel_var == KEPLERIAN)
         {
             if (kep[0] <= 0.0)
                 {console.add_timed_text("[Error] : Semi-major axis 'a' must be positive.\n"); return false;}
@@ -463,7 +468,7 @@ public:
 
         //Possible error 12 : Quaternion (both must be nonzero).
         //Note : In case of non normalized quaternion input, the program normalizes them both automatically.
-        if (orient_var_choice == 1)
+        if (orient_var == QUATERNION)
         {
             if (length(q1) <= 1e-15)
                 {console.add_timed_text("[Error] : Quaternion 1 ('q10', 'q11', 'q12', 'q13') must be nonzero.\n"); return false;}
@@ -496,10 +501,6 @@ public:
         //Possible error 17 : 'OK' button in the spacecraft orbiter parameters window (it must be clicked so that the i.c. are taken into account).
         if (spacecraft_checkbox && !spacecraft_clicked_ok)
             {console.add_timed_text("[Error] : 'OK' button must be pressed in the 'Orbiter's initial state' window.\n"); return false;}
-
-        //Possible error 18 : 'OK' button in the C.O.M. parameters window (it must be clicked so that the C.O.M. i.c. are taken into account).
-        if (com_checkbox && !com_clicked_ok)
-            {console.add_timed_text("[Error] : 'OK' button must be pressed in the 'C.O.M. initial state' window.\n"); return false;}
 
         return true;
     }
@@ -644,19 +645,19 @@ public:
         //Integration method (RKF78 constant, RKF78 adaptive, Bulirsch–Stoer adaptive).
         ImGui::PushItemWidth(200.0f);
             ImGui::PushID(id++);
-                static const char *integration_method_var[4] = {"RKF78 (fixed)",
-                                                                "RKF78 (adaptive)",
-                                                                "BStoer (adaptive)",
-                                                                "ABM5  (fixed)"};
-                ImGui::Combo("  ", &integration_method_var_choice, integration_method_var, IM_ARRAYSIZE(integration_method_var));
+                static const char *methods[4] = {"RKF78 (fixed)",
+                                                 "RKF78 (adaptive)",
+                                                 "BStoer (adaptive)",
+                                                 "ABM5  (fixed)"};
+                ImGui::Combo("  ", (int*)(&integration_method), methods, IM_ARRAYSIZE(methods));
             ImGui::PopID();
         ImGui::PopItemWidth();
 
         double_field("Epoch ",     100.0f, 105.0f, id, "[days]", epoch);
         double_field("Duration ",  100.0f, 105.0f, id, "[days]", dur);
-        if (integration_method_var_choice == 0 || integration_method_var_choice == 3)
+        if (integration_method == RKF78_FIXED || integration_method == ABM5_FIXED)
             double_field("Step ",  100.0f, 105.0f, id, "[days]", step);
-        else //integration_method_var_choice is 1 or 2, thus render the 'Target error' input field.
+        else //integration_method is adaptive, thus render the 'Target error' input field.
             double_field("Target error ", 100.0f, 105.0f, id, "[    ]", target_error);
         ImGui::Dummy(ImVec2(0.0f,7.5f));
         ImGui::Separator();
@@ -672,10 +673,10 @@ public:
         ImGui::PushItemWidth(200.0f);
             ImGui::PushID(id++);
                 static const char *cart_kep_var[2] = {"Cartesian", "Keplerian"}; //Nature of the relative position and velocity variables.
-                ImGui::Combo("  ", &cart_kep_var_choice, cart_kep_var, IM_ARRAYSIZE(cart_kep_var));
+                ImGui::Combo("  ", (int*)(&pos_vel_var), cart_kep_var, IM_ARRAYSIZE(cart_kep_var));
             ImGui::PopID();
         ImGui::PopItemWidth();
-        if (cart_kep_var_choice == 0)
+        if (pos_vel_var == CARTESIAN)
         {
             double_field("x ",  100.0f, 55.0f, id, "[km]",     cart[0]);
             double_field("y ",  100.0f, 55.0f, id, "[km]",     cart[1]);
@@ -684,7 +685,7 @@ public:
             double_field("υy ", 100.0f, 55.0f, id, "[km/sec]", cart[4]);
             double_field("υz ", 100.0f, 55.0f, id, "[km/sec]", cart[5]);
         }
-        else //cart_kep_var_choice is 1, thus render the Keplerian elements.
+        else //pos_vel_var == KEPLERIAN
         {
             double_field("a ", 100.0f, 55.0f, id, "[km]",  kep[0]);
             double_field("e ", 100.0f, 55.0f, id, "[    ]",  kep[1]);
@@ -700,11 +701,11 @@ public:
         //Orientation variables (Euler angles (roll, pitch, yaw) or quaternions).
         ImGui::PushItemWidth(200.0f);
             ImGui::PushID(id++);
-                static const char *orient_var[2] = {"Euler angles (XYZ)", "Quaternions (WXYZ)"}; //Nature of the orientation variables.
-                ImGui::Combo("  ", &orient_var_choice, orient_var, IM_ARRAYSIZE(orient_var));
+                static const char *rpy_quat_var[2] = {"Euler angles (XYZ)", "Quaternions (WXYZ)"}; //Nature of the orientation variables.
+                ImGui::Combo("  ", (int*)(&orient_var), rpy_quat_var, IM_ARRAYSIZE(rpy_quat_var));
             ImGui::PopID();
         ImGui::PopItemWidth();
-        if (orient_var_choice == 0)
+        if (orient_var == EULER_XYZ)
         {
             double_field("roll 1 " , 100.0f, 80.0f, id, "[deg]", rpy1[0]);
             double_field("pitch 1 ", 100.0f, 80.0f, id, "[deg]", rpy1[1]);
@@ -714,7 +715,7 @@ public:
             double_field("pitch 2 ", 100.0f, 80.0f, id, "[deg]", rpy2[1]);
             double_field("yaw 2 ",   100.0f, 80.0f, id, "[deg]", rpy2[2]);
         }
-        else //orient_var_choice is 1, thus render the quaternion format.
+        else //orient_var == QUATERNION
         {
             double_field("q10 ", 100.0f, 70.0f, id, "[    ]", q1[0]);
             double_field("q11 ", 100.0f, 70.0f, id, "[    ]", q1[1]);
@@ -730,14 +731,14 @@ public:
 
         ImGui::Text("Angular velocities");
 
-        //Angular velocities reference frames (inertial/world or corresponding body).
+        //Angular velocities reference frames (C.O.M. or corresponding body frame).
         ImGui::PushItemWidth(200.0f);
             ImGui::PushID(id++);
-                static const char *frame_type[2] = {"At inertial frame", "At body frames"}; //Which frame for the angular velocities.
-                ImGui::Combo("  ", &frame_type_choice, frame_type, IM_ARRAYSIZE(frame_type));
+                static const char *omega_frame[2] = {"Inertial frame", "Body frames"}; //Which frame for the angular velocities.
+                ImGui::Combo("  ", (int*)(&angvel_frame), omega_frame, IM_ARRAYSIZE(omega_frame));
             ImGui::PopID();
         ImGui::PopItemWidth();
-        if (frame_type_choice == 0)
+        if (angvel_frame == INERTIAL)
         {
             double_field("ω1ix ", 100.0f, 70.0f, id, "[rad/sec]", w1i[0]);
             double_field("ω1iy ", 100.0f, 70.0f, id, "[rad/sec]", w1i[1]);
@@ -747,7 +748,7 @@ public:
             double_field("ω2iy ", 100.0f, 70.0f, id, "[rad/sec]", w2i[1]);
             double_field("ω2iz ", 100.0f, 70.0f, id, "[rad/sec]", w2i[2]);
         }
-        else //frame_type_choice is 1, thus assume individual body frames.
+        else //angvel_frame == BODY
         {
             double_field("ω1bx ", 100.0f, 70.0f, id, "[rad/sec]", w1b[0]);
             double_field("ω1by ", 100.0f, 70.0f, id, "[rad/sec]", w1b[1]);
@@ -757,7 +758,19 @@ public:
             double_field("ω2by ", 100.0f, 70.0f, id, "[rad/sec]", w2b[1]);
             double_field("ω2bz ", 100.0f, 70.0f, id, "[rad/sec]", w2b[2]);
         }
+        ImGui::Dummy(ImVec2(0.0f,15.0f));
+
+        //C.O.M. initial position and velocity.
+        ImGui::Text("C.O.M. motion relative to world");
+        double_field("x ",  100.0f, 70.0f, id, "[km]",     r_com[0]);
+        double_field("y ",  100.0f, 70.0f, id, "[km]",     r_com[1]);
+        double_field("z ",  100.0f, 70.0f, id, "[km]",     r_com[2]);
+        double_field("υx ", 100.0f, 70.0f, id, "[km/sec]", v_com[0]);
+        double_field("υy ", 100.0f, 70.0f, id, "[km/sec]", v_com[1]);
+        double_field("υz ", 100.0f, 70.0f, id, "[km/sec]", v_com[2]);
+
         ImGui::Unindent();
+
         ImGui::Dummy(ImVec2(0.0f,7.5f));
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f,7.5f));
@@ -800,7 +813,7 @@ public:
                 ImGui::Text("Mass (dry + fuel)");
                 double_field("m1 ", 100.0f, 40.0f, id, "[kg]", M1_impact);
                 ImGui::Dummy(ImVec2(0.0f,15.0f));
-                ImGui::Text("Velocity (world)");
+                ImGui::Text("Velocity (relative to body 1)");
                 double_field("υx1 ", 100.0f, 40.0f, id, "[km/sec]", v1_impact[0]);
                 double_field("υy1 ", 100.0f, 40.0f, id, "[km/sec]", v1_impact[1]);
                 double_field("υz1 ", 100.0f, 40.0f, id, "[km/sec]", v1_impact[2]);
@@ -816,7 +829,7 @@ public:
                 ImGui::Text("Mass (dry + fuel)");
                 double_field("m2 ", 100.0f, 40.0f, id, "[kg]", M2_impact);
                 ImGui::Dummy(ImVec2(0.0f,15.0f));
-                ImGui::Text("Velocity (world)");
+                ImGui::Text("Velocity (relative to body 2)");
                 double_field("υx2 ", 100.0f, 40.0f, id, "[km/sec]", v2_impact[0]);
                 double_field("υy2 ", 100.0f, 40.0f, id, "[km/sec]", v2_impact[1]);
                 double_field("υz2 ", 100.0f, 40.0f, id, "[km/sec]", v2_impact[2]);
@@ -849,12 +862,12 @@ public:
             ImGui::SetNextWindowSize(ImVec2(0.15f*ImGui::GetIO().DisplaySize.x, 0.4f*ImGui::GetIO().DisplaySize.y), ImGuiCond_FirstUseEver); 
             ImGui::Begin("Orbiter's initial state", &spacecraft_checkbox);
 
-            ImGui::Text("Position (world)");
+            ImGui::Text("Position (relative to C.O.M.)");
             double_field("xs ", 100.0f, 40.0f, id, "[km]", r_sp[0]);
             double_field("ys ", 100.0f, 40.0f, id, "[km]", r_sp[1]);
             double_field("zs ", 100.0f, 40.0f, id, "[km]", r_sp[2]);
             ImGui::Dummy(ImVec2(0.0f,15.0f));
-            ImGui::Text("Velocity (world)");
+            ImGui::Text("Velocity (relative to C.O.M.)");
             double_field("υxs ", 100.0f, 40.0f, id, "[km/sec]", v_sp[0]);
             double_field("υys ", 100.0f, 40.0f, id, "[km/sec]", v_sp[1]);
             double_field("υzs ", 100.0f, 40.0f, id, "[km/sec]", v_sp[2]);
@@ -865,40 +878,6 @@ public:
             //Final "OK" button. This must be pressed, otherwise the spacecraft's i.c. will not be taken into account.
             if (ImGui::Button("OK", ImVec2(50.0f,30.0f)))
                 spacecraft_clicked_ok = true;
-
-            ImGui::End();
-        }
-
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f,7.5f));
-
-        //C.O.M. motion logic.
-        ImGui::Text("C.O.M. motion");
-        if (ImGui::Checkbox("Account for C.O.M. motion", &com_checkbox) && com_checkbox)
-            com_clicked_ok = false;
-        if (com_checkbox && !com_clicked_ok)
-        {
-            ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, 0.0f), ImGuiCond_FirstUseEver); 
-            ImGui::SetNextWindowSize(ImVec2(0.15f*ImGui::GetIO().DisplaySize.x, 0.4f*ImGui::GetIO().DisplaySize.y), ImGuiCond_FirstUseEver); 
-            ImGui::Begin("C.O.M. initial state", &com_checkbox);
-
-            ImGui::Text("Position (world)");
-            double_field("x ", 100.0f, 40.0f, id, "[km]", r_com[0]);
-            double_field("y ", 100.0f, 40.0f, id, "[km]", r_com[1]);
-            double_field("z ", 100.0f, 40.0f, id, "[km]", r_com[2]);
-            ImGui::Dummy(ImVec2(0.0f,15.0f));
-            ImGui::Text("Velocity (world)");
-            double_field("υx ", 100.0f, 40.0f, id, "[km/sec]", v_com[0]);
-            double_field("υy ", 100.0f, 40.0f, id, "[km/sec]", v_com[1]);
-            double_field("υz ", 100.0f, 40.0f, id, "[km/sec]", v_com[2]);
-            ImGui::Dummy(ImVec2(0.0f,15.0f));
-
-            ImGui::Dummy(ImVec2(0.0f,15.0f));
-
-            //Final "OK" button. This must be pressed, otherwise the spacecraft's i.c. will not be taken into account.
-            if (ImGui::Button("OK", ImVec2(50.0f,30.0f)))
-                com_clicked_ok = true;
 
             ImGui::End();
         }

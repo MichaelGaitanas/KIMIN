@@ -38,6 +38,13 @@ w2ix := 0
 w2iy := 0
 w2iz := 0.000146402
 
+x  com := 0.0
+y  com := 0.0
+z  com := 0.0
+vx com := 0.0
+vy com := 0.0
+vz com := 0.0
+
 Collision shapes := "Polyhedra"
 
 Kinetic impactors := "No"
@@ -49,5 +56,3 @@ zs  := 0
 vxs := 0
 vys := 0
 vzs := 0.00011
-
-Account for C.O.M. motion := "No"

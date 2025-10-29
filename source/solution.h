@@ -12,6 +12,7 @@
 #include"typedef.h"
 #include"linalg.h"
 #include"conversion.h"
+#include"properties_panel.h"
 #include"integrator.h"
 
 class solution
@@ -377,28 +378,28 @@ public:
         fprintf(file_properties,"M1 := %.15g\n",  integr.properties.M1);
         fprintf(file_properties,"M2 := %.15g\n\n",integr.properties.M2);
 
-        if (integr.properties.integration_method_var_choice == 0)
+        if (integr.properties.integration_method == properties_panel::RKF78_FIXED)
         {
             fprintf(file_properties,"Numerical method := \"RKF78 (fixed)\"\n");
             fprintf(file_properties,"Epoch := %.15g\n",integr.properties.epoch);
             fprintf(file_properties,"Duration := %.15g\n",integr.properties.dur);
             fprintf(file_properties,"Step := %.15g\n\n",integr.properties.step);
         }
-        else if (integr.properties.integration_method_var_choice == 1)
+        else if (integr.properties.integration_method == properties_panel::RKF78_ADAPTIVE)
         {
             fprintf(file_properties,"Numerical method := \"RKF78 (adaptive)\"\n");
             fprintf(file_properties,"Epoch := %.15g\n",integr.properties.epoch);
             fprintf(file_properties,"Duration := %.15g\n",integr.properties.dur);
             fprintf(file_properties,"Target error := %.15g\n\n",integr.properties.target_error);
         }
-        else if (integr.properties.integration_method_var_choice == 2)
+        else if (integr.properties.integration_method == properties_panel::BSTOER_ADAPTIVE)
         {
             fprintf(file_properties,"Numerical method := \"BStoer (adaptive)\"\n");
             fprintf(file_properties,"Epoch := %.15g\n",integr.properties.epoch);
             fprintf(file_properties,"Duration := %.15g\n",integr.properties.dur);
             fprintf(file_properties,"Target error := %.15g\n\n",integr.properties.target_error);
         }
-        else
+        else //properties_panel::ABM5_FIXED
         {
             fprintf(file_properties,"Numerical method := \"ABM5 (fixed)\"\n");
             fprintf(file_properties,"Epoch := %.15g\n",integr.properties.epoch);
@@ -406,7 +407,7 @@ public:
             fprintf(file_properties,"Step := %.15g\n\n",integr.properties.step);
         }
 
-        if (integr.properties.cart_kep_var_choice == 0) //Cartesian
+        if (integr.properties.pos_vel_var == properties_panel::CARTESIAN)
         {
             fprintf(file_properties,"Relative position and velocity := \"Cartesian\"\n");
             fprintf(file_properties,"x  := %.15g\n",   integr.properties.cart[0]);
@@ -416,7 +417,7 @@ public:
             fprintf(file_properties,"vy := %.15g\n",   integr.properties.cart[4]);
             fprintf(file_properties,"vz := %.15g\n\n", integr.properties.cart[5]);
         }
-        else //Keplerian
+        else //properties_panel::KEPLERIAN
         {
             fprintf(file_properties,"Relative position and velocity := \"Keplerian\"\n");
             fprintf(file_properties,"a  := %.15g\n",   integr.properties.kep[0]);
@@ -427,7 +428,7 @@ public:
             fprintf(file_properties,"M  := %.15g\n\n", integr.properties.kep[5]);
         }
 
-        if (integr.properties.orient_var_choice == 0) //Euler angles
+        if (integr.properties.orient_var == properties_panel::EULER_XYZ)
         {
             fprintf(file_properties,"Orientations := \"Euler angles\"\n");
             fprintf(file_properties,"roll 1  := %.15g\n",   integr.properties.rpy1[0]);
@@ -437,7 +438,7 @@ public:
             fprintf(file_properties,"pitch 2 := %.15g\n",   integr.properties.rpy2[1]);
             fprintf(file_properties,"yaw 2   := %.15g\n\n", integr.properties.rpy2[2]);
         }
-        else //Quaternions
+        else //properties_panel::QUATERNION
         {
             fprintf(file_properties,"Orientations := \"Quaternions\"\n");
             fprintf(file_properties,"q10 := %.15g\n",   integr.properties.q1[0]);
@@ -450,7 +451,7 @@ public:
             fprintf(file_properties,"q23 := %.15g\n\n", integr.properties.q2[3]);
         }
 
-        if (integr.properties.frame_type_choice == 0) //Inertial frame angular velocities.
+        if (integr.properties.angvel_frame == properties_panel::INERTIAL)
         {
             fprintf(file_properties,"Angular velocities := \"At inertial frame\"\n");
             fprintf(file_properties,"w1ix := %.15g\n",   integr.properties.w1i[0]);
@@ -460,7 +461,7 @@ public:
             fprintf(file_properties,"w2iy := %.15g\n",   integr.properties.w2i[1]);
             fprintf(file_properties,"w2iz := %.15g\n\n", integr.properties.w2i[2]);
         }
-        else //Body frame angular velocities.
+        else //properties_panel::BODY
         {
             fprintf(file_properties,"Angular velocities := \"At body frames\"\n");
             fprintf(file_properties,"w1bx := %.15g\n",   integr.properties.w1b[0]);
@@ -470,6 +471,13 @@ public:
             fprintf(file_properties,"w2by := %.15g\n",   integr.properties.w2b[1]);
             fprintf(file_properties,"w2bz := %.15g\n\n", integr.properties.w2b[2]);
         }
+
+        fprintf(file_properties,"x  com := %.15g\n",   integr.properties.r_com[0]);
+        fprintf(file_properties,"y  com := %.15g\n",   integr.properties.r_com[1]);
+        fprintf(file_properties,"z  com := %.15g\n",   integr.properties.r_com[2]);
+        fprintf(file_properties,"vx com := %.15g\n",   integr.properties.v_com[0]);
+        fprintf(file_properties,"vy com := %.15g\n",   integr.properties.v_com[1]);
+        fprintf(file_properties,"vz com := %.15g\n\n", integr.properties.v_com[2]);
 
         if (integr.properties.collision_no)
             fprintf(file_properties,"Collision shapes := \"No collision\"\n\n");
@@ -513,21 +521,6 @@ public:
         }
         else
             fprintf(file_properties,"Spacecraft orbiter := \"No\"\n\n");
-
-        if (integr.properties.com_checkbox)
-        {
-            fprintf(file_properties,"Account for C.O.M. motion := \"Yes\"\n");
-
-            fprintf(file_properties,"xcom  := %.15g\n", integr.properties.r_com[0]);
-            fprintf(file_properties,"ycom  := %.15g\n", integr.properties.r_com[1]);
-            fprintf(file_properties,"zcom  := %.15g\n", integr.properties.r_com[2]);
-
-            fprintf(file_properties,"vxcom := %.15g\n",   integr.properties.v_com[0]);
-            fprintf(file_properties,"vycom := %.15g\n",   integr.properties.v_com[1]);
-            fprintf(file_properties,"vzcom := %.15g\n\n", integr.properties.v_com[2]);
-        }
-        else
-            fprintf(file_properties,"Account for C.O.M. motion := \"No\"\n\n");
 
         fclose(file_properties);
 

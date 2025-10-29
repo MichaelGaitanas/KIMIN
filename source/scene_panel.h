@@ -28,7 +28,7 @@ private:
     bvec plot_cart_sp; //Buttons : [xs, ys, zs].
     
     bool render_scene, play_pause_video, reset_gpu_essential, auto_replay, orb1_sync, orb2_sync, orb_sp_sync;
-    uint64_t current_frame, total_frames;
+    uint64_t iframe, total_frames;
     int frame_rate; //Frame updates per second.
     float frame_accumulator; //Accumulates fractional frames between updates.
 
@@ -53,7 +53,7 @@ public:
                     orb1_sync(false),
                     orb2_sync(false),
                     orb_sp_sync(false),
-                    current_frame(0),
+                    iframe(0),
                     total_frames(0),
                     frame_rate(60),
                     frame_accumulator(0.0f)
@@ -71,7 +71,7 @@ public:
         float binary_max_dist = *std::max_element(sol.dist.begin(), sol.dist.end());
         rend3D.cam.reset(sol.integr.brillouin1 + sol.integr.brillouin2, binary_max_dist);
 
-        current_frame = 0;
+        iframe = 0;
         total_frames = static_cast<uint64_t>(sol.t.size());
         play_pause_video = false; //Set the video at paused state ('true' means playing, 'false' means paused).
         reset_gpu_essential = true; //This will inform the renderer3D::reset_gpu_resources() to run, but only once.
@@ -107,16 +107,16 @@ private:
     }
 
     //Because the 'sol2D' (the one used for 2D plotting) is reduced in size compared to the 'sol' (the one used for exporting or 3D rendering), we have to map
-    //the 'current_frame' index to another index 'i_reduce', so that the scatter point of the current frame corresponds to the correct time.
+    //the 'iframe' index to another index 'i_reduce', so that the scatter point of the current frame corresponds to the correct time.
     //This function serves the aforementioned purpose. 
-    inline size_t map_frame_to_reduced_sol(const size_t current_frame, const size_t original_size, const size_t reduced_size)
+    inline size_t map_frame_to_reduced_sol(const size_t iframe, const size_t original_size, const size_t reduced_size)
     {
         //Edge cases.
         if (reduced_size == 0 || original_size <= 1 || reduced_size <= 1)
             return 0;
         
         double step = (original_size - 1.0)/(reduced_size - 1.0);
-        double val = current_frame/step;
+        double val = iframe/step;
         size_t i_reduced = (size_t)std::floor(val + 0.5); //Round to nearest integer.
         if (i_reduced >= reduced_size)
             i_reduced = reduced_size - 1; //Clamp to [0, reduced_size - 1].
@@ -138,7 +138,7 @@ private:
             ImPlot::PlotLine("", &sol2D.t[0], &data[0], sol2D.t.size());
             
             //Current frame marker logic :
-            size_t i_reduced = map_frame_to_reduced_sol(current_frame, sol.t.size(), sol2D.t.size());
+            size_t i_reduced = map_frame_to_reduced_sol(iframe, sol.t.size(), sol2D.t.size());
             ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 6.0f, ImColor(0, 255, 0, 255), 1.0f, ImColor(0, 255, 0, 255));
             ImPlot::PlotScatter("Current frame", &sol2D.t[i_reduced], &data[i_reduced], 1);
 
@@ -345,8 +345,8 @@ private:
             ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(auto_replay_col.x*0.8f, auto_replay_col.y*0.8f, auto_replay_col.z*0.8f, 1.0f));
             auto_replay = common_onoff_button(ICON_FA_REDO" Auto##auto_replay", ImVec2(55.0f, 25.0f), auto_replay);
             ImGui::PopStyleColor(3);
-            if (auto_replay && play_pause_video && current_frame >= total_frames - 1)
-                current_frame = 0;
+            if (auto_replay && play_pause_video && iframe >= total_frames - 1)
+                iframe = 0;
         }
 
         if (!render_scene)
@@ -357,10 +357,10 @@ private:
         ImGui::SameLine();
         ImGui::SetCursorPosX(50.0f);
         uint64_t visible_min_frame = (total_frames > 0) ? 1 : 0;
-        uint64_t visible_current_frame = (total_frames > 0) ? (current_frame + 1) : 0; //Display in the gui 1-based frame (instead of 0-based, which is used in the arrays as index).
-        ImGui::SliderScalar("##visible_current_frame", ImGuiDataType_U64, &visible_current_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
-        //Rule is : the above slider controls the frames and then the 'current_frame' is updated accordingly, but into 0-based frame, because it is an index.
-        current_frame = (visible_current_frame > 0) ? (visible_current_frame - 1) : 0;
+        uint64_t visible_iframe = (total_frames > 0) ? (iframe + 1) : 0; //Display in the gui 1-based frame (instead of 0-based, which is used in the arrays as index).
+        ImGui::SliderScalar("##visible_iframe", ImGuiDataType_U64, &visible_iframe, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        //Rule is : the above slider controls the frames and then the 'iframe' is updated accordingly, but into 0-based frame, because it is an index.
+        iframe = (visible_iframe > 0) ? (visible_iframe - 1) : 0;
         ImGui::Text("Rate");
         ImGui::SameLine();
         ImGui::SetCursorPosX(50.0f);
@@ -368,7 +368,7 @@ private:
         if (sol.t.empty())
             ImGui::Text("Time : 0.00  [days]");
         else
-            ImGui::Text("Time : %.2f  [days]", static_cast<float>(sol.t[current_frame]));
+            ImGui::Text("Time : %.2f  [days]", static_cast<float>(sol.t[iframe]));
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
@@ -381,50 +381,29 @@ private:
         //Frame view (World, Barycentric, Body 1, Body 2).
         ImGui::Text("Frame view");
         ImGui::PushItemWidth(250.0f);
-        static const char *items[4] = {"World", "Barycentric", "Body 1", "Body 2"};
-        ImGui::Combo("##rend3D.cam.frame_of_ref", reinterpret_cast<int*>(&rend3D.cam.frame_of_ref), items, IM_ARRAYSIZE(items));
+        static const char *cam_frames[4] = {"World", "Center of mass", "Body 1", "Body 2"};
+        ImGui::Combo("##rend3D.cam.frame_of_ref", (int*)(&rend3D.cam.frame_of_ref), cam_frames, IM_ARRAYSIZE(cam_frames));
         ImGui::PopItemWidth();
 
-        if (rend3D.cam.frame_of_ref == camera::world)
+        if (rend3D.cam.frame_of_ref == camera::WORLD || rend3D.cam.frame_of_ref == camera::COM)
         {
             ImGui::Text("Dist");
             ImGui::SameLine();
             ImGui::SetCursorPosX(40.0f);
-            ImGui::SliderFloat("[km]##rend3D.cam.dist", &rend3D.cam.dist, rend3D.cam.min_dist, rend3D.cam.max_dist, "%.3f", ImGuiSliderFlags_Logarithmic);
+            ImGui::SliderFloat("[km]##rend3D.cam.dist_world_or_com", &rend3D.cam.get_active_dist(), rend3D.cam.min_dist, rend3D.cam.max_dist, "%.3f", ImGuiSliderFlags_Logarithmic);
 
             ImGui::Text("Lon");
             ImGui::SameLine();
             ImGui::SetCursorPosX(40.0f);
-            ImGui::SliderFloat("[deg]##rend3D.cam.lon", &rend3D.cam.lon, 0.0f, 360.0f, "%.1f");
+            ImGui::SliderFloat("[deg]##rend3D.cam.lon_world_or_com", &rend3D.cam.get_active_lon(), 0.0f, 360.0f, "%.1f");
 
             ImGui::Text("Lat");
             ImGui::SameLine();
             ImGui::SetCursorPosX(40.0f);
-            ImGui::SliderFloat("[deg]##rend3D.cam.lat", &rend3D.cam.lat, 0.0f, 180.0f, "%.1f");
+            ImGui::SliderFloat("[deg]##rend3D.cam.lat_world_or_com", &rend3D.cam.get_active_lat(), 0.0f, 180.0f, "%.1f");
         }
-        else if (rend3D.cam.frame_of_ref == camera::barycentric)
+        else //camera::BODY1 or camera::BODY2
         {
-            ImGui::Text("Dist");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(40.0f);
-            ImGui::SliderFloat("[km]##rend3D.cam.dist", &rend3D.cam.dist, rend3D.cam.min_dist, rend3D.cam.max_dist, "%.3f", ImGuiSliderFlags_Logarithmic);
-
-            ImGui::Text("Lon");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(40.0f);
-            ImGui::SliderFloat("[deg]##rend3D.cam.lon", &rend3D.cam.lon, 0.0f, 360.0f, "%.1f");
-
-            ImGui::Text("Lat");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(40.0f);
-            ImGui::SliderFloat("[deg]##rend3D.cam.lat", &rend3D.cam.lat, 0.0f, 180.0f, "%.1f");
-        }
-        else if (rend3D.cam.frame_of_ref == camera::body1)
-        {
-            rend3D.cam.mount_body1 = true;
-            rend3D.cam.mount_body2 = false;
-            rend3D.cam.voffset_ndc.x = rend3D.cam.voffset_ndc.y = 0.0f; //Recenter joystick.
-            
             ImGui::Text("R - offset");
             ImGui::SameLine();
             ImGui::SetCursorPosX(70.0f);
@@ -438,30 +417,10 @@ private:
             ImGui::SliderFloat("[Brillouin]##rend3D.cam.vscale", &rend3D.cam.vscale, 0.0f, 5.0f, "%.1f");
 
             //This is a 2D joystick, used to shift the mounted camera left-right-up-down from the radial direction so that the body in front does not block the view.
+            //rend3D.cam.voffset_ndc.x = rend3D.cam.voffset_ndc.y = 0.0f; //Recenter joystick.
             imgui_slider_float_2D("V - offset", "##rend3D.cam.voffset_ndc", (ImVec2*)&rend3D.cam.voffset_ndc, ImVec2(-1.0f,-1.0f), ImVec2(1.0f,1.0f));
         }
-        else //rend3D.cam.frame_of_ref = camera::body2
-        {
-            rend3D.cam.mount_body2 = true;
-            rend3D.cam.mount_body1 = false;
-            rend3D.cam.voffset_ndc.x = rend3D.cam.voffset_ndc.y = 0.0f; //Recenter joystick.
-
-            ImGui::Text("R - offset");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(70.0f);
-            ImGui::SetNextItemWidth(130);
-            ImGui::SliderFloat("[Brillouin]##rend3D.cam.rscale", &rend3D.cam.rscale, 3.0f, 10.0f, "%.1f");
-
-            ImGui::Text("V - scale");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(70.0f);
-            ImGui::SetNextItemWidth(130);
-            ImGui::SliderFloat("[Brillouin]##rend3D.cam.vscale", &rend3D.cam.vscale, 0.0f, 5.0f, "%.1f");
-
-            //This is a 2D joystick, used to shift the mounted camera left-right-up-down from the radial direction so that the body in front does not block the view.
-            imgui_slider_float_2D("V - offset", "##rend3D.cam.voffset_ndc", (ImVec2*)&rend3D.cam.voffset_ndc, ImVec2(-1.0f,-1.0f), ImVec2(1.0f,1.0f));
-        }
-        ImGui::Dummy(ImVec2(0.0f, 4.0f));
+        ImGui::Dummy(ImVec2(0.0f, 8.0f));
 
         ImGui::Text("FoV");
         ImGui::SameLine();
@@ -559,7 +518,7 @@ private:
         rend3D.orb1.draw_count = static_cast<size_t>(visible_orb1_frame);
         orb1_sync = common_onoff_button("Sync##orb1_sync", ImVec2(50.0f, 18.0f), orb1_sync);
         if (orb1_sync)
-            rend3D.orb1.draw_count = static_cast<size_t>(current_frame + 1);
+            rend3D.orb1.draw_count = static_cast<size_t>(iframe + 1);
 
         if (!rend3D.render_orb1)
             ImGui::EndDisabled();
@@ -585,7 +544,7 @@ private:
         orb2_sync = common_onoff_button("Sync##visible_orb2_frame", ImVec2(50.0f, 18.0f), orb2_sync);
         rend3D.orb2.draw_count = static_cast<size_t>(visible_orb2_frame);
         if (orb2_sync)
-            rend3D.orb2.draw_count = static_cast<size_t>(current_frame + 1);
+            rend3D.orb2.draw_count = static_cast<size_t>(iframe + 1);
 
         if (!rend3D.render_orb2)
             ImGui::EndDisabled();
@@ -615,7 +574,7 @@ private:
         orb_sp_sync = common_onoff_button("Sync##orb_sp_sync", ImVec2(50.0f, 18.0f), orb_sp_sync);
         rend3D.orb_sp.draw_count = static_cast<size_t>(visible_orb_sp_frame);
         if (orb_sp_sync)
-            rend3D.orb_sp.draw_count = static_cast<size_t>(current_frame + 1);
+            rend3D.orb_sp.draw_count = static_cast<size_t>(iframe + 1);
 
         if (!rend3D.render_orb_sp)
             ImGui::EndDisabled();
@@ -648,10 +607,10 @@ private:
             {
                 if (io.KeyCtrl)
                     rend3D.cam.scroll_fov(io.MouseWheel);
-                else if (!rend3D.cam.mount_body1 && !rend3D.cam.mount_body2)
-                    rend3D.cam.scroll_dist_barycenter(io.MouseWheel);
-                else if (rend3D.cam.mount_body1 || rend3D.cam.mount_body2)
-                    rend3D.cam.scroll_dist_mount(io.MouseWheel);
+                else if (rend3D.cam.frame_of_ref == camera::WORLD || rend3D.cam.frame_of_ref == camera::COM)
+                    rend3D.cam.scroll_dist_inertial(io.MouseWheel);
+                else if (rend3D.cam.frame_of_ref == camera::BODY1 || rend3D.cam.frame_of_ref == camera::BODY2)
+                    rend3D.cam.scroll_dist_body(io.MouseWheel);
             }
 
             if (io.MouseDown[ImGuiMouseButton_Middle])
@@ -661,9 +620,9 @@ private:
                 {
                     if (io.KeyCtrl)
                         rend3D.sunlight.rotate_lon_lat(d.x, d.y);
-                    else if (!rend3D.cam.mount_body1 && !rend3D.cam.mount_body2)
-                        rend3D.cam.rotate_lon_lat_barycenter(d.x, d.y);
-                    else if (rend3D.cam.mount_body1 || rend3D.cam.mount_body2)
+                    else if (rend3D.cam.frame_of_ref == camera::WORLD || rend3D.cam.frame_of_ref == camera::COM)
+                        rend3D.cam.rotate_lon_lat_inertial(d.x, d.y);
+                    else if (rend3D.cam.frame_of_ref == camera::BODY1 || rend3D.cam.frame_of_ref == camera::BODY2)
                         rend3D.cam.move_upon_vplane(d.x, d.y, rend3D.win_width, rend3D.win_height);
                 }
             }
@@ -675,9 +634,9 @@ private:
 
         //Frame increment logic :
 
-        if (play_pause_video && render_scene && current_frame < total_frames - 1)
+        if (play_pause_video && render_scene && iframe < total_frames - 1)
         {
-            if (frame_rate == 0) //The slider is set to 0 => paused. Do not increment current_frame.
+            if (frame_rate == 0) //The slider is set to 0 => paused. Do not increment iframe.
             {
                 //Pass.
             }
@@ -686,20 +645,20 @@ private:
                 frame_accumulator += ImGui::GetIO().DeltaTime;
                 float step = 1.0f/static_cast<float>(frame_rate);
                 //In case DeltaTime is large (e.g. if the user drags the window), use a while() so we don't 'miss' increments.
-                while (frame_accumulator >= step && current_frame < total_frames - 1)
+                while (frame_accumulator >= step && iframe < total_frames - 1)
                 {
-                    current_frame++;
+                    iframe++;
                     frame_accumulator -= step;
                 }
             }
             else //frame_rate == 60 => let it play as fast as the machine can handle, i.e. increment every time we render.
-                current_frame++;
+                iframe++;
         }
         
         
         //Finally, render the 3D content.
         if (render_scene)
-            rend3D.render_3D_content(sol, current_frame, reset_gpu_essential);
+            rend3D.render_3D_content(sol, iframe, reset_gpu_essential);
     }
 
 public:

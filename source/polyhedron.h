@@ -34,7 +34,7 @@ private:
 
     //OpenGL related members. They are used after the numerical integration ends, in order to render the 3D scene.
     bool gl_ready; //Whether or not the mesh data are uploaded to the gpu.
-    unsigned int gl_vao, gl_vbo; //Vertex array and vertex buffer objects.
+    unsigned int vao, vbo; //Vertex array and vertex buffer objects.
     size_t gl_vertex_count; //Triangle vertices in the interleaved buffer.
 
 public:
@@ -47,8 +47,8 @@ public:
                    edges_exist(false),
                    vol_exists(false),
                    gl_ready(false),
-                   gl_vao(0),
-                   gl_vbo(0),
+                   vao(0),
+                   vbo(0),
                    gl_vertex_count(0)
     { }
 
@@ -290,11 +290,11 @@ public:
         }
         gl_vertex_count = interleaved_buffer.size()/6; //Because each vertex has 6 float attributes bound.
 
-        glGenVertexArrays(1, &gl_vao);
-        glBindVertexArray(gl_vao);
+        glGenVertexArrays(1, &vao);
+        glBindVertexArray(vao);
 
-        glGenBuffers(1, &gl_vbo);
-        glBindBuffer(GL_ARRAY_BUFFER, gl_vbo);
+        glGenBuffers(1, &vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, interleaved_buffer.size()*sizeof(float), interleaved_buffer.data(), GL_STATIC_DRAW);
 
         //layout (location = 0) in vec3 pos;
@@ -315,7 +315,7 @@ public:
     {
         if (!gl_ready) return; //Guard.
         
-        glBindVertexArray(gl_vao);
+        glBindVertexArray(vao);
         glDrawArrays(GL_TRIANGLES, 0, (GLsizei)gl_vertex_count);
         glBindVertexArray(0);
     }
@@ -323,15 +323,15 @@ public:
     //Cleanup GPU resources. This basically resets the OpenGL - related members back to what u see in the beginning of the class.
     void clear_gl_mesh()
     {
-        if (gl_vbo != 0)
+        if (vbo != 0)
         {
-            glDeleteBuffers(1, &gl_vbo);
-            gl_vbo = 0;
+            glDeleteBuffers(1, &vbo);
+            vbo = 0;
         }
-        if (gl_vao != 0)
+        if (vao != 0)
         {
-            glDeleteVertexArrays(1, &gl_vao);
-            gl_vao = 0;
+            glDeleteVertexArrays(1, &vao);
+            vao = 0;
         }
         gl_vertex_count = 0;
         gl_ready = false;

@@ -1,8 +1,12 @@
-/* This class is called only by scene_panel.h and is responsible to 'assemble' the rendering logic of the 3D scene
-   at every frame (bind framebuffers, clear color/depth buffers, switch shaders, apply matrix multiplications, etc...). */
+/* This class is responsible to assemble the rendering logic of the 3D scene at every frame (bind framebuffers, clear color/depth buffers, switch shaders, apply matrix multiplications, etc.). */
 
 #ifndef RENDERER3D_H
 #define RENDERER3D_H
+
+#include<glm/glm.hpp>
+#include<glm/gtc/matrix_transform.hpp>
+
+#include<memory>
 
 #include"constant.h"
 #include"typedef.h"
@@ -16,20 +20,13 @@
 #include"grid.h"
 #include"sun.h"
 
-#include<memory>
-
-#include<glm/glm.hpp>
-#include<glm/gtc/matrix_transform.hpp>
-#include<glm/gtc/type_ptr.hpp>
-
 class renderer3D
 {
 private:
-    shader sh_depth, sh_dlight_shadow, sh_orb, sh_skybox, sh_sun, sh_grid; //These are all the shaders that are used throughout the 3D scene.
-    glm::vec3 body1_col, body2_col, xaxis_col, yaxis_col, zaxis_col, orb1_col, orb2_col, orb_sp_col, sun_col; //Colors of whatever is rendered.
+    shader sh_depth, sh_dlight_shadow, sh_orb, sh_skybox, sh_sun, sh_grid; //All shaders used throughout the 3D scene.
     polyhedron xaxis, yaxis, zaxis; //Body-frame axes meshes.
-    std::unique_ptr<skybox> sky; //Skybox (does NOT include the sun).
-    sun sunquad; //This is a very basic 2D quad mesh, but when manipulated appropriately in the shader 'sh_sun', it results into a nice sun display.
+    std::unique_ptr<skybox> sky; //Skybox does NOT include the Sun. The Sun is procedurally generated.
+    sun sunquad;
 
     unsigned int depth_fbo, depth_tex; //IDs to hold the depth framebuffer and the depth texture for the shadow map algorithm.
 
@@ -38,9 +35,11 @@ public:
     light sunlight;
     orbit orb1, orb2, orb_sp;
     grid infgrid;
-    
-    int depth_reso; //Depth image resolution in pixels.
-    bool render_body1, render_body2, render_axes1, render_axes2, render_orb1, render_orb2, render_orb_sp, render_grid; //These correspond to the GUI checkboxes state : what to render and what not to.
+
+    int depth_reso; //Actual depth image resolution in pixels (for the shadow map).
+
+    glm::vec3 body1_col, body2_col, xaxis_col, yaxis_col, zaxis_col, orb1_col, orb2_col, orb_sp_col, sun_col;
+    bool render_body1, render_body2, render_axes1, render_axes2, render_orb1, render_orb2, render_orb_sp, render_grid; //These correspond to the GUI checkboxes state.
 
     int win_width, win_height;
     
@@ -50,15 +49,6 @@ public:
                    sh_skybox("../shaders/vertex/skybox.vert","../shaders/fragment/skybox.frag"),
                    sh_sun("../shaders/vertex/sun.vert", "../shaders/fragment/sun.frag"),
                    sh_grid("../shaders/vertex/grid.vert", "../shaders/fragment/grid.frag"),
-                   body1_col(glm::vec3(0.8f)),
-                   body2_col(glm::vec3(0.8f)),
-                   xaxis_col(glm::vec3(1.0f,0.0f,0.0f)),
-                   yaxis_col(glm::vec3(0.0f,1.0f,0.0f)),
-                   zaxis_col(glm::vec3(0.0f,0.0f,1.0f)),
-                   orb1_col(glm::vec3(0.7f,0.0f,0.0f)),
-                   orb2_col(glm::vec3(0.0f,0.7f,0.0f)),
-                   orb_sp_col(glm::vec3(0.0f,0.75f,0.75f)),
-                   sun_col(glm::vec3(1.0f)),
                    xaxis(),
                    yaxis(),
                    zaxis(),
@@ -73,6 +63,15 @@ public:
                    orb_sp(),
                    infgrid(),
                    depth_reso(4096),
+                   body1_col(glm::vec3(0.8f)),
+                   body2_col(glm::vec3(0.8f)),
+                   xaxis_col(glm::vec3(1.0f,0.0f,0.0f)),
+                   yaxis_col(glm::vec3(0.0f,1.0f,0.0f)),
+                   zaxis_col(glm::vec3(0.0f,0.0f,1.0f)),
+                   orb1_col(glm::vec3(0.7f,0.0f,0.0f)),
+                   orb2_col(glm::vec3(0.0f,0.7f,0.0f)),
+                   orb_sp_col(glm::vec3(0.0f,0.75f,0.75f)),
+                   sun_col(glm::vec3(1.0f)),
                    render_body1(true),
                    render_body2(true),
                    render_axes1(false),
@@ -120,8 +119,7 @@ public:
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_tex, 0);
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
             fprintf(stderr, "[Warning] : In renderer3D::setup_depth_fbo(), the depth framebuffer is not completed.\n");
-        //Since shadow mapping only requires depth information and needs no colors, the following commnads make sure that
-        //OpenGL avoids any (unnecessary) color buffer operations.
+        //Since shadow mapping only requires depth information and needs no colors, the following commnads make sure that OpenGL avoids any (unnecessary) color buffer operations.
         glDrawBuffer(GL_NONE);
         glReadBuffer(GL_NONE);
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -155,15 +153,57 @@ public:
                                                  "../skybox/starfield2k/front.jpg",
                                                  "../skybox/starfield2k/back.jpg");
 
-        //Wtf? Is this necessary to be here?
+        //Wtf? Is this necessary to be here? Why not in the scene_panel.h
         orb1.draw_count = std::min<size_t>(1, sol.t.size());
         orb2.draw_count = std::min<size_t>(1, sol.t.size());
         if (sol.integr.properties.spacecraft_checkbox)
             orb_sp.draw_count = std::min<size_t>(1, sol.t.size());
     }
 
+    glm::vec3 compute_com_world_at(const solution &sol, size_t i, const glm::vec3 &rcm0_world, const glm::vec3 &vcm0_world)
+    {
+        const double t0_sec = sol.integr.t0, ti_sec = sol.t[i]*86400.0, dt0 = ti_sec - t0_sec;
+
+        //'Base' linear drift from initial state.
+        glm::vec3 r = rcm0_world + vcm0_world*(float)dt0;
+
+        const double Mtot = sol.integr.properties.M1 + sol.integr.properties.M2;
+
+        if (sol.integr.properties.impactors_checkbox)
+        {
+            // Impact 1 contribution (world-frame impact velocity)
+            {
+                const double t1 = sol.integr.properties.t1_impact; // seconds (after prepare())
+                if (ti_sec >= t1) {
+                    const double scale = (sol.integr.properties.beta1 * sol.integr.properties.M1_impact) / Mtot;
+                    const glm::vec3 dV1 = (float)scale * glm::vec3(
+                        (float)sol.integr.properties.v1_impact[0],
+                        (float)sol.integr.properties.v1_impact[1],
+                        (float)sol.integr.properties.v1_impact[2]
+                    );
+                    r += dV1 * (float)(ti_sec - t1);
+                }
+            }
+            // Impact 2 contribution
+            {
+                const double t2 = sol.integr.properties.t2_impact; // seconds
+                if (ti_sec >= t2) {
+                    const double scale = (sol.integr.properties.beta2 * sol.integr.properties.M2_impact) / Mtot;
+                    const glm::vec3 dV2 = (float)scale * glm::vec3(
+                        (float)sol.integr.properties.v2_impact[0],
+                        (float)sol.integr.properties.v2_impact[1],
+                        (float)sol.integr.properties.v2_impact[2]
+                    );
+                    r += dV2 * (float)(ti_sec - t2);
+                }
+            }
+        }
+
+        return r;
+    }
+
     //This function handles the rendering logic of the 3D content.
-    void render_3D_content(solution &sol, const size_t i, bool &reset_gpu_essential)
+    void render_3D_content(solution &sol, const size_t iframe, bool &reset_gpu_essential)
     {
         //Prepare all the meshes for rendering, by running the appropriate CPU/GPU tasks.
         if (reset_gpu_essential)
@@ -172,36 +212,40 @@ public:
             reset_gpu_essential = false;
         }
 
-        float pos_comx = sol.integr.properties.r_com[0] + sol.integr.properties.v_com[0]*(sol.t[i] - sol.t[0]);
-        float pos_comy = sol.integr.properties.r_com[1] + sol.integr.properties.v_com[1]*(sol.t[i] - sol.t[0]);
-        float pos_comz = sol.integr.properties.r_com[2] + sol.integr.properties.v_com[2]*(sol.t[i] - sol.t[0]);
-        glm::vec3 pos_com = glm::vec3(pos_comx, pos_comy, pos_comz);
-        glm::vec3 pos1 = glm::vec3((float)sol.integr.com1_coeff*glm::vec3(sol.x[i],sol.y[i],sol.z[i])) + pos_com;
-        glm::vec3 pos2 = glm::vec3((float)sol.integr.com2_coeff*glm::vec3(sol.x[i],sol.y[i],sol.z[i])) + pos_com;
+        const glm::vec3 r0 = glm::vec3((float)sol.integr.properties.r_com[0],
+                                       (float)sol.integr.properties.r_com[1],
+                                       (float)sol.integr.properties.r_com[2]);
+        const glm::vec3 v0 = glm::vec3((float)sol.integr.properties.v_com[0],
+                                       (float)sol.integr.properties.v_com[1],
+                                       (float)sol.integr.properties.v_com[2]);
+        const glm::vec3 pos_com = compute_com_world_at(sol, iframe, r0, v0);
+        const glm::vec3 pos1 = pos_com + (float)sol.integr.com1_coeff*glm::vec3(sol.x[iframe],sol.y[iframe],sol.z[iframe]);
+        const glm::vec3 pos2 = pos_com + (float)sol.integr.com2_coeff*glm::vec3(sol.x[iframe],sol.y[iframe],sol.z[iframe]);
 
-        sunlight.set_geometry((float)sol.integr.brillouin1 + (float)sol.integr.brillouin1 + (float)sol.dist[i]);
+        const float aspect = win_width/(float)win_height;
+        if (cam.frame_of_ref == camera::WORLD)
+            cam.set_geometry_inertial(aspect, glm::vec3(0.0f));
+        else if (cam.frame_of_ref == camera::COM)
+            cam.set_geometry_inertial(aspect, pos_com);
+        else if (cam.frame_of_ref == camera::BODY1)
+            cam.set_geometry_body(aspect, pos1, pos2, (float)sol.integr.brillouin1);
+        else //camera::BODY2
+            cam.set_geometry_body(aspect, pos2, pos1, (float)sol.integr.brillouin2);
 
-        if (cam.frame_of_ref == camera::world)
-            cam.set_geometry_world(...);
-        else if (cam.frame_of_ref == camera::barycentric)
-            cam.set_geometry_barycenter(win_width/(float)win_height, pos_com);
-        else if (cam.frame_of_ref == camera::body1)
-            cam.set_geometry_mount(win_width/(float)win_height, pos1, pos2, (float)sol.integr.brillouin1);
-        else //cam.frame_of_ref == camera::body2
-            cam.set_geometry_mount(win_width/(float)win_height, pos2, pos1, (float)sol.integr.brillouin2);
+        sunlight.set_geometry((float)sol.integr.brillouin1 + (float)sol.integr.brillouin2 + (float)sol.dist[iframe], pos_com);
 
         glm::mat4 I = glm::mat4(1.0f);
 
         glm::mat4 T1R1 = glm::translate(I, pos1)*
-                         glm::rotate(I, glm::radians((float)sol.yaw1[i]),   glm::vec3(0.0f,0.0f,1.0f))*
-                         glm::rotate(I, glm::radians((float)sol.pitch1[i]), glm::vec3(0.0f,1.0f,0.0f))*
-                         glm::rotate(I, glm::radians((float)sol.roll1[i]),  glm::vec3(1.0f,0.0f,0.0f));
+                         glm::rotate(I, glm::radians((float)sol.yaw1[iframe]),   glm::vec3(0.0f,0.0f,1.0f))*
+                         glm::rotate(I, glm::radians((float)sol.pitch1[iframe]), glm::vec3(0.0f,1.0f,0.0f))*
+                         glm::rotate(I, glm::radians((float)sol.roll1[iframe]),  glm::vec3(1.0f,0.0f,0.0f));
         glm::mat4 S1 = glm::scale(I, glm::vec3((float)sol.integr.brillouin1));
 
         glm::mat4 T2R2 = glm::translate(I, pos2)*
-                         glm::rotate(I, glm::radians((float)sol.yaw2[i]),   glm::vec3(0.0f,0.0f,1.0f))*
-                         glm::rotate(I, glm::radians((float)sol.pitch2[i]), glm::vec3(0.0f,1.0f,0.0f))*
-                         glm::rotate(I, glm::radians((float)sol.roll2[i]),  glm::vec3(1.0f,0.0f,0.0f));
+                         glm::rotate(I, glm::radians((float)sol.yaw2[iframe]),   glm::vec3(0.0f,0.0f,1.0f))*
+                         glm::rotate(I, glm::radians((float)sol.pitch2[iframe]), glm::vec3(0.0f,1.0f,0.0f))*
+                         glm::rotate(I, glm::radians((float)sol.roll2[iframe]),  glm::vec3(1.0f,0.0f,0.0f));
         glm::mat4 S2 = glm::scale(I, glm::vec3((float)sol.integr.brillouin2));
         
         //Shadow rendering pass : render the meshes that account for shadow, but do so from the light's (orthographic) view. Shadow pass must always happen first.
@@ -247,9 +291,9 @@ public:
         //Skybox rendering pass :
         if (sky)
         {
-            glm::mat4 sky_view  = glm::mat4(glm::mat3(cam.view)); //View but no translation part.
-            glm::mat4 sky_model = glm::rotate(I, glm::radians(180.0f), glm::vec3(0.0f,0.0f,1.0f))*
-                                  glm::rotate(I, glm::radians(90.0f),  glm::vec3(1.0f,0.0f,0.0f));
+            const glm::mat4 sky_view  = glm::mat4(glm::mat3(cam.view)); //View but no translation part.
+            const glm::mat4 sky_model = glm::rotate(I, glm::radians(180.0f), glm::vec3(0.0f,0.0f,1.0f))*
+                                        glm::rotate(I, glm::radians(90.0f),  glm::vec3(1.0f,0.0f,0.0f));
             sh_skybox.use();
             sh_skybox.set_int_uniform("skybox", 0);
             sh_skybox.set_mat4_uniform("projection", cam.projection);
@@ -257,7 +301,7 @@ public:
             sh_skybox.set_mat4_uniform("model", sky_model);
             glActiveTexture(GL_TEXTURE0);
 		    glBindTexture(GL_TEXTURE_CUBE_MAP, sky->tex);
-            glDepthFunc(GL_LEQUAL); //Look at the shader skybox.vert : we have forced all fragments' depth values to be 1.0. So for the depth test to pass, we change the test operation to '<=' instead of the default '<'.
+            glDepthFunc(GL_LEQUAL); //Look at the shader skybox.vert : I have forced all fragments' depth values to be 1.0. So for the depth test to pass, I change the test operation to '<=' instead of the default '<'.
             glDepthMask(GL_FALSE); //This ain't needed for the particular order of rendering, but let it be some sort of guard for any future update...
             sky->render();
             glDepthMask(GL_TRUE);
@@ -314,12 +358,14 @@ public:
         glBindTexture(GL_TEXTURE_2D, 0);
 
         //Orbits rendering pass :
-        if (render_orb1 || render_orb2 || render_orb_sp) //If none of the three orbits are rendered, we skip the shader bind (glUseProgram()) and all uniform traffic (glUniform*()) entirely.
+        if (render_orb1 || render_orb2 || render_orb_sp) //This is to avoid to compute 3 times the translation matrix, the shader bind (glUseProgram()) and all uniform traffic (glUniform*()).
         {
+            const glm::mat4 Tcom = glm::translate(I, pos_com);
+
             sh_orb.use();
             sh_orb.set_mat4_uniform("projection", cam.projection);
             sh_orb.set_mat4_uniform("view", cam.view);
-            sh_orb.set_mat4_uniform("model", I);
+            sh_orb.set_mat4_uniform("model", Tcom);
             if (render_orb1)
             {
                 sh_orb.set_vec3_uniform("mesh_col", orb1_col);
@@ -336,14 +382,14 @@ public:
                 orb_sp.render();
             }
         }
-
-        //Grid rendering pass :
+        
+        //Infinite grid rendering pass :
         if (render_grid)
         {
             sh_grid.use();
             sh_grid.set_mat4_uniform("uProj", cam.projection);
             sh_grid.set_mat4_uniform("uView", cam.view);
-            sh_grid.set_float_uniform("uFadeEnd", 2.0f*cam.dist);
+            sh_grid.set_float_uniform("uFadeEnd", 2.0f*cam.get_active_dist());
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             glDepthFunc(GL_LEQUAL);
