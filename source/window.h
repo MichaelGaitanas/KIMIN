@@ -14,9 +14,9 @@
 class window
 {
 private:
-    bool confirm_exit;
     GLFWwindow *wpointer;
     int width, height;
+    bool confirm_exit;
     
     static void framebuffer_size_callback(GLFWwindow *ptr, int w, int h)
     {
@@ -47,7 +47,10 @@ private:
     }
 
 public:
-    window() : confirm_exit(false)
+    window() : wpointer(nullptr),
+               width(1),
+               height(1),
+               confirm_exit(false)
     {
         //(Re)initialize glfw along with some different settings. Since we explicitely terminated glfw in the logo.h, all (previous) corresponding resources are freed and now they are allocated again.
         if(!glfwInit())
@@ -60,15 +63,14 @@ public:
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
-        glfwWindowHint(GLFW_REFRESH_RATE, 60);
+        //glfwWindowHint(GLFW_REFRESH_RATE, 60);
         glfwWindowHint(GLFW_SAMPLES, 4); //Anti-aliasing samples.
         glfwWindowHint(GLFW_DEPTH_BITS, 32);
 
-        GLFWmonitor *monitor = glfwGetPrimaryMonitor();
-        const GLFWvidmode *mode = glfwGetVideoMode(monitor);
+        const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
         width = mode->width;
         height = mode->height;
-        //That being said, when the gui launches, it is in windowed-fullscreen mode.nIf the rescale button is clicked, the size remains, unless the user resizes it from the corners.
+        //That being said, when the gui launches, it is in windowed-fullscreen mode. If the rescale button is clicked, the size remains, unless the user resizes it from the corners.
 
         wpointer = glfwCreateWindow(width, height, "KIMIN - Kinetic Impact Mission to NEO", nullptr, nullptr);
         if (wpointer == nullptr)
@@ -79,7 +81,7 @@ public:
         }
         glfwSetWindowUserPointer(wpointer, this);
         glfwMakeContextCurrent(wpointer);
-        glfwSetWindowSizeLimits(wpointer, 400,400, GLFW_DONT_CARE,GLFW_DONT_CARE); //Minimum window size.
+        glfwSetWindowSizeLimits(wpointer, 400,400, GLFW_DONT_CARE,GLFW_DONT_CARE);
         glfwSwapInterval(1);
 
         glewExperimental = GL_TRUE;
@@ -112,7 +114,7 @@ public:
         glDepthFunc(GL_LESS);
         while (!glfwWindowShouldClose(wpointer))
         {
-            glClear(GL_COLOR_BUFFER_BIT);
+            glClear(GL_COLOR_BUFFER_BIT); //Depth is cleared in ui.scene.render(), where it is necessary.
 
             ui.begin();
             ui.topbar.render(wpointer, confirm_exit);

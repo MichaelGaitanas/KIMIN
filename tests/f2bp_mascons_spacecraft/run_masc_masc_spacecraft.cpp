@@ -4,7 +4,7 @@
 #include<filesystem>
 #include<boost/numeric/odeint.hpp>
 
-#include"../../source/constant.h"
+#include"../../source/constants.h"
 #include"../../source/typedef.h"
 #include"../../source/linalg.h"
 #include"../../source/file.h"
@@ -307,8 +307,8 @@ int main()
         dmat3 A2 = quat2mat(q2);
         dvec3 w1i = body2iner(w1b,A1);
         dvec3 w2i = body2iner(w2b,A2);
-        dvec3 rpy1 = quat2ang(q1)*180.0/pi;
-        dvec3 rpy2 = quat2ang(q2)*180.0/pi;
+        dvec3 rpy1 = quat2ang(q1)*180.0/PI;
+        dvec3 rpy2 = quat2ang(q2)*180.0/PI;
         dvec3 rs = {orbit[i][21], orbit[i][22], orbit[i][23]};
         dvec3 vs = {orbit[i][24], orbit[i][25], orbit[i][26]};
         double energy = 0.5*pars.m*dot(v,v) +

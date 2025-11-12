@@ -1,6 +1,6 @@
 #include<cstdio>
 
-#include"../../source/constant.h"
+#include"../../source/constants.h"
 #include"../../source/typedef.h"
 #include"../../source/linalg.h"
 #include"../../source/file.h"
@@ -23,7 +23,7 @@ int main()
         if (find_assignment_operator(fp)) fscanf(fp, "%lf", &kep[i]);
     fclose(fp);
 
-    dvec6 cart = kep2cart({kep[0], kep[1], kep[2]*pi/180.0, kep[3]*pi/180.0, kep[4]*pi/180.0, kep[5]*pi/180.0}, G*(M1+M2));
+    dvec6 cart = kep2cart({kep[0], kep[1], kep[2]*PI/180.0, kep[3]*PI/180.0, kep[4]*PI/180.0, kep[5]*PI/180.0}, G*(M1+M2));
     printf("x  = %.15lf\n", cart[0]);
     printf("y  = %.15lf\n", cart[1]);
     printf("z  = %.15lf\n", cart[2]);

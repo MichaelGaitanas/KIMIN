@@ -6,7 +6,7 @@
 #include<atomic>
 #include<boost/numeric/odeint.hpp>
 
-#include"constant.h"
+#include"constants.h"
 #include"typedef.h"
 #include"linalg.h"
 #include"conversion.h"
@@ -126,10 +126,10 @@ private:
 
         if (properties.spacecraft_checkbox)
         {
-            //Spacecraft state (inertial frame).
+            //Spacecraft state (COM frame).
             dvec3 r_sp = { state[20], state[21], state[22] };
             dvec3 v_sp = { state[23], state[24], state[25] };
-            //Body c.o.m. positions in barycentric inertial frame.
+            //Individual bodies' COM positions in the mutual COM frame.
             dvec3 r1 = com1_coeff*r;
             dvec3 r2 = com2_coeff*r;
             //Body -> spacecraft vectors.
@@ -173,18 +173,18 @@ public:
         if (properties.pos_vel_var == properties_panel::KEPLERIAN)
             properties.cart = kep2cart(dvec6{properties.kep[0],
                                              properties.kep[1],
-                                             properties.kep[2]*pi/180.0,
-                                             properties.kep[3]*pi/180.0,
-                                             properties.kep[4]*pi/180.0,
-                                             properties.kep[5]*pi/180.0}, G*(properties.M1 + properties.M2));
+                                             properties.kep[2]*PI/180.0,
+                                             properties.kep[3]*PI/180.0,
+                                             properties.kep[4]*PI/180.0,
+                                             properties.kep[5]*PI/180.0}, G*(properties.M1 + properties.M2));
         
         //Preparation 2 : If the user chose Euler angles as initial orientations, then, transform them to
         //quaternions because the F2BP odes are written in quaternion form.
         if (properties.orient_var == properties_panel::EULER_XYZ)
         {
             //Note : ang2quat() ensures that the returned quaternion is normalized, so we don't need to apply quat2unit().
-            properties.q1 = ang2quat(properties.rpy1*pi/180.0);
-            properties.q2 = ang2quat(properties.rpy2*pi/180.0);
+            properties.q1 = ang2quat(properties.rpy1*PI/180.0);
+            properties.q2 = ang2quat(properties.rpy2*PI/180.0);
         }
 
         //Preparation 3 : If the user chose to input the angular velocities in the inertial frame, then, transform them
@@ -257,7 +257,7 @@ public:
         else
             init_guess_time_step = 1.0; //[sec]
 
-        //Preparation 6 : Convert impact times in [sec]. Then, apply maneuvers BEFORE the while integration loop, only if the impact times are chose to be at t = t0.
+        //Preparation 6 : Convert impact times in [sec]. Then, apply maneuvers BEFORE the while integration loop, only if the impact times are chosen to be at t = t0.
         if (properties.impactors_checkbox)
         {
             properties.t1_impact *= 86400.0;
@@ -267,6 +267,10 @@ public:
                 properties.cart[3] -= properties.beta1*properties.M1_impact*properties.v1_impact[0]/properties.M1;
                 properties.cart[4] -= properties.beta1*properties.M1_impact*properties.v1_impact[1]/properties.M1;
                 properties.cart[5] -= properties.beta1*properties.M1_impact*properties.v1_impact[2]/properties.M1;
+                if (properties.spacecraft_checkbox)
+                {
+                    properties.v_sp = properties.v_sp - properties.beta1*properties.M1_impact*properties.v1_impact/(properties.M1 + properties.M2);
+                }
                 maneuver1_applied = true;
             }
             if (fabs(t0 - properties.t2_impact) < 1e-15)
@@ -274,6 +278,10 @@ public:
                 properties.cart[3] += properties.beta2*properties.M2_impact*properties.v2_impact[0]/properties.M2;
                 properties.cart[4] += properties.beta2*properties.M2_impact*properties.v2_impact[1]/properties.M2;
                 properties.cart[5] += properties.beta2*properties.M2_impact*properties.v2_impact[2]/properties.M2;
+                if (properties.spacecraft_checkbox)
+                {
+                    properties.v_sp = properties.v_sp - properties.beta2*properties.M2_impact*properties.v2_impact/(properties.M1 + properties.M2);
+                }
                 maneuver2_applied = true;
             }
         }
@@ -337,6 +345,12 @@ public:
                     state[3] -= properties.beta1*properties.M1_impact*properties.v1_impact[0]/properties.M1;
                     state[4] -= properties.beta1*properties.M1_impact*properties.v1_impact[1]/properties.M1;
                     state[5] -= properties.beta1*properties.M1_impact*properties.v1_impact[2]/properties.M1;
+                    if (properties.spacecraft_checkbox)
+                    {
+                        state[23] -= properties.beta1*properties.M1_impact*properties.v1_impact[0]/(properties.M1 + properties.M2);
+                        state[24] -= properties.beta1*properties.M1_impact*properties.v1_impact[1]/(properties.M1 + properties.M2);
+                        state[25] -= properties.beta1*properties.M1_impact*properties.v1_impact[2]/(properties.M1 + properties.M2);
+                    }
                     maneuver1_applied = true;
                 }
                 if (!maneuver2_applied && t >= properties.t2_impact)
@@ -344,6 +358,12 @@ public:
                     state[3] += properties.beta2*properties.M2_impact*properties.v2_impact[0]/properties.M2;
                     state[4] += properties.beta2*properties.M2_impact*properties.v2_impact[1]/properties.M2;
                     state[5] += properties.beta2*properties.M2_impact*properties.v2_impact[2]/properties.M2;
+                    if (properties.spacecraft_checkbox)
+                    {
+                        state[23] -= properties.beta2*properties.M2_impact*properties.v2_impact[0]/(properties.M1 + properties.M2);
+                        state[24] -= properties.beta2*properties.M2_impact*properties.v2_impact[1]/(properties.M1 + properties.M2);
+                        state[25] -= properties.beta2*properties.M2_impact*properties.v2_impact[2]/(properties.M1 + properties.M2);
+                    }
                     maneuver2_applied = true;
                 }
             }

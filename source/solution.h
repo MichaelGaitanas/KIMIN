@@ -8,7 +8,7 @@
 #include<atomic>
 #include<algorithm>
 
-#include"constant.h"
+#include"constants.h"
 #include"typedef.h"
 #include"linalg.h"
 #include"conversion.h"
@@ -93,12 +93,12 @@ public:
 
             dvec3 rcyl = cart2cyl(r);
             double temp = rpy1[2] - rcyl[1]; //phi1 = thita1z - thita
-            while (temp > pi) temp -= 2.0*pi;
-            while (temp <= -pi) temp += 2.0*pi;
+            while (temp > PI) temp -= 2.0*PI;
+            while (temp <= -PI) temp += 2.0*PI;
             double libr1 = temp;
             temp = rpy2[2] - rcyl[1];  //phi2 = thita2z - thita
-            while (temp > pi) temp -= 2.0*pi;
-            while (temp <= -pi) temp += 2.0*pi;
+            while (temp > PI) temp -= 2.0*PI;
+            while (temp <= -PI) temp += 2.0*PI;
             double libr2 = temp;
 
             dvec6 kep  = cart2kep(dvec6{r[0],r[1],r[2], v[0],v[1],v[2]}, G*(integr.properties.M1 + integr.properties.M2));
@@ -152,15 +152,15 @@ public:
             dist[i] = rcyl[0];
             vel[i]  = length(v);
 
-            roll1[i]   = rpy1[0]*180.0/pi;
-            pitch1[i]  = rpy1[1]*180.0/pi;
-            yaw1[i]    = rpy1[2]*180.0/pi;
-            relyaw1[i] = libr1*180.0/pi;
+            roll1[i]   = rpy1[0]*180.0/PI;
+            pitch1[i]  = rpy1[1]*180.0/PI;
+            yaw1[i]    = rpy1[2]*180.0/PI;
+            relyaw1[i] = libr1*180.0/PI;
 
-            roll2[i]  = rpy2[0]*180.0/pi;
-            pitch2[i] = rpy2[1]*180.0/pi;
-            yaw2[i]   = rpy2[2]*180.0/pi;
-            relyaw2[i] = libr2*180.0/pi;
+            roll2[i]  = rpy2[0]*180.0/PI;
+            pitch2[i] = rpy2[1]*180.0/PI;
+            yaw2[i]   = rpy2[2]*180.0/PI;
+            relyaw2[i] = libr2*180.0/PI;
 
             w1ix[i] = w1i[0];
             w1iy[i] = w1i[1];
@@ -172,10 +172,10 @@ public:
 
             sma[i]    = kep[0];
             ecc[i]    = kep[1];
-            inc[i]    = kep[2]*180.0/pi;
-            raan[i]   = kep[3]*180.0/pi;
-            argper[i] = kep[4]*180.0/pi;
-            manom[i]  = kep[5]*180.0/pi;
+            inc[i]    = kep[2]*180.0/PI;
+            raan[i]   = kep[3]*180.0/PI;
+            argper[i] = kep[4]*180.0/PI;
+            manom[i]  = kep[5]*180.0/PI;
 
             if (i == 0)
             {

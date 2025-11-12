@@ -1,6 +1,6 @@
 #include<cstdio>
 
-#include"../../source/constant.h"
+#include"../../source/constants.h"
 #include"../../source/typedef.h"
 #include"../../source/linalg.h"
 #include"../../source/file.h"
@@ -26,10 +26,10 @@ int main()
     dvec6 kep = cart2kep(cart, G*(M1+M2));
     printf("a  = %.15lf\n", kep[0]);
     printf("e  = %.15lf\n", kep[1]);
-    printf("i  = %.15lf\n", kep[2]*180.0/pi);
-    printf("Om = %.15lf\n", kep[3]*180.0/pi);
-    printf("w  = %.15lf\n", kep[4]*180.0/pi);
-    printf("M  = %.15lf\n\n", kep[5]*180.0/pi);
+    printf("i  = %.15lf\n", kep[2]*180.0/PI);
+    printf("Om = %.15lf\n", kep[3]*180.0/PI);
+    printf("w  = %.15lf\n", kep[4]*180.0/PI);
+    printf("M  = %.15lf\n\n", kep[5]*180.0/PI);
 
     return 0;
 }

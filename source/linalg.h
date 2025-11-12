@@ -6,9 +6,7 @@
 #include<limits>
 
 #include"typedef.h"
-#include"constant.h"
-
-////////////////////////////////////////////////////////////////////////////////
+#include"constants.h"
 
 //Define the operation v1 + v2 (v1,v2 are 3x1 vectors).
 dvec3 operator+(const dvec3 &v1, const dvec3 &v2)

@@ -9,6 +9,8 @@
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
 
+#include"constants.h"
+
 class camera
 {
 private:
@@ -119,8 +121,8 @@ public:
     void scroll_fov(const float mouse_delta_wheel)
     {
         fov -= mouse_delta_wheel;
-        if (fov <= 1.0f) fov = 1.0f;
-        else if (fov >= 179.0f) fov = 179.0f;
+        if (fov <= CAM_MIN_FOV) fov = CAM_MIN_FOV;
+        else if (fov >= CAM_MAX_FOV) fov = CAM_MAX_FOV;
     }
 
     //This function alters the camera's active distance member (i.e. 'dist_world' or 'dist_com'), based on how much the user scrolled the mouse wheel since the last frame. It is called only when the camera is either in WORLD or COM frame mode.

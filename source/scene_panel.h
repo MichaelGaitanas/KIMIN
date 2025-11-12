@@ -8,7 +8,7 @@
 #include"../imgui/imgui_impl_opengl3.h"
 #include"../imgui/implot.h"
 
-#include"constant.h"
+#include"constants.h"
 #include"typedef.h"
 #include"solution.h"
 #include"renderer3D.h"
@@ -425,7 +425,7 @@ private:
         ImGui::Text("FoV");
         ImGui::SameLine();
         ImGui::SetCursorPosX(40.0f);
-        ImGui::SliderFloat("[deg]##rend3D.cam.fov", &rend3D.cam.fov, 1.0f, 179.0f, "%.0f");
+        ImGui::SliderFloat("[deg]##rend3D.cam.fov", &rend3D.cam.fov, CAM_MIN_FOV, CAM_MAX_FOV, "%.0f");
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Separator();

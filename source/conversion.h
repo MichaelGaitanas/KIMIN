@@ -6,7 +6,7 @@
 #include<cmath>
 #include<cstdio>
 
-#include"constant.h"
+#include"constants.h"
 #include"typedef.h"
 #include"linalg.h"
 
@@ -117,12 +117,12 @@ double clamp_cos(double cosx)
     return cosx;
 }
 
-//Perform unsigned modulo 2*pi to the argument 'angle'.
+//Perform unsigned modulo 2*PI to the argument 'angle'.
 double wrap_to_2pi(double angle)
 {
-    angle = fmod(angle, 2.0*pi);
+    angle = fmod(angle, 2.0*PI);
     if (angle < 0.0)
-        angle += 2.0*pi;
+        angle += 2.0*PI;
     return angle;
 }
 
@@ -191,7 +191,7 @@ double M2H(const double M, const double e)
 double H2M(const double H, const double e)
 {
     double M = e*sinh(H) - H;
-    return M; //Here we do not wrap in 2*pi, because the hyperbolic mean anomaly is not a periodic angle (unlike in the elliptical case).
+    return M; //Here we do not wrap in 2*PI, because the hyperbolic mean anomaly is not a periodic angle (unlike in the elliptical case).
 }
 
 //Convert Keplerian elements to Cartesian.
@@ -309,7 +309,7 @@ dvec6 cart2kep(const dvec6 &cart, const double GM)
         double cosOm = nx/n;
         Om = acos(clamp_cos(cosOm));
         if (ny < 0.0)
-            Om = 2.0*pi - Om;
+            Om = 2.0*PI - Om;
     }
     else
         Om = 0.0;
@@ -324,7 +324,7 @@ dvec6 cart2kep(const dvec6 &cart, const double GM)
             cosw = (nx*ex + ny*ey)/(e*n);
             w = acos(clamp_cos(cosw));
             if (ez < 0.0)
-                w = 2.0*pi - w;
+                w = 2.0*PI - w;
         }
         else
         {
@@ -344,14 +344,14 @@ dvec6 cart2kep(const dvec6 &cart, const double GM)
             cosf = (ex*x + ey*y + ez*z)/(e*r);
             f = acos(clamp_cos(cosf));
             if (rdotv < 0.0)
-                f = 2.0*pi - f;
+                f = 2.0*PI - f;
         }
         else
         {
             cosf = (nx*x + ny*y)/(n*r);
             f = acos(clamp_cos(cosf));
             if (-x*ny + y*nx < 0.0)
-                f = 2.0*pi - f;
+                f = 2.0*PI - f;
         }
     }
     else

@@ -4,7 +4,7 @@
 #include<filesystem>
 #include<boost/numeric/odeint.hpp>
 
-#include"../../source/constant.h"
+#include"../../source/constants.h"
 #include"../../source/typedef.h"
 #include"../../source/linalg.h"
 #include"../../source/file.h"
@@ -270,15 +270,15 @@ int main()
         dmat3 A2 = quat2mat(q2);
         dvec3 w1i = body2iner(w1b,A1);
         dvec3 w2i = body2iner(w2b,A2);
-        dvec3 rpy1 = quat2ang(q1)*180.0/pi;
-        dvec3 rpy2 = quat2ang(q2)*180.0/pi;
+        dvec3 rpy1 = quat2ang(q1)*180.0/PI;
+        dvec3 rpy2 = quat2ang(q2)*180.0/PI;
 
         dvec3 rcyl = cart2cyl(r);
-        double temp = rpy1[2] - rcyl[1]*180.0/pi; //phi1 = thita1z - thita
+        double temp = rpy1[2] - rcyl[1]*180.0/PI; //phi1 = thita1z - thita
         while (temp > 180.0) temp -= 360.0;
         while (temp <= -180.0) temp += 360.0;
         double libr1 = temp; //In [deg].
-        temp = rpy2[2] - rcyl[1]*180.0/pi;  //phi2 = thita2z - thita
+        temp = rpy2[2] - rcyl[1]*180.0/PI;  //phi2 = thita2z - thita
         while (temp > 180.0) temp -= 360.0;
         while (temp <= -180.0) temp += 360.0;
         double libr2 = temp; //In [deg].
@@ -313,7 +313,7 @@ int main()
         fprintf(file_t,"%.16lf\n", orbit[i][0]/86400.0); //Export t in [days]
         fprintf(file_pos,"%.16lf %.16lf %.16lf %.16lf\n",r[0],r[1],r[2], length(r));
         fprintf(file_vel,"%.16lf %.16lf %.16lf %.16lf\n",v[0],v[1],v[2], length(v));
-        fprintf(file_kep,"%.16lf %.16lf %.16lf\n",kep[0],kep[1],kep[2]*180.0/pi);
+        fprintf(file_kep,"%.16lf %.16lf %.16lf\n",kep[0],kep[1],kep[2]*180.0/PI);
         fprintf(file_q1,"%.16lf %.16lf %.16lf %.16lf\n",q1[0],q1[1],q1[2],q1[3]);
         fprintf(file_w1b,"%.16lf %.16lf %.16lf\n",w1b[0],w1b[1],w1b[2]);
         fprintf(file_q2,"%.16lf %.16lf %.16lf %.16lf\n",q2[0],q2[1],q2[2],q2[3]);

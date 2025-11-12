@@ -1,5 +1,5 @@
-/* Here we have the expressions of : 1) potentials, 2) forces, 3) torques for a couple of physics modeling assumptions.
-   I know that they are not in the most optimized form, but for know I account for correctness and clarity. :)  */
+/* Here we have the expressions of gravitational potentials, forces and torques for a couple of physics modeling assumptions.
+   I know that they are not in the most optimized form as there are repentances, but for know I account for correctness and clarity. :)  */
 
 #ifndef GRAVITY_H
 #define GRAVITY_H
@@ -10,7 +10,7 @@
     #include<omp.h>
 #endif
 
-#include"constant.h"
+#include"constants.h"
 #include"typedef.h"
 #include"linalg.h"
 

@@ -4,7 +4,7 @@
 #include<limits>
 #include<boost/numeric/odeint.hpp>
 
-#include"../../source/constant.h"
+#include"../../source/constants.h"
 #include"../../source/typedef.h"
 #include"../../source/linalg.h"
 #include"../../source/conversion.h"
@@ -94,7 +94,7 @@ int main()
         dvec3 wb = dvec3{orbit[i][5], orbit[i][6], orbit[i][7]};
         dmat3 A = quat2mat(q);
         dvec3 wi = body2iner(wb,A);
-        dvec3 rpy = quat2ang(q)*180.0/pi;
+        dvec3 rpy = quat2ang(q)*180.0/PI;
         double energy = 0.5*dot( dot(wb,inertia), wb);
         dvec3 momentum = dot(A, dot(inertia,wb));
 

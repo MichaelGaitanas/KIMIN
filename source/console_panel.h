@@ -18,17 +18,15 @@
 class console_panel
 {
 private:
-    ImGuiTextBuffer buffer;
-    bool scroll_to_bottom;
-    const int max_buffer_size = 60000; //Threshold for buffer size, measured in bytes (1 byte for each ASCII char and 1-4 bytes for each unicode char due to UTF-8 encoding).
+    ImGuiTextBuffer buffer{};
+    bool scroll_to_bottom = false;
+    const int max_buffer_size = 60000; //In bytes (1 byte for each ASCII char and 1-4 bytes for each unicode char due to UTF-8 encoding).
 
-    //Actual clearance of the console.
     void cls()
     {
         buffer.clear();
     }
 
-    //Automatic clearance of the console.
     void auto_cls()
     {
         if (buffer.size() > max_buffer_size)
@@ -66,20 +64,20 @@ public:
         add_text(text);
     }
 
-    //Render the console imgui window.
+    //Render the console window.
     void render()
     {
         ImGui::SetNextWindowPos(ImVec2(0.15f*ImGui::GetIO().DisplaySize.x, 0.8f*ImGui::GetIO().DisplaySize.y), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(0.7f*ImGui::GetIO().DisplaySize.x, 0.2f*ImGui::GetIO().DisplaySize.y), ImGuiCond_FirstUseEver);
         ImGui::Begin("Console", nullptr);
 
-        //Mouse input : Clear the console.
+        //Clear button.
         if (ImGui::Button("Clear", ImVec2(60.0f,25.0f)))
             cls();
         
-        //Display GPU.
+        //Display FPS and GPU.
         ImGui::SameLine();
-        ImGui::Text("GPU [ %s ] ",glGetString(GL_RENDERER));
+        ImGui::Text("FPS [ %.0f ] ,    GPU [ %s ]", ImGui::GetIO().Framerate, glGetString(GL_RENDERER));
         ImGui::Separator();
         
         ImGui::BeginChild("Scroll", ImVec2(0.0f,0.0f), true, ImGuiWindowFlags_HorizontalScrollbar);

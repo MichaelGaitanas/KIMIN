@@ -15,7 +15,7 @@
 #include<Eigen/Dense>
 
 #include"typedef.h"
-#include"constant.h"
+#include"constants.h"
 #include"linalg.h"
 
 class polyhedron
@@ -400,7 +400,7 @@ public:
         gen_norms();
 
         //Ray's destination point. It is assumed to be very far away, aiming to be outside of the polyhedron. The irrational numbers help avoid degeneracies.
-        dvec3 pdest = 10000000.0*dvec3{pi, exp(1.0), sqrt(2.0)};
+        dvec3 pdest = 10000000.0*dvec3{PI, exp(1.0), sqrt(2.0)};
         
         size_t intersections = 0;
 

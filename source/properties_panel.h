@@ -13,7 +13,7 @@
 #include<cstring>
 #include<string>
 
-#include"constant.h"
+#include"constants.h"
 #include"linalg.h"
 #include"conversion.h"
 #include"polyhedron.h"
@@ -23,7 +23,7 @@
 class properties_panel
 {
 public:
-    char sim_name[128]; //'Simulation name' text field.
+    char sim_name[128]; //'Simulation name' text field (imgui shall stop the input characters to 127 to prevent overflow).
     
     bool ell_checkbox; //'Ellipsoids' checkbox state.
     dvec3 semiaxes1, semiaxes2; //'a1', 'b1', 'c1', 'a2', 'b2', 'c2' double fields.
@@ -53,8 +53,8 @@ public:
         CARTESIAN,
         KEPLERIAN
     } pos_vel_var;
-    dvec6 cart; //'x', 'y', 'z', 'υx', 'υy', 'υz' double fields of the relative state.
-    dvec6 kep; //'a', 'e', 'i', 'Ω', 'ω', 'M' double fields of the relative state.
+    dvec6 cart; //'x', 'y', 'z', 'υx', 'υy', 'υz' double fields of the relative position/velocity.
+    dvec6 kep; //'a', 'e', 'i', 'Ω', 'ω', 'M' double fields of the relative position/velocity.
 
     enum
     {
@@ -72,7 +72,7 @@ public:
     dvec3 w1i, w2i; //'ω1ix', 'ω1iy', 'ω1iz', 'ω2ix', 'ω2iy, 'ω2iz' double fields.
     dvec3 w1b, w2b; //'ω1bx', 'ω1by', 'ω1bz', 'ω2bx', 'ω2by, 'ω2bz' double fields.
 
-    dvec3 r_com, v_com; //'x', 'y', 'z', 'υx', 'υy', 'υz' double fields of the center of mass.
+    dvec3 r_com, v_com; //'x', 'y', 'z', 'υx', 'υy', 'υz' double fields of the center of mass of the binary.
 
     bool collision_no, collision_spheres, collision_polyhedra; //Which type of collision criterion to apply in the simulation.
 
@@ -162,12 +162,12 @@ public:
         }
 
         //Parse the simulation name.
-        if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", sim_name);
+        if (find_assignment_operator(fp)) fscanf(fp, " \"%127[^\"]\"", sim_name);
 
         char buffer[128];
 
         //Parse the shape model.
-        if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", buffer);
+        if (find_assignment_operator(fp)) fscanf(fp, " \"%127[^\"]\"", buffer);
         if (strcmp(buffer, "Ellipsoids") == 0)
         {
             for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &semiaxes1[i]);
@@ -178,12 +178,12 @@ public:
         {
             if (find_assignment_operator(fp))
             {   
-                fscanf(fp, " \"%[^\"]\"", buffer);
+                fscanf(fp, " \"%127[^\"]\"", buffer);
                 obj1_path = buffer;
             }
             if (find_assignment_operator(fp))
             {
-                fscanf(fp, " \"%[^\"]\"", buffer);
+                fscanf(fp, " \"%127[^\"]\"", buffer);
                 obj2_path = buffer;
             }
             obj_checkbox = obj_clicked_ok = true;
@@ -204,7 +204,7 @@ public:
         if (find_assignment_operator(fp)) fscanf(fp, "%lf", &M2);
 
         //Parse the numerical method of integration.
-        if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", buffer);
+        if (find_assignment_operator(fp)) fscanf(fp, " \"%127[^\"]\"", buffer);
         if (strcmp(buffer, "RKF78 (fixed)") == 0)
         {
             integration_method = RKF78_FIXED;
@@ -235,7 +235,7 @@ public:
         }
 
         //Parse the binary's initial position/velocity.
-        if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", buffer);
+        if (find_assignment_operator(fp)) fscanf(fp, " \"%127[^\"]\"", buffer);
         if (strcmp(buffer, "Cartesian") == 0)
         {
             pos_vel_var = CARTESIAN;
@@ -248,7 +248,7 @@ public:
         }
 
         //Parse the bodies' initial orientations.
-        if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", buffer);
+        if (find_assignment_operator(fp)) fscanf(fp, " \"%127[^\"]\"", buffer);
         if (strcmp(buffer, "Euler angles") == 0)
         {
             orient_var = EULER_XYZ;
@@ -263,7 +263,7 @@ public:
         }
 
         //Parse the binary's initial angular velocity.
-        if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", buffer);
+        if (find_assignment_operator(fp)) fscanf(fp, " \"%127[^\"]\"", buffer);
         if (strcmp(buffer, "At inertial frame") == 0)
         {
             angvel_frame = INERTIAL;
@@ -282,7 +282,7 @@ public:
         for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &v_com[i]);
 
         //Parse the collision shapes.
-        if (find_assignment_operator(fp)) fscanf(fp, " \"%[^\"]\"", buffer);
+        if (find_assignment_operator(fp)) fscanf(fp, " \"%127[^\"]\"", buffer);
         if (strcmp(buffer, "No collision") == 0)
             collision_no = true;
         else if (strcmp(buffer, "Spheres") == 0)
@@ -293,7 +293,7 @@ public:
         //Parse the kinetic impactors.
         if (find_assignment_operator(fp))
         {
-            fscanf(fp, " \"%[^\"]\"", buffer);
+            fscanf(fp, " \"%127[^\"]\"", buffer);
             if (strcmp(buffer, "Yes") == 0)
             {
                 if (find_assignment_operator(fp)) fscanf(fp, "%lf", &M1_impact);
@@ -313,7 +313,7 @@ public:
         //Parse the spacecraft orbiter's initial state.
         if (find_assignment_operator(fp))
         {
-            fscanf(fp, " \"%[^\"]\"", buffer);
+            fscanf(fp, " \"%127[^\"]\"", buffer);
             if (strcmp(buffer, "Yes") == 0)
             {
                 for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &r_sp[i]);

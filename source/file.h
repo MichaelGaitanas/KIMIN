@@ -1,9 +1,10 @@
+/* This is a single function header, meant to track my personal assignment operator ':=' inside an input file. */
+
 #ifndef FILE_H
 #define FILE_H
 
 #include<cstdio>
 
-//This function is used to track the assignment operator ':=' inside a file, which is used to read inputs.
 bool find_assignment_operator(FILE *fp)
 {
     int c = fgetc(fp);
