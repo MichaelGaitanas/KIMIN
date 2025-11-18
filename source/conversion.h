@@ -142,7 +142,7 @@ double M2E(const double M, const double e)
         E = E0 - (M - E0 + e*sin(E0))/(-1.0 + e*cos(E0));
 
         //Loop escape criterion.
-        if (++iter > 20)
+        if (++iter > NR_MAX_ITERATIONS)
         {
             printf("Warning : In M2E(), N-R did not converge sufficiently. Returning as E the last E_i of the method (E_i = %.15lf [rad]) for which |E_i - E_(i-1)| = %.15e.\n", E, fabs(E-E0));
             return wrap_to_2pi(E);
@@ -176,7 +176,7 @@ double M2H(const double M, const double e)
         H = H0 - (e*sinh(H0) - H0 - M)/(e*cosh(H0) - 1.0);
         
         //Loop escape criterion.
-        if (++iter > 20)
+        if (++iter > NR_MAX_ITERATIONS)
         {
             printf("Warning : In M2H(), N-R did not converge sufficiently. Returning as H the last H_i of the method (H_i = %.15lf [rad]) for which |H_i - H_(i-1)| = %.15e.\n", H, fabs(H-H0));
             return H;

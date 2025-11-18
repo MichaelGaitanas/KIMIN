@@ -9,6 +9,7 @@
 #include<cstdio>
 #include<cstdlib>
 
+#include"constants.h"
 #include"gui.h"
 
 class window
@@ -64,8 +65,8 @@ public:
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
         //glfwWindowHint(GLFW_REFRESH_RATE, 60);
-        glfwWindowHint(GLFW_SAMPLES, 4); //Anti-aliasing samples.
-        glfwWindowHint(GLFW_DEPTH_BITS, 32);
+        glfwWindowHint(GLFW_SAMPLES, GLFW_SSAS_SAMPLES);
+        glfwWindowHint(GLFW_DEPTH_BITS, GLFW_REQUESTED_DEPTH_BITS);
 
         const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
         width = mode->width;
@@ -81,7 +82,7 @@ public:
         }
         glfwSetWindowUserPointer(wpointer, this);
         glfwMakeContextCurrent(wpointer);
-        glfwSetWindowSizeLimits(wpointer, 400,400, GLFW_DONT_CARE,GLFW_DONT_CARE);
+        glfwSetWindowSizeLimits(wpointer, GLFW_MIN_WIDTH,GLFW_MIN_HEIGHT, GLFW_DONT_CARE,GLFW_DONT_CARE);
         glfwSwapInterval(1);
 
         glewExperimental = GL_TRUE;

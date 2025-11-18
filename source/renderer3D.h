@@ -109,7 +109,7 @@ public:
         glBindFramebuffer(GL_FRAMEBUFFER, depth_fbo);
         glGenTextures(1, &depth_tex);
         glBindTexture(GL_TEXTURE_2D, depth_tex);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, depth_reso, depth_reso, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr); //Shadow mapping is highly sensitive to depth precision, hence the 32 bits.
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, depth_reso, depth_reso, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
@@ -119,7 +119,6 @@ public:
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_tex, 0);
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
             fprintf(stderr, "[Warning] : In renderer3D::setup_depth_fbo(), the depth framebuffer is not completed.\n");
-        //Since shadow mapping only requires depth information and needs no colors, the following commnads make sure that OpenGL avoids any (unnecessary) color buffer operations.
         glDrawBuffer(GL_NONE);
         glReadBuffer(GL_NONE);
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -160,45 +159,30 @@ public:
             orb_sp.draw_count = std::min<size_t>(1, sol.t.size());
     }
 
-    glm::vec3 compute_com_world_at(const solution &sol, size_t i, const glm::vec3 &rcm0_world, const glm::vec3 &vcm0_world)
+    //This function evaluates the equation of motion of the COM in world coordinates.
+    glm::vec3 get_pos_com(const solution &sol, const size_t i, const glm::vec3 &rcm0, const glm::vec3 &vcm0)
     {
-        const double t0_sec = sol.integr.t0, ti_sec = sol.t[i]*86400.0, dt0 = ti_sec - t0_sec;
-
-        //'Base' linear drift from initial state.
-        glm::vec3 r = rcm0_world + vcm0_world*(float)dt0;
-
-        const double Mtot = sol.integr.properties.M1 + sol.integr.properties.M2;
-
+        const double ti = sol.t[i]*86400.0;
+        glm::vec3 r = rcm0 + vcm0*(float)(ti - sol.integr.t0); //COM position due to initial state.
         if (sol.integr.properties.impactors_checkbox)
         {
-            // Impact 1 contribution (world-frame impact velocity)
+            if (ti >= sol.integr.properties.tD1) //Impact 1 contribution.
             {
-                const double t1 = sol.integr.properties.t1_impact; // seconds (after prepare())
-                if (ti_sec >= t1) {
-                    const double scale = (sol.integr.properties.beta1 * sol.integr.properties.M1_impact) / Mtot;
-                    const glm::vec3 dV1 = (float)scale * glm::vec3(
-                        (float)sol.integr.properties.v1_impact[0],
-                        (float)sol.integr.properties.v1_impact[1],
-                        (float)sol.integr.properties.v1_impact[2]
-                    );
-                    r += dV1 * (float)(ti_sec - t1);
-                }
+                const float c = (sol.integr.properties.beta1*sol.integr.properties.mD1)/(sol.integr.properties.M1 + sol.integr.properties.M2);
+                const glm::vec3 dvcm1 = c*glm::vec3((float)sol.integr.properties.vD1[0],
+                                                    (float)sol.integr.properties.vD1[1],
+                                                    (float)sol.integr.properties.vD1[2]);
+                r += dvcm1*(float)(ti - sol.integr.properties.tD1);
             }
-            // Impact 2 contribution
+            if (ti >= sol.integr.properties.tD2) //Impact 2 contribution.
             {
-                const double t2 = sol.integr.properties.t2_impact; // seconds
-                if (ti_sec >= t2) {
-                    const double scale = (sol.integr.properties.beta2 * sol.integr.properties.M2_impact) / Mtot;
-                    const glm::vec3 dV2 = (float)scale * glm::vec3(
-                        (float)sol.integr.properties.v2_impact[0],
-                        (float)sol.integr.properties.v2_impact[1],
-                        (float)sol.integr.properties.v2_impact[2]
-                    );
-                    r += dV2 * (float)(ti_sec - t2);
-                }
+                const float c = (sol.integr.properties.beta2*sol.integr.properties.mD2)/(sol.integr.properties.M1 + sol.integr.properties.M2);
+                const glm::vec3 dvcm2 = c*glm::vec3((float)sol.integr.properties.vD2[0],
+                                                    (float)sol.integr.properties.vD2[1],
+                                                    (float)sol.integr.properties.vD2[2]);
+                r += dvcm2*(float)(ti - sol.integr.properties.tD2);
             }
         }
-
         return r;
     }
 
@@ -212,13 +196,12 @@ public:
             reset_gpu_essential = false;
         }
 
-        const glm::vec3 r0 = glm::vec3((float)sol.integr.properties.r_com[0],
-                                       (float)sol.integr.properties.r_com[1],
-                                       (float)sol.integr.properties.r_com[2]);
-        const glm::vec3 v0 = glm::vec3((float)sol.integr.properties.v_com[0],
-                                       (float)sol.integr.properties.v_com[1],
-                                       (float)sol.integr.properties.v_com[2]);
-        const glm::vec3 pos_com = compute_com_world_at(sol, iframe, r0, v0);
+        const glm::vec3 pos_com = get_pos_com(sol, iframe, glm::vec3((float)sol.integr.properties.r_com[0],
+                                                                     (float)sol.integr.properties.r_com[1],
+                                                                     (float)sol.integr.properties.r_com[2]),
+                                                           glm::vec3((float)sol.integr.properties.v_com[0],
+                                                                     (float)sol.integr.properties.v_com[1],
+                                                                     (float)sol.integr.properties.v_com[2]));
         const glm::vec3 pos1 = pos_com + (float)sol.integr.com1_coeff*glm::vec3(sol.x[iframe],sol.y[iframe],sol.z[iframe]);
         const glm::vec3 pos2 = pos_com + (float)sol.integr.com2_coeff*glm::vec3(sol.x[iframe],sol.y[iframe],sol.z[iframe]);
 

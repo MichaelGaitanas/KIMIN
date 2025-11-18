@@ -490,19 +490,19 @@ public:
         {
             fprintf(file_properties,"Kinetic impactors := \"Yes\"\n");
 
-            fprintf(file_properties,"m1    := %.15g\n", integr.properties.M1_impact);
-            fprintf(file_properties,"vx1   := %.15g\n", integr.properties.v1_impact[0]);
-            fprintf(file_properties,"vy1   := %.15g\n", integr.properties.v1_impact[1]);
-            fprintf(file_properties,"vz1   := %.15g\n", integr.properties.v1_impact[2]);
+            fprintf(file_properties,"m1    := %.15g\n", integr.properties.mD1);
+            fprintf(file_properties,"vx1   := %.15g\n", integr.properties.vD1[0]);
+            fprintf(file_properties,"vy1   := %.15g\n", integr.properties.vD1[1]);
+            fprintf(file_properties,"vz1   := %.15g\n", integr.properties.vD1[2]);
             fprintf(file_properties,"beta1 := %.15g\n", integr.properties.beta1);
-            fprintf(file_properties,"t1    := %.15g\n", integr.properties.t1_impact/86400.0);
+            fprintf(file_properties,"t1    := %.15g\n", integr.properties.tD1/86400.0);
 
-            fprintf(file_properties,"m2    := %.15g\n",   integr.properties.M2_impact);
-            fprintf(file_properties,"vx2   := %.15g\n",   integr.properties.v2_impact[0]);
-            fprintf(file_properties,"vy2   := %.15g\n",   integr.properties.v2_impact[1]);
-            fprintf(file_properties,"vz2   := %.15g\n",   integr.properties.v2_impact[2]);
+            fprintf(file_properties,"m2    := %.15g\n",   integr.properties.mD2);
+            fprintf(file_properties,"vx2   := %.15g\n",   integr.properties.vD2[0]);
+            fprintf(file_properties,"vy2   := %.15g\n",   integr.properties.vD2[1]);
+            fprintf(file_properties,"vz2   := %.15g\n",   integr.properties.vD2[2]);
             fprintf(file_properties,"beta2 := %.15g\n",   integr.properties.beta2);
-            fprintf(file_properties,"t2    := %.15g\n\n", integr.properties.t2_impact/86400.0);
+            fprintf(file_properties,"t2    := %.15g\n\n", integr.properties.tD2/86400.0);
         }
         else
             fprintf(file_properties, "Kinetic impactors := \"No\"\n\n");

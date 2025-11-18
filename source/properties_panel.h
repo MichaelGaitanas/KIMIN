@@ -77,10 +77,10 @@ public:
     bool collision_no, collision_spheres, collision_polyhedra; //Which type of collision criterion to apply in the simulation.
 
     bool impactors_checkbox; //'Kinetic impactors' checkbox state.
-    double M1_impact, M2_impact; //'m1', 'm2' double fields.
-    dvec3 v1_impact, v2_impact; //'υx1', 'υy1', 'υz1', 'υx2', 'υy2', 'υz2' double fields.
+    double mD1, mD2; //'m1', 'm2' double fields.
+    dvec3 vD1, vD2; //'υx1', 'υy1', 'υz1', 'υx2', 'υy2', 'υz2' double fields.
     double beta1, beta2; //'β1', 'β2' double fields.
-    double t1_impact, t2_impact; //'t1', 't2' double fields.
+    double tD1, tD2; //'t1', 't2' double fields.
     bool impactors_clicked_ok; //Impactors 'OK' button.
 
     bool spacecraft_checkbox; //'Spacecraft orbiter' checkbox state.
@@ -130,14 +130,14 @@ public:
                          collision_spheres(false),
                          collision_polyhedra(false),
                          impactors_checkbox(false),
-                         M1_impact(0.0),
-                         M2_impact(0.0),
-                         v1_impact(dvec3{0.0,0.0,0.0}),
-                         v2_impact(dvec3{0.0,0.0,0.0}),
+                         mD1(0.0),
+                         mD2(0.0),
+                         vD1(dvec3{0.0,0.0,0.0}),
+                         vD2(dvec3{0.0,0.0,0.0}),
                          beta1(0.0),
                          beta2(0.0),
-                         t1_impact(0.0),
-                         t2_impact(0.0),
+                         tD1(0.0),
+                         tD2(0.0),
                          impactors_clicked_ok(false),
                          spacecraft_checkbox(false),
                          r_sp(dvec3{0.0,0.0,0.0}),
@@ -296,15 +296,15 @@ public:
             fscanf(fp, " \"%127[^\"]\"", buffer);
             if (strcmp(buffer, "Yes") == 0)
             {
-                if (find_assignment_operator(fp)) fscanf(fp, "%lf", &M1_impact);
-                for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &v1_impact[i]);
+                if (find_assignment_operator(fp)) fscanf(fp, "%lf", &mD1);
+                for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &vD1[i]);
                 if (find_assignment_operator(fp)) fscanf(fp, "%lf", &beta1);
-                if (find_assignment_operator(fp)) fscanf(fp, "%lf", &t1_impact);
+                if (find_assignment_operator(fp)) fscanf(fp, "%lf", &tD1);
 
-                if (find_assignment_operator(fp)) fscanf(fp, "%lf",&M2_impact);
-                for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &v2_impact[i]);
+                if (find_assignment_operator(fp)) fscanf(fp, "%lf",&mD2);
+                for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &vD2[i]);
                 if (find_assignment_operator(fp)) fscanf(fp, "%lf", &beta2);
-                if (find_assignment_operator(fp)) fscanf(fp, "%lf", &t2_impact);
+                if (find_assignment_operator(fp)) fscanf(fp, "%lf", &tD2);
 
                 impactors_checkbox = impactors_clicked_ok = true;
             }
@@ -491,11 +491,11 @@ public:
             {console.add_timed_text("[Error] : 'OK' button must be pressed in the 'Impactors' parameters' window.\n"); return false;}
 
         //Possible error 15 : Impactors' parameters (masses must be >= 0).
-        if (impactors_checkbox && (M1_impact < 0.0 || M2_impact < 0.0))
+        if (impactors_checkbox && (mD1 < 0.0 || mD2 < 0.0))
             {console.add_timed_text("[Error] : Both impactors' masses, 'm1' and 'm2' must be non negative.\n"); return false;}
 
         //Possible error 16 : Times of impacts must range in the simulated time range, i.e. in [Epoch, Epoch + Duration]
-        if (impactors_checkbox && (t1_impact < epoch || t1_impact > epoch + dur || t2_impact < epoch || t2_impact > epoch + dur))
+        if (impactors_checkbox && (tD1 < epoch || tD1 > epoch + dur || tD2 < epoch || tD2 > epoch + dur))
             {console.add_timed_text("[Error] : Impact times must range in [Epoch,  Epoch + Duration].\n"); return false;}
 
         //Possible error 17 : 'OK' button in the spacecraft orbiter parameters window (it must be clicked so that the i.c. are taken into account).
@@ -811,34 +811,34 @@ public:
             if (impactor_refers_to_body == 1)
             {
                 ImGui::Text("Mass (dry + fuel)");
-                double_field("m1 ", 100.0f, 40.0f, id, "[kg]", M1_impact);
+                double_field("m1 ", 100.0f, 40.0f, id, "[kg]", mD1);
                 ImGui::Dummy(ImVec2(0.0f,15.0f));
                 ImGui::Text("Velocity (relative to body 1)");
-                double_field("υx1 ", 100.0f, 40.0f, id, "[km/sec]", v1_impact[0]);
-                double_field("υy1 ", 100.0f, 40.0f, id, "[km/sec]", v1_impact[1]);
-                double_field("υz1 ", 100.0f, 40.0f, id, "[km/sec]", v1_impact[2]);
+                double_field("υx1 ", 100.0f, 40.0f, id, "[km/sec]", vD1[0]);
+                double_field("υy1 ", 100.0f, 40.0f, id, "[km/sec]", vD1[1]);
+                double_field("υz1 ", 100.0f, 40.0f, id, "[km/sec]", vD1[2]);
                 ImGui::Dummy(ImVec2(0.0f,15.0f));
                 ImGui::Text("Momentum enhancement factor (ejecta)");
                 double_field("β1 ", 100.0f, 40.0f, id, "[  ]", beta1);
                 ImGui::Dummy(ImVec2(0.0f,15.0f));
                 ImGui::Text("Impact epoch");
-                double_field("t1 ", 100.0f, 40.0f, id, "[days]", t1_impact);
+                double_field("t1 ", 100.0f, 40.0f, id, "[days]", tD1);
             }
             else
             {
                 ImGui::Text("Mass (dry + fuel)");
-                double_field("m2 ", 100.0f, 40.0f, id, "[kg]", M2_impact);
+                double_field("m2 ", 100.0f, 40.0f, id, "[kg]", mD2);
                 ImGui::Dummy(ImVec2(0.0f,15.0f));
                 ImGui::Text("Velocity (relative to body 2)");
-                double_field("υx2 ", 100.0f, 40.0f, id, "[km/sec]", v2_impact[0]);
-                double_field("υy2 ", 100.0f, 40.0f, id, "[km/sec]", v2_impact[1]);
-                double_field("υz2 ", 100.0f, 40.0f, id, "[km/sec]", v2_impact[2]);
+                double_field("υx2 ", 100.0f, 40.0f, id, "[km/sec]", vD2[0]);
+                double_field("υy2 ", 100.0f, 40.0f, id, "[km/sec]", vD2[1]);
+                double_field("υz2 ", 100.0f, 40.0f, id, "[km/sec]", vD2[2]);
                 ImGui::Dummy(ImVec2(0.0f,15.0f));
                 ImGui::Text("Momentum enhancement factor (ejecta)");
                 double_field("β2 ", 100.0f, 40.0f, id, "[  ]", beta2);
                 ImGui::Dummy(ImVec2(0.0f,15.0f));
                 ImGui::Text("Impact epoch");
-                double_field("t2 ", 100.0f, 40.0f, id, "[days]", t2_impact);
+                double_field("t2 ", 100.0f, 40.0f, id, "[days]", tD2);
             }
             ImGui::Dummy(ImVec2(0.0f,15.0f));
 

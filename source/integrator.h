@@ -255,32 +255,32 @@ public:
         if (properties.integration_method == properties_panel::RKF78_FIXED || properties.integration_method == properties_panel::ABM5_FIXED)
             dt = properties.step*86400.0; //[sec]
         else
-            init_guess_time_step = 1.0; //[sec]
+            init_guess_time_step = INIT_GUESS_TIME_STEP; //[sec]
 
         //Preparation 6 : Convert impact times in [sec]. Then, apply maneuvers BEFORE the while integration loop, only if the impact times are chosen to be at t = t0.
         if (properties.impactors_checkbox)
         {
-            properties.t1_impact *= 86400.0;
-            properties.t2_impact *= 86400.0;
-            if (fabs(t0 - properties.t1_impact) < 1e-15)
+            properties.tD1 *= 86400.0;
+            properties.tD2 *= 86400.0;
+            if (fabs(t0 - properties.tD1) < 1e-15)
             {
-                properties.cart[3] -= properties.beta1*properties.M1_impact*properties.v1_impact[0]/properties.M1;
-                properties.cart[4] -= properties.beta1*properties.M1_impact*properties.v1_impact[1]/properties.M1;
-                properties.cart[5] -= properties.beta1*properties.M1_impact*properties.v1_impact[2]/properties.M1;
+                properties.cart[3] -= properties.beta1*properties.mD1*properties.vD1[0]/properties.M1;
+                properties.cart[4] -= properties.beta1*properties.mD1*properties.vD1[1]/properties.M1;
+                properties.cart[5] -= properties.beta1*properties.mD1*properties.vD1[2]/properties.M1;
                 if (properties.spacecraft_checkbox)
                 {
-                    properties.v_sp = properties.v_sp - properties.beta1*properties.M1_impact*properties.v1_impact/(properties.M1 + properties.M2);
+                    properties.v_sp = properties.v_sp - properties.beta1*properties.mD1*properties.vD1/(properties.M1 + properties.M2);
                 }
                 maneuver1_applied = true;
             }
-            if (fabs(t0 - properties.t2_impact) < 1e-15)
+            if (fabs(t0 - properties.tD2) < 1e-15)
             {
-                properties.cart[3] += properties.beta2*properties.M2_impact*properties.v2_impact[0]/properties.M2;
-                properties.cart[4] += properties.beta2*properties.M2_impact*properties.v2_impact[1]/properties.M2;
-                properties.cart[5] += properties.beta2*properties.M2_impact*properties.v2_impact[2]/properties.M2;
+                properties.cart[3] += properties.beta2*properties.mD2*properties.vD2[0]/properties.M2;
+                properties.cart[4] += properties.beta2*properties.mD2*properties.vD2[1]/properties.M2;
+                properties.cart[5] += properties.beta2*properties.mD2*properties.vD2[2]/properties.M2;
                 if (properties.spacecraft_checkbox)
                 {
-                    properties.v_sp = properties.v_sp - properties.beta2*properties.M2_impact*properties.v2_impact/(properties.M1 + properties.M2);
+                    properties.v_sp = properties.v_sp - properties.beta2*properties.mD2*properties.vD2/(properties.M1 + properties.M2);
                 }
                 maneuver2_applied = true;
             }
@@ -340,29 +340,29 @@ public:
             //2) Kinetic impacts : apply corresponding maneuvers in case that kinetic impactors were assumed in the gui.
             if (properties.impactors_checkbox)
             {
-                if (!maneuver1_applied && t >= properties.t1_impact)
+                if (!maneuver1_applied && t >= properties.tD1)
                 {
-                    state[3] -= properties.beta1*properties.M1_impact*properties.v1_impact[0]/properties.M1;
-                    state[4] -= properties.beta1*properties.M1_impact*properties.v1_impact[1]/properties.M1;
-                    state[5] -= properties.beta1*properties.M1_impact*properties.v1_impact[2]/properties.M1;
+                    state[3] -= properties.beta1*properties.mD1*properties.vD1[0]/properties.M1;
+                    state[4] -= properties.beta1*properties.mD1*properties.vD1[1]/properties.M1;
+                    state[5] -= properties.beta1*properties.mD1*properties.vD1[2]/properties.M1;
                     if (properties.spacecraft_checkbox)
                     {
-                        state[23] -= properties.beta1*properties.M1_impact*properties.v1_impact[0]/(properties.M1 + properties.M2);
-                        state[24] -= properties.beta1*properties.M1_impact*properties.v1_impact[1]/(properties.M1 + properties.M2);
-                        state[25] -= properties.beta1*properties.M1_impact*properties.v1_impact[2]/(properties.M1 + properties.M2);
+                        state[23] -= properties.beta1*properties.mD1*properties.vD1[0]/(properties.M1 + properties.M2);
+                        state[24] -= properties.beta1*properties.mD1*properties.vD1[1]/(properties.M1 + properties.M2);
+                        state[25] -= properties.beta1*properties.mD1*properties.vD1[2]/(properties.M1 + properties.M2);
                     }
                     maneuver1_applied = true;
                 }
-                if (!maneuver2_applied && t >= properties.t2_impact)
+                if (!maneuver2_applied && t >= properties.tD2)
                 {
-                    state[3] += properties.beta2*properties.M2_impact*properties.v2_impact[0]/properties.M2;
-                    state[4] += properties.beta2*properties.M2_impact*properties.v2_impact[1]/properties.M2;
-                    state[5] += properties.beta2*properties.M2_impact*properties.v2_impact[2]/properties.M2;
+                    state[3] += properties.beta2*properties.mD2*properties.vD2[0]/properties.M2;
+                    state[4] += properties.beta2*properties.mD2*properties.vD2[1]/properties.M2;
+                    state[5] += properties.beta2*properties.mD2*properties.vD2[2]/properties.M2;
                     if (properties.spacecraft_checkbox)
                     {
-                        state[23] -= properties.beta2*properties.M2_impact*properties.v2_impact[0]/(properties.M1 + properties.M2);
-                        state[24] -= properties.beta2*properties.M2_impact*properties.v2_impact[1]/(properties.M1 + properties.M2);
-                        state[25] -= properties.beta2*properties.M2_impact*properties.v2_impact[2]/(properties.M1 + properties.M2);
+                        state[23] -= properties.beta2*properties.mD2*properties.vD2[0]/(properties.M1 + properties.M2);
+                        state[24] -= properties.beta2*properties.mD2*properties.vD2[1]/(properties.M1 + properties.M2);
+                        state[25] -= properties.beta2*properties.mD2*properties.vD2[2]/(properties.M1 + properties.M2);
                     }
                     maneuver2_applied = true;
                 }
