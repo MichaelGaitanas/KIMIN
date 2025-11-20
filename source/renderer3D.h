@@ -153,8 +153,7 @@ public:
                                                  "../skybox/starfield2k/back.jpg");
 
         //Wtf? Is this necessary to be here? Why not in the scene_panel.h
-        orb1.draw_count = std::min<size_t>(1, sol.t.size());
-        orb2.draw_count = std::min<size_t>(1, sol.t.size());
+        orb1.draw_count = orb2.draw_count = std::min<size_t>(1, sol.t.size());
         if (sol.integr.properties.spacecraft_checkbox)
             orb_sp.draw_count = std::min<size_t>(1, sol.t.size());
     }
@@ -217,19 +216,19 @@ public:
 
         sunlight.set_geometry((float)sol.integr.brillouin1 + (float)sol.integr.brillouin2 + (float)sol.dist[iframe], pos_com);
 
-        glm::mat4 I = glm::mat4(1.0f);
+        const glm::mat4 I = glm::mat4(1.0f);
 
-        glm::mat4 T1R1 = glm::translate(I, pos1)*
+        const glm::mat4 T1R1 = glm::translate(I, pos1)*
                          glm::rotate(I, glm::radians((float)sol.yaw1[iframe]),   glm::vec3(0.0f,0.0f,1.0f))*
                          glm::rotate(I, glm::radians((float)sol.pitch1[iframe]), glm::vec3(0.0f,1.0f,0.0f))*
                          glm::rotate(I, glm::radians((float)sol.roll1[iframe]),  glm::vec3(1.0f,0.0f,0.0f));
-        glm::mat4 S1 = glm::scale(I, glm::vec3((float)sol.integr.brillouin1));
+        const glm::mat4 S1 = glm::scale(I, glm::vec3((float)sol.integr.brillouin1));
 
-        glm::mat4 T2R2 = glm::translate(I, pos2)*
+        const glm::mat4 T2R2 = glm::translate(I, pos2)*
                          glm::rotate(I, glm::radians((float)sol.yaw2[iframe]),   glm::vec3(0.0f,0.0f,1.0f))*
                          glm::rotate(I, glm::radians((float)sol.pitch2[iframe]), glm::vec3(0.0f,1.0f,0.0f))*
                          glm::rotate(I, glm::radians((float)sol.roll2[iframe]),  glm::vec3(1.0f,0.0f,0.0f));
-        glm::mat4 S2 = glm::scale(I, glm::vec3((float)sol.integr.brillouin2));
+        const glm::mat4 S2 = glm::scale(I, glm::vec3((float)sol.integr.brillouin2));
         
         //Shadow rendering pass : render the meshes that account for shadow, but do so from the light's (orthographic) view. Shadow pass must always happen first.
         glBindFramebuffer(GL_FRAMEBUFFER, depth_fbo);
