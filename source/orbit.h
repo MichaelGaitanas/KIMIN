@@ -3,9 +3,9 @@
 #ifndef ORBIT_H
 #define ORBIT_H
 
-#include<GL/glew.h>
-
 #include<vector>
+
+#include<GL/glew.h>
 
 #include"typedef.h"
 

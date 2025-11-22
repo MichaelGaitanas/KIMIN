@@ -12,5 +12,8 @@ constexpr int GLFW_MIN_WIDTH = 400; //[pix]
 constexpr int GLFW_MIN_HEIGHT = 400; //[pix]
 constexpr int GLFW_SSAS_SAMPLES = 4;
 constexpr int GLFW_REQUESTED_DEPTH_BITS = 32;
+constexpr float CLEAR_COLOR_R = 0.06f;
+constexpr float CLEAR_COLOR_G = 0.06f;
+constexpr float CLEAR_COLOR_B = 0.06f;
 
 #endif

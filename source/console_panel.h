@@ -3,17 +3,17 @@
 #ifndef CONSOLE_PANEL_H
 #define CONSOLE_PANEL_H
 
-#include"../imgui/imgui.h"
-#include"../imgui/imgui_impl_glfw.h"
-#include"../imgui/imgui_impl_opengl3.h"
-
-#include<GL/glew.h>
-#include<GLFW/glfw3.h>
-
 #include<cstdarg>
 #include<sstream>
 #include<string>
+
 #include<boost/date_time.hpp>
+#include<GL/glew.h>
+#include<GLFW/glfw3.h>
+
+#include"../imgui/imgui.h"
+#include"../imgui/imgui_impl_glfw.h"
+#include"../imgui/imgui_impl_opengl3.h"
 
 class console_panel
 {

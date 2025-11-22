@@ -14,7 +14,7 @@ Epoch := 0
 Duration := 50
 Step := 0.005
 
-Relative position and velocity := "Keplerian"
+Initial relative position and velocity := "Keplerian"
 a  := 4
 e  := 0
 i  := 0
@@ -22,7 +22,7 @@ Om := 0
 w  := 0
 M  := 0
 
-Orientations := "Euler angles"
+Initial orientations := "Euler angles"
 roll 1  := 0
 pitch 1 := 0
 yaw 1   := 0
@@ -30,7 +30,7 @@ roll 2  := 0
 pitch 2 := 0
 yaw 2   := 0
 
-Angular velocities := "At inertial frame"
+Initial angular velocities := "At inertial frame"
 w1ix := 0
 w1iy := 0
 w1iz := 0.00015
@@ -38,6 +38,7 @@ w2ix := 0
 w2iy := 0
 w2iz := 0
 
+Initial position and velocity of the center of mass :
 x  com := 0.0
 y  com := 0.0
 z  com := 0.0

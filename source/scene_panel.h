@@ -3,6 +3,8 @@
 #ifndef SCENE_PANEL_H
 #define SCENE_PANEL_H
 
+#include<algorithm>
+
 #include"../imgui/imgui.h"
 #include"../imgui/imgui_impl_glfw.h"
 #include"../imgui/imgui_impl_opengl3.h"
@@ -14,8 +16,6 @@
 #include"renderer3D.h"
 #include"icons.h"
 
-#include<algorithm>
-
 class scene_panel
 {
 private:
@@ -25,7 +25,7 @@ private:
     bvec plot_w1i, plot_w1b; //Buttons : [ω1ix, ω1iy, ω1iz] and [ω1bx, ω1by, ω1bz].
     bvec plot_w2i, plot_w2b; //Buttons : [ω2ix, ω2iy, ω2iz] and [ω2bx, ω2by, ω2bz].
     bvec plot_ener_mom_rel_err; //Buttons : [energy, momentum].
-    bvec plot_cart_sp; //Buttons : [xs, ys, zs].
+    bvec plot_rsp; //Buttons : [xsp, ysp, zsp].
     
     bool render_scene, play_pause_video, reset_gpu_essential, auto_replay, orb1_sync, orb2_sync, orb_sp_sync;
     uint64_t iframe, total_frames;
@@ -45,7 +45,7 @@ public:
                     plot_w2i({false,false,false}),
                     plot_w2b({false,false,false}),
                     plot_ener_mom_rel_err({false,false}),
-                    plot_cart_sp({false,false,false}),
+                    plot_rsp({false,false,false}),
                     render_scene(false),
                     play_pause_video(false),
                     reset_gpu_essential(false),
@@ -81,7 +81,7 @@ public:
         //At every new simulation, if the user does not assume a 3rd body spacecraft, then any previous plots regarding the 3rd body shall disappear.
         if (!sol.integr.properties.spacecraft_checkbox)
         {
-            plot_cart_sp = {false,false,false};
+            plot_rsp = {false,false,false};
             rend3D.orb_sp.draw_count = 0;
             orb_sp_sync = false;
             rend3D.render_orb_sp = false;
@@ -299,9 +299,9 @@ private:
                 ImGui::BeginDisabled();
             ImGui::Dummy(ImVec2(0.0f,7.5f));
             ImGui::Text("Position");
-            plot_cart_sp[0] = common_onoff_button("xs##plot_cart_sp[0]", ImVec2(50.0f, 20.0f), plot_cart_sp[0]); ImGui::SameLine();
-            plot_cart_sp[1] = common_onoff_button("ys##plot_cart_sp[1]", ImVec2(50.0f, 20.0f), plot_cart_sp[1]); ImGui::SameLine();
-            plot_cart_sp[2] = common_onoff_button("zs##plot_cart_sp[2]", ImVec2(50.0f, 20.0f), plot_cart_sp[2]);
+            plot_rsp[0] = common_onoff_button("x##plot_rsp[0]", ImVec2(50.0f, 20.0f), plot_rsp[0]); ImGui::SameLine();
+            plot_rsp[1] = common_onoff_button("y##plot_rsp[1]", ImVec2(50.0f, 20.0f), plot_rsp[1]); ImGui::SameLine();
+            plot_rsp[2] = common_onoff_button("z##plot_rsp[2]", ImVec2(50.0f, 20.0f), plot_rsp[2]);
             ImGui::Dummy(ImVec2(0.0f,7.5f));
             if (!sol.integr.properties.spacecraft_checkbox)
                 ImGui::EndDisabled();
@@ -666,6 +666,7 @@ public:
     void render(const int win_width, const int win_height)
     {
         //Copy the window's dimensions to the renderer3D's members. We need them at each frame to compute the camera's projection matrix (see renderer3D.h).
+        //NOTE : Do not forget to check if this is the right numbers vs the ImGui::GetIO().DisplaySize.
         rend3D.win_width  = win_width;
         rend3D.win_height = win_height;
 
@@ -735,9 +736,9 @@ public:
 
                 if (sol.integr.properties.spacecraft_checkbox)
                 {
-                    if (plot_cart_sp[0]) plot_cart_sp[0] = common_plot("##plot_cart_sp[0]", "Spacecraft x", "xs [km]", plot_cart_sp[0], sol2D.x_sp);
-                    if (plot_cart_sp[1]) plot_cart_sp[1] = common_plot("##plot_cart_sp[1]", "Spacecraft y", "ys [km]", plot_cart_sp[1], sol2D.y_sp);
-                    if (plot_cart_sp[2]) plot_cart_sp[2] = common_plot("##plot_cart_sp[2]", "Spacecraft z", "zs [km]", plot_cart_sp[2], sol2D.z_sp);
+                    if (plot_rsp[0]) plot_rsp[0] = common_plot("##plot_rsp[0]", "Spacecraft x", "xsp [km]", plot_rsp[0], sol2D.xsp);
+                    if (plot_rsp[1]) plot_rsp[1] = common_plot("##plot_rsp[1]", "Spacecraft y", "ysp [km]", plot_rsp[1], sol2D.ysp);
+                    if (plot_rsp[2]) plot_rsp[2] = common_plot("##plot_rsp[2]", "Spacecraft z", "zsp [km]", plot_rsp[2], sol2D.zsp);
                 }
 
             }

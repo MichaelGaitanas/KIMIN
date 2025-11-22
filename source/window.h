@@ -3,11 +3,11 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
-#include<GL/glew.h>
-#include<GLFW/glfw3.h>
-
 #include<cstdio>
 #include<cstdlib>
+
+#include<GL/glew.h>
+#include<GLFW/glfw3.h>
 
 #include"constants.h"
 #include"gui.h"
@@ -109,10 +109,8 @@ public:
     {   
         gui ui(wpointer); //Instantiate the user interface along with some settings defined in the corresponding contructor (gui.h).
         
-        glClearColor(0.06f,0.06f,0.06f,1.0f);
+        glClearColor(CLEAR_COLOR_R, CLEAR_COLOR_G, CLEAR_COLOR_B, 1.0f);
         glEnable(GL_DEPTH_TEST);
-        glDepthMask(GL_TRUE);
-        glDepthFunc(GL_LESS);
         while (!glfwWindowShouldClose(wpointer))
         {
             glClear(GL_COLOR_BUFFER_BIT); //Depth is cleared in ui.scene.render(), where it is necessary.

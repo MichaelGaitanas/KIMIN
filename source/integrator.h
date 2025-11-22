@@ -21,29 +21,26 @@ class integrator
 {
 public:
     properties_panel properties; //This is meant to be copy of the user's choice of inputs in the gui.
-    bool maneuver1_applied, maneuver2_applied; //Whether or each beta-kick (equivalent maneuver) has been applied to the corresponding asteroid.
 
     double m; //Reduced binary mass ( m = M1*M2/(M1 + M2) ).
-    double com1_coeff, com2_coeff; //These are the coefficients that when multiplied with the relative position, yield each body's aboslute position in the inertial frame, i.e. com1_coeff = -M2/(M1+M2), com2_coeff = M1/(M1+M2).
+    double com1_coeff, com2_coeff; //These are the coefficients that when multiplied with the relative position, yield each body's aboslute position in the COM frame, i.e. com1_coeff = -M2/(M1+M2), com2_coeff = M1/(M1+M2).
     dmat3 I1, I2; //Moments of inertia.
     dtens J1, J2; //Inertial integrals.
     double brillouin1, brillouin2; //Brillouin radii of the 2 bodies.
-
     bool collision, collision_sp; //Collision detection flag for the binary and the spacecraft (respectively).
+    bool maneuver1, maneuver2; //Whether or not a beta-kick (equivalent maneuver) has been applied to the corresponding body.
 
     double t0, tmax, dt, init_guess_time_step; //Integration time.
 
     dmat orbit; //This is the solution matrix of the differential equations that will be propagated (time + state vector).
 
-    integrator() { } //This is needed in the solution class.
+    integrator() { } //This is needed to instantiate an integrator object in the solution class.
 
-    integrator(const properties_panel &properties) //And this is needed in the gui class (pure copying).
+    integrator(const properties_panel &properties) //And this is needed to instantiate the integrator in the gui class.
     {
         this->properties = properties;
         //Note : In the following member functions, whatever change is made upon the 'properties' variable, has nothing to do with the gui's displayed properties.
         //We operate only on THIS class' member 'properties', which is a deep copy of the gui's input.
-
-        maneuver1_applied = maneuver2_applied = false;
     }
 
 private:
@@ -127,14 +124,14 @@ private:
         if (properties.spacecraft_checkbox)
         {
             //Spacecraft state (COM frame).
-            dvec3 r_sp = { state[20], state[21], state[22] };
-            dvec3 v_sp = { state[23], state[24], state[25] };
-            //Individual bodies' COM positions in the mutual COM frame.
+            dvec3 rsp = { state[20], state[21], state[22] };
+            dvec3 vsp = { state[23], state[24], state[25] };
+            //Individual bodies' COM positions (i.e. COM1 and COM2) in the mutual COM frame.
             dvec3 r1 = com1_coeff*r;
             dvec3 r2 = com2_coeff*r;
             //Body -> spacecraft vectors.
-            dvec3 rho1 = r_sp - r1;
-            dvec3 rho2 = r_sp - r2;
+            dvec3 rho1 = rsp - r1;
+            dvec3 rho2 = rsp - r2;
 
             dvec3 force_spacecraft; //Spacecraft's force due to the combined presence of the 2 rigid bodies.
             if (properties.ord2_checkbox)
@@ -145,14 +142,14 @@ private:
                 force_spacecraft = force_integrals_ord4(rho1, properties.M1, J1, A1) + force_integrals_ord4(rho2, properties.M2, J2, A2);
 
             //Spacecraft's position and velocity rhs.
-            dstate[20] = v_sp[0];
-            dstate[21] = v_sp[1];
-            dstate[22] = v_sp[2];
+            dstate[20] = vsp[0];
+            dstate[21] = vsp[1];
+            dstate[22] = vsp[2];
             dstate[23] = force_spacecraft[0];
             dstate[24] = force_spacecraft[1];
             dstate[25] = force_spacecraft[2];
         }
-        else //assign zero everywhere...
+        else //Assign zero everywhere...
         {
             dstate[20] = dstate[21] = dstate[22] = dstate[23] = dstate[24] = dstate[25] = 0.0;
         }
@@ -258,6 +255,7 @@ public:
             init_guess_time_step = INIT_GUESS_TIME_STEP; //[sec]
 
         //Preparation 6 : Convert impact times in [sec]. Then, apply maneuvers BEFORE the while integration loop, only if the impact times are chosen to be at t = t0.
+        maneuver1 = maneuver2 = false;
         if (properties.impactors_checkbox)
         {
             properties.tD1 *= 86400.0;
@@ -269,9 +267,9 @@ public:
                 properties.cart[5] -= properties.beta1*properties.mD1*properties.vD1[2]/properties.M1;
                 if (properties.spacecraft_checkbox)
                 {
-                    properties.v_sp = properties.v_sp - properties.beta1*properties.mD1*properties.vD1/(properties.M1 + properties.M2);
+                    properties.vsp = properties.vsp - properties.beta1*properties.mD1*properties.vD1/(properties.M1 + properties.M2);
                 }
-                maneuver1_applied = true;
+                maneuver1 = true;
             }
             if (fabs(t0 - properties.tD2) < 1e-15)
             {
@@ -280,16 +278,16 @@ public:
                 properties.cart[5] += properties.beta2*properties.mD2*properties.vD2[2]/properties.M2;
                 if (properties.spacecraft_checkbox)
                 {
-                    properties.v_sp = properties.v_sp - properties.beta2*properties.mD2*properties.vD2/(properties.M1 + properties.M2);
+                    properties.vsp = properties.vsp - properties.beta2*properties.mD2*properties.vD2/(properties.M1 + properties.M2);
                 }
-                maneuver2_applied = true;
+                maneuver2 = true;
             }
         }
 
         if (!properties.spacecraft_checkbox)
         {
-            properties.r_sp[0] = properties.r_sp[1] = properties.r_sp[2] = 0.0;
-            properties.v_sp[0] = properties.v_sp[1] = properties.v_sp[2] = 0.0;
+            properties.rsp[0] = properties.rsp[1] = properties.rsp[2] = 0.0;
+            properties.vsp[0] = properties.vsp[1] = properties.vsp[2] = 0.0;
         }
 
         collision = collision_sp = false; //Assuming no collision when the simulation starts.
@@ -310,18 +308,18 @@ public:
                                              properties.w1b[0],  properties.w1b[1],  properties.w1b[2],
                                               properties.q2[0],   properties.q2[1],   properties.q2[2], properties.q2[3],
                                              properties.w2b[0],  properties.w2b[1],  properties.w2b[2],
-                                            properties.r_sp[0], properties.r_sp[1], properties.r_sp[2],
-                                            properties.v_sp[0], properties.v_sp[1], properties.v_sp[2] };
+                                             properties.rsp[0],  properties.rsp[1],  properties.rsp[2],
+                                             properties.vsp[0],  properties.vsp[1],  properties.vsp[2] };
         
         double t = t0; //Initialize time.
 
-        boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 26>> rkf78_const;
+        boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 26>> rkf78_fixed;
         auto rkf78_adaptive = boost::numeric::odeint::make_controlled(properties.target_error, properties.target_error, boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 26>>());
         boost::numeric::odeint::bulirsch_stoer<boost::array<double, 26>> bstoer_adaptive(properties.target_error, properties.target_error);
-        boost::numeric::odeint::adams_bashforth_moulton<5, boost::array<double, 26>> abm_const;
+        boost::numeric::odeint::adams_bashforth_moulton<5, boost::array<double, 26>> abm_fixed;
 
         if (properties.integration_method == properties_panel::ABM5_FIXED) //Seed Adams-Bashforth-Moulton only if this is the requested method of integration.
-            abm_const.initialize(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, dt);
+            abm_fixed.initialize(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, dt);
         
         char formatted_text[128];
         
@@ -340,7 +338,7 @@ public:
             //2) Kinetic impacts : apply corresponding maneuvers in case that kinetic impactors were assumed in the gui.
             if (properties.impactors_checkbox)
             {
-                if (!maneuver1_applied && t >= properties.tD1)
+                if (!maneuver1 && t >= properties.tD1)
                 {
                     state[3] -= properties.beta1*properties.mD1*properties.vD1[0]/properties.M1;
                     state[4] -= properties.beta1*properties.mD1*properties.vD1[1]/properties.M1;
@@ -351,9 +349,9 @@ public:
                         state[24] -= properties.beta1*properties.mD1*properties.vD1[1]/(properties.M1 + properties.M2);
                         state[25] -= properties.beta1*properties.mD1*properties.vD1[2]/(properties.M1 + properties.M2);
                     }
-                    maneuver1_applied = true;
+                    maneuver1 = true;
                 }
-                if (!maneuver2_applied && t >= properties.tD2)
+                if (!maneuver2 && t >= properties.tD2)
                 {
                     state[3] += properties.beta2*properties.mD2*properties.vD2[0]/properties.M2;
                     state[4] += properties.beta2*properties.mD2*properties.vD2[1]/properties.M2;
@@ -364,7 +362,7 @@ public:
                         state[24] -= properties.beta2*properties.mD2*properties.vD2[1]/(properties.M1 + properties.M2);
                         state[25] -= properties.beta2*properties.mD2*properties.vD2[2]/(properties.M1 + properties.M2);
                     }
-                    maneuver2_applied = true;
+                    maneuver2 = true;
                 }
             }
 
@@ -386,15 +384,15 @@ public:
                     const dvec3 r = dvec3{state[0],state[1],state[2]};
                     const dvec3 r1 = com1_coeff*r;
                     const dvec3 r2 = com2_coeff*r;
-                    const dvec3 r_sp = dvec3{state[20],state[21],state[22]};
-                    if (sphere_point_collision(length(r_sp - r1), brillouin1))
+                    const dvec3 rsp = dvec3{state[20],state[21],state[22]};
+                    if (sphere_point_collision(length(rsp - r1), brillouin1))
                     {
                         sprintf(formatted_text,"< Collision (asteroid - spacecraft) at t = %5.2lf [days]. >\n", t/86400.0);
                         console.add_text(formatted_text);
                         collision_sp = true;
                         break;
                     }
-                    if (sphere_point_collision(length(r_sp - r2), brillouin2))
+                    if (sphere_point_collision(length(rsp - r2), brillouin2))
                     {
                         sprintf(formatted_text,"< Collision (asteroid - spacecraft) at t = %5.2lf [days]. >\n", t/86400.0);
                         console.add_text(formatted_text);
@@ -424,11 +422,11 @@ public:
                 //Polyhedron spacecraft-asteroid (sphere-point gate, then polyhedron-point).
                 if (properties.spacecraft_checkbox)
                 {
-                    const dvec3 r_sp = dvec3{state[20],state[21],state[22]};
-                    if (sphere_point_collision(length(r_sp - r1), brillouin1))
+                    const dvec3 rsp = dvec3{state[20],state[21],state[22]};
+                    if (sphere_point_collision(length(rsp - r1), brillouin1))
                     {
                         const dmat3 A1 = quat2mat(dvec4{state[6],state[7],state[8],state[9]});
-                        if (polyhedron_point_collision(properties.poly1, A1, r1, r_sp))
+                        if (polyhedron_point_collision(properties.poly1, A1, r1, rsp))
                         {
                             sprintf(formatted_text,"< Collision (spacecraft - asteroid) at t = %5.2lf [days]. >\n", t/86400.0);
                             console.add_text(formatted_text);
@@ -436,10 +434,10 @@ public:
                             break;
                         }
                     }
-                    if (sphere_point_collision(length(r_sp - r2), brillouin2))
+                    if (sphere_point_collision(length(rsp - r2), brillouin2))
                     {
                         const dmat3 A2 = quat2mat(dvec4{state[13],state[14],state[15],state[16]});
-                        if (polyhedron_point_collision(properties.poly2, A2, r2, r_sp))
+                        if (polyhedron_point_collision(properties.poly2, A2, r2, rsp))
                         {
                             sprintf(formatted_text,"< Collision (spacecraft - asteroid, polyhedron) at t = %5.2lf [days]. >\n", t/86400.0);
                             console.add_text(formatted_text);
@@ -461,7 +459,7 @@ public:
             //Update the state vector by doing 1 step of the numerical method.
             if (properties.integration_method == properties_panel::RKF78_FIXED)
             {
-                rkf78_const.do_step(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, dt);
+                rkf78_fixed.do_step(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, dt);
                 t += dt;
             }
             else if (properties.integration_method == properties_panel::RKF78_ADAPTIVE)
@@ -470,7 +468,7 @@ public:
                 bstoer_adaptive.try_step(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, init_guess_time_step);
             else //properties_panel::ABM5_FIXED
             {
-                abm_const.do_step(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, dt);
+                abm_fixed.do_step(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, dt);
                 t += dt;
             }
             //Note : Boost's do_step() does NOT update internally t, hence we have to do it ourselves. But try_step() DOES update internally t, hence we do not touch it in this case.

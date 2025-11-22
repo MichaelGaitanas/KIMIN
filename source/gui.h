@@ -4,16 +4,16 @@
 #ifndef GUI_H
 #define GUI_H
 
-#include"../imgui/imgui.h"
-#include"../imgui/imgui_impl_glfw.h"
-#include"../imgui/imgui_impl_opengl3.h"
-#include"../imgui/implot.h"
+#include<thread>
+#include<atomic>
 
 #include<GL/glew.h>
 #include<GLFW/glfw3.h>
 
-#include<thread>
-#include<atomic>
+#include"../imgui/imgui.h"
+#include"../imgui/imgui_impl_glfw.h"
+#include"../imgui/imgui_impl_opengl3.h"
+#include"../imgui/implot.h"
 
 #include"top_bar_panel.h"
 #include"properties_panel.h"
@@ -32,8 +32,7 @@ public:
     console_panel console;
     scene_panel scene;
 
-    //The 'solution' class contains all data regarding the simulation (user inputs, numerical integrator results, orbit, etc.).
-    solution *sol;
+    solution sol; //This contains all data regarding a simulation (user inputs, numerical integrator results, orbit, etc.).
 
     //These variables are meant to track and control separate thread tasks, in order to prevent the gui from 'freezing'.
     std::atomic<bool> task_is_running, task_was_aborted;
@@ -44,7 +43,7 @@ public:
                                 properties(),
                                 console(),
                                 scene(),
-                                sol(nullptr),
+                                sol(),
                                 task_is_running(false),
                                 task_was_aborted(false),
                                 task_progress(0.0f)
@@ -54,7 +53,7 @@ public:
         ImPlot::CreateContext(); //Strictly AFTER Imgui::CreateContext();
         ImGuiIO &io = ImGui::GetIO();
         io.IniFilename = nullptr;
-        io.Fonts->AddFontFromFileTTF("../fonts/RobotoRegular.ttf", 15.0f, nullptr, io.Fonts->GetGlyphRangesGreek()); //Dangerous...
+        io.Fonts->AddFontFromFileTTF("../fonts/RobotoRegular.ttf", 15.0f, nullptr, io.Fonts->GetGlyphRangesGreek());
         (void)io;
         ImGui::StyleColorsDark();
         ImGui_ImplGlfw_InitForOpenGL(wpointer, true);
@@ -79,7 +78,6 @@ public:
     //Free gui resources.
     ~gui()
     {
-        delete sol; //Clean up the solution if allocated. If not (i.e. if sol is nullptr), then the 'delete' operator does nothing.
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplGlfw_Shutdown();
         ImPlot::DestroyContext(); //Strictly BEFORE Imgui::DestroyContext();
@@ -118,23 +116,20 @@ private:
             properties.run_pressed = false;
             task_was_aborted.store(false);
             
-            std::thread task_thread([&]()
+            std::thread task_thread([this]()
             {
                 if (properties.validate(console)) //If no input errors are found, proceed with the simulation.
                 {
-                    integrator *integr = new integrator(properties);
-                    integr->prepare(console);
+                    integrator integr(properties);
+                    integr.prepare(console);
                     task_is_running.store(true); //From this point on, we assume that the task is running because this affects the state of the 'Abort' button, which can be pressed only during the integration.
-                    integr->run(task_was_aborted, task_progress, console);
+                    integr.run(task_was_aborted, task_progress, console);
                     if (!task_was_aborted.load())
                     {
-                        delete sol; //Clean up the solution if allocated. If not (nullptr), the 'delete' operator does nothing.
-                        sol = new solution(*integr);
-                        sol->construct(console);
-                        scene.setup(*sol);
+                        sol = solution(integr);
+                        sol.construct(console);
+                        scene.setup(sol);
                     }
-                    //In case abort, the previous solution (if present) exists in the memory.
-                    delete integr; //The integrator lives only inside the current thread scope.
                     task_is_running.store(false);
                 }
             });
@@ -164,14 +159,14 @@ private:
         }
 
         //Event 2 : What happens after choosing to a simulation solution :
-        if (sol != nullptr && sol->t.size() > 0)
+        if (!sol.t.empty())
         {
             topbar.export_is_enabled = true;
             if (topbar.export_sol_clicked)
             {
                 std::thread export_sol_thread([this]()
                 {
-                    sol->export_files(console);
+                    sol.export_files(console);
                 });
                 export_sol_thread.detach();
                 topbar.export_sol_clicked = false; //Reset the flag after exporting the solution.

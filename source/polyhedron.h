@@ -1,8 +1,6 @@
 #ifndef POLYHEDRON_H
 #define POLYHEDRON_H
 
-#include<GL/glew.h>
-
 #include<cstdio>
 #include<cstdlib>
 #include<cstring>
@@ -11,6 +9,8 @@
 #include<algorithm>
 #include<vector>
 #include<string>
+
+#include<GL/glew.h>
 
 #include<Eigen/Dense>
 

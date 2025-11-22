@@ -3,10 +3,10 @@
 #ifndef LOGO_H
 #define LOGO_H
 
+#include<cstdio>
+
 #include<GL/glew.h>
 #include<GLFW/glfw3.h>
-
-#include<cstdio>
 
 #include"shader.h"
 

@@ -1,9 +1,9 @@
 #ifndef SKYBOX_H
 #define SKYBOX_H
 
-#include<GL/glew.h>
-
 #include<string>
+
+#include<GL/glew.h>
 
 class skybox
 {

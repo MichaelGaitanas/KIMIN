@@ -18,7 +18,7 @@ Epoch := 0
 Duration := 365
 Target error := 1e-15
 
-Relative position and velocity := "Cartesian"
+Initial relative position and velocity := "Cartesian"
 x  := 664.6
 y  := 0
 z  := 0
@@ -26,7 +26,7 @@ vx := 0
 vy := 0.010959427634877469
 vz := 0
 
-Orientations := "Euler angles"
+Initial orientations := "Euler angles"
 roll 1  := 0
 pitch 1 := 0
 yaw 1   := 0
@@ -34,7 +34,7 @@ roll 2  := 0
 pitch 2 := 0
 yaw 2   := 0
 
-Angular velocities := "At inertial frame"
+Initial angular velocities := "At inertial frame"
 w1ix := 0
 w1iy := 0
 w1iz := 1.64902612622291e-05
@@ -42,6 +42,7 @@ w2ix := 0
 w2iy := 0
 w2iz := 1.64902612622291e-05
 
+Initial position and velocity of the center of mass :
 x  com := 0.0
 y  com := 0.0
 z  com := 0.0

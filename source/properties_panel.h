@@ -3,15 +3,15 @@
 #ifndef PROPERTIES_PANEL_H
 #define PROPERTIES_PANEL_H
 
-#include"../imgui/imgui.h"
-#include"../imgui/imgui_impl_glfw.h"
-#include"../imgui/imgui_impl_opengl3.h"
-
 #include<vector>
 #include<filesystem>
 #include<atomic>
 #include<cstring>
 #include<string>
+
+#include"../imgui/imgui.h"
+#include"../imgui/imgui_impl_glfw.h"
+#include"../imgui/imgui_impl_opengl3.h"
 
 #include"constants.h"
 #include"linalg.h"
@@ -72,7 +72,7 @@ public:
     dvec3 w1i, w2i; //'ω1ix', 'ω1iy', 'ω1iz', 'ω2ix', 'ω2iy, 'ω2iz' double fields.
     dvec3 w1b, w2b; //'ω1bx', 'ω1by', 'ω1bz', 'ω2bx', 'ω2by, 'ω2bz' double fields.
 
-    dvec3 r_com, v_com; //'x', 'y', 'z', 'υx', 'υy', 'υz' double fields of the center of mass of the binary.
+    dvec3 rcom, vcom; //'x', 'y', 'z', 'υx', 'υy', 'υz' double fields of the center of mass of the binary.
 
     bool collision_no, collision_spheres, collision_polyhedra; //Which type of collision criterion to apply in the simulation.
 
@@ -84,7 +84,7 @@ public:
     bool impactors_clicked_ok; //Impactors 'OK' button.
 
     bool spacecraft_checkbox; //'Spacecraft orbiter' checkbox state.
-    dvec3 r_sp, v_sp; //Spacecraft's 'xs', 'ys', 'zs' and 'υxs', 'υys', 'υzs' double fields.
+    dvec3 rsp, vsp; //Spacecraft's 'x', 'y', 'z' and 'υx', 'υy', 'υz' double fields.
     bool spacecraft_clicked_ok; //Spacecraft's 'OK' button.
 
     bool run_pressed; //Whether or not the 'Run' button has been pressed.
@@ -124,8 +124,8 @@ public:
                          w2i(dvec3{0.0,0.0,0.0}),
                          w1b(dvec3{0.0,0.0,0.0}),
                          w2b(dvec3{0.0,0.0,0.0}),
-                         r_com(dvec3{0.0,0.0,0.0}),
-                         v_com(dvec3{0.0,0.0,0.0}),
+                         rcom(dvec3{0.0,0.0,0.0}),
+                         vcom(dvec3{0.0,0.0,0.0}),
                          collision_no(false),
                          collision_spheres(false),
                          collision_polyhedra(false),
@@ -140,8 +140,8 @@ public:
                          tD2(0.0),
                          impactors_clicked_ok(false),
                          spacecraft_checkbox(false),
-                         r_sp(dvec3{0.0,0.0,0.0}),
-                         v_sp(dvec3{0.0,0.0,0.0}),
+                         rsp(dvec3{0.0,0.0,0.0}),
+                         vsp(dvec3{0.0,0.0,0.0}),
                          spacecraft_clicked_ok(false),
                          run_pressed(false),
                          abort_pressed(false),
@@ -234,7 +234,7 @@ public:
             if (find_assignment_operator(fp)) fscanf(fp, "%lf", &step);
         }
 
-        //Parse the binary's initial position/velocity.
+        //Parse the binary's initial relative position/velocity.
         if (find_assignment_operator(fp)) fscanf(fp, " \"%127[^\"]\"", buffer);
         if (strcmp(buffer, "Cartesian") == 0)
         {
@@ -278,8 +278,8 @@ public:
         }
 
         //Parse the C.O.M. initial state.
-        for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &r_com[i]);
-        for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &v_com[i]);
+        for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &rcom[i]);
+        for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &vcom[i]);
 
         //Parse the collision shapes.
         if (find_assignment_operator(fp)) fscanf(fp, " \"%127[^\"]\"", buffer);
@@ -316,8 +316,8 @@ public:
             fscanf(fp, " \"%127[^\"]\"", buffer);
             if (strcmp(buffer, "Yes") == 0)
             {
-                for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &r_sp[i]);
-                for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &v_sp[i]);
+                for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &rsp[i]);
+                for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &vsp[i]);
                 spacecraft_checkbox = spacecraft_clicked_ok = true;
             }
         }
@@ -326,8 +326,7 @@ public:
     }
 
 private:
-    //This function receives as input a 'path' to a directory and as a result it returns a vector of paths, corresponding
-    //to all the .obj files found inside 'path'.
+    //This function receives as input a 'path' to a directory and as a result it returns a vector of paths, corresponding to all the .obj files found inside 'path'.
     std::vector<std::filesystem::path> list_obj_files(const char *path)
     {
         std::vector<std::filesystem::path> paths;
@@ -341,7 +340,7 @@ public:
     //This function automates common double inputs via the keyboard. It creates a rectangle, inside of which the user may enter a double.
     //'label' is a string written on the left of the rectangle. 'item_width' is the horizontal legth (space) of the rectangle. 'id' is a unique
     //int via which the computer identifies which variable to affect. 'unit' is a string written on the right of the rectangle (acting as unit of measurement).
-    //'variable' is the variable itself, passed by reference to InputDouble(), so it may change.
+    //'variable' is the variable itself (passed by reference to InputDouble()).
     void double_field(const char *label, const float item_width, const float align_width, int &id, const char *unit, double &variable)
     {
         ImGui::Text(label);
@@ -762,12 +761,12 @@ public:
 
         //C.O.M. initial position and velocity.
         ImGui::Text("C.O.M. motion relative to world");
-        double_field("x ",  100.0f, 70.0f, id, "[km]",     r_com[0]);
-        double_field("y ",  100.0f, 70.0f, id, "[km]",     r_com[1]);
-        double_field("z ",  100.0f, 70.0f, id, "[km]",     r_com[2]);
-        double_field("υx ", 100.0f, 70.0f, id, "[km/sec]", v_com[0]);
-        double_field("υy ", 100.0f, 70.0f, id, "[km/sec]", v_com[1]);
-        double_field("υz ", 100.0f, 70.0f, id, "[km/sec]", v_com[2]);
+        double_field("x ",  100.0f, 70.0f, id, "[km]",     rcom[0]);
+        double_field("y ",  100.0f, 70.0f, id, "[km]",     rcom[1]);
+        double_field("z ",  100.0f, 70.0f, id, "[km]",     rcom[2]);
+        double_field("υx ", 100.0f, 70.0f, id, "[km/sec]", vcom[0]);
+        double_field("υy ", 100.0f, 70.0f, id, "[km/sec]", vcom[1]);
+        double_field("υz ", 100.0f, 70.0f, id, "[km/sec]", vcom[2]);
 
         ImGui::Unindent();
 
@@ -811,34 +810,34 @@ public:
             if (impactor_refers_to_body == 1)
             {
                 ImGui::Text("Mass (dry + fuel)");
-                double_field("m1 ", 100.0f, 40.0f, id, "[kg]", mD1);
+                double_field("m ", 100.0f, 40.0f, id, "[kg]", mD1);
                 ImGui::Dummy(ImVec2(0.0f,15.0f));
-                ImGui::Text("Velocity (relative to body 1)");
-                double_field("υx1 ", 100.0f, 40.0f, id, "[km/sec]", vD1[0]);
-                double_field("υy1 ", 100.0f, 40.0f, id, "[km/sec]", vD1[1]);
-                double_field("υz1 ", 100.0f, 40.0f, id, "[km/sec]", vD1[2]);
+                ImGui::Text("Velocity (relative to body)");
+                double_field("υx ", 100.0f, 40.0f, id, "[km/sec]", vD1[0]);
+                double_field("υy ", 100.0f, 40.0f, id, "[km/sec]", vD1[1]);
+                double_field("υz ", 100.0f, 40.0f, id, "[km/sec]", vD1[2]);
                 ImGui::Dummy(ImVec2(0.0f,15.0f));
                 ImGui::Text("Momentum enhancement factor (ejecta)");
-                double_field("β1 ", 100.0f, 40.0f, id, "[  ]", beta1);
+                double_field("β ", 100.0f, 40.0f, id, "[  ]", beta1);
                 ImGui::Dummy(ImVec2(0.0f,15.0f));
                 ImGui::Text("Impact epoch");
-                double_field("t1 ", 100.0f, 40.0f, id, "[days]", tD1);
+                double_field("t ", 100.0f, 40.0f, id, "[days]", tD1);
             }
             else
             {
                 ImGui::Text("Mass (dry + fuel)");
-                double_field("m2 ", 100.0f, 40.0f, id, "[kg]", mD2);
+                double_field("m ", 100.0f, 40.0f, id, "[kg]", mD2);
                 ImGui::Dummy(ImVec2(0.0f,15.0f));
-                ImGui::Text("Velocity (relative to body 2)");
-                double_field("υx2 ", 100.0f, 40.0f, id, "[km/sec]", vD2[0]);
-                double_field("υy2 ", 100.0f, 40.0f, id, "[km/sec]", vD2[1]);
-                double_field("υz2 ", 100.0f, 40.0f, id, "[km/sec]", vD2[2]);
+                ImGui::Text("Velocity (relative to body)");
+                double_field("υx ", 100.0f, 40.0f, id, "[km/sec]", vD2[0]);
+                double_field("υy ", 100.0f, 40.0f, id, "[km/sec]", vD2[1]);
+                double_field("υz ", 100.0f, 40.0f, id, "[km/sec]", vD2[2]);
                 ImGui::Dummy(ImVec2(0.0f,15.0f));
                 ImGui::Text("Momentum enhancement factor (ejecta)");
-                double_field("β2 ", 100.0f, 40.0f, id, "[  ]", beta2);
+                double_field("β ", 100.0f, 40.0f, id, "[  ]", beta2);
                 ImGui::Dummy(ImVec2(0.0f,15.0f));
                 ImGui::Text("Impact epoch");
-                double_field("t2 ", 100.0f, 40.0f, id, "[days]", tD2);
+                double_field("t ", 100.0f, 40.0f, id, "[days]", tD2);
             }
             ImGui::Dummy(ImVec2(0.0f,15.0f));
 
@@ -863,14 +862,14 @@ public:
             ImGui::Begin("Orbiter's initial state", &spacecraft_checkbox);
 
             ImGui::Text("Position (relative to C.O.M.)");
-            double_field("xs ", 100.0f, 40.0f, id, "[km]", r_sp[0]);
-            double_field("ys ", 100.0f, 40.0f, id, "[km]", r_sp[1]);
-            double_field("zs ", 100.0f, 40.0f, id, "[km]", r_sp[2]);
+            double_field("x ", 100.0f, 40.0f, id, "[km]", rsp[0]);
+            double_field("y ", 100.0f, 40.0f, id, "[km]", rsp[1]);
+            double_field("z ", 100.0f, 40.0f, id, "[km]", rsp[2]);
             ImGui::Dummy(ImVec2(0.0f,15.0f));
             ImGui::Text("Velocity (relative to C.O.M.)");
-            double_field("υxs ", 100.0f, 40.0f, id, "[km/sec]", v_sp[0]);
-            double_field("υys ", 100.0f, 40.0f, id, "[km/sec]", v_sp[1]);
-            double_field("υzs ", 100.0f, 40.0f, id, "[km/sec]", v_sp[2]);
+            double_field("υx ", 100.0f, 40.0f, id, "[km/sec]", vsp[0]);
+            double_field("υy ", 100.0f, 40.0f, id, "[km/sec]", vsp[1]);
+            double_field("υz ", 100.0f, 40.0f, id, "[km/sec]", vsp[2]);
             ImGui::Dummy(ImVec2(0.0f,15.0f));
 
             ImGui::Dummy(ImVec2(0.0f,15.0f));

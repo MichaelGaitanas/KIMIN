@@ -100,6 +100,9 @@
         "xhash": "cpp",
         "shared_mutex": "cpp",
         "stdfloat": "cpp",
-        "text_encoding": "cpp"
+        "text_encoding": "cpp",
+        "csetjmp": "cpp",
+        "cfloat": "cpp",
+        "climits": "cpp"
     }
 }

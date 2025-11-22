@@ -3,10 +3,10 @@
 #ifndef RENDERER3D_H
 #define RENDERER3D_H
 
+#include<memory>
+
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
-
-#include<memory>
 
 #include"constants.h"
 #include"typedef.h"
@@ -140,7 +140,7 @@ public:
         orb1.set_as_gl_mesh(sol.x, sol.y, sol.z, static_cast<float>(sol.integr.com1_coeff));
         orb2.set_as_gl_mesh(sol.x, sol.y, sol.z, static_cast<float>(sol.integr.com2_coeff));
         if (sol.integr.properties.spacecraft_checkbox)
-            orb_sp.set_as_gl_mesh(sol.x_sp, sol.y_sp, sol.z_sp);
+            orb_sp.set_as_gl_mesh(sol.xsp, sol.ysp, sol.zsp);
         
         setup_depth_fbo();
 
@@ -158,11 +158,11 @@ public:
             orb_sp.draw_count = std::min<size_t>(1, sol.t.size());
     }
 
-    //This function evaluates the equation of motion of the COM in world coordinates.
-    glm::vec3 get_pos_com(const solution &sol, const size_t i, const glm::vec3 &rcm0, const glm::vec3 &vcm0)
+    //This function evaluates analytically the equation of motion of the COM in world coordinates.
+    glm::vec3 get_analytic_rcom(const solution &sol, const size_t i, const glm::vec3 &rcom0, const glm::vec3 &vcom0)
     {
         const double ti = sol.t[i]*86400.0;
-        glm::vec3 r = rcm0 + vcm0*(float)(ti - sol.integr.t0); //COM position due to initial state.
+        glm::vec3 r = rcom0 + vcom0*(float)(ti - sol.integr.t0); //COM position due to initial state.
         if (sol.integr.properties.impactors_checkbox)
         {
             if (ti >= sol.integr.properties.tD1) //Impact 1 contribution.
@@ -195,36 +195,36 @@ public:
             reset_gpu_essential = false;
         }
 
-        const glm::vec3 pos_com = get_pos_com(sol, iframe, glm::vec3((float)sol.integr.properties.r_com[0],
-                                                                     (float)sol.integr.properties.r_com[1],
-                                                                     (float)sol.integr.properties.r_com[2]),
-                                                           glm::vec3((float)sol.integr.properties.v_com[0],
-                                                                     (float)sol.integr.properties.v_com[1],
-                                                                     (float)sol.integr.properties.v_com[2]));
-        const glm::vec3 pos1 = pos_com + (float)sol.integr.com1_coeff*glm::vec3(sol.x[iframe],sol.y[iframe],sol.z[iframe]);
-        const glm::vec3 pos2 = pos_com + (float)sol.integr.com2_coeff*glm::vec3(sol.x[iframe],sol.y[iframe],sol.z[iframe]);
+        const glm::vec3 rcom = get_analytic_rcom(sol, iframe, glm::vec3((float)sol.integr.properties.rcom[0],
+                                                                        (float)sol.integr.properties.rcom[1],
+                                                                        (float)sol.integr.properties.rcom[2]),
+                                                              glm::vec3((float)sol.integr.properties.vcom[0],
+                                                                        (float)sol.integr.properties.vcom[1],
+                                                                        (float)sol.integr.properties.vcom[2]));
+        const glm::vec3 r1_world = rcom + (float)sol.integr.com1_coeff*glm::vec3(sol.x[iframe],sol.y[iframe],sol.z[iframe]);
+        const glm::vec3 r2_world = rcom + (float)sol.integr.com2_coeff*glm::vec3(sol.x[iframe],sol.y[iframe],sol.z[iframe]);
 
         const float aspect = win_width/(float)win_height;
         if (cam.frame_of_ref == camera::WORLD)
             cam.set_geometry_inertial(aspect, glm::vec3(0.0f));
         else if (cam.frame_of_ref == camera::COM)
-            cam.set_geometry_inertial(aspect, pos_com);
+            cam.set_geometry_inertial(aspect, rcom);
         else if (cam.frame_of_ref == camera::BODY1)
-            cam.set_geometry_body(aspect, pos1, pos2, (float)sol.integr.brillouin1);
+            cam.set_geometry_body(aspect, r1_world, r2_world, (float)sol.integr.brillouin1);
         else //camera::BODY2
-            cam.set_geometry_body(aspect, pos2, pos1, (float)sol.integr.brillouin2);
+            cam.set_geometry_body(aspect, r2_world, r1_world, (float)sol.integr.brillouin2);
 
-        sunlight.set_geometry((float)sol.integr.brillouin1 + (float)sol.integr.brillouin2 + (float)sol.dist[iframe], pos_com);
+        sunlight.set_geometry((float)sol.integr.brillouin1 + (float)sol.integr.brillouin2 + (float)sol.dist[iframe], rcom);
 
         const glm::mat4 I = glm::mat4(1.0f);
 
-        const glm::mat4 T1R1 = glm::translate(I, pos1)*
+        const glm::mat4 T1R1 = glm::translate(I, r1_world)*
                          glm::rotate(I, glm::radians((float)sol.yaw1[iframe]),   glm::vec3(0.0f,0.0f,1.0f))*
                          glm::rotate(I, glm::radians((float)sol.pitch1[iframe]), glm::vec3(0.0f,1.0f,0.0f))*
                          glm::rotate(I, glm::radians((float)sol.roll1[iframe]),  glm::vec3(1.0f,0.0f,0.0f));
         const glm::mat4 S1 = glm::scale(I, glm::vec3((float)sol.integr.brillouin1));
 
-        const glm::mat4 T2R2 = glm::translate(I, pos2)*
+        const glm::mat4 T2R2 = glm::translate(I, r2_world)*
                          glm::rotate(I, glm::radians((float)sol.yaw2[iframe]),   glm::vec3(0.0f,0.0f,1.0f))*
                          glm::rotate(I, glm::radians((float)sol.pitch2[iframe]), glm::vec3(0.0f,1.0f,0.0f))*
                          glm::rotate(I, glm::radians((float)sol.roll2[iframe]),  glm::vec3(1.0f,0.0f,0.0f));
@@ -232,10 +232,6 @@ public:
         
         //Shadow rendering pass : render the meshes that account for shadow, but do so from the light's (orthographic) view. Shadow pass must always happen first.
         glBindFramebuffer(GL_FRAMEBUFFER, depth_fbo);
-        //glEnable(GL_POLYGON_OFFSET_FILL);
-        //glPolygonOffset(1.1f, 2.0f);
-        //glEnable(GL_CULL_FACE);
-        //glCullFace(GL_FRONT);
         glViewport(0,0, depth_reso,depth_reso);
         glClear(GL_DEPTH_BUFFER_BIT);
         sh_dlight_shadow.use();
@@ -261,9 +257,6 @@ public:
             sh_depth.set_mat4_uniform("model", T2R2*S2);
             xaxis.render(); yaxis.render(); zaxis.render();
         }
-        //glCullFace(GL_BACK);
-        //glDisable(GL_CULL_FACE);
-        //glDisable(GL_POLYGON_OFFSET_FILL);
         
         //Rest of the meshes rendering pass : now we render the meshes from the camera's (perspective) view.
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -342,7 +335,7 @@ public:
         //Orbits rendering pass :
         if (render_orb1 || render_orb2 || render_orb_sp) //This is to avoid to compute 3 times the translation matrix, the shader bind (glUseProgram()) and all uniform traffic (glUniform*()).
         {
-            const glm::mat4 Tcom = glm::translate(I, pos_com);
+            const glm::mat4 Tcom = glm::translate(I, rcom);
 
             sh_orb.use();
             sh_orb.set_mat4_uniform("projection", cam.projection);

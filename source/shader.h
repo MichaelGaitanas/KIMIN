@@ -3,13 +3,13 @@
 #ifndef SHADER_H
 #define SHADER_H
 
-#include<GL/glew.h>
-#include<glm/glm.hpp>
-
 #include<cstdio>
 #include<fstream>
 #include<string>
 #include<iterator>
+
+#include<GL/glew.h>
+#include<glm/glm.hpp>
 
 class shader
 {
