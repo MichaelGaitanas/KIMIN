@@ -32,7 +32,9 @@ private:
     int frame_rate; //Frame updates per second.
     float frame_accumulator; //Accumulates fractional frames between updates.
 
-    solution sol, sol2D; //The 'sol' contains all the orbital data and is used to render the 3D scene. The 'sol2D' is downsampled and used for the 2D plots.
+    solution *sol; //This contains all the orbital data and is used to render the 3D scene (pointer to avoid huge copy).
+    solution sol2D; //And this is the downsampled version of the sol, used only for the 2D plots.
+
     renderer3D rend3D;
 
 public:
@@ -56,30 +58,33 @@ public:
                     iframe(0),
                     total_frames(0),
                     frame_rate(60),
-                    frame_accumulator(0.0f)
+                    frame_accumulator(0.0f),
+                    sol(nullptr),
+                    sol2D(),
+                    rend3D()
     { }
 
     //Reset essential stuff upon a simulation termination.
     //Note : apart from the following resets, we still have to reset OpenGL stuff. But the following setup() function is gonna run in
     //the 'task_thread' thread defined in gui.h, not in the main thread, where OpenGL runs. So any gl* commands that handle
     //gpu resets must not happen here. For that, we have the messenger variable 'reset_gpu_essential' (see function render_3D_content() in the renderer3D.h).
-    void setup(const solution &sol)
+    void setup(solution &sol_temp)
     {
-        this->sol = sol; //Obtain a solution copy for the 3D rendering.
-        this->sol2D = sol.get_reduced_solution(PLOT_POINTS_2D); //Then create a downsampled solution for the 2D plots.
+        sol = &sol_temp; //Obtain a copy of the adress, not a full deep copy!
+        sol2D = sol->get_reduced_solution(); //Then create a downsampled solution for the 2D plots.
 
-        float binary_max_dist = *std::max_element(sol.dist.begin(), sol.dist.end());
-        rend3D.cam.reset(sol.integr.brillouin1 + sol.integr.brillouin2, binary_max_dist);
+        float binary_max_dist = *std::max_element(sol->dist.begin(), sol->dist.end());
+        rend3D.cam.reset(sol->integr.brillouin1 + sol->integr.brillouin2, binary_max_dist);
 
         iframe = 0;
-        total_frames = static_cast<uint64_t>(sol.t.size());
+        total_frames = static_cast<uint64_t>(sol->t.size());
         play_pause_video = false; //Set the video at paused state ('true' means playing, 'false' means paused).
         reset_gpu_essential = true; //This will inform the renderer3D::reset_gpu_resources() to run, but only once.
 
         uint64_t init_orb_count = (total_frames > 0 ? 1 : 0);
         rend3D.orb1.draw_count = rend3D.orb2.draw_count = init_orb_count;
         //At every new simulation, if the user does not assume a 3rd body spacecraft, then any previous plots regarding the 3rd body shall disappear.
-        if (!sol.integr.properties.spacecraft_checkbox)
+        if (!sol->integr.properties.spacecraft_checkbox)
         {
             plot_rsp = {false,false,false};
             rend3D.orb_sp.draw_count = 0;
@@ -138,7 +143,7 @@ private:
             ImPlot::PlotLine("", &sol2D.t[0], &data[0], sol2D.t.size());
             
             //Current frame marker logic :
-            size_t i_reduced = map_frame_to_reduced_sol(iframe, sol.t.size(), sol2D.t.size());
+            size_t i_reduced = map_frame_to_reduced_sol(iframe, sol->t.size(), sol2D.t.size());
             ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 6.0f, ImColor(0, 255, 0, 255), 1.0f, ImColor(0, 255, 0, 255));
             ImPlot::PlotScatter("Current frame", &sol2D.t[i_reduced], &data[i_reduced], 1);
 
@@ -295,7 +300,7 @@ private:
         //Spacecraft's plots.
         if (ImGui::TreeNodeEx("Spacecraft orbiter"))
         {
-            if (!sol.integr.properties.spacecraft_checkbox)
+            if (!sol || sol->t.empty() || !sol->integr.properties.spacecraft_checkbox)
                 ImGui::BeginDisabled();
             ImGui::Dummy(ImVec2(0.0f,7.5f));
             ImGui::Text("Position");
@@ -303,7 +308,7 @@ private:
             plot_rsp[1] = common_onoff_button("y##plot_rsp[1]", ImVec2(50.0f, 20.0f), plot_rsp[1]); ImGui::SameLine();
             plot_rsp[2] = common_onoff_button("z##plot_rsp[2]", ImVec2(50.0f, 20.0f), plot_rsp[2]);
             ImGui::Dummy(ImVec2(0.0f,7.5f));
-            if (!sol.integr.properties.spacecraft_checkbox)
+            if (!sol || sol->t.empty() || !sol->integr.properties.spacecraft_checkbox)
                 ImGui::EndDisabled();
 
             ImGui::TreePop();
@@ -365,10 +370,10 @@ private:
         ImGui::SameLine();
         ImGui::SetCursorPosX(50.0f);
         ImGui::SliderInt("[Hz]##frame_rate", &frame_rate, 0, 60, "%d");
-        if (sol.t.empty())
+        if (!sol || sol->t.empty())
             ImGui::Text("Time : 0.00  [days]");
         else
-            ImGui::Text("Time : %.2f  [days]", static_cast<float>(sol.t[iframe]));
+            ImGui::Text("Time : %.2f  [days]", static_cast<float>(sol->t[iframe]));
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f, 7.5f));
@@ -550,7 +555,7 @@ private:
             ImGui::EndDisabled();
 
 
-        if (!sol.integr.properties.spacecraft_checkbox)
+        if (!sol || sol->t.empty() || !sol->integr.properties.spacecraft_checkbox)
             ImGui::BeginDisabled();
 
         ImGui::Text("Orbiter");
@@ -579,7 +584,7 @@ private:
         if (!rend3D.render_orb_sp)
             ImGui::EndDisabled();
 
-        if (!sol.integr.properties.spacecraft_checkbox)
+        if (!sol || sol->t.empty() || !sol->integr.properties.spacecraft_checkbox)
             ImGui::EndDisabled();
 
         ImGui::PopStyleColor();
@@ -657,8 +662,8 @@ private:
         
         
         //Finally, render the 3D content.
-        if (render_scene)
-            rend3D.render_3D_content(sol, iframe, reset_gpu_essential);
+        if (render_scene && sol && !sol->t.empty())
+            rend3D.render_3D_content(*sol, iframe, reset_gpu_essential);
     }
 
 public:
@@ -678,7 +683,7 @@ public:
         if (ImGui::CollapsingHeader("Plots 2D"))
         {
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f,0.2f,0.2f,1.0f)); //Make all the plot buttons' off state gray.
-            if (sol.t.empty())
+            if (!sol || sol->t.empty())
             {
                 ImGui::BeginDisabled();
                 render_plot_buttons();
@@ -734,7 +739,7 @@ public:
                 if (plot_ener_mom_rel_err[0]) plot_ener_mom_rel_err[0] = common_plot("##plot_ener_mom_rel_err[0]", "Energy relative error",             "| (E[i+1] - E[0])/E[0] |", plot_ener_mom_rel_err[0], sol2D.ener_rel_err);
                 if (plot_ener_mom_rel_err[1]) plot_ener_mom_rel_err[1] = common_plot("##plot_ener_mom_rel_err[1]", "Momentum magnitude relative error", "| (L[i+1] - L[0])/L[0] |", plot_ener_mom_rel_err[1], sol2D.mom_rel_err);
 
-                if (sol.integr.properties.spacecraft_checkbox)
+                if (sol->integr.properties.spacecraft_checkbox)
                 {
                     if (plot_rsp[0]) plot_rsp[0] = common_plot("##plot_rsp[0]", "Spacecraft x", "xsp [km]", plot_rsp[0], sol2D.xsp);
                     if (plot_rsp[1]) plot_rsp[1] = common_plot("##plot_rsp[1]", "Spacecraft y", "ysp [km]", plot_rsp[1], sol2D.ysp);
@@ -748,7 +753,7 @@ public:
         ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
         if (ImGui::CollapsingHeader("Video 3D"))
         {
-            if (sol.t.empty())
+            if (!sol || sol->t.empty())
             {
                 ImGui::BeginDisabled();
                 render_scene_buttons();

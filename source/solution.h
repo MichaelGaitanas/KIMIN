@@ -24,9 +24,7 @@ public:
     dvec t;
     dvec x, y, z;
     dvec vx, vy, vz;
-    dvec q10, q11, q12, q13;
     dvec w1bx, w1by, w1bz;
-    dvec q20, q21, q22, q23;
     dvec w2bx, w2by, w2bz;
     dvec xsp, ysp, zsp;
 
@@ -57,9 +55,7 @@ public:
         
         x.resize(N);    y.resize(N);    z.resize(N);
         vx.resize(N);   vy.resize(N);   vz.resize(N);
-        q10.resize(N);  q11.resize(N);  q12.resize(N);  q13.resize(N);
         w1bx.resize(N); w1by.resize(N); w1bz.resize(N);
-        q20.resize(N);  q21.resize(N);  q22.resize(N);  q23.resize(N);
         w2bx.resize(N); w2by.resize(N); w2bz.resize(N);
         xsp.resize(N); ysp.resize(N); zsp.resize(N);
 
@@ -82,7 +78,7 @@ public:
             dvec3  w1b  = dvec3{integr.orbit[i][11], integr.orbit[i][12], integr.orbit[i][13]};
             dvec4  q2   = dvec4{integr.orbit[i][14], integr.orbit[i][15], integr.orbit[i][16], integr.orbit[i][17]};
             dvec3  w2b  = dvec3{integr.orbit[i][18], integr.orbit[i][19], integr.orbit[i][20]};
-            dvec3  rsp = dvec3{integr.orbit[i][21], integr.orbit[i][22], integr.orbit[i][23]};
+            dvec3  rsp  = dvec3{integr.orbit[i][21], integr.orbit[i][22], integr.orbit[i][23]};
 
             dmat3 A1   = quat2mat(q1);
             dmat3 A2   = quat2mat(q2);
@@ -127,19 +123,9 @@ public:
             vy[i] = v[1];
             vz[i] = v[2];
 
-            q10[i] = q1[0];
-            q11[i] = q1[1];
-            q12[i] = q1[2];
-            q13[i] = q1[3];
-
             w1bx[i] = w1b[0];
             w1by[i] = w1b[1];
             w1bz[i] = w1b[2];
-
-            q20[i] = q2[0];
-            q21[i] = q2[1];
-            q22[i] = q2[2];
-            q23[i] = q2[3];
 
             w2bx[i] = w2b[0];
             w2by[i] = w2b[1];
@@ -197,85 +183,81 @@ public:
                     mom_rel_err[i] = fabs(momentum - momentum_at_t0);
             }
         }
+        integr.orbit.clear();
+        integr.orbit.shrink_to_fit();
+        
         console.add_text("Done.\n");
     }
 
-    void reduce_vector(dvec &vec, const size_t final_size)
+    void reduce(const dvec &original, dvec &reduced)
     {
-        double step = (vec.size() - 1.0)/(final_size - 1.0);
-        dvec reduced(final_size);
-        for (size_t i = 0; i < final_size; ++i)
+        reduced.resize(SOL2D_SIZE);
+        const size_t N = original.size();
+        double step = (N - 1.0)/(SOL2D_SIZE - 1.0); 
+        for (size_t i = 0; i < SOL2D_SIZE; ++i)
         {
-            size_t index = (size_t)(i*step);
-            reduced[i] = vec[index];
+            size_t j = (size_t)(i*step);
+            if (j >= N)
+                j = N-1;
+            reduced[i] = original[j];
         }
-        vec = std::move(reduced); //Fast copy.
-    }
-
-    void reduce(const size_t final_size)
-    {
-        //If final_size is zero or larger than the current size, there's nothing to reduce.
-        if (final_size == 0 || t.size() <= final_size)
-            return;
-
-        //Reduce all solution member vectors.
-        reduce_vector(t,            final_size);
-        reduce_vector(x,            final_size);
-        reduce_vector(y,            final_size);
-        reduce_vector(z,            final_size);
-        reduce_vector(vx,           final_size);
-        reduce_vector(vy,           final_size);
-        reduce_vector(vz,           final_size);
-        reduce_vector(q10,          final_size);
-        reduce_vector(q11,          final_size);
-        reduce_vector(q12,          final_size);
-        reduce_vector(q13,          final_size);
-        reduce_vector(w1bx,         final_size);
-        reduce_vector(w1by,         final_size);
-        reduce_vector(w1bz,         final_size);
-        reduce_vector(q20,          final_size);
-        reduce_vector(q21,          final_size);
-        reduce_vector(q22,          final_size);
-        reduce_vector(q23,          final_size);
-        reduce_vector(w2bx,         final_size);
-        reduce_vector(w2by,         final_size);
-        reduce_vector(w2bz,         final_size);
-        reduce_vector(xsp,         final_size);
-        reduce_vector(ysp,         final_size);
-        reduce_vector(zsp,         final_size);
-        
-        reduce_vector(dist,         final_size);
-        reduce_vector(vel,          final_size);
-        reduce_vector(roll1,        final_size);
-        reduce_vector(pitch1,       final_size);
-        reduce_vector(yaw1,         final_size);
-        reduce_vector(relyaw1,      final_size);
-        reduce_vector(roll2,        final_size);
-        reduce_vector(pitch2,       final_size);
-        reduce_vector(yaw2,         final_size);
-        reduce_vector(relyaw2,      final_size);
-        reduce_vector(w1ix,         final_size);
-        reduce_vector(w1iy,         final_size);
-        reduce_vector(w1iz,         final_size);
-        reduce_vector(w2ix,         final_size);
-        reduce_vector(w2iy,         final_size);
-        reduce_vector(w2iz,         final_size);
-        reduce_vector(sma,          final_size);
-        reduce_vector(ecc,          final_size);
-        reduce_vector(inc,          final_size);
-        reduce_vector(raan,         final_size);
-        reduce_vector(argper,       final_size);
-        reduce_vector(manom,        final_size);
-        reduce_vector(ener_rel_err, final_size);
-        reduce_vector(mom_rel_err,  final_size);
     }
 
     //Create and return a reduced (downsample) version of the solution.
-    solution get_reduced_solution(const size_t final_size) const
+    solution get_reduced_solution()
     {
-        solution sol_copy = *this; //Copy the already existing solution.
-        sol_copy.reduce(final_size); //Reduce all vectors in the copy.
-        return sol_copy;
+        solution sol2D;
+
+        if (SOL2D_SIZE == 0 || t.size() == 0)
+            return sol2D;
+
+        if (t.size() <= SOL2D_SIZE)
+            return *this;
+
+        sol2D.integr = integr;
+        reduce(t,            sol2D.t);
+        reduce(x,            sol2D.x);
+        reduce(y,            sol2D.y);
+        reduce(z,            sol2D.z);
+        reduce(vx,           sol2D.vx);
+        reduce(vy,           sol2D.vy);
+        reduce(vz,           sol2D.vz);
+        reduce(w1bx,         sol2D.w1bx);
+        reduce(w1by,         sol2D.w1by);
+        reduce(w1bz,         sol2D.w1bz);
+        reduce(w2bx,         sol2D.w2bx);
+        reduce(w2by,         sol2D.w2by);
+        reduce(w2bz,         sol2D.w2bz);
+        reduce(xsp,          sol2D.xsp);
+        reduce(ysp,          sol2D.ysp);
+        reduce(zsp,          sol2D.zsp);
+        
+        reduce(dist,         sol2D.dist);
+        reduce(vel,          sol2D.vel);
+        reduce(roll1,        sol2D.roll1);
+        reduce(pitch1,       sol2D.pitch1);
+        reduce(yaw1,         sol2D.yaw1);
+        reduce(relyaw1,      sol2D.relyaw1);
+        reduce(roll2,        sol2D.roll2);
+        reduce(pitch2,       sol2D.pitch2);
+        reduce(yaw2,         sol2D.yaw2);
+        reduce(relyaw2,      sol2D.relyaw2);
+        reduce(w1ix,         sol2D.w1ix);
+        reduce(w1iy,         sol2D.w1iy);
+        reduce(w1iz,         sol2D.w1iz);
+        reduce(w2ix,         sol2D.w2ix);
+        reduce(w2iy,         sol2D.w2iy);
+        reduce(w2iz,         sol2D.w2iz);
+        reduce(sma,          sol2D.sma);
+        reduce(ecc,          sol2D.ecc);
+        reduce(inc,          sol2D.inc);
+        reduce(raan,         sol2D.raan);
+        reduce(argper,       sol2D.argper);
+        reduce(manom,        sol2D.manom);
+        reduce(ener_rel_err, sol2D.ener_rel_err);
+        reduce(mom_rel_err,  sol2D.mom_rel_err);
+        
+        return sol2D;
     }
 
     void export_files(console_panel &console)
@@ -290,9 +272,7 @@ public:
         FILE *file_t        = fopen(("../simulations/" + std::string(sim_name) + "/time.txt"              ).c_str(), "w");
         FILE *file_pos      = fopen(("../simulations/" + std::string(sim_name) + "/rel_pos.txt"           ).c_str(), "w");
         FILE *file_vel      = fopen(("../simulations/" + std::string(sim_name) + "/rel_vel.txt"           ).c_str(), "w");
-        FILE *file_q1       = fopen(("../simulations/" + std::string(sim_name) + "/quaternion1.txt"       ).c_str(), "w");
         FILE *file_w1b      = fopen(("../simulations/" + std::string(sim_name) + "/ang_vel_w1b.txt"       ).c_str(), "w");
-        FILE *file_q2       = fopen(("../simulations/" + std::string(sim_name) + "/quaternion2.txt"       ).c_str(), "w");
         FILE *file_w2b      = fopen(("../simulations/" + std::string(sim_name) + "/ang_vel_w2b.txt"       ).c_str(), "w");
         FILE *file_sp       = fopen(("../simulations/" + std::string(sim_name) + "/spacecraft.txt"        ).c_str(), "w");
 
@@ -309,9 +289,7 @@ public:
             fprintf(file_t,        "%.16lf\n", t[i]);
             fprintf(file_pos,      "%.16lf %.16lf %.16lf %.16lf\n",                 x[i],    y[i],    z[i], dist[i]);
             fprintf(file_vel,      "%.16lf %.16lf %.16lf %.16lf\n",                vx[i],   vy[i],   vz[i],  vel[i]);
-            fprintf(file_q1,       "%.16lf %.16lf %.16lf %.16lf\n",               q10[i],  q11[i],  q12[i],  q13[i]);
             fprintf(file_w1b,      "%.16lf %.16lf %.16lf\n",                     w1bx[i], w1by[i], w1bz[i]);
-            fprintf(file_q2,       "%.16lf %.16lf %.16lf %.16lf\n",               q20[i],  q21[i],  q22[i],  q23[i]);
             fprintf(file_w2b,      "%.16lf %.16lf %.16lf\n",                     w2bx[i], w2by[i], w2bz[i]);
             fprintf(file_sp,       "%.16lf %.16lf %.16lf\n",                     xsp[i], ysp[i], zsp[i]);
 
@@ -326,9 +304,7 @@ public:
         fclose(file_t);
         fclose(file_pos);
         fclose(file_vel);
-        fclose(file_q1);
         fclose(file_w1b);
-        fclose(file_q2);
         fclose(file_w2b);
         fclose(file_sp);
 

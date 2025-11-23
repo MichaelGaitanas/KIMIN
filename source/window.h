@@ -119,6 +119,7 @@ public:
             ui.topbar.render(wpointer, confirm_exit);
             ui.properties.render(ui.task_is_running.load(), ui.task_was_aborted.load(), ui.task_progress.load());
             ui.console.render();
+            ui.update_solution_if_ready();
             ui.scene.render(width, height);
             ui.render();
             ui.poll_events();

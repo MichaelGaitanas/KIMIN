@@ -32,10 +32,11 @@ public:
     console_panel console;
     scene_panel scene;
 
-    solution sol; //This contains all data regarding a simulation (user inputs, numerical integrator results, orbit, etc.).
+    //A solution contains all data regarding a simulation (user inputs, numerical integrator results, orbit, etc.).
+    solution sol, sol_pending;
 
     //These variables are meant to track and control separate thread tasks, in order to prevent the gui from 'freezing'.
-    std::atomic<bool> task_is_running, task_was_aborted;
+    std::atomic<bool> task_is_running, task_was_aborted, solution_is_ready;
     std::atomic<float> task_progress;
 
     //Initialize imgui, implot (along with some settings) and the class members.
@@ -44,8 +45,10 @@ public:
                                 console(),
                                 scene(),
                                 sol(),
+                                sol_pending(),
                                 task_is_running(false),
                                 task_was_aborted(false),
+                                solution_is_ready(false),
                                 task_progress(0.0f)
     {
         IMGUI_CHECKVERSION();
@@ -99,6 +102,15 @@ public:
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     }
 
+    void update_solution_if_ready()
+    {
+        if (solution_is_ready.exchange(false, std::memory_order_acquire))
+        {
+            sol = std::move(sol_pending);
+            scene.setup(sol); //This happens in the main thread!
+        }
+    }
+
     void poll_events()
     {
         poll_topbar_events();
@@ -126,9 +138,11 @@ private:
                     integr.run(task_was_aborted, task_progress, console);
                     if (!task_was_aborted.load())
                     {
-                        sol = solution(integr);
-                        sol.construct(console);
-                        scene.setup(sol);
+                        sol_pending = solution(integr);
+                        sol_pending.construct(console);
+                        integr.orbit.clear();
+                        integr.orbit.shrink_to_fit();
+                        solution_is_ready.store(true, std::memory_order_release);
                     }
                     task_is_running.store(false);
                 }
