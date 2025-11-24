@@ -14,10 +14,10 @@ bool find_assignment_operator(FILE *fp)
         {
             c = fgetc(fp);
             if (c == '=')
-                return true;
+                return true; //Found assignment!
         }
         else
-            c = fgetc(fp); //Update c when it is not ':'.
+            c = fgetc(fp); //Proceed to the next character.
     }
     return false;
 }

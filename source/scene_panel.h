@@ -27,9 +27,9 @@ private:
     bvec plot_dener_dmom; //Buttons : [energy, momentum].
     bvec plot_rsp; //Buttons : [xsp, ysp, zsp].
     
-    bool render_scene, play_pause_video, reset_gpu_essential, auto_replay, orb1_sync, orb2_sync, orb_sp_sync;
-    uint64_t iframe, total_frames;
-    int frame_rate; //Frame updates per second.
+    bool render_scene, play_video, reset_gpu_essential, auto_replay, orb1_sync, orb2_sync, orb_sp_sync;
+    uint64_t iframe, frames;
+    int framerate; //Frame updates per second.
     float frame_accumulator; //Accumulates fractional frames between updates.
 
     solution *sol; //This contains all the orbital data and is used to render the 3D scene (pointer to avoid huge copy).
@@ -49,15 +49,15 @@ public:
                     plot_dener_dmom({false,false}),
                     plot_rsp({false,false,false}),
                     render_scene(false),
-                    play_pause_video(false),
+                    play_video(false),
                     reset_gpu_essential(false),
                     auto_replay(false),
                     orb1_sync(false),
                     orb2_sync(false),
                     orb_sp_sync(false),
                     iframe(0),
-                    total_frames(0),
-                    frame_rate(60),
+                    frames(0),
+                    framerate(60),
                     frame_accumulator(0.0f),
                     sol(nullptr),
                     sol2D(),
@@ -68,20 +68,20 @@ public:
     //Note : apart from the following resets, we still have to reset OpenGL stuff. But the following setup() function is gonna run in
     //the 'task_thread' thread defined in gui.h, not in the main thread, where OpenGL runs. So any gl* commands that handle
     //gpu resets must not happen here. For that, we have the messenger variable 'reset_gpu_essential' (see function render_3D_content() in the renderer3D.h).
-    void setup(solution &sol_temp)
+    void setup(solution &s)
     {
-        sol = &sol_temp; //Obtain a copy of the adress, not a full deep copy!
+        sol = &s; //Obtain a copy of the adress, not a full deep copy!
         sol2D = sol->get_reduced_solution(); //Then create a downsampled solution for the 2D plots.
 
-        float binary_max_dist = *std::max_element(sol->dist.begin(), sol->dist.end());
-        rend3D.cam.reset(sol->integr.brillouin1 + sol->integr.brillouin2, binary_max_dist);
+        float mutual_max_dist = *std::max_element(sol->dist.begin(), sol->dist.end());
+        rend3D.cam.reset(sol->integr.brillouin1 + sol->integr.brillouin2, mutual_max_dist);
 
         iframe = 0;
-        total_frames = static_cast<uint64_t>(sol->t.size());
-        play_pause_video = false; //Set the video at paused state ('true' means playing, 'false' means paused).
+        frames = static_cast<uint64_t>(sol->t.size());
+        play_video = false; //Set the video at paused state ('true' means play, 'false' means pause).
         reset_gpu_essential = true; //This will inform the renderer3D::reset_gpu_resources() to run, but only once.
 
-        uint64_t init_orb_count = (total_frames > 0 ? 1 : 0);
+        uint64_t init_orb_count = (frames > 0 ? 1 : 0);
         rend3D.orb1.draw_count = rend3D.orb2.draw_count = init_orb_count;
         //At every new simulation, if the user does not assume a 3rd body spacecraft, then any previous plots regarding the 3rd body shall disappear.
         if (!sol->integr.properties.spacecraft_checkbox)
@@ -112,21 +112,20 @@ private:
     }
 
     //Because the 'sol2D' (the one used for 2D plotting) is reduced in size compared to the 'sol' (the one used for exporting or 3D rendering), we have to map
-    //the 'iframe' index to another index 'i_reduce', so that the scatter point of the current frame corresponds to the correct time.
+    //the 'iframe' index to another index 'jframe', so that the scatter point of the current frame corresponds to the correct time.
     //This function serves the aforementioned purpose. 
     inline size_t map_frame_to_reduced_sol(const size_t iframe, const size_t original_size, const size_t reduced_size)
     {
-        //Edge cases.
+        //Edge cases :
         if (reduced_size == 0 || original_size <= 1 || reduced_size <= 1)
             return 0;
         
         double step = (original_size - 1.0)/(reduced_size - 1.0);
-        double val = iframe/step;
-        size_t i_reduced = (size_t)std::floor(val + 0.5); //Round to nearest integer.
-        if (i_reduced >= reduced_size)
-            i_reduced = reduced_size - 1; //Clamp to [0, reduced_size - 1].
+        size_t jframe = (size_t)std::floor(iframe/step + 0.5); //Round to nearest integer.
+        if (jframe >= reduced_size)
+            jframe = reduced_size - 1; //Clamp to avoid wrong access.
     
-        return i_reduced;
+        return jframe;
     }
 
     //This function plots the data {t, data(t)}.
@@ -143,9 +142,9 @@ private:
             ImPlot::PlotLine("", &sol2D.t[0], &data[0], sol2D.t.size());
             
             //Current frame marker logic :
-            size_t i_reduced = map_frame_to_reduced_sol(iframe, sol->t.size(), sol2D.t.size());
+            size_t jframe = map_frame_to_reduced_sol(iframe, sol->t.size(), sol2D.t.size());
             ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 6.0f, ImColor(0, 255, 0, 255), 1.0f, ImColor(0, 255, 0, 255));
-            ImPlot::PlotScatter("Current frame", &sol2D.t[i_reduced], &data[i_reduced], 1);
+            ImPlot::PlotScatter("Current frame", &sol2D.t[jframe], &data[jframe], 1);
 
             //Collision frame marker logic :
             if (sol2D.integr.collision) //Asteroid-asteroid collision.
@@ -330,18 +329,18 @@ private:
         if (!render_scene)
         {
             ImGui::BeginDisabled();
-            play_pause_video = onoff_button("Play/Pause##play_pause_video", ImVec2(80.0f, 25.0f), play_pause_video);
+            play_video = onoff_button("Play/Pause##play_video", ImVec2(80.0f, 25.0f), play_video);
             ImGui::SameLine();
             auto_replay = onoff_button(ICON_FA_REDO" Auto##auto_replay", ImVec2(55.0f, 25.0f), auto_replay);
             ImGui::EndDisabled();
         }
         else
         {
-            ImVec4 play_pause_col = play_pause_video ? ImVec4(0.0f, 0.7f, 0.0f, 1.0f) : ImVec4(0.7f, 0.0f, 0.0f, 1.0f);
+            ImVec4 play_pause_col = play_video ? ImVec4(0.0f, 0.7f, 0.0f, 1.0f) : ImVec4(0.7f, 0.0f, 0.0f, 1.0f);
             ImGui::PushStyleColor(ImGuiCol_Button,        play_pause_col);
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(play_pause_col.x+0.2f, play_pause_col.y+0.2f, play_pause_col.z+0.2f, 1.0f));
             ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(play_pause_col.x*0.8f, play_pause_col.y*0.8f, play_pause_col.z*0.8f, 1.0f));
-            play_pause_video = onoff_button("Play/Pause##play_pause_video", ImVec2(80.0f, 25.0f), play_pause_video);
+            play_video = onoff_button("Play/Pause##play_video", ImVec2(80.0f, 25.0f), play_video);
             ImGui::PopStyleColor(3);
             ImGui::SameLine();
             ImVec4 auto_replay_col = auto_replay ? ImVec4(0.0f, 0.7f, 0.0f, 1.0f) : ImVec4(0.7f, 0.0f, 0.0f, 1.0f);
@@ -350,7 +349,7 @@ private:
             ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(auto_replay_col.x*0.8f, auto_replay_col.y*0.8f, auto_replay_col.z*0.8f, 1.0f));
             auto_replay = onoff_button(ICON_FA_REDO" Auto##auto_replay", ImVec2(55.0f, 25.0f), auto_replay);
             ImGui::PopStyleColor(3);
-            if (auto_replay && play_pause_video && iframe >= total_frames - 1)
+            if (auto_replay && play_video && iframe >= frames - 1)
                 iframe = 0;
         }
 
@@ -361,15 +360,15 @@ private:
         ImGui::Text("Frame");
         ImGui::SameLine();
         ImGui::SetCursorPosX(50.0f);
-        uint64_t visible_min_frame = (total_frames > 0) ? 1 : 0;
-        uint64_t visible_iframe = (total_frames > 0) ? (iframe + 1) : 0; //Display in the gui 1-based frame (instead of 0-based, which is used in the arrays as index).
-        ImGui::SliderScalar("##visible_iframe", ImGuiDataType_U64, &visible_iframe, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        uint64_t visible_min_frame = (frames > 0) ? 1 : 0;
+        uint64_t visible_iframe = (frames > 0) ? (iframe + 1) : 0; //Display in the gui 1-based frame (instead of 0-based, which is used in the arrays as index).
+        ImGui::SliderScalar("##visible_iframe", ImGuiDataType_U64, &visible_iframe, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         //Rule is : the above slider controls the frames and then the 'iframe' is updated accordingly, but into 0-based frame, because it is an index.
         iframe = (visible_iframe > 0) ? (visible_iframe - 1) : 0;
         ImGui::Text("Rate");
         ImGui::SameLine();
         ImGui::SetCursorPosX(50.0f);
-        ImGui::SliderInt("[Hz]##frame_rate", &frame_rate, 0, 60, "%d");
+        ImGui::SliderInt("[Hz]##framerate", &framerate, 0, 60, "%d");
         if (!sol || sol->t.empty())
             ImGui::Text("Time : 0.00  [days]");
         else
@@ -509,7 +508,7 @@ private:
         ImGui::SameLine();
         ImGui::SetCursorPosX(90.0f);
         ImGui::SetNextItemWidth(100);
-        uint64_t visible_orb1_frame = (total_frames > 0) ? static_cast<uint64_t>(rend3D.orb1.draw_count) : 0;
+        uint64_t visible_orb1_frame = (frames > 0) ? static_cast<uint64_t>(rend3D.orb1.draw_count) : 0;
         
         if (!rend3D.render_orb1)
         {
@@ -518,7 +517,7 @@ private:
                 orb1_sync = false;
         }
         
-        ImGui::SliderScalar("##visible_orb1_frame", ImGuiDataType_U64, &visible_orb1_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SliderScalar("##visible_orb1_frame", ImGuiDataType_U64, &visible_orb1_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
         rend3D.orb1.draw_count = static_cast<size_t>(visible_orb1_frame);
         orb1_sync = onoff_button("Sync##orb1_sync", ImVec2(50.0f, 18.0f), orb1_sync);
@@ -535,7 +534,7 @@ private:
         ImGui::SameLine();
         ImGui::SetCursorPosX(90.0f);
         ImGui::SetNextItemWidth(100);
-        uint64_t visible_orb2_frame = (total_frames > 0) ? static_cast<uint64_t>(rend3D.orb2.draw_count) : 0;
+        uint64_t visible_orb2_frame = (frames > 0) ? static_cast<uint64_t>(rend3D.orb2.draw_count) : 0;
 
         if (!rend3D.render_orb2)
         {
@@ -544,7 +543,7 @@ private:
                 orb2_sync = false;
         }
 
-        ImGui::SliderScalar("##visible_orb2_frame", ImGuiDataType_U64, &visible_orb2_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SliderScalar("##visible_orb2_frame", ImGuiDataType_U64, &visible_orb2_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
         orb2_sync = onoff_button("Sync##visible_orb2_frame", ImVec2(50.0f, 18.0f), orb2_sync);
         rend3D.orb2.draw_count = static_cast<size_t>(visible_orb2_frame);
@@ -565,7 +564,7 @@ private:
         ImGui::SameLine();
         ImGui::SetCursorPosX(90.0f);
         ImGui::SetNextItemWidth(100);
-        uint64_t visible_orb_sp_frame = (total_frames > 0) ? static_cast<uint64_t>(rend3D.orb_sp.draw_count) : 0;
+        uint64_t visible_orb_sp_frame = (frames > 0) ? static_cast<uint64_t>(rend3D.orb_sp.draw_count) : 0;
 
         if (!rend3D.render_orb_sp)
         {
@@ -574,7 +573,7 @@ private:
                 orb_sp_sync = false;
         }
 
-        ImGui::SliderScalar("##visible_orb_sp_frame", ImGuiDataType_U64, &visible_orb_sp_frame, &visible_min_frame, &total_frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SliderScalar("##visible_orb_sp_frame", ImGuiDataType_U64, &visible_orb_sp_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
         orb_sp_sync = onoff_button("Sync##orb_sp_sync", ImVec2(50.0f, 18.0f), orb_sp_sync);
         rend3D.orb_sp.draw_count = static_cast<size_t>(visible_orb_sp_frame);
@@ -634,29 +633,29 @@ private:
 
             //Toggle play/pause state via spacebar key, but only when the cursor is in the 3D viewport region.
             if (ImGui::IsKeyReleased(ImGuiKey_Space))
-                play_pause_video = !play_pause_video;
+                play_video = !play_video;
         }
 
         //Frame increment logic :
 
-        if (play_pause_video && render_scene && iframe < total_frames - 1)
+        if (play_video && render_scene && iframe < frames - 1)
         {
-            if (frame_rate == 0) //The slider is set to 0 => paused. Do not increment iframe.
+            if (framerate == 0) //The slider is set to 0 => paused. Do not increment iframe.
             {
                 //Pass.
             }
-            else if (frame_rate < 60) //We do a time-based step to achieve the chosen frame_rate.
+            else if (framerate < 60) //We do a time-based step to achieve the chosen framerate.
             {
                 frame_accumulator += ImGui::GetIO().DeltaTime;
-                float step = 1.0f/static_cast<float>(frame_rate);
+                float step = 1.0f/static_cast<float>(framerate);
                 //In case DeltaTime is large (e.g. if the user drags the window), use a while() so we don't 'miss' increments.
-                while (frame_accumulator >= step && iframe < total_frames - 1)
+                while (frame_accumulator >= step && iframe < frames - 1)
                 {
                     iframe++;
                     frame_accumulator -= step;
                 }
             }
-            else //frame_rate == 60 => let it play as fast as the machine can handle, i.e. increment every time we render.
+            else //framerate == 60 => let it play as fast as the machine can handle, i.e. increment every time we render.
                 iframe++;
         }
         
