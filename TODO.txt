@@ -1,9 +1,7 @@
-1) Add global Cartesian frame of reference (plain RGB GL_LINES centered at the world origin).
-2) Add C.O.M. motion, relative to the global inertial Cartesian frame.
-3) Assume that the 3rd body (orbiter) can be a rigid body instead of a point mass (rotational dynamics).
-4) Fix that bullshitty random crash after the numerical integration. 
-5) Fix shadow algorithm (cascaded shadow).
-6) Render the Sun better (glowing rays).
-7) Add SRP to asteroids and 3rd body (cannonball & faceted model).
-8) Add non-inertial terms for the barycentric frame.
-9) Add binary's revolution around the Sun.
+- Add global Cartesian frame of reference (plain RGB GL_LINES centered at the world origin).
+- Assume that the 3rd body (orbiter) can be a rigid body instead of a point mass (rotational dynamics).
+- Fix shadow algorithm (cascaded shadow).
+- Render the Sun better (glowing rays).
+- Add SRP to asteroids and 3rd body (cannonball & faceted model).
+- Add non-inertial terms for the barycentric frame.
+- Add binary's revolution around the Sun.

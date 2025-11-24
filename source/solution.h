@@ -35,7 +35,7 @@ public:
     dvec w1ix, w1iy, w1iz;
     dvec w2ix, w2iy, w2iz;
     dvec sma, ecc, inc, raan, argper, manom;
-    dvec ener_rel_err, mom_rel_err;
+    dvec denergy, dmomentum; //Relative errors, i.e. |(E[i] - E[0])/E[0]| and |(L[i] - L[0])/L[0]|
 
     solution() { } //This is needed in the scene_panel class.
 
@@ -53,24 +53,24 @@ public:
         
         t.resize(N);
         
-        x.resize(N);    y.resize(N);    z.resize(N);
-        vx.resize(N);   vy.resize(N);   vz.resize(N);
-        w1bx.resize(N); w1by.resize(N); w1bz.resize(N);
-        w2bx.resize(N); w2by.resize(N); w2bz.resize(N);
-        xsp.resize(N); ysp.resize(N); zsp.resize(N);
+        x.resize(N);     y.resize(N);     z.resize(N);
+        vx.resize(N);    vy.resize(N);    vz.resize(N);
+        w1bx.resize(N);  w1by.resize(N);  w1bz.resize(N);
+        w2bx.resize(N);  w2by.resize(N);  w2bz.resize(N);
+        xsp.resize(N);   ysp.resize(N);   zsp.resize(N);
 
-        dist.resize(N);  vel.resize(N);
-        roll1.resize(N); pitch1.resize(N); yaw1.resize(N), relyaw1.resize(N);
-        roll2.resize(N); pitch2.resize(N); yaw2.resize(N), relyaw2.resize(N);
-        w1ix.resize(N);  w1iy.resize(N);   w1iz.resize(N);
-        w2ix.resize(N);  w2iy.resize(N);   w2iz.resize(N);
-        sma.resize(N);   ecc.resize(N); inc.resize(N);  raan.resize(N); argper.resize(N); manom.resize(N);
-        ener_rel_err.resize(N); mom_rel_err.resize(N);
+        dist.resize(N);    vel.resize(N);
+        roll1.resize(N);   pitch1.resize(N);    yaw1.resize(N),  relyaw1.resize(N);
+        roll2.resize(N);   pitch2.resize(N);    yaw2.resize(N),  relyaw2.resize(N);
+        w1ix.resize(N);    w1iy.resize(N);      w1iz.resize(N);
+        w2ix.resize(N);    w2iy.resize(N);      w2iz.resize(N);
+        sma.resize(N);     ecc.resize(N);       inc.resize(N);   raan.resize(N); argper.resize(N); manom.resize(N);
+        denergy.resize(N); dmomentum.resize(N);
 
-        double energy_at_t0, momentum_at_t0;
+        double energy0, momentum0;
         for (size_t i = 0; i < N; ++i)
         {
-            //Extract the integr.orbit[][] matrix into temporary variables for readability (though one could operate directly on integr.orbit[][]).
+            //Extract the integr.orbit[][] matrix into temporary variables for readability.
             //Remember : integr.orbit contains (t, x,y,z, vx,vy,vz, q10,q11,q12,q13, w1bx,w1by,w1bz, q20,q21,q22,q23, w2bx,w2by,w2bz, xsp,ysp,zsp) at each line i.
             dvec3  r    = dvec3{integr.orbit[i][1],  integr.orbit[i][2],  integr.orbit[i][3]};
             dvec3  v    = dvec3{integr.orbit[i][4],  integr.orbit[i][5],  integr.orbit[i][6]};
@@ -99,7 +99,7 @@ public:
 
             dvec6 kep  = cart2kep(dvec6{r[0],r[1],r[2], v[0],v[1],v[2]}, G*(integr.properties.M1 + integr.properties.M2));
             
-            //Kinetic energy part.
+            //Kinetic energy part (evaluated in body frames - that's ok coz energy is scalar and scalars are preserved under rotations).
             double energy = 0.5*integr.m*dot(v,v) + 0.5*dot( dot(w1b, integr.I1), w1b) + 0.5*dot( dot(w2b, integr.I2), w2b);
 
             //Potential energy part.
@@ -110,7 +110,8 @@ public:
             else
                 energy += mut_pot_integrals_ord4(r, integr.properties.M1, integr.J1, A1, integr.properties.M2, integr.J2, A2);
             
-            //Momentum magnitude. Note : All 3 components of the momentum vector are conserved in time. I just choose to store and plot the magnitude only.
+            //Momentum magnitude (now we must evaluate it in the C.O.M. frame because this is a vector).
+            //Note : All 3 components of the momentum vector are conserved in time, but I just choose to store and plot the magnitude only.
             double momentum = length( integr.m*cross(r,v) + dot(A1, dot(integr.I1, w1b)) + dot(A2, dot(integr.I2, w2b)) );
 
             t[i] = integr.orbit[i][0]/86400.0;
@@ -143,9 +144,9 @@ public:
             yaw1[i]    = rpy1[2]*180.0/PI;
             relyaw1[i] = libr1*180.0/PI;
 
-            roll2[i]  = rpy2[0]*180.0/PI;
-            pitch2[i] = rpy2[1]*180.0/PI;
-            yaw2[i]   = rpy2[2]*180.0/PI;
+            roll2[i]   = rpy2[0]*180.0/PI;
+            pitch2[i]  = rpy2[1]*180.0/PI;
+            yaw2[i]    = rpy2[2]*180.0/PI;
             relyaw2[i] = libr2*180.0/PI;
 
             w1ix[i] = w1i[0];
@@ -165,22 +166,23 @@ public:
 
             if (i == 0)
             {
-                energy_at_t0 = energy;
-                momentum_at_t0 = momentum;
-                ener_rel_err[0] = 0.0;
-                mom_rel_err[0]  = 0.0;
+                energy0 = energy;
+                momentum0 = momentum;
+                denergy[0] = dmomentum[0] = 0.0; //No error initially by default...
             }
             else
             {
-                if (fabs(energy_at_t0) > 1e-16)
-                    ener_rel_err[i] = fabs((energy - energy_at_t0)/energy_at_t0);
-                else //Fallback to absolute error to avoid division by zero.
-                    ener_rel_err[i] = fabs(energy - energy_at_t0);
+                //Calculate the relative energy error if energy0 != 0, otherwise calculate the absolute error to avoid division by zero.
+                if (fabs(energy0) > 1e-16)
+                    denergy[i] = fabs((energy - energy0)/energy0);
+                else
+                    denergy[i] = fabs(energy - energy0);
             
-                if (fabs(momentum_at_t0) > 1e-16)
-                    mom_rel_err[i] = fabs((momentum - momentum_at_t0)/momentum_at_t0);
-                else //The same...
-                    mom_rel_err[i] = fabs(momentum - momentum_at_t0);
+                //Same here with momentum.
+                if (fabs(momentum0) > 1e-16)
+                    dmomentum[i] = fabs((momentum - momentum0)/momentum0);
+                else
+                    dmomentum[i] = fabs(momentum - momentum0);
             }
         }
         integr.orbit.clear();
@@ -203,7 +205,7 @@ public:
         }
     }
 
-    //Create and return a reduced (downsample) version of the solution.
+    //Create a reduced version of the solution.
     solution get_reduced_solution()
     {
         solution sol2D;
@@ -214,7 +216,7 @@ public:
         if (t.size() <= SOL2D_SIZE)
             return *this;
 
-        sol2D.integr = integr;
+        sol2D.integr = integr; //Copy integrator's members (cheap because the expensive 'orbit' member is already freed).
         reduce(t,            sol2D.t);
         reduce(x,            sol2D.x);
         reduce(y,            sol2D.y);
@@ -254,8 +256,8 @@ public:
         reduce(raan,         sol2D.raan);
         reduce(argper,       sol2D.argper);
         reduce(manom,        sol2D.manom);
-        reduce(ener_rel_err, sol2D.ener_rel_err);
-        reduce(mom_rel_err,  sol2D.mom_rel_err);
+        reduce(denergy,      sol2D.denergy);
+        reduce(dmomentum,    sol2D.dmomentum);
         
         return sol2D;
     }
@@ -298,7 +300,7 @@ public:
             fprintf(file_rpy2,     "%.16lf %.16lf %.16lf\n",                      roll2[i], pitch2[i], yaw2[i]);
             fprintf(file_w2i,      "%.16lf %.16lf %.16lf\n",                       w2ix[i],   w2iy[i], w2iz[i]);
             fprintf(file_kep,      "%.16lf %.16lf %.16lf %.16lf %.16lf %.16lf\n",   sma[i],    ecc[i],  inc[i], raan[i], argper[i], manom[i]); 
-            fprintf(file_ener_mom, "%.16lf %.16lf\n",                      ener_rel_err[i], mom_rel_err[i]);
+            fprintf(file_ener_mom, "%.16lf %.16lf\n",                      denergy[i], dmomentum[i]);
         }
 
         fclose(file_t);

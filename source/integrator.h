@@ -252,7 +252,7 @@ public:
         if (properties.integration_method == properties_panel::RKF78_FIXED || properties.integration_method == properties_panel::ABM5_FIXED)
             dt = properties.step*86400.0; //[sec]
         else
-            init_guess_time_step = INIT_GUESS_TIME_STEP; //[sec]
+            init_guess_time_step = ODES_INIT_GUESS_TIME_STEP; //[sec]
 
         //Preparation 6 : Convert impact times in [sec]. Then, apply maneuvers BEFORE the while integration loop, only if the impact times are chosen to be at t = t0.
         maneuver1 = maneuver2 = false;
