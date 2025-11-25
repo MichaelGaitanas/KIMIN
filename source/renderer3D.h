@@ -13,7 +13,7 @@
 #include"solution.h"
 #include"shader.h"
 #include"polyhedron.h"
-#include"light.h"
+#include"dlight.h"
 #include"camera.h"
 #include"orbit.h"
 #include"skybox.h"
@@ -23,16 +23,16 @@
 class renderer3D
 {
 private:
-    shader sh_depth, sh_dlight_shadow, sh_orb, sh_skybox, sh_sun, sh_grid; //All shaders used throughout the 3D scene.
-    polyhedron xaxis, yaxis, zaxis; //Body-frame axes meshes.
-    std::unique_ptr<skybox> sky; //Skybox does NOT include the Sun. The Sun is procedurally generated.
+    shader sh_depth, sh_dlight, sh_orb, sh_skybox, sh_sun, sh_grid;
+    polyhedron xaxis, yaxis, zaxis;
+    std::unique_ptr<skybox> sky;
     sun sunquad;
 
     unsigned int depth_fbo, depth_tex; //IDs to hold the depth framebuffer and the depth texture for the shadow map algorithm.
 
 public:
     camera cam;
-    light sunlight;
+    dlight sunlight;
     orbit orb1, orb2, orb_sp;
     grid infgrid;
 
@@ -43,8 +43,8 @@ public:
 
     int win_width, win_height;
     
-    renderer3D() : sh_depth("../shaders/vertex/trans_dir_light_mvp.vert","../shaders/fragment/nothing.frag"),
-                   sh_dlight_shadow("../shaders/vertex/trans_mvpn_shadow.vert","../shaders/fragment/dir_light_ad_shadow.frag"),
+    renderer3D() : sh_depth("../shaders/vertex/trans_dlight_mvp.vert","../shaders/fragment/nothing.frag"),
+                   sh_dlight("../shaders/vertex/trans_mvpn_shadow.vert","../shaders/fragment/dlight_ad_shadow.frag"),
                    sh_orb("../shaders/vertex/trans_mvp.vert","../shaders/fragment/monochromatic.frag"),
                    sh_skybox("../shaders/vertex/skybox.vert","../shaders/fragment/skybox.frag"),
                    sh_sun("../shaders/vertex/sun.vert", "../shaders/fragment/sun.frag"),
@@ -62,7 +62,7 @@ public:
                    orb2(),
                    orb_sp(),
                    infgrid(),
-                   depth_reso(4096),
+                   depth_reso(DEPTH_RESO_INIT),
                    body1_col(glm::vec3(0.8f)),
                    body2_col(glm::vec3(0.8f)),
                    xaxis_col(glm::vec3(1.0f,0.0f,0.0f)),
@@ -137,8 +137,8 @@ public:
 
         sol.integr.properties.poly1.set_as_gl_mesh();
         sol.integr.properties.poly2.set_as_gl_mesh();
-        orb1.set_as_gl_mesh(sol.x, sol.y, sol.z, static_cast<float>(sol.integr.com1_coeff));
-        orb2.set_as_gl_mesh(sol.x, sol.y, sol.z, static_cast<float>(sol.integr.com2_coeff));
+        orb1.set_as_gl_mesh(sol.x, sol.y, sol.z, (float)sol.integr.com1_coeff);
+        orb2.set_as_gl_mesh(sol.x, sol.y, sol.z, (float)sol.integr.com2_coeff);
         if (sol.integr.properties.spacecraft_checkbox)
             orb_sp.set_as_gl_mesh(sol.xsp, sol.ysp, sol.zsp);
         
@@ -152,7 +152,7 @@ public:
                                                  "../skybox/starfield2k/front.jpg",
                                                  "../skybox/starfield2k/back.jpg");
 
-        //Wtf? Is this necessary to be here? Why not in the scene_panel.h
+        //Wtf? Is this necessary to be here? Why not in the scene_panel.h?
         orb1.draw_count = orb2.draw_count = std::min<size_t>(1, sol.t.size());
         if (sol.integr.properties.spacecraft_checkbox)
             orb_sp.draw_count = std::min<size_t>(1, sol.t.size());
@@ -234,11 +234,11 @@ public:
         glBindFramebuffer(GL_FRAMEBUFFER, depth_fbo);
         glViewport(0,0, depth_reso,depth_reso);
         glClear(GL_DEPTH_BUFFER_BIT);
-        sh_dlight_shadow.use();
-        sh_dlight_shadow.set_mat4_uniform("projection", cam.projection);
-        sh_dlight_shadow.set_mat4_uniform("view", cam.view);
-        sh_dlight_shadow.set_mat4_uniform("light_pv", sunlight.pv);
-        sh_dlight_shadow.set_vec3_uniform("light_dir", sunlight.dir);
+        sh_dlight.use();
+        sh_dlight.set_mat4_uniform("projection", cam.projection);
+        sh_dlight.set_mat4_uniform("view", cam.view);
+        sh_dlight.set_mat4_uniform("light_pv", sunlight.pv);
+        sh_dlight.set_vec3_uniform("light_dir", sunlight.dir);
         sh_depth.use();
         sh_depth.set_mat4_uniform("light_pv", sunlight.pv);
         sh_depth.set_mat4_uniform("model", T1R1);
@@ -306,29 +306,29 @@ public:
         //Polyhedra rendering pass :
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, depth_tex);
-        sh_dlight_shadow.use();
-        sh_dlight_shadow.set_int_uniform("sample_shadow", 0);
-        sh_dlight_shadow.set_mat4_uniform("model", T1R1);
-        sh_dlight_shadow.set_vec3_uniform("mesh_col", body1_col);
+        sh_dlight.use();
+        sh_dlight.set_int_uniform("sample_shadow", 0);
+        sh_dlight.set_mat4_uniform("model", T1R1);
+        sh_dlight.set_vec3_uniform("mesh_col", body1_col);
         if (render_body1)
             sol.integr.properties.poly1.render();
         if (render_axes1)
         {
-            sh_dlight_shadow.set_mat4_uniform("model", T1R1*S1);
-            sh_dlight_shadow.set_vec3_uniform("mesh_col", xaxis_col); xaxis.render();
-            sh_dlight_shadow.set_vec3_uniform("mesh_col", yaxis_col); yaxis.render();
-            sh_dlight_shadow.set_vec3_uniform("mesh_col", zaxis_col); zaxis.render();
+            sh_dlight.set_mat4_uniform("model", T1R1*S1);
+            sh_dlight.set_vec3_uniform("mesh_col", xaxis_col); xaxis.render();
+            sh_dlight.set_vec3_uniform("mesh_col", yaxis_col); yaxis.render();
+            sh_dlight.set_vec3_uniform("mesh_col", zaxis_col); zaxis.render();
         }
-        sh_dlight_shadow.set_mat4_uniform("model", T2R2);
-        sh_dlight_shadow.set_vec3_uniform("mesh_col", body2_col);
+        sh_dlight.set_mat4_uniform("model", T2R2);
+        sh_dlight.set_vec3_uniform("mesh_col", body2_col);
         if (render_body2)
             sol.integr.properties.poly2.render();
         if (render_axes2)
         {
-            sh_dlight_shadow.set_mat4_uniform("model", T2R2*S2);
-            sh_dlight_shadow.set_vec3_uniform("mesh_col", xaxis_col); xaxis.render();
-            sh_dlight_shadow.set_vec3_uniform("mesh_col", yaxis_col); yaxis.render();
-            sh_dlight_shadow.set_vec3_uniform("mesh_col", zaxis_col); zaxis.render();
+            sh_dlight.set_mat4_uniform("model", T2R2*S2);
+            sh_dlight.set_vec3_uniform("mesh_col", xaxis_col); xaxis.render();
+            sh_dlight.set_vec3_uniform("mesh_col", yaxis_col); yaxis.render();
+            sh_dlight.set_vec3_uniform("mesh_col", zaxis_col); zaxis.render();
         }
         glBindTexture(GL_TEXTURE_2D, 0);
 

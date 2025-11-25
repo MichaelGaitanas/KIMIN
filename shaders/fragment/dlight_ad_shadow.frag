@@ -14,7 +14,7 @@ uniform vec3 light_dir; //Direction of the light in world coordinates.
 uniform sampler2D sample_shadow; //Depth image texture, obtained by the other shader.
 
 //Hard-coded Poisson disk sampling offsets, used for smoothing the shadow edges (pcf).
-vec2 poisson_disk[POISSON_SAMPLES] = vec2[]( vec2(-0.94201624, -0.39906216), 
+const vec2 poisson_disk[POISSON_SAMPLES] = { vec2(-0.94201624, -0.39906216), 
                                              vec2( 0.94558609, -0.76890725), 
                                              vec2(-0.09418410, -0.92938870), 
                                              vec2( 0.34495938,  0.29387760), 
@@ -29,7 +29,7 @@ vec2 poisson_disk[POISSON_SAMPLES] = vec2[]( vec2(-0.94201624, -0.39906216),
                                              vec2(-0.24188840,  0.99706507), 
                                              vec2(-0.81409955,  0.91437590), 
                                              vec2( 0.19984126,  0.78641367), 
-                                             vec2( 0.14383161, -0.14100790)  );
+                                             vec2( 0.14383161, -0.14100790)  };
 
 //Decide whether or not the fragment is in shadow.
 float get_shadow(float diffuse)

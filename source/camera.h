@@ -49,7 +49,7 @@ public:
                rscale(5.0f),
                vscale(1.0f),
                voffset_ndc(glm::vec2(0.0f)),
-               fov(60.0f),
+               fov(CAM_INIT_FOV),
                frame_of_ref(WORLD)
     { }
 

@@ -1,24 +1,24 @@
 /* This class contains the core geometrical calculations of the directional light used to render the simulation in 3D. */
 
-#ifndef LIGHT_H
-#define LIGHT_H
+#ifndef DLIGHT_H
+#define DLIGHT_H
 
 #include<cmath>
 
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
 
-class light
+class dlight
 {
 public:
     float lon, lat;
     glm::vec3 dir;
     glm::mat4 pv; //projection*view (premultiplied to avoid doing it in the GPU per vertex).
 
-    light() : lon(0.0f),
-              lat(90.0f),
-              dir(glm::vec3(0.0f)),
-              pv(glm::mat4(0.0f))
+    dlight() : lon(0.0f),
+               lat(90.0f),
+               dir(glm::vec3(0.0f)),
+               pv(glm::mat4(0.0f))
     { }
 
     //This function alters the light's 'lon' and 'lat' members, based on how much the user moved the mouse (+ middle click + ctrl key) since the last frame.
