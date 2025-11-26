@@ -159,9 +159,9 @@ public:
     }
 
     //This function evaluates analytically the equation of motion of the COM in world coordinates.
-    glm::vec3 get_analytic_rcom(const solution &sol, const size_t i, const glm::vec3 &rcom0, const glm::vec3 &vcom0)
+    glm::vec3 get_analytic_rcom(const solution &sol, const size_t iframe, const glm::vec3 &rcom0, const glm::vec3 &vcom0)
     {
-        const double ti = sol.t[i]*86400.0;
+        const double ti = sol.t[iframe]*86400.0;
         glm::vec3 r = rcom0 + vcom0*(float)(ti - sol.integr.t0); //COM position due to initial state.
         if (sol.integr.properties.impactors_checkbox)
         {

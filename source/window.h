@@ -68,10 +68,10 @@ public:
         glfwWindowHint(GLFW_SAMPLES, GLFW_SSAS_SAMPLES);
         glfwWindowHint(GLFW_DEPTH_BITS, GLFW_REQUESTED_DEPTH_BITS);
 
+        //When the app launches, it shall be windowed-fullscreen mode. If the rescale button is clicked, the size remains, unless the user resizes it from the corners.
         const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
         width = mode->width;
         height = mode->height;
-        //That being said, when the gui launches, it is in windowed-fullscreen mode. If the rescale button is clicked, the size remains, unless the user resizes it from the corners.
 
         wpointer = glfwCreateWindow(width, height, "KIMIN - Kinetic Impact Mission to NEO", nullptr, nullptr);
         if (wpointer == nullptr)
@@ -82,6 +82,8 @@ public:
         }
         glfwSetWindowUserPointer(wpointer, this);
         glfwMakeContextCurrent(wpointer);
+        glfwGetFramebufferSize(wpointer, &width, &height);
+        glViewport(0,0, width,height);
         glfwSetWindowSizeLimits(wpointer, GLFW_MIN_WIDTH,GLFW_MIN_HEIGHT, GLFW_DONT_CARE,GLFW_DONT_CARE);
         glfwSwapInterval(1);
 

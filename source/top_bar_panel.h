@@ -48,9 +48,8 @@ public:
         {
             float sx = ImGui::GetIO().DisplaySize.x;
             float sy = ImGui::GetIO().DisplaySize.y;
-            ImVec2 winsize{ 0.3f*sx, 0.4f*sy };
-            ImGui::SetNextWindowSize(winsize, ImGuiCond_Appearing);
-            ImGui::SetNextWindowPos(ImVec2(0.5f*sx, 0.5f*sy), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f)); 
+            ImGui::SetNextWindowSize(ImVec2(0.4f*sx, 0.4f*sy), ImGuiCond_Appearing);
+            ImGui::SetNextWindowPos( ImVec2(0.5f*sx, 0.5f*sy), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f)); 
             ImGui::Begin("Select properties file", &import_props_clicked);
             if (ImGui::TreeNodeEx("Available properties files", ImGuiTreeNodeFlags_Framed))
             {
@@ -72,7 +71,7 @@ public:
             //Final "Import file" button. This must be pressed, otherwise the properties pannel will not be updated.
             if (ImGui::Button("Import file", ImVec2(70.0f,30.0f)))
             {
-                import_props_clicked = false; //This will close the window (encapsulated).
+                import_props_clicked = false; //This will close the window.
                 if (!properties_path.empty())
                     import_props_confirm = true; //And this is will communicate with gui::poll_topbar_events(), which then will communicate with properties::import_file().
             }

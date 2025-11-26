@@ -1,4 +1,4 @@
-/* This class handles the rendering logic of the right panel (scene) in the gui. */
+/* This class handles the rendering logic of the right (scene) panel in the gui. */
 
 #ifndef SCENE_PANEL_H
 #define SCENE_PANEL_H
@@ -21,32 +21,33 @@ class scene_panel
 private:
     bvec plot_cart; //Buttons : [x, y, z, r] and [υx, υy, υz, υ].
     bvec plot_kep; //Buttons : [a, e, i, Ω, ω, M].
-    bvec plot_rpy1, plot_rpy2; //Buttons : [roll 1, pitch 1, yaw 1, libration 1] and [roll 2, pitch 2, yaw 2, libration 1].
-    bvec plot_w1i, plot_w1b; //Buttons : [ω1ix, ω1iy, ω1iz] and [ω1bx, ω1by, ω1bz].
-    bvec plot_w2i, plot_w2b; //Buttons : [ω2ix, ω2iy, ω2iz] and [ω2bx, ω2by, ω2bz].
     bvec plot_dener_dmom; //Buttons : [energy, momentum].
-    bvec plot_rsp; //Buttons : [xsp, ysp, zsp].
+    bvec plot_rpy1, plot_rpy2; //Buttons : [roll, pitch, yaw, rel. yaw] for body 1 and [roll, pitch, yaw, rel. yaw] for body 2.
+    bvec plot_w1i, plot_w1b; //Buttons : [ωx, ωy, ωz] and [ω1, ω2, ω3] for body 1.
+    bvec plot_w2i, plot_w2b; //Buttons : [ωx, ωy, ωz] and [ω1, ω2, ω3] for body 2.
+    bvec plot_rsp; //Buttons : [x, y, z] of the spacecraft orbiter.
     
     bool render_scene, play_video, reset_gpu_essential, auto_replay, orb1_sync, orb2_sync, orb_sp_sync;
+
     uint64_t iframe, frames;
     int framerate; //Frame updates per second.
     float frame_accumulator; //Accumulates fractional frames between updates.
 
     solution *sol; //This contains all the orbital data and is used to render the 3D scene (pointer to avoid huge copy).
-    solution sol2D; //And this is the downsampled version of the sol, used only for the 2D plots.
+    solution sol2D; //This is the downsampled version of the sol, used only for the 2D plots.
 
     renderer3D rend3D;
 
 public:
     scene_panel() : plot_cart({false,false,false,false, false,false,false,false}),
                     plot_kep({false,false,false,false,false,false}),
+                    plot_dener_dmom({false,false}),
                     plot_rpy1({false,false,false,false}),
                     plot_rpy2({false,false,false,false}),
                     plot_w1i({false,false,false}),
                     plot_w1b({false,false,false}),
                     plot_w2i({false,false,false}),
                     plot_w2b({false,false,false}),
-                    plot_dener_dmom({false,false}),
                     plot_rsp({false,false,false}),
                     render_scene(false),
                     play_video(false),
@@ -336,19 +337,9 @@ private:
         }
         else
         {
-            ImVec4 play_pause_col = play_video ? ImVec4(0.0f, 0.7f, 0.0f, 1.0f) : ImVec4(0.7f, 0.0f, 0.0f, 1.0f);
-            ImGui::PushStyleColor(ImGuiCol_Button,        play_pause_col);
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(play_pause_col.x+0.2f, play_pause_col.y+0.2f, play_pause_col.z+0.2f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(play_pause_col.x*0.8f, play_pause_col.y*0.8f, play_pause_col.z*0.8f, 1.0f));
             play_video = onoff_button("Play/Pause##play_video", ImVec2(80.0f, 25.0f), play_video);
-            ImGui::PopStyleColor(3);
             ImGui::SameLine();
-            ImVec4 auto_replay_col = auto_replay ? ImVec4(0.0f, 0.7f, 0.0f, 1.0f) : ImVec4(0.7f, 0.0f, 0.0f, 1.0f);
-            ImGui::PushStyleColor(ImGuiCol_Button,        auto_replay_col);
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(auto_replay_col.x+0.2f, auto_replay_col.y+0.2f, auto_replay_col.z+0.2f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(auto_replay_col.x*0.8f, auto_replay_col.y*0.8f, auto_replay_col.z*0.8f, 1.0f));
             auto_replay = onoff_button(ICON_FA_REDO" Auto##auto_replay", ImVec2(55.0f, 25.0f), auto_replay);
-            ImGui::PopStyleColor(3);
             if (auto_replay && play_video && iframe >= frames - 1)
                 iframe = 0;
         }
