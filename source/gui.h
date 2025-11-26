@@ -15,6 +15,7 @@
 #include"../imgui/imgui_impl_opengl3.h"
 #include"../imgui/implot.h"
 
+#include"constants.h"
 #include"top_bar_panel.h"
 #include"properties_panel.h"
 #include"console_panel.h"
@@ -56,7 +57,7 @@ public:
         ImPlot::CreateContext(); //Strictly AFTER Imgui::CreateContext();
         ImGuiIO &io = ImGui::GetIO();
         io.IniFilename = nullptr;
-        io.Fonts->AddFontFromFileTTF("../fonts/RobotoRegular.ttf", 15.0f, nullptr, io.Fonts->GetGlyphRangesGreek());
+        io.Fonts->AddFontFromFileTTF("../fonts/RobotoRegular.ttf", 15.0f*SCY, nullptr, io.Fonts->GetGlyphRangesGreek());
         (void)io;
         ImGui::StyleColorsDark();
         ImGui_ImplGlfw_InitForOpenGL(wpointer, true);
@@ -75,7 +76,7 @@ public:
         cfg.MergeMode = true;
         cfg.PixelSnapH = true;
         static const ImWchar icon_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
-        io.Fonts->AddFontFromFileTTF("../fonts/Icons.otf", 15.0f, &cfg, icon_ranges);
+        io.Fonts->AddFontFromFileTTF("../fonts/Icons.otf", 15.0f*SCY, &cfg, icon_ranges);
     }
 
     //Free gui resources.

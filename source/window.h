@@ -27,7 +27,7 @@ private:
         window *instance = static_cast<window*>(glfwGetWindowUserPointer(ptr));
         if (instance != nullptr)
         {
-            instance->width = w;
+            instance->width  = w;
             instance->height = h;
             glViewport(0,0, w,h);
         }
@@ -70,8 +70,10 @@ public:
 
         //When the app launches, it shall be windowed-fullscreen mode. If the rescale button is clicked, the size remains, unless the user resizes it from the corners.
         const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-        width = mode->width;
+        width  = mode->width;
         height = mode->height;
+        SCX = (mode->width)/1920.0f;
+        SCY = (mode->height)/1080.0f;
 
         wpointer = glfwCreateWindow(width, height, "KIMIN - Kinetic Impact Mission to NEO", nullptr, nullptr);
         if (wpointer == nullptr)

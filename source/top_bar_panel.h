@@ -10,6 +10,8 @@
 #include"../imgui/imgui_impl_glfw.h"
 #include"../imgui/imgui_impl_opengl3.h"
 
+#include"constants.h"
+
 class top_bar_panel
 {
 public:
@@ -63,13 +65,13 @@ public:
                 }
                 ImGui::TreePop();
             }
-            ImGui::Dummy(ImVec2(0.0f,15.0f));
+            ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
 
             if (properties_path.empty())
                 ImGui::BeginDisabled();
 
             //Final "Import file" button. This must be pressed, otherwise the properties pannel will not be updated.
-            if (ImGui::Button("Import file", ImVec2(70.0f,30.0f)))
+            if (ImGui::Button("Import file", ImVec2(70.0f*SCX,30.0f*SCY)))
             {
                 import_props_clicked = false; //This will close the window.
                 if (!properties_path.empty())
@@ -84,12 +86,13 @@ public:
 
         if (confirm_exit)
         {
-            float sx = ImGui::GetIO().DisplaySize.x, sy = ImGui::GetIO().DisplaySize.y;
-            ImGui::SetNextWindowPos(ImVec2(0.5f*sx, 0.5f*sy), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+            float sx = ImGui::GetIO().DisplaySize.x;
+            float sy = ImGui::GetIO().DisplaySize.y;
+            ImGui::SetNextWindowPos( ImVec2(0.5f*sx, 0.5f*sy), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
             ImGui::SetNextWindowSize(ImVec2(0.1f*sx, 0.1f*sy), ImGuiCond_Always);
             ImGui::Begin("Exit KIMIN ?", &confirm_exit, ImGuiWindowFlags_NoResize);
             
-            ImVec2 butt_size(50.0f, 30.0f);
+            ImVec2 butt_size(50.0f*SCX, 30.0f*SCY);
             float butt_spacing = ImGui::GetStyle().ItemSpacing.x;
             float total_width = 2.0f*butt_size.x + butt_spacing;
             float avail_width = ImGui::GetContentRegionAvail().x;

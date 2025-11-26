@@ -15,6 +15,8 @@
 #include"../imgui/imgui_impl_glfw.h"
 #include"../imgui/imgui_impl_opengl3.h"
 
+#include"constants.h"
+
 class console_panel
 {
 private:
@@ -72,7 +74,7 @@ public:
         ImGui::Begin("Console", nullptr);
 
         //Clear button.
-        if (ImGui::Button("Clear", ImVec2(60.0f,25.0f)))
+        if (ImGui::Button("Clear", ImVec2(60.0f*SCX, 25.0f*SCY)))
             cls();
         
         //Display FPS and GPU.

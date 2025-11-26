@@ -20,4 +20,7 @@ constexpr float CLEAR_COLOR_R = 0.06f;
 constexpr float CLEAR_COLOR_G = 0.06f;
 constexpr float CLEAR_COLOR_B = 0.06f;
 
+//These are scale factors and are defined as variables because their values can only be computed as soon as the app launches. They remain however unchanged throughout the app run.
+float SCX, SCY;
+
 #endif
