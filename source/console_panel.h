@@ -69,8 +69,10 @@ public:
     //Render the console window.
     void render()
     {
-        ImGui::SetNextWindowPos(ImVec2(0.15f*ImGui::GetIO().DisplaySize.x, 0.8f*ImGui::GetIO().DisplaySize.y), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2(0.7f*ImGui::GetIO().DisplaySize.x, 0.2f*ImGui::GetIO().DisplaySize.y), ImGuiCond_FirstUseEver);
+        float sx = ImGui::GetIO().DisplaySize.x;
+        float sy = ImGui::GetIO().DisplaySize.y;
+        ImGui::SetNextWindowPos(ImVec2(0.15f*sx, 0.8f*sy), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(0.7f*sx, 0.2f*sy), ImGuiCond_FirstUseEver);
         ImGui::Begin("Console", nullptr);
 
         //Clear button.

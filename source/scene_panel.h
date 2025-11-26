@@ -132,11 +132,13 @@ private:
     //This function plots the data {t, data(t)}.
     bool plot(const char *imgui_id, const char *implot_id, const char *yaxis_str, bool plot_status, dvec &data)
     {
-        ImGui::SetNextWindowPos( ImVec2(0.6f*ImGui::GetIO().DisplaySize.x, 0.0f), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2(0.25f*ImGui::GetIO().DisplaySize.x, 0.4f*ImGui::GetIO().DisplaySize.y), ImGuiCond_FirstUseEver);
+        float sx = ImGui::GetIO().DisplaySize.x;
+        float sy = ImGui::GetIO().DisplaySize.y;
+
+        ImGui::SetNextWindowPos( ImVec2(0.6f*sx, 0.0f), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(0.25f*sx, 0.4f*sy), ImGuiCond_FirstUseEver);
         ImGui::Begin(imgui_id, &plot_status);
-        ImVec2 plot_win_size = ImVec2(ImGui::GetWindowSize().x - 20.0f, ImGui::GetWindowSize().y - 40.0f);
-        if (ImPlot::BeginPlot(implot_id, plot_win_size))
+        if (ImPlot::BeginPlot(implot_id, ImVec2(ImGui::GetWindowSize().x - 20.0f*SCX, ImGui::GetWindowSize().y - 40.0f*SCY)))
         {
             //Line logic :
             ImPlot::SetupAxes("time [days]", yaxis_str);
@@ -144,18 +146,18 @@ private:
             
             //Current frame marker logic :
             size_t jframe = map_frame_to_reduced_sol(iframe, sol->t.size(), sol2D.t.size());
-            ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 6.0f, ImColor(0, 255, 0, 255), 1.0f, ImColor(0, 255, 0, 255));
+            ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 6.0f*SCX, ImColor(0,255,0,255), 1.0f, ImColor(0,255,0,255));
             ImPlot::PlotScatter("Current frame", &sol2D.t[jframe], &data[jframe], 1);
 
             //Collision frame marker logic :
             if (sol2D.integr.collision) //Asteroid-asteroid collision.
             {
-                ImPlot::SetNextMarkerStyle(ImPlotMarker_Down, 6.0f, ImColor(255,0,0,255), 1.0f, ImColor(255,0,0,255));
+                ImPlot::SetNextMarkerStyle(ImPlotMarker_Down, 6.0f*SCX, ImColor(255,0,0,255), 1.0f, ImColor(255,0,0,255));
                 ImPlot::PlotScatter("Collision frame", &sol2D.t.back(), &data.back(), 1);
             }
             else if (sol2D.integr.collision_sp) //Asteroid-spacecraft collision.
             {
-                ImPlot::SetNextMarkerStyle(ImPlotMarker_Down, 6.0f, ImColor(255, 100, 0, 255), 1.0f, ImColor(255, 100, 0, 255));
+                ImPlot::SetNextMarkerStyle(ImPlotMarker_Down, 6.0f*SCX, ImColor(255,100,0,255), 1.0f, ImColor(255,100,0,255));
                 ImPlot::PlotScatter("Collision frame", &sol2D.t.back(), &data.back(), 1);
             }
 
@@ -166,7 +168,7 @@ private:
     }
 
     //Since imgui does not provide a 2D slider - joystick, we emulate one ourselves.
-    bool imgui_slider_float_2D(const char *label, const char *hash, ImVec2 *value, ImVec2 min, ImVec2 max, ImVec2 size = ImVec2(100.0f,100.0f))
+    bool imgui_slider_float_2D(const char *label, const char *hash, ImVec2 *value, ImVec2 min, ImVec2 max, ImVec2 size)
     {
         ImGui::Text("%s", label);
         ImGui::SetCursorPosX(0.15f*ImGui::GetIO().DisplaySize.x/2.0f - size.x/2.0f);
@@ -200,7 +202,7 @@ private:
         float tx = (value->x - min.x)/(max.x - min.x);
         float ty = (value->y - min.y)/(max.y - min.y);
         ImVec2 handle = ImVec2(pos.x + tx*size.x, pos.y + ty*size.y);
-        draw_list->AddCircleFilled(handle, 5.0f, col_handle);
+        draw_list->AddCircleFilled(handle, 5.0f*SCX, col_handle);
 
         return changed;
     }
@@ -213,34 +215,34 @@ private:
         //Binary's (mutual) plots.
         if (ImGui::TreeNodeEx("Mutual"))
         {
-            ImGui::Dummy(ImVec2(0.0f,7.5f));
+            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
             ImGui::Text("Position");
-            plot_cart[0] = onoff_button("x##plot_cart[0]", ImVec2(50.0f, 20.0f), plot_cart[0]); ImGui::SameLine();
-            plot_cart[1] = onoff_button("y##plot_cart[1]", ImVec2(50.0f, 20.0f), plot_cart[1]); ImGui::SameLine();
-            plot_cart[2] = onoff_button("z##plot_cart[2]", ImVec2(50.0f, 20.0f), plot_cart[2]); ImGui::SameLine();
-            plot_cart[3] = onoff_button("r##plot_cart[3]", ImVec2(50.0f, 20.0f), plot_cart[3]);
-            ImGui::Dummy(ImVec2(0.0f,7.5f));
+            plot_cart[0] = onoff_button("x##plot_cart[0]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart[0]); ImGui::SameLine();
+            plot_cart[1] = onoff_button("y##plot_cart[1]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart[1]); ImGui::SameLine();
+            plot_cart[2] = onoff_button("z##plot_cart[2]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart[2]); ImGui::SameLine();
+            plot_cart[3] = onoff_button("r##plot_cart[3]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart[3]);
+            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
 
             ImGui::Text("Velocity");
-            plot_cart[4] = onoff_button("υx##plot_cart[4]", ImVec2(50.0f, 20.0f), plot_cart[4]); ImGui::SameLine();
-            plot_cart[5] = onoff_button("υy##plot_cart[5]", ImVec2(50.0f, 20.0f), plot_cart[5]); ImGui::SameLine();
-            plot_cart[6] = onoff_button("υz##plot_cart[6]", ImVec2(50.0f, 20.0f), plot_cart[6]); ImGui::SameLine();
-            plot_cart[7] = onoff_button("υ##plot_cart[7]" , ImVec2(50.0f, 20.0f), plot_cart[7]);
-            ImGui::Dummy(ImVec2(0.0f,7.5f));
+            plot_cart[4] = onoff_button("υx##plot_cart[4]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart[4]); ImGui::SameLine();
+            plot_cart[5] = onoff_button("υy##plot_cart[5]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart[5]); ImGui::SameLine();
+            plot_cart[6] = onoff_button("υz##plot_cart[6]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart[6]); ImGui::SameLine();
+            plot_cart[7] = onoff_button("υ##plot_cart[7]" , ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart[7]);
+            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
 
             ImGui::Text("Keplerian elements");
-            plot_kep[0] = onoff_button("a##plot_kep[0]", ImVec2(35.0f, 20.0f), plot_kep[0]); ImGui::SameLine();
-            plot_kep[1] = onoff_button("e##plot_kep[1]", ImVec2(35.0f, 20.0f), plot_kep[1]); ImGui::SameLine();
-            plot_kep[2] = onoff_button("i##plot_kep[2]", ImVec2(35.0f, 20.0f), plot_kep[2]); ImGui::SameLine();
-            plot_kep[3] = onoff_button("Ω##plot_kep[3]", ImVec2(35.0f, 20.0f), plot_kep[3]); ImGui::SameLine();
-            plot_kep[4] = onoff_button("ω##plot_kep[4]", ImVec2(35.0f, 20.0f), plot_kep[4]); ImGui::SameLine();
-            plot_kep[5] = onoff_button("M##plot_kep[5]", ImVec2(35.0f, 20.0f), plot_kep[5]);
-            ImGui::Dummy(ImVec2(0.0f,7.5f));
+            plot_kep[0] = onoff_button("a##plot_kep[0]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep[0]); ImGui::SameLine();
+            plot_kep[1] = onoff_button("e##plot_kep[1]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep[1]); ImGui::SameLine();
+            plot_kep[2] = onoff_button("i##plot_kep[2]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep[2]); ImGui::SameLine();
+            plot_kep[3] = onoff_button("Ω##plot_kep[3]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep[3]); ImGui::SameLine();
+            plot_kep[4] = onoff_button("ω##plot_kep[4]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep[4]); ImGui::SameLine();
+            plot_kep[5] = onoff_button("M##plot_kep[5]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep[5]);
+            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
 
             ImGui::Text("Energy and momentum errors");
-            plot_dener_dmom[0] = onoff_button("energy##plot_dener_dmom[0]",   ImVec2(80.0f, 25.0f), plot_dener_dmom[0]); ImGui::SameLine();
-            plot_dener_dmom[1] = onoff_button("momentum##plot_dener_dmom[1]", ImVec2(80.0f, 25.0f), plot_dener_dmom[1]);
-            ImGui::Dummy(ImVec2(0.0f,7.5f));
+            plot_dener_dmom[0] = onoff_button("energy##plot_dener_dmom[0]",   ImVec2(80.0f*SCX, 25.0f*SCY), plot_dener_dmom[0]); ImGui::SameLine();
+            plot_dener_dmom[1] = onoff_button("momentum##plot_dener_dmom[1]", ImVec2(80.0f*SCX, 25.0f*SCY), plot_dener_dmom[1]);
+            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
 
             ImGui::TreePop();
         }
@@ -248,25 +250,25 @@ private:
         //Body 1 plots.
         if (ImGui::TreeNodeEx("Body 1"))
         {
-            ImGui::Dummy(ImVec2(0.0f,7.5f));
+            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
             ImGui::Text("Euler angles (XYZ)");
-            plot_rpy1[0] = onoff_button("roll##plot_rpy1[0]",      ImVec2(50.0f, 20.0f), plot_rpy1[0]); ImGui::SameLine();
-            plot_rpy1[1] = onoff_button("pitch##plot_rpy1[1]",     ImVec2(50.0f, 20.0f), plot_rpy1[1]); ImGui::SameLine();
-            plot_rpy1[2] = onoff_button("yaw##plot_rpy1[2]",       ImVec2(50.0f, 20.0f), plot_rpy1[2]); ImGui::SameLine();
-            plot_rpy1[3] = onoff_button("rel. yaw##plot_rpy1[3]",  ImVec2(60.0f, 20.0f), plot_rpy1[3]);
-            ImGui::Dummy(ImVec2(0.0f,7.5f));
+            plot_rpy1[0] = onoff_button("roll##plot_rpy1[0]",      ImVec2(50.0f*SCX, 20.0f*SCY), plot_rpy1[0]); ImGui::SameLine();
+            plot_rpy1[1] = onoff_button("pitch##plot_rpy1[1]",     ImVec2(50.0f*SCX, 20.0f*SCY), plot_rpy1[1]); ImGui::SameLine();
+            plot_rpy1[2] = onoff_button("yaw##plot_rpy1[2]",       ImVec2(50.0f*SCX, 20.0f*SCY), plot_rpy1[2]); ImGui::SameLine();
+            plot_rpy1[3] = onoff_button("rel. yaw##plot_rpy1[3]",  ImVec2(60.0f*SCX, 20.0f*SCY), plot_rpy1[3]);
+            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
 
             ImGui::Text("Angular velocity (inertial frame)");
-            plot_w1i[0] = onoff_button("ωx##plot_w1i[0]", ImVec2(50.0f, 20.0f), plot_w1i[0]); ImGui::SameLine();
-            plot_w1i[1] = onoff_button("ωy##plot_w1i[1]", ImVec2(50.0f, 20.0f), plot_w1i[1]); ImGui::SameLine();
-            plot_w1i[2] = onoff_button("ωz##plot_w1i[2]", ImVec2(50.0f, 20.0f), plot_w1i[2]);
-            ImGui::Dummy(ImVec2(0.0f,7.5f));
+            plot_w1i[0] = onoff_button("ωx##plot_w1i[0]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_w1i[0]); ImGui::SameLine();
+            plot_w1i[1] = onoff_button("ωy##plot_w1i[1]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_w1i[1]); ImGui::SameLine();
+            plot_w1i[2] = onoff_button("ωz##plot_w1i[2]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_w1i[2]);
+            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
             
             ImGui::Text("Angular velocity (body frame)");
-            plot_w1b[0] = onoff_button("ω1##plot_w1b[0]", ImVec2(50.0f, 20.0f), plot_w1b[0]); ImGui::SameLine();
-            plot_w1b[1] = onoff_button("ω2##plot_w1b[1]", ImVec2(50.0f, 20.0f), plot_w1b[1]); ImGui::SameLine();
-            plot_w1b[2] = onoff_button("ω3##plot_w1b[2]", ImVec2(50.0f, 20.0f), plot_w1b[2]);
-            ImGui::Dummy(ImVec2(0.0f,7.5f));
+            plot_w1b[0] = onoff_button("ω1##plot_w1b[0]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_w1b[0]); ImGui::SameLine();
+            plot_w1b[1] = onoff_button("ω2##plot_w1b[1]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_w1b[1]); ImGui::SameLine();
+            plot_w1b[2] = onoff_button("ω3##plot_w1b[2]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_w1b[2]);
+            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
 
             ImGui::TreePop();
         }
@@ -274,25 +276,25 @@ private:
         //Body 2 plots.
         if (ImGui::TreeNodeEx("Body 2"))
         {
-            ImGui::Dummy(ImVec2(0.0f,7.5f));
+            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
             ImGui::Text("Euler angles (XYZ)");
-            plot_rpy2[0] = onoff_button("roll##plot_rpy2[0]",      ImVec2(50.0f, 20.0f), plot_rpy2[0]); ImGui::SameLine();
-            plot_rpy2[1] = onoff_button("pitch##plot_rpy2[1]",     ImVec2(50.0f, 20.0f), plot_rpy2[1]); ImGui::SameLine();
-            plot_rpy2[2] = onoff_button("yaw##plot_rpy2[2]",       ImVec2(50.0f, 20.0f), plot_rpy2[2]); ImGui::SameLine();
-            plot_rpy2[3] = onoff_button("rel. yaw##plot_rpy2[3]",  ImVec2(60.0f, 20.0f), plot_rpy2[3]);
-            ImGui::Dummy(ImVec2(0.0f,7.5f));
+            plot_rpy2[0] = onoff_button("roll##plot_rpy2[0]",      ImVec2(50.0f*SCX, 20.0f*SCY), plot_rpy2[0]); ImGui::SameLine();
+            plot_rpy2[1] = onoff_button("pitch##plot_rpy2[1]",     ImVec2(50.0f*SCX, 20.0f*SCY), plot_rpy2[1]); ImGui::SameLine();
+            plot_rpy2[2] = onoff_button("yaw##plot_rpy2[2]",       ImVec2(50.0f*SCX, 20.0f*SCY), plot_rpy2[2]); ImGui::SameLine();
+            plot_rpy2[3] = onoff_button("rel. yaw##plot_rpy2[3]",  ImVec2(60.0f*SCX, 20.0f*SCY), plot_rpy2[3]);
+            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
 
             ImGui::Text("Angular velocity (inertial frame)");
-            plot_w2i[0] = onoff_button("ωx##plot_w2i[0]", ImVec2(50.0f, 20.0f), plot_w2i[0]); ImGui::SameLine();
-            plot_w2i[1] = onoff_button("ωy##plot_w2i[1]", ImVec2(50.0f, 20.0f), plot_w2i[1]); ImGui::SameLine();
-            plot_w2i[2] = onoff_button("ωz##plot_w2i[2]", ImVec2(50.0f, 20.0f), plot_w2i[2]);
-            ImGui::Dummy(ImVec2(0.0f,7.5f));
+            plot_w2i[0] = onoff_button("ωx##plot_w2i[0]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_w2i[0]); ImGui::SameLine();
+            plot_w2i[1] = onoff_button("ωy##plot_w2i[1]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_w2i[1]); ImGui::SameLine();
+            plot_w2i[2] = onoff_button("ωz##plot_w2i[2]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_w2i[2]);
+            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
             
             ImGui::Text("Angular velocity (body frame)");
-            plot_w2b[0] = onoff_button("ω1##plot_w2b[0]", ImVec2(50.0f, 20.0f), plot_w2b[0]); ImGui::SameLine();
-            plot_w2b[1] = onoff_button("ω2##plot_w2b[1]", ImVec2(50.0f, 20.0f), plot_w2b[1]); ImGui::SameLine();
-            plot_w2b[2] = onoff_button("ω3##plot_w2b[2]", ImVec2(50.0f, 20.0f), plot_w2b[2]);
-            ImGui::Dummy(ImVec2(0.0f,7.5f));
+            plot_w2b[0] = onoff_button("ω1##plot_w2b[0]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_w2b[0]); ImGui::SameLine();
+            plot_w2b[1] = onoff_button("ω2##plot_w2b[1]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_w2b[1]); ImGui::SameLine();
+            plot_w2b[2] = onoff_button("ω3##plot_w2b[2]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_w2b[2]);
+            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
 
             ImGui::TreePop();
         }
@@ -302,12 +304,12 @@ private:
         {
             if (!sol || sol->t.empty() || !sol->integr.properties.spacecraft_checkbox)
                 ImGui::BeginDisabled();
-            ImGui::Dummy(ImVec2(0.0f,7.5f));
+            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
             ImGui::Text("Position (binary's C.O.M. frame)");
-            plot_rsp[0] = onoff_button("x##plot_rsp[0]", ImVec2(50.0f, 20.0f), plot_rsp[0]); ImGui::SameLine();
-            plot_rsp[1] = onoff_button("y##plot_rsp[1]", ImVec2(50.0f, 20.0f), plot_rsp[1]); ImGui::SameLine();
-            plot_rsp[2] = onoff_button("z##plot_rsp[2]", ImVec2(50.0f, 20.0f), plot_rsp[2]);
-            ImGui::Dummy(ImVec2(0.0f,7.5f));
+            plot_rsp[0] = onoff_button("x##plot_rsp[0]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_rsp[0]); ImGui::SameLine();
+            plot_rsp[1] = onoff_button("y##plot_rsp[1]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_rsp[1]); ImGui::SameLine();
+            plot_rsp[2] = onoff_button("z##plot_rsp[2]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_rsp[2]);
+            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
             if (!sol || sol->t.empty() || !sol->integr.properties.spacecraft_checkbox)
                 ImGui::EndDisabled();
 
@@ -322,24 +324,24 @@ private:
     {
         //Content state logic :
 
-        ImGui::Dummy(ImVec2(0.0f, 7.5f));
+        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
         ImGui::Text("Content state");
-        render_scene = onoff_button("Render##render_scene", ImVec2(80.0f, 25.0f), render_scene);
+        render_scene = onoff_button("Render##render_scene", ImVec2(80.0f*SCX, 25.0f*SCY), render_scene);
         ImGui::SameLine();
 
         if (!render_scene)
         {
             ImGui::BeginDisabled();
-            play_video = onoff_button("Play/Pause##play_video", ImVec2(80.0f, 25.0f), play_video);
+            play_video = onoff_button("Play/Pause##play_video", ImVec2(80.0f*SCX, 25.0f*SCY), play_video);
             ImGui::SameLine();
-            auto_replay = onoff_button(ICON_FA_REDO" Auto##auto_replay", ImVec2(55.0f, 25.0f), auto_replay);
+            auto_replay = onoff_button(ICON_FA_REDO" Auto##auto_replay", ImVec2(55.0f*SCX, 25.0f*SCY), auto_replay);
             ImGui::EndDisabled();
         }
         else
         {
-            play_video = onoff_button("Play/Pause##play_video", ImVec2(80.0f, 25.0f), play_video);
+            play_video = onoff_button("Play/Pause##play_video", ImVec2(80.0f*SCX, 25.0f*SCY), play_video);
             ImGui::SameLine();
-            auto_replay = onoff_button(ICON_FA_REDO" Auto##auto_replay", ImVec2(55.0f, 25.0f), auto_replay);
+            auto_replay = onoff_button(ICON_FA_REDO" Auto##auto_replay", ImVec2(55.0f*SCX, 25.0f*SCY), auto_replay);
             if (auto_replay && play_video && iframe >= frames - 1)
                 iframe = 0;
         }
@@ -347,10 +349,10 @@ private:
         if (!render_scene)
             ImGui::BeginDisabled();
 
-        ImGui::Dummy(ImVec2(0.0f, 7.5f));
+        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
         ImGui::Text("Frame");
         ImGui::SameLine();
-        ImGui::SetCursorPosX(50.0f);
+        ImGui::SetCursorPosX(50.0f*SCX);
         uint64_t visible_min_frame = (frames > 0) ? 1 : 0;
         uint64_t visible_iframe = (frames > 0) ? (iframe + 1) : 0; //Display in the gui 1-based frame (instead of 0-based, which is used in the arrays as index).
         ImGui::SliderScalar("##visible_iframe", ImGuiDataType_U64, &visible_iframe, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
@@ -358,24 +360,24 @@ private:
         iframe = (visible_iframe > 0) ? (visible_iframe - 1) : 0;
         ImGui::Text("Rate");
         ImGui::SameLine();
-        ImGui::SetCursorPosX(50.0f);
+        ImGui::SetCursorPosX(50.0f*SCX);
         ImGui::SliderInt("[Hz]##framerate", &framerate, 0, 60, "%d");
         if (!sol || sol->t.empty())
             ImGui::Text("Time : 0.00  [days]");
         else
             ImGui::Text("Time : %.2f  [days]", static_cast<float>(sol->t[iframe]));
-        ImGui::Dummy(ImVec2(0.0f, 7.5f));
+        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
         ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f, 7.5f));
+        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
 
         //Camera setup logic :
 
         ImGui::Text("Camera setup");
-        ImGui::Dummy(ImVec2(0.0f, 4.0f));
+        ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
 
         //Frame view (World, Barycentric, Body 1, Body 2).
         ImGui::Text("Frame view");
-        ImGui::PushItemWidth(250.0f);
+        ImGui::PushItemWidth(250.0f*SCX);
         static const char *cam_frames[4] = {"World", "Center of mass", "Body 1", "Body 2"};
         ImGui::Combo("##rend3D.cam.frame_of_ref", (int*)(&rend3D.cam.frame_of_ref), cam_frames, IM_ARRAYSIZE(cam_frames));
         ImGui::PopItemWidth();
@@ -384,47 +386,47 @@ private:
         {
             ImGui::Text("Dist");
             ImGui::SameLine();
-            ImGui::SetCursorPosX(40.0f);
+            ImGui::SetCursorPosX(40.0f*SCX);
             ImGui::SliderFloat("[km]##rend3D.cam.dist_world_or_com", &rend3D.cam.get_active_dist(), rend3D.cam.min_dist, rend3D.cam.max_dist, "%.3f", ImGuiSliderFlags_Logarithmic);
 
             ImGui::Text("Lon");
             ImGui::SameLine();
-            ImGui::SetCursorPosX(40.0f);
+            ImGui::SetCursorPosX(40.0f*SCX);
             ImGui::SliderFloat("[deg]##rend3D.cam.lon_world_or_com", &rend3D.cam.get_active_lon(), 0.0f, 360.0f, "%.1f");
 
             ImGui::Text("Lat");
             ImGui::SameLine();
-            ImGui::SetCursorPosX(40.0f);
+            ImGui::SetCursorPosX(40.0f*SCX);
             ImGui::SliderFloat("[deg]##rend3D.cam.lat_world_or_com", &rend3D.cam.get_active_lat(), 0.0f, 180.0f, "%.1f");
         }
         else //camera::BODY1 or camera::BODY2
         {
             ImGui::Text("R - offset");
             ImGui::SameLine();
-            ImGui::SetCursorPosX(70.0f);
-            ImGui::SetNextItemWidth(130);
+            ImGui::SetCursorPosX(70.0f*SCX);
+            ImGui::SetNextItemWidth(130.0f*SCX);
             ImGui::SliderFloat("[Brillouin]##rend3D.cam.rscale", &rend3D.cam.rscale, 3.0f, 10.0f, "%.1f");
 
             ImGui::Text("V - scale");
             ImGui::SameLine();
-            ImGui::SetCursorPosX(70.0f);
-            ImGui::SetNextItemWidth(130);
+            ImGui::SetCursorPosX(70.0f*SCX);
+            ImGui::SetNextItemWidth(130.0f*SCX);
             ImGui::SliderFloat("[Brillouin]##rend3D.cam.vscale", &rend3D.cam.vscale, 0.0f, 5.0f, "%.1f");
 
             //This is a 2D joystick, used to shift the mounted camera left-right-up-down from the radial direction so that the body in front does not block the view.
             //rend3D.cam.voffset_ndc.x = rend3D.cam.voffset_ndc.y = 0.0f; //Recenter joystick.
-            imgui_slider_float_2D("V - offset", "##rend3D.cam.voffset_ndc", (ImVec2*)&rend3D.cam.voffset_ndc, ImVec2(-1.0f,-1.0f), ImVec2(1.0f,1.0f));
+            imgui_slider_float_2D("V - offset", "##rend3D.cam.voffset_ndc", (ImVec2*)&rend3D.cam.voffset_ndc, ImVec2(-1.0f,-1.0f), ImVec2(1.0f,1.0f), ImVec2(100.0f*SCX, 100.0f*SCY));
         }
-        ImGui::Dummy(ImVec2(0.0f, 8.0f));
+        ImGui::Dummy(ImVec2(0.0f, 8.0f*SCY));
 
         ImGui::Text("FoV");
         ImGui::SameLine();
-        ImGui::SetCursorPosX(40.0f);
+        ImGui::SetCursorPosX(40.0f*SCX);
         ImGui::SliderFloat("[deg]##rend3D.cam.fov", &rend3D.cam.fov, CAM_MIN_FOV, CAM_MAX_FOV, "%.0f");
 
-        ImGui::Dummy(ImVec2(0.0f, 7.5f));
+        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
         ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f, 7.5f));
+        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
 
         //Sun setup logic :
 
@@ -432,17 +434,17 @@ private:
 
         ImGui::Text("Lon");
         ImGui::SameLine();
-        ImGui::SetCursorPosX(40.0f);
+        ImGui::SetCursorPosX(40.0f*SCX);
         ImGui::SliderFloat("[deg]##rend3D.sunlight.lon", &rend3D.sunlight.lon, 0.0f, 360.0f, "%.1f");
 
         ImGui::Text("Lat");
         ImGui::SameLine();
-        ImGui::SetCursorPosX(40.0f);
+        ImGui::SetCursorPosX(40.0f*SCX);
         ImGui::SliderFloat("[deg]##rend3D.sunlight.lat", &rend3D.sunlight.lat, 0.0f, 180.0f, "%.1f");
 
-        ImGui::Dummy(ImVec2(0.0f, 7.5f));
+        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
         ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f, 7.5f));
+        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
 
         //Shadow setup logic :
 
@@ -450,55 +452,55 @@ private:
 
         ImGui::Text("Reso");
         ImGui::SameLine();
-        ImGui::SetCursorPosX(40.0f);
+        ImGui::SetCursorPosX(40.0f*SCX);
         if (ImGui::SliderInt("[pix]##rend3D.depth_reso", &rend3D.depth_reso, DEPTH_RESO_MIN, DEPTH_RESO_MAX))
             rend3D.setup_depth_fbo();
 
-        ImGui::Dummy(ImVec2(0.0f, 7.5f));
+        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
         ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f, 7.5f));
+        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
 
         //Meshes to render logic :
 
         ImGui::Text("Visible meshes");
-        ImGui::Dummy(ImVec2(0.0f, 4.0f));
+        ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
 
         ImGui::Text("Bodies");
-        ImGui::Dummy(ImVec2(0.0f, 4.0f));
+        ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
 
         ImGui::Text("Body 1");
         ImGui::SameLine();
-        ImGui::SetCursorPosX(60.0f);
+        ImGui::SetCursorPosX(60.0f*SCX);
         ImGui::Checkbox("##rend3D.render_body1", &rend3D.render_body1);
         ImGui::SameLine();
-        ImGui::SetCursorPosX(100.0f);
+        ImGui::SetCursorPosX(100.0f*SCX);
         ImGui::Text("Axes 1");
         ImGui::SameLine();
         ImGui::Checkbox("##rend3D.render_axes1", &rend3D.render_axes1);
 
         ImGui::Text("Body 2");
         ImGui::SameLine();
-        ImGui::SetCursorPosX(60.0f);
+        ImGui::SetCursorPosX(60.0f*SCX);
         ImGui::Checkbox("##rend3D.render_body2", &rend3D.render_body2);
         ImGui::SameLine();
-        ImGui::SetCursorPosX(100.0f);
+        ImGui::SetCursorPosX(100.0f*SCX);
         ImGui::Text("Axes 2");
         ImGui::SameLine();
         ImGui::Checkbox("##rend3D.render_axes2", &rend3D.render_axes2);
-        ImGui::Dummy(ImVec2(0.0f,4.0f));
+        ImGui::Dummy(ImVec2(0.0f,4.0f*SCY));
 
         ImGui::Text("Orbits");
-        ImGui::Dummy(ImVec2(0.0f, 4.0f));
+        ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
 
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f,0.2f,0.2f,1.0f)); //Make all the plot buttons' off state gray.
 
         ImGui::Text("Body 1");
         ImGui::SameLine();
-        ImGui::SetCursorPosX(60.0f);
+        ImGui::SetCursorPosX(60.0f*SCX);
         ImGui::Checkbox("##rend3D.render_orb1", &rend3D.render_orb1);
         ImGui::SameLine();
-        ImGui::SetCursorPosX(90.0f);
-        ImGui::SetNextItemWidth(100);
+        ImGui::SetCursorPosX(90.0f*SCX);
+        ImGui::SetNextItemWidth(100.0f*SCX);
         uint64_t visible_orb1_frame = (frames > 0) ? static_cast<uint64_t>(rend3D.orb1.draw_count) : 0;
         
         if (!rend3D.render_orb1)
@@ -511,7 +513,7 @@ private:
         ImGui::SliderScalar("##visible_orb1_frame", ImGuiDataType_U64, &visible_orb1_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
         rend3D.orb1.draw_count = static_cast<size_t>(visible_orb1_frame);
-        orb1_sync = onoff_button("Sync##orb1_sync", ImVec2(50.0f, 18.0f), orb1_sync);
+        orb1_sync = onoff_button("Sync##orb1_sync", ImVec2(50.0f*SCX, 18.0f*SCY), orb1_sync);
         if (orb1_sync)
             rend3D.orb1.draw_count = static_cast<size_t>(iframe + 1);
 
@@ -520,11 +522,11 @@ private:
 
         ImGui::Text("Body 2");
         ImGui::SameLine();
-        ImGui::SetCursorPosX(60.0f);
+        ImGui::SetCursorPosX(60.0f*SCX);
         ImGui::Checkbox("##rend3D.render_orb2", &rend3D.render_orb2);
         ImGui::SameLine();
-        ImGui::SetCursorPosX(90.0f);
-        ImGui::SetNextItemWidth(100);
+        ImGui::SetCursorPosX(90.0f*SCX);
+        ImGui::SetNextItemWidth(100.0f*SCX);
         uint64_t visible_orb2_frame = (frames > 0) ? static_cast<uint64_t>(rend3D.orb2.draw_count) : 0;
 
         if (!rend3D.render_orb2)
@@ -536,7 +538,7 @@ private:
 
         ImGui::SliderScalar("##visible_orb2_frame", ImGuiDataType_U64, &visible_orb2_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
-        orb2_sync = onoff_button("Sync##visible_orb2_frame", ImVec2(50.0f, 18.0f), orb2_sync);
+        orb2_sync = onoff_button("Sync##visible_orb2_frame", ImVec2(50.0f*SCX, 18.0f*SCY), orb2_sync);
         rend3D.orb2.draw_count = static_cast<size_t>(visible_orb2_frame);
         if (orb2_sync)
             rend3D.orb2.draw_count = static_cast<size_t>(iframe + 1);
@@ -550,11 +552,11 @@ private:
 
         ImGui::Text("Orbiter");
         ImGui::SameLine();
-        ImGui::SetCursorPosX(60.0f);
+        ImGui::SetCursorPosX(60.0f*SCX);
         ImGui::Checkbox("##rend3D.render_orb_sp", &rend3D.render_orb_sp);
         ImGui::SameLine();
-        ImGui::SetCursorPosX(90.0f);
-        ImGui::SetNextItemWidth(100);
+        ImGui::SetCursorPosX(90.0f*SCX);
+        ImGui::SetNextItemWidth(100.0f*SCX);
         uint64_t visible_orb_sp_frame = (frames > 0) ? static_cast<uint64_t>(rend3D.orb_sp.draw_count) : 0;
 
         if (!rend3D.render_orb_sp)
@@ -566,7 +568,7 @@ private:
 
         ImGui::SliderScalar("##visible_orb_sp_frame", ImGuiDataType_U64, &visible_orb_sp_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
         ImGui::SameLine();
-        orb_sp_sync = onoff_button("Sync##orb_sp_sync", ImVec2(50.0f, 18.0f), orb_sp_sync);
+        orb_sp_sync = onoff_button("Sync##orb_sp_sync", ImVec2(50.0f*SCX, 18.0f*SCY), orb_sp_sync);
         rend3D.orb_sp.draw_count = static_cast<size_t>(visible_orb_sp_frame);
         if (orb_sp_sync)
             rend3D.orb_sp.draw_count = static_cast<size_t>(iframe + 1);
@@ -579,16 +581,16 @@ private:
 
         ImGui::PopStyleColor();
 
-        ImGui::Dummy(ImVec2(0.0f,4.0f));
+        ImGui::Dummy(ImVec2(0.0f,4.0f*SCY));
 
         ImGui::Text("Infinite grid");
-        ImGui::Dummy(ImVec2(0.0f, 4.0f));
+        ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
         ImGui::Text("Grid");
         ImGui::SameLine();
-        ImGui::SetCursorPosX(60.0f);
+        ImGui::SetCursorPosX(60.0f*SCX);
         ImGui::Checkbox("##rend3D.render_grid", &rend3D.render_grid);
 
-        ImGui::Dummy(ImVec2(0.0f,700.0f)); //Some extra y-space in order to be able to scroll down along scene panel.        
+        ImGui::Dummy(ImVec2(0.0f,700.0f*SCY)); //Some extra y-space in order to be able to scroll down along scene panel.        
 
         if (!render_scene)
             ImGui::EndDisabled();
@@ -665,8 +667,11 @@ public:
         rend3D.win_width  = win_width;
         rend3D.win_height = win_height;
 
-        ImGui::SetNextWindowPos( ImVec2(0.85f*ImGui::GetIO().DisplaySize.x, 21.0f), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2(0.15f*ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y - 21.0f), ImGuiCond_FirstUseEver);
+        float sx = ImGui::GetIO().DisplaySize.x;
+        float sy = ImGui::GetIO().DisplaySize.y;
+
+        ImGui::SetNextWindowPos( ImVec2(0.85f*sx, ImGui::GetFrameHeight()), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(0.15f*sx, sy - ImGui::GetFrameHeight()), ImGuiCond_FirstUseEver);
         ImGui::Begin("Scene", nullptr);
 
         ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);

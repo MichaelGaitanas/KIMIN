@@ -54,26 +54,48 @@ public:
     {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
-        ImPlot::CreateContext(); //Strictly AFTER Imgui::CreateContext();
+        ImPlot::CreateContext(); //AFTER Imgui::CreateContext();
+
         ImGuiIO &io = ImGui::GetIO();
         io.IniFilename = nullptr;
         io.Fonts->AddFontFromFileTTF("../fonts/RobotoRegular.ttf", 15.0f*SCY, nullptr, io.Fonts->GetGlyphRangesGreek());
         (void)io;
+
         ImGui::StyleColorsDark();
         ImGui_ImplGlfw_InitForOpenGL(wpointer, true);
         ImGui_ImplOpenGL3_Init("#version 450");
         
         ImGuiStyle &imstyle = ImGui::GetStyle();
-        imstyle.FrameRounding = 6.0f;
-        imstyle.WindowRounding = 6.0f;
+        imstyle.FrameRounding  = 6.0f*SCY;
+        imstyle.WindowRounding = 6.0f*SCY;
+        imstyle.ScrollbarRounding  *= SCY;
+        imstyle.ScrollbarSize      *= SCY;
+        imstyle.ChildRounding      *= SCY;
+        imstyle.IndentSpacing      *= SCX;
+        imstyle.ItemSpacing.x      *= SCX;
+        imstyle.ItemSpacing.y      *= SCY;
+        imstyle.ItemInnerSpacing.x *= SCX;
+        imstyle.ItemInnerSpacing.y *= SCY;
+        imstyle.CellPadding.x      *= SCX;
+        imstyle.CellPadding.y      *= SCY;
+        imstyle.WindowPadding.x    *= SCX;
+        imstyle.WindowPadding.y    *= SCY;
+        imstyle.FramePadding.x     *= SCX;
+        imstyle.FramePadding.y     *= SCY; 
         imstyle.Colors[ImGuiCol_WindowBg]      = ImVec4(0.1f,0.1f,0.1f, 1.0f);
         imstyle.Colors[ImGuiCol_FrameBg]       = ImVec4(0.2f,0.2f,0.2f, 1.0f);
         imstyle.Colors[ImGuiCol_Header]        = ImVec4(0.2f,0.2f,0.2f, 1.0f);
         imstyle.Colors[ImGuiCol_Border]        = ImVec4(0.15f,0.15f,0.15f, 1.0f);
         imstyle.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.2f,0.2f,0.2f, 1.0f);
 
+        ImPlotStyle& plstyle = ImPlot::GetStyle();
+        plstyle.PlotPadding.x     *= SCX;
+        plstyle.PlotPadding.y     *= SCY;
+        plstyle.PlotDefaultSize.x *= SCX;
+        plstyle.PlotDefaultSize.y *= SCY;
+
         ImFontConfig cfg;
-        cfg.MergeMode = true;
+        cfg.MergeMode  = true;
         cfg.PixelSnapH = true;
         static const ImWchar icon_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
         io.Fonts->AddFontFromFileTTF("../fonts/Icons.otf", 15.0f*SCY, &cfg, icon_ranges);
@@ -84,7 +106,7 @@ public:
     {
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplGlfw_Shutdown();
-        ImPlot::DestroyContext(); //Strictly BEFORE Imgui::DestroyContext();
+        ImPlot::DestroyContext(); //BEFORE Imgui::DestroyContext();
         ImGui::DestroyContext();
     }
 
@@ -184,7 +206,7 @@ private:
                     sol.export_files(console);
                 });
                 export_sol_thread.detach();
-                topbar.export_sol_clicked = false; //Reset the flag after exporting the solution.
+                topbar.export_sol_clicked = false; //Since we exported, reset the flag.
             }
         }
         else
