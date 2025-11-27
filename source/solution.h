@@ -293,14 +293,14 @@ public:
             fprintf(file_vel,      "%.16lf %.16lf %.16lf %.16lf\n",                vx[i],   vy[i],   vz[i],  vel[i]);
             fprintf(file_w1b,      "%.16lf %.16lf %.16lf\n",                     w1bx[i], w1by[i], w1bz[i]);
             fprintf(file_w2b,      "%.16lf %.16lf %.16lf\n",                     w2bx[i], w2by[i], w2bz[i]);
-            fprintf(file_sp,       "%.16lf %.16lf %.16lf\n",                     xsp[i], ysp[i], zsp[i]);
+            fprintf(file_sp,       "%.16lf %.16lf %.16lf\n",                      xsp[i],  ysp[i],  zsp[i]);
 
             fprintf(file_rpy1,     "%.16lf %.16lf %.16lf\n",                      roll1[i], pitch1[i], yaw1[i]);
             fprintf(file_w1i,      "%.16lf %.16lf %.16lf\n",                       w1ix[i],   w1iy[i], w1iz[i]);
             fprintf(file_rpy2,     "%.16lf %.16lf %.16lf\n",                      roll2[i], pitch2[i], yaw2[i]);
             fprintf(file_w2i,      "%.16lf %.16lf %.16lf\n",                       w2ix[i],   w2iy[i], w2iz[i]);
             fprintf(file_kep,      "%.16lf %.16lf %.16lf %.16lf %.16lf %.16lf\n",   sma[i],    ecc[i],  inc[i], raan[i], argper[i], manom[i]); 
-            fprintf(file_ener_mom, "%.16lf %.16lf\n",                      denergy[i], dmomentum[i]);
+            fprintf(file_ener_mom, "%.16lf %.16lf\n",                           denergy[i],       dmomentum[i]);
         }
 
         fclose(file_t);

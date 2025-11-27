@@ -46,10 +46,10 @@ public:
             ImGui::EndMainMenuBar();
         }
 
+        float sx = ImGui::GetIO().DisplaySize.x;
+        float sy = ImGui::GetIO().DisplaySize.y;
         if (import_props_clicked)
         {
-            float sx = ImGui::GetIO().DisplaySize.x;
-            float sy = ImGui::GetIO().DisplaySize.y;
             ImGui::SetNextWindowSize(ImVec2(0.4f*sx, 0.4f*sy), ImGuiCond_Appearing);
             ImGui::SetNextWindowPos( ImVec2(0.5f*sx, 0.5f*sy), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f)); 
             ImGui::Begin("Select properties file", &import_props_clicked);
@@ -86,8 +86,6 @@ public:
 
         if (confirm_exit)
         {
-            float sx = ImGui::GetIO().DisplaySize.x;
-            float sy = ImGui::GetIO().DisplaySize.y;
             ImGui::SetNextWindowPos( ImVec2(0.5f*sx, 0.5f*sy), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
             ImGui::SetNextWindowSize(ImVec2(0.1f*sx, 0.1f*sy), ImGuiCond_Always);
             ImGui::Begin("Exit KIMIN ?", &confirm_exit, ImGuiWindowFlags_NoResize);

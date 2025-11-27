@@ -69,9 +69,12 @@ public:
         imstyle.FrameRounding  = 6.0f*SCY;
         imstyle.WindowRounding = 6.0f*SCY;
         imstyle.ScrollbarRounding  *= SCY;
-        imstyle.ScrollbarSize      *= SCY;
         imstyle.ChildRounding      *= SCY;
-        imstyle.IndentSpacing      *= SCX;
+        imstyle.GrabRounding       *= SCY;
+        imstyle.TabRounding        *= SCY;
+        imstyle.ScrollbarSize      *= SCY;
+        imstyle.GrabMinSize        *= SCY;
+        imstyle.IndentSpacing      *= SCX; //Horizontal indentation used by ImGui::Indent()/Unindent()
         imstyle.ItemSpacing.x      *= SCX;
         imstyle.ItemSpacing.y      *= SCY;
         imstyle.ItemInnerSpacing.x *= SCX;
@@ -81,7 +84,7 @@ public:
         imstyle.WindowPadding.x    *= SCX;
         imstyle.WindowPadding.y    *= SCY;
         imstyle.FramePadding.x     *= SCX;
-        imstyle.FramePadding.y     *= SCY; 
+        imstyle.FramePadding.y     *= SCY;
         imstyle.Colors[ImGuiCol_WindowBg]      = ImVec4(0.1f,0.1f,0.1f, 1.0f);
         imstyle.Colors[ImGuiCol_FrameBg]       = ImVec4(0.2f,0.2f,0.2f, 1.0f);
         imstyle.Colors[ImGuiCol_Header]        = ImVec4(0.2f,0.2f,0.2f, 1.0f);
@@ -89,10 +92,30 @@ public:
         imstyle.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.2f,0.2f,0.2f, 1.0f);
 
         ImPlotStyle& plstyle = ImPlot::GetStyle();
-        plstyle.PlotPadding.x     *= SCX;
-        plstyle.PlotPadding.y     *= SCY;
-        plstyle.PlotDefaultSize.x *= SCX;
-        plstyle.PlotDefaultSize.y *= SCY;
+        plstyle.PlotBorderSize       *= SCX;
+        plstyle.LineWeight           *= SCX;
+        plstyle.ErrorBarSize         *= SCX;
+        plstyle.ErrorBarWeight       *= SCX;
+        plstyle.PlotPadding.x        *= SCX;
+        plstyle.PlotPadding.y        *= SCY;
+        plstyle.LabelPadding.x       *= SCX;
+        plstyle.LabelPadding.y       *= SCY;
+        plstyle.LegendPadding.x      *= SCX;
+        plstyle.LegendPadding.y      *= SCY;
+        plstyle.LegendInnerPadding.x *= SCX;
+        plstyle.LegendInnerPadding.y *= SCY;
+        plstyle.PlotDefaultSize.x    *= SCX;
+        plstyle.PlotDefaultSize.y    *= SCY;
+        plstyle.LegendSpacing.x      *= SCX;
+        plstyle.LegendSpacing.y      *= SCY;
+        plstyle.MajorTickLen.x       *= SCX;
+        plstyle.MajorTickLen.y       *= SCY;
+        plstyle.MinorTickLen.x       *= SCX;
+        plstyle.MinorTickLen.y       *= SCY;
+        plstyle.MajorTickSize.x      *= SCX;
+        plstyle.MajorTickSize.y      *= SCY;
+        plstyle.MinorTickSize.x      *= SCX;
+        plstyle.MinorTickSize.y      *= SCY;
 
         ImFontConfig cfg;
         cfg.MergeMode  = true;
@@ -151,7 +174,7 @@ private:
             properties.run_pressed = false;
             task_was_aborted.store(false);
             
-            std::thread task_thread([this]()
+            std::thread task([this]()
             {
                 if (properties.validate(console)) //If no input errors are found, proceed with the simulation.
                 {
@@ -170,7 +193,7 @@ private:
                     task_is_running.store(false);
                 }
             });
-            task_thread.detach();
+            task.detach();
         }
 
         //'Abort' protocol.
@@ -201,11 +224,11 @@ private:
             topbar.export_is_enabled = true;
             if (topbar.export_sol_clicked)
             {
-                std::thread export_sol_thread([this]()
+                std::thread task([this]()
                 {
                     sol.export_files(console);
                 });
-                export_sol_thread.detach();
+                task.detach();
                 topbar.export_sol_clicked = false; //Since we exported, reset the flag.
             }
         }

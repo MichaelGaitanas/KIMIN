@@ -862,7 +862,7 @@ public:
         {
             ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, 0.0f), ImGuiCond_FirstUseEver); 
             ImGui::SetNextWindowSize(ImVec2(0.15f*sx, 0.4f*sy), ImGuiCond_FirstUseEver); 
-            ImGui::Begin("Orbiter's initial state", &spacecraft_checkbox);
+            ImGui::Begin("Spacecraft's initial state & parameters", &spacecraft_checkbox);
 
             ImGui::Text("Position (relative to C.O.M.)");
             double_field("x ", 100.0f*SCX, 40.0f*SCX, id, "[km]", rsp[0]);
