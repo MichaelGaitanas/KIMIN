@@ -85,6 +85,9 @@ public:
 
     bool spacecraft_checkbox; //'Spacecraft orbiter' checkbox state.
     dvec3 rsp, vsp; //Spacecraft's 'x', 'y', 'z' and 'υx', 'υy', 'υz' double fields.
+    bool srp_checkbox; //'Account for SRP' checkbox state.
+    double sp_refl, sp_area, sp_mass; //Spacecraft's 'ρ', 'A', 'm' double fields.
+    double sun_dist, sun_lon, sun_lat; //Sun's 'Dist', 'Lon', 'Lat' double fields.
     bool spacecraft_clicked_ok; //Spacecraft's 'OK' button.
 
     bool run_pressed; //Whether or not the 'Run' button has been pressed.
@@ -142,6 +145,13 @@ public:
                          spacecraft_checkbox(false),
                          rsp(dvec3{0.0,0.0,0.0}),
                          vsp(dvec3{0.0,0.0,0.0}),
+                         srp_checkbox(false),
+                         sp_refl(0.0),
+                         sp_area(0.0),
+                         sp_mass(0.0),
+                         sun_dist(0.0),
+                         sun_lon(0.0),
+                         sun_lat(0.0),
                          spacecraft_clicked_ok(false),
                          run_pressed(false),
                          abort_pressed(false),
@@ -493,13 +503,36 @@ public:
         if (impactors_checkbox && (mD1 < 0.0 || mD2 < 0.0))
             {console.add_timed_text("[Error] : Both impactors' masses, 'm1' and 'm2' must be non negative.\n"); return false;}
 
-        //Possible error 16 : Times of impacts must range in the simulated time range, i.e. in [Epoch, Epoch + Duration]
+        //Possible error 16 : Times of impacts must range in the simulated time range, i.e. in [Epoch, Epoch + Duration].
         if (impactors_checkbox && (tD1 < epoch || tD1 > epoch + dur || tD2 < epoch || tD2 > epoch + dur))
             {console.add_timed_text("[Error] : Impact times must range in [Epoch,  Epoch + Duration].\n"); return false;}
 
         //Possible error 17 : 'OK' button in the spacecraft orbiter parameters window (it must be clicked so that the i.c. are taken into account).
         if (spacecraft_checkbox && !spacecraft_clicked_ok)
             {console.add_timed_text("[Error] : 'OK' button must be pressed in the 'Orbiter's initial state' window.\n"); return false;}
+
+        if (spacecraft_checkbox)
+        {
+            if (srp_checkbox)
+            {
+                if (sp_refl < 0.0 || sp_refl > 1.0 + 1e-15)
+                    {console.add_timed_text("[Error] : Spacecraft's reflectance 'ρ' must range in [0,1].\n"); return false;}
+                if (sp_area < 1e-15)
+                    {console.add_timed_text("[Error] : Spacecraft's area 'A' must positive.\n"); return false;}
+                if (sp_mass < 1e-15)
+                    {console.add_timed_text("[Error] : Spacecraft's mass 'm' must positive.\n"); return false;}
+                if (sun_dist < 1e-15)
+                    {console.add_timed_text("[Error] : Sun's distance 'Dist' must be positive.\n"); return false;}
+                if (2.0*length(rsp)/(sun_dist*AU) > MAX_SRP_REL_VARIATION) //This is to block very short spacecraft - star distance input.
+                {
+                    console.add_timed_text("[Error] : Initial Sun - spacecraft distance is too short for the parallel-ray SRP model. "
+                                           "Increase 'Dist' or set the spacecraft closer to the binary's C.O.M.\n");
+                    return false;
+                }
+            }
+            if (!spacecraft_clicked_ok)
+                {console.add_timed_text("[Error] : 'OK' button must be pressed in the 'Spacecraft's state' window.\n"); return false;}
+        }
 
         return true;
     }
@@ -709,13 +742,13 @@ public:
         ImGui::PopItemWidth();
         if (orient_var == EULER_XYZ)
         {
-            double_field("roll 1 " , 100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy1[0]);
-            double_field("pitch 1 ", 100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy1[1]);
-            double_field("yaw 1 ",   100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy1[2]);
+            double_field("Roll 1 " , 100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy1[0]);
+            double_field("Pitch 1 ", 100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy1[1]);
+            double_field("Yaw 1 ",   100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy1[2]);
             ImGui::Dummy(ImVec2(0.0f,5.0f));
-            double_field("roll 2 ",  100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy2[0]);
-            double_field("pitch 2 ", 100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy2[1]);
-            double_field("yaw 2 ",   100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy2[2]);
+            double_field("Roll 2 ",  100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy2[0]);
+            double_field("Pitch 2 ", 100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy2[1]);
+            double_field("Yaw 2 ",   100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy2[2]);
         }
         else //orient_var == QUATERNION
         {
@@ -862,18 +895,38 @@ public:
         {
             ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, 0.0f), ImGuiCond_FirstUseEver); 
             ImGui::SetNextWindowSize(ImVec2(0.15f*sx, 0.4f*sy), ImGuiCond_FirstUseEver); 
-            ImGui::Begin("Spacecraft's initial state & parameters", &spacecraft_checkbox);
+            ImGui::Begin("Spacecraft's state", &spacecraft_checkbox);
 
             ImGui::Text("Position (relative to C.O.M.)");
             double_field("x ", 100.0f*SCX, 40.0f*SCX, id, "[km]", rsp[0]);
             double_field("y ", 100.0f*SCX, 40.0f*SCX, id, "[km]", rsp[1]);
             double_field("z ", 100.0f*SCX, 40.0f*SCX, id, "[km]", rsp[2]);
-            ImGui::Dummy(ImVec2(0.0f,15.0f));
+            ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
             ImGui::Text("Velocity (relative to C.O.M.)");
             double_field("υx ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", vsp[0]);
             double_field("υy ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", vsp[1]);
             double_field("υz ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", vsp[2]);
+
+            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
+            ImGui::Separator();
+            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
+
+            ImGui::Checkbox("Account for SRP", &srp_checkbox);
+            if (srp_checkbox)
+            {
+                ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
+                ImGui::Text("SRP model parameters");
+                double_field("ρ ", 100.0f*SCX, 40.0f*SCX, id, "[  ]",  sp_refl);
+                double_field("A ", 100.0f*SCX, 40.0f*SCX, id, "[m^2]", sp_area);
+                double_field("m ", 100.0f*SCX, 40.0f*SCX, id, "[kg]",  sp_mass);
+                ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
+                ImGui::Text("Sun's position (relative to C.O.M.)");
+                double_field("Dist ", 100.0f*SCX, 40.0f*SCX, id, "[AU]",  sun_dist);
+                double_field("Lon ",  100.0f*SCX, 40.0f*SCX, id, "[deg]", sun_lon);
+                double_field("Lat ",  100.0f*SCX, 40.0f*SCX, id, "[deg]", sun_lat);
+            }
             ImGui::Dummy(ImVec2(0.0f,30.0f*SCY));
+
             //Final "OK" button. This must be pressed, otherwise the spacecraft's i.c. will not be taken into account.
             if (ImGui::Button("OK", ImVec2(50.0f*SCX,30.0f*SCY)))
                 spacecraft_clicked_ok = true;
