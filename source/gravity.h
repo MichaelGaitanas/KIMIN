@@ -1146,4 +1146,10 @@ dvec3 force_masc(const dvec3 &r, const double M, const dmatnx3 &masc, const dmat
 
 /* End of gravity force and torque expressions. */
 
+//Force felt by a test particle (e.g. spacecraft) due to SRP cannonball model.
+dvec3 force_srp(const double rho, const double A, const double m, const dvec3 &r, const dvec3 &rsun)
+{
+    return (1.0 + rho)*A*4.56e-6*AU*AU*(r - rsun)/length(r - rsun);
+}
+
 #endif

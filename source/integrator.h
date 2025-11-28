@@ -30,17 +30,19 @@ public:
     bool collision, collision_sp; //Collision detection flag for the binary and the spacecraft (respectively).
     bool maneuver1, maneuver2; //Whether or not a beta-kick (equivalent maneuver) has been applied to the corresponding body.
 
+    dvec3 rsun; //Constant sun's position relative to the COM of the binary in Cartesian coords.
+
     double t0, tmax, dt, init_guess_time_step; //Integration time.
 
     dmat orbit; //This is the solution matrix of the differential equations that will be propagated (time + state vector).
 
-    integrator() { } //This is needed to instantiate an integrator object in the solution class.
+    integrator() { } //Needed to instantiate an integrator object in the solution class.
 
     integrator(const properties_panel &properties) //And this is needed to instantiate the integrator in the gui class.
     {
         this->properties = properties;
         //Note : In the following member functions, whatever change is made upon the 'properties' variable, has nothing to do with the gui's displayed properties.
-        //We operate only on THIS class' member 'properties', which is a deep copy of the gui's input.
+        //We operate only on THIS class member 'properties', which is a deep copy of the gui's input.
     }
 
 private:
@@ -129,7 +131,7 @@ private:
             //Individual bodies' COM positions (i.e. COM1 and COM2) in the mutual COM frame.
             dvec3 r1 = com1_coeff*r;
             dvec3 r2 = com2_coeff*r;
-            //Body -> spacecraft vectors.
+            //Corresponding body to spacecraft vector.
             dvec3 rho1 = rsp - r1;
             dvec3 rho2 = rsp - r2;
 
@@ -141,6 +143,11 @@ private:
             else //Only 'ord4_checkbox' remains...
                 force_spacecraft = force_integrals_ord4(rho1, properties.M1, J1, A1) + force_integrals_ord4(rho2, properties.M2, J2, A2);
 
+            if (properties.srp_checkbox)
+            {
+                force_spacecraft = force_spacecraft + force_srp(...);
+            }
+
             //Spacecraft's position and velocity rhs.
             dstate[20] = vsp[0];
             dstate[21] = vsp[1];
@@ -149,10 +156,8 @@ private:
             dstate[24] = force_spacecraft[1];
             dstate[25] = force_spacecraft[2];
         }
-        else //Assign zero everywhere...
-        {
+        else
             dstate[20] = dstate[21] = dstate[22] = dstate[23] = dstate[24] = dstate[25] = 0.0;
-        }
     }
 
 public:
@@ -284,13 +289,17 @@ public:
             }
         }
 
+        //Preparation 7 : SRP assumption.
         if (!properties.spacecraft_checkbox)
         {
             properties.rsp[0] = properties.rsp[1] = properties.rsp[2] = 0.0;
             properties.vsp[0] = properties.vsp[1] = properties.vsp[2] = 0.0;
         }
+        else if (properties.spacecraft_checkbox && properties.srp_checkbox)
+            rsun = spher2cart({properties.sun_dist, properties.sun_lon*PI/180.0, properties.sun_lat*PI/180.0}); //[AU], [rad], [rad]
 
         collision = collision_sp = false; //Assuming no collision when the simulation starts.
+        
         orbit.clear();
 
         console.add_text("Done.\n");
