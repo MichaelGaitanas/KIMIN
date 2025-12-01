@@ -1,59 +1,74 @@
-Simulation name := "DidymosHERA"
+Simulation name := "DidymosHERATermination"
 
 Shape models := ".obj files"
-file 1 := "didymain2019_R04km.obj"
-file 2 := "dimorphos_ellipsoid_R01km.obj"
+    file 1 := "didymain2019_R04km.obj"
+    file 2 := "dimorphos_ellipsoid_R01km.obj"
 
 Mutual potential order := 4
 
-M1 := 515041825125.529
-M2 := 3926933196.12399
+Masses :
+    M1 := 515041825125.529
+    M2 := 3926933196.12399
 
-Numerical method := "RKF78 (adaptive)"
-Epoch := 0
-Duration := 365
-Target error := 1e-14
+Numerical integration :
+    Method := "RKF78 (adaptive)"
+    Epoch := 0
+    Duration := 365
+    Target error := 1e-14
 
-Initial relative position and velocity := "Keplerian"
-a  := 1.18
-e  := 0.04
-i  := 0
-Om := 0
-w  := 0
-M  := 0
+Initial state :
+    Relative position and velocity := "Keplerian"
+    a  := 1.18
+    e  := 0.04
+    i  := 0
+    Om := 0
+    w  := 0
+    M  := 0
 
-Initial orientations := "Euler angles"
-roll 1  := 0
-pitch 1 := 0
-yaw 1   := 0
-roll 2  := 0
-pitch 2 := 0
-yaw 2   := 0
+    Orientations := "Euler angles (XYZ)"
+    Roll 1  := 0
+    Pitch 1 := 0
+    Yaw 1   := 0
+    Roll 2  := 0
+    Pitch 2 := 0
+    Yaw 2   := 0
 
-Initial angular velocities := "At inertial frame"
-w1ix := 0
-w1iy := 0
-w1iz := 0.000772269580528464
-w2ix := 0
-w2iy := 0
-w2iz := 0.000146402
+    Angular velocities := "At inertial frame"
+    w1ix := 0
+    w1iy := 0
+    w1iz := 0.000772269580528464
+    w2ix := 0
+    w2iy := 0
+    w2iz := 0.000146402
 
-Initial position and velocity of the center of mass :
-x  com := 0.0
-y  com := 0.0
-z  com := 0.0
-vx com := 0.0
-vy com := 0.0
-vz com := 0.0
+    C.O.M. motion relative to world :
+    x  := 0.0
+    y  := 0.0
+    z  := 0.0
+    vx := 0.0
+    vy := 0.0
+    vz := 0.0
 
 Collision shapes := "Polyhedra"
 
-Kinetic impactors := "No"
+Assume kinetic impactors := "No"
 
-Spacecraft orbiter := "Yes"
-x  sp := 3
-y  sp := 0
-z  sp := 0
-vx sp := 0
-vy sp := 0
-vz sp := 0.00011
+Assume spacecraft orbiter := "Yes"
+    Initial position (relative to C.O.M.) :
+        x  := 3
+        y  := 0
+        z  := 0
+    Initial velocity (relative to C.O.M.) :
+        vx := 0
+        vy := 0
+        vz := 0.00011
+    Account for SRP := "Yes"
+        SRP parameters :
+            ρ := 0.3
+            A := 13
+            m := 1128
+        Sun's position (relative to C.O.M.) :
+            Dist := 1.64
+            Lon  := 0
+            Lat  := 90
+        Account for shadows (spheres) := "Yes"

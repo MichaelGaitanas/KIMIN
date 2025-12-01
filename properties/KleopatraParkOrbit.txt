@@ -1,54 +1,57 @@
 Simulation name := "KleopatraParkOrbit"
 
 Shape models := ".obj files"
-file 1 := "kleopatra4k_R114km.obj"
-file 2 := "cube2x2x2_R1km.obj"
+    file 1 := "kleopatra4k_R114km.obj"
+    file 2 := "cube2x2x2_R1km.obj"
 
 Mutual potential order := 3
 
-M1 := 4.64e+18
-M2 := 200
+Masses :
+    M1 := 4.64e+18
+    M2 := 200
 
-Numerical method := "RKF78 (fixed)"
-Epoch := 0
-Duration := 50
-Step := 0.004
+Numerical integration :
+    Method := "ABM5 (fixed)"
+    Epoch := 0
+    Duration := 50
+    Step := 0.004
 
-Initial relative position and velocity := "Keplerian"
-a  := 100
-e  := 0
-i  := 80
-Om := 90
-w  := 0
-M  := 90
+Initial state :
+    Relative position and velocity := "Keplerian"
+    a  := 100
+    e  := 0
+    i  := 80
+    Om := 90
+    w  := 0
+    M  := 90
 
-Initial orientations := "Euler angles"
-roll 1  := 0
-pitch 1 := 0
-yaw 1   := 0
-roll 2  := 0
-pitch 2 := 0
-yaw 2   := 0
+    Orientations := "Euler angles (XYZ)"
+    Roll 1  := 0
+    Pitch 1 := 0
+    Yaw 1   := 0
+    Roll 2  := 0
+    Pitch 2 := 0
+    Yaw 2   := 0
 
-Initial angular velocities := "At inertial frame"
-w1ix := 8e-06
-w1iy := 0
-w1iz := 0
-w2ix := 0
-w2iy := 0
-w2iz := 0
+    Angular velocities := "At inertial frame"
+    w1ix := 8e-06
+    w1iy := 0
+    w1iz := 0
+    w2ix := 0
+    w2iy := 0
+    w2iz := 0
 
-Initial position and velocity of the center of mass :
-x  com := 0.0
-y  com := 0.0
-z  com := 0.0
-vx com := 0.0
-vy com := 0.0
-vz com := 0.0
+    C.O.M. motion relative to world :
+    x  := 0.0
+    y  := 0.0
+    z  := 0.0
+    vx := 0.0
+    vy := 0.0
+    vz := 0.0
 
 Collision shapes := "Polyhedra"
 
-Kinetic impactors := "No"
+Assume kinetic impactors := "No"
 
-Spacecraft orbiter := "No"
+Assume spacecraft orbiter := "No"
 

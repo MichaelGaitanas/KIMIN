@@ -1,5 +1,5 @@
-/* Here we have the expressions of gravitational potentials, forces and torques for a couple of physics modeling assumptions.
-   I know that they are not in the most optimized form as there are repentances, but for know I account for correctness and clarity. :)  */
+/* Here we have the expressions of gravitational potentials, accelerations, forces and torques for a couple of dynamical assumptions.
+   I know that they are not in the most optimized form as, there are repentances, but for know I account for correctness and clarity. :) */
 
 #ifndef GRAVITY_H
 #define GRAVITY_H
@@ -933,8 +933,14 @@ dvec6 mut_force_tau1i_masc(const dvec3 &r, const double M1, const dmatnx3 &masc1
     return {-coeff*sumfx,-coeff*sumfy,-coeff*sumfz, coeff*sumtx,coeff*sumty,coeff*sumtz};
 }
 
-//Force of a rigid body upon a test particle at position r, assuming inertial integral expansion of order 2 approximation.
-dvec3 force_integrals_ord2(const dvec3 &r, const double M, const dtens &J, const dmat3 &A)
+/* End of gravity force and torque expressions. */
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/* Gravity acceleration expressions. */
+
+//Acceleration of a test particle at position r, due to a rigid body, assuming inertial integral expansion of order 2 approximation.
+dvec3 accel_integrals_ord2(const dvec3 &r, const double M, const dtens &J, const dmat3 &A)
 {
     double Ix = J[0][2][0] + J[0][0][2];
     double Iy = J[2][0][0] + J[0][0][2];
@@ -973,8 +979,8 @@ dvec3 force_integrals_ord2(const dvec3 &r, const double M, const dtens &J, const
     return -(dV_dd*dd_dr + dV_dl*dl_dr + dV_dm*dm_dr + dV_dn*dn_dr);
 }
 
-//Force of a rigid body upon a test particle at position r, assuming inertial integral expansion of order 3 approximation.
-dvec3 force_integrals_ord3(const dvec3 &r, const double M, const dtens &J, const dmat3 &A)
+//Acceleration of a test particle at position r, due to a rigid body, assuming inertial integral expansion of order 3 approximation.
+dvec3 accel_integrals_ord3(const dvec3 &r, const double M, const dtens &J, const dmat3 &A)
 {
     double Jxxx = J[3][0][0];
     double Jyyy = J[0][3][0];
@@ -1030,8 +1036,8 @@ dvec3 force_integrals_ord3(const dvec3 &r, const double M, const dtens &J, const
     return -(dV_dd*dd_dr + dV_dl*dl_dr + dV_dm*dm_dr + dV_dn*dn_dr);
 }
 
-//Force of a rigid body upon a test particle at position r, assuming integral expansion of order 4 approximation.
-dvec3 force_integrals_ord4(const dvec3 &r, const double M, const dtens &J, const dmat3 &A)
+//Acceleration of a test particle at position r, due to a rigid body, assuming inertial integral expansion of order 4 approximation.
+dvec3 accel_integrals_ord4(const dvec3 &r, const double M, const dtens &J, const dmat3 &A)
 {
     double Jxxx = J[3][0][0];
     double Jyyy = J[0][3][0];
@@ -1113,8 +1119,8 @@ dvec3 force_integrals_ord4(const dvec3 &r, const double M, const dtens &J, const
     return -(dV_dd*dd_dr + dV_dl*dl_dr + dV_dm*dm_dr + dV_dn*dn_dr);
 }
 
-//Force of a rigid body upon a test particle at position r, assuming mascons distribution with constant density.
-dvec3 force_masc(const dvec3 &r, const double M, const dmatnx3 &masc, const dmat3 &A)
+//Acceleration of a test particle at position r, due to a rigid body, assuming mascons distribution with constant density.
+dvec3 accel_masc(const dvec3 &r, const double M, const dmatnx3 &masc, const dmat3 &A)
 {
     #ifdef _OPENMP
         int total_threads = omp_get_max_threads();
@@ -1144,12 +1150,14 @@ dvec3 force_masc(const dvec3 &r, const double M, const dmatnx3 &masc, const dmat
     return -G*M*dvec3{sumfx,sumfy,sumfz}/(double)N;
 }
 
-/* End of gravity force and torque expressions. */
+/* End of gravity acceleration expressions. */
 
-//Force felt by a test particle (e.g. spacecraft) due to SRP cannonball model.
-dvec3 force_srp(const double rho, const double A, const double m, const dvec3 &r, const dvec3 &rsun)
+//Acceleration of a body (e.g. spacecraft) due to SRP - cannonball model.
+dvec3 accel_srp(const double rho, const double A, const double m, const dvec3 &r, const dvec3 &rsun)
 {
-    return (1.0 + rho)*A*4.56e-6*AU*AU*(r - rsun)/length(r - rsun);
+    dvec3 dr = r - rsun;
+    double drlen = length(dr);
+    return (1.0 + rho)*(A/m)*4.56e-9*AU2KM*AU2KM*dr/(drlen*drlen*drlen); //[km/sec^2]
 }
 
 #endif

@@ -1,53 +1,56 @@
 Simulation name := "SyntheticBinaryMutualEscape"
 
 Shape models := ".obj files"
-file 1 := "eros196k_R17km.obj"
-file 2 := "procgen1_4k_R3km.obj"
+    file 1 := "eros196k_R17km.obj"
+    file 2 := "procgen1_4k_R3km.obj"
 
 Mutual potential order := 2
 
-M1 := 6.687e+15
-M2 := 9982000000000
+Masses :
+    M1 := 6.687e+15
+    M2 := 9982000000000
 
-Numerical method := "ABM5 (fixed)"
-Epoch := 0
-Duration := 35
-Step := 0.001
+Numerical integration :
+    Method := "ABM5 (fixed)"
+    Epoch := 0
+    Duration := 35
+    Step := 0.001
 
-Initial relative position and velocity := "Keplerian"
-a  := 67
-e  := 0.4
-i  := 0
-Om := 0
-w  := 0
-M  := 0
+Initial state :
+    Relative position and velocity := "Keplerian"
+    a  := 67
+    e  := 0.4
+    i  := 0
+    Om := 0
+    w  := 0
+    M  := 0
 
-Initial orientations := "Euler angles"
-roll 1  := 0
-pitch 1 := 0
-yaw 1   := 0
-roll 2  := 0
-pitch 2 := 0
-yaw 2   := 0
+    Orientations := "Euler angles (XYZ)"
+    Roll 1  := 0
+    Pitch 1 := 0
+    Yaw 1   := 0
+    Roll 2  := 0
+    Pitch 2 := 0
+    Yaw 2   := 0
 
-Initial angular velocities := "At inertial frame"
-w1ix := 0
-w1iy := 0
-w1iz := 0.00015
-w2ix := 0
-w2iy := 0
-w2iz := 0
+    Angular velocities := "At inertial frame"
+    w1ix := 0
+    w1iy := 0
+    w1iz := 0.00015
+    w2ix := 0
+    w2iy := 0
+    w2iz := 0
 
-Initial position and velocity of the center of mass :
-x  com := 0.0
-y  com := 0.0
-z  com := 0.0
-vx com := 0.0
-vy com := 0.0
-vz com := 0.0
+    C.O.M. motion relative to world :
+    x  := 0.0
+    y  := 0.0
+    z  := 0.0
+    vx := 0.0
+    vy := 0.0
+    vz := 0.0
 
 Collision shapes := "Spheres"
 
-Kinetic impactors := "No"
+Assume kinetic impactors := "No"
 
-Spacecraft orbiter := "No"
+Assume spacecraft orbiter := "No"

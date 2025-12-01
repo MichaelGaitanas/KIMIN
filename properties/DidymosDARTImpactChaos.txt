@@ -1,65 +1,78 @@
 Simulation name := "DidymosDARTImpactChaos"
 
 Shape models := ".obj files"
-file 1 := "didymain2019_R04km.obj"
-file 2 := "dimorphos_ellipsoid_R01km.obj"
+    file 1 := "didymain2019_R04km.obj"
+    file 2 := "dimorphos_ellipsoid_R01km.obj"
 
 Mutual potential order := 4
 
-M1 := 515041825125.529
-M2 := 3926933196.12399
+Masses :
+    M1 := 515041825125.529
+    M2 := 3926933196.12399
 
-Numerical method := "RKF78 (fixed)"
-Epoch := 0
-Duration := 100
-Step := 0.001
+Numerical integration :
+    Method := "RKF78 (fixed)"
+    Epoch := 0
+    Duration := 100
+    Step := 0.001
 
-Initial relative position and velocity := "Cartesian"
-x  := 1.18
-y  := 0
-z  := 0
-vx := 0
-vy := 0.000172754231527419
-vz := 0
+Initial state :
+    Relative position and velocity := "Cartesian"
+    x  := 1.18
+    y  := 0
+    z  := 0
+    vx := 0
+    vy := 0.000172754231527419
+    vz := 0
 
-Initial orientations := "Euler angles"
-roll 1  := 0
-pitch 1 := 0
-yaw 1   := 0
-roll 2  := 0
-pitch 2 := 0
-yaw 2   := 0
+    Orientations := "Euler angles (XYZ)"
+    Roll 1  := 0
+    Pitch 1 := 0
+    Yaw 1   := 0
+    Roll 2  := 0
+    Pitch 2 := 0
+    Yaw 2   := 0
 
-Initial angular velocities := "At inertial frame"
-w1ix := 0
-w1iy := 0
-w1iz := 0.000772269580528464
-w2ix := 0
-w2iy := 0
-w2iz := 0.000146402
+    Angular velocities := "At inertial frame"
+    w1ix := 0
+    w1iy := 0
+    w1iz := 0.000772269580528464
+    w2ix := 0
+    w2iy := 0
+    w2iz := 0.000146402
 
-Initial position and velocity of the center of mass :
-x  com := 0.0
-y  com := 0.0
-z  com := 0.0
-vx com := 0.0
-vy com := 0.0
-vz com := 0.0
+    C.O.M. motion relative to world :
+    x  := 0.0
+    y  := 0.0
+    z  := 0.0
+    vx := 0.0
+    vy := 0.0
+    vz := 0.0
 
 Collision shapes := "Spheres"
 
-Kinetic impactors := "Yes"
-m1    := 0
-vx1   := 0
-vy1   := 0
-vz1   := 0
-beta1 := 0
-t1    := 0
-m2    := 579.434
-vx2   := 0
-vy2   := -6.06924608412306
-vz2   := 0.961274144225715
-beta2 := 3.6
-t2    := 10.19
+Assume kinetic impactors := "Yes"
+    Body 1 :
+        Mass (dry + fuel) :
+            m := 0
+        Velocity (relative to body) :
+            vx := 0
+            vy := 0
+            vz := 0
+        Momentum enhancement factor (ejecta) :
+            beta := 0
+        Impact epoch :
+            t := 0
+    Body 2 :
+        Mass (dry + fuel) :
+            m := 579.434
+        Velocity (relative to body) :
+            vx := 0
+            vy := -6.06924608412306
+            vz := 0.961274144225715
+        Momentum enhancement factor (ejecta) :
+            beta := 3.6
+        Impact epoch :
+            t := 10.19
 
-Spacecraft orbiter := "No"
+Assume spacecraft orbiter := "No"

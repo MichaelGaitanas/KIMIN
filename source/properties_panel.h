@@ -77,10 +77,10 @@ public:
     bool collision_no, collision_spheres, collision_polyhedra; //Which type of collision criterion to apply in the simulation.
 
     bool impactors_checkbox; //'Kinetic impactors' checkbox state.
-    double mD1, mD2; //'m1', 'm2' double fields.
-    dvec3 vD1, vD2; //'υx1', 'υy1', 'υz1', 'υx2', 'υy2', 'υz2' double fields.
-    double beta1, beta2; //'β1', 'β2' double fields.
-    double tD1, tD2; //'t1', 't2' double fields.
+    double mD1, mD2; //'m' double fields.
+    dvec3 vD1, vD2; //'υx', 'υy', 'υz' double fields.
+    double beta1, beta2; //'β' double fields.
+    double tD1, tD2; //'t' double fields.
     bool impactors_clicked_ok; //Impactors 'OK' button.
 
     bool spacecraft_checkbox; //'Spacecraft orbiter' checkbox state.
@@ -88,6 +88,7 @@ public:
     bool srp_checkbox; //'Account for SRP' checkbox state.
     double sp_refl, sp_area, sp_mass; //Spacecraft's 'ρ', 'A', 'm' double fields.
     double sun_dist, sun_lon, sun_lat; //Sun's 'Dist', 'Lon', 'Lat' double fields.
+    bool srp_shadow_checkbox; //'Account for shadow' checkbox state.
     bool spacecraft_clicked_ok; //Spacecraft's 'OK' button.
 
     bool run_pressed; //Whether or not the 'Run' button has been pressed.
@@ -152,6 +153,7 @@ public:
                          sun_dist(0.0),
                          sun_lon(0.0),
                          sun_lat(0.0),
+                         srp_shadow_checkbox(false),
                          spacecraft_clicked_ok(false),
                          run_pressed(false),
                          abort_pressed(false),
@@ -259,7 +261,7 @@ public:
 
         //Parse the bodies' initial orientations.
         if (find_assignment_operator(fp)) fscanf(fp, " \"%127[^\"]\"", buffer);
-        if (strcmp(buffer, "Euler angles") == 0)
+        if (strcmp(buffer, "Euler angles (XYZ)") == 0)
         {
             orient_var = EULER_XYZ;
             for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &rpy1[i]);
@@ -320,7 +322,7 @@ public:
             }
         }
 
-        //Parse the spacecraft orbiter's initial state.
+        //Parse the spacecraft orbiter's state.
         if (find_assignment_operator(fp))
         {
             fscanf(fp, " \"%127[^\"]\"", buffer);
@@ -328,6 +330,29 @@ public:
             {
                 for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &rsp[i]);
                 for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &vsp[i]);
+
+                if (find_assignment_operator(fp))
+                {
+                    fscanf(fp, " \"%127[^\"]\"", buffer);
+                    if (strcmp(buffer, "Yes") == 0)
+                    {
+                        if (find_assignment_operator(fp)) fscanf(fp, "%lf", &sp_refl);
+                        if (find_assignment_operator(fp)) fscanf(fp, "%lf", &sp_area);
+                        if (find_assignment_operator(fp)) fscanf(fp, "%lf", &sp_mass);
+
+                        if (find_assignment_operator(fp)) fscanf(fp, "%lf", &sun_dist);
+                        if (find_assignment_operator(fp)) fscanf(fp, "%lf", &sun_lon);
+                        if (find_assignment_operator(fp)) fscanf(fp, "%lf", &sun_lat);
+
+                        if (find_assignment_operator(fp))
+                        {
+                            fscanf(fp, " \"%127[^\"]\"", buffer);
+                            if (strcmp(buffer, "Yes") == 0)
+                                srp_shadow_checkbox = true;
+                        }
+                        srp_checkbox = true;
+                    }
+                }
                 spacecraft_checkbox = spacecraft_clicked_ok = true;
             }
         }
@@ -507,10 +532,7 @@ public:
         if (impactors_checkbox && (tD1 < epoch || tD1 > epoch + dur || tD2 < epoch || tD2 > epoch + dur))
             {console.add_timed_text("[Error] : Impact times must range in [Epoch,  Epoch + Duration].\n"); return false;}
 
-        //Possible error 17 : 'OK' button in the spacecraft orbiter parameters window (it must be clicked so that the i.c. are taken into account).
-        if (spacecraft_checkbox && !spacecraft_clicked_ok)
-            {console.add_timed_text("[Error] : 'OK' button must be pressed in the 'Orbiter's initial state' window.\n"); return false;}
-
+        //Possible error 17 : SRP inputs must be valid and 'OK' button must be clicked in the end.
         if (spacecraft_checkbox)
         {
             if (srp_checkbox)
@@ -523,7 +545,7 @@ public:
                     {console.add_timed_text("[Error] : Spacecraft's mass 'm' must positive.\n"); return false;}
                 if (sun_dist < 1e-15)
                     {console.add_timed_text("[Error] : Sun's distance 'Dist' must be positive.\n"); return false;}
-                if (2.0*length(rsp)/(sun_dist*AU) > MAX_SRP_REL_VARIATION) //This is to block very short spacecraft - star distance input.
+                if (2.0*length(rsp)/(sun_dist*AU2KM) > MAX_SRP_REL_VARIATION) //This is to block very short spacecraft - star distance input.
                 {
                     console.add_timed_text("[Error] : Initial Sun - spacecraft distance is too short for the parallel-ray SRP model. "
                                            "Increase 'Dist' or set the spacecraft closer to the binary's C.O.M.\n");
@@ -683,7 +705,7 @@ public:
                 static const char *methods[4] = {"RKF78 (fixed)",
                                                  "RKF78 (adaptive)",
                                                  "BStoer (adaptive)",
-                                                 "ABM5  (fixed)"};
+                                                 "ABM5 (fixed)"};
                 ImGui::Combo("  ", (int*)(&integration_method), methods, IM_ARRAYSIZE(methods));
             ImGui::PopID();
         ImGui::PopItemWidth();
@@ -769,7 +791,7 @@ public:
         //Angular velocities reference frames (C.O.M. or corresponding body frame).
         ImGui::PushItemWidth(200.0f*SCX);
             ImGui::PushID(id++);
-                static const char *omega_frame[2] = {"Inertial frame", "Body frames"}; //Which frame for the angular velocities.
+                static const char *omega_frame[2] = {"At inertial frame", "At body frames"}; //Which frame for the angular velocities.
                 ImGui::Combo("  ", (int*)(&angvel_frame), omega_frame, IM_ARRAYSIZE(omega_frame));
             ImGui::PopID();
         ImGui::PopItemWidth();
@@ -915,7 +937,7 @@ public:
             if (srp_checkbox)
             {
                 ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
-                ImGui::Text("SRP model parameters");
+                ImGui::Text("SRP parameters");
                 double_field("ρ ", 100.0f*SCX, 40.0f*SCX, id, "[  ]",  sp_refl);
                 double_field("A ", 100.0f*SCX, 40.0f*SCX, id, "[m^2]", sp_area);
                 double_field("m ", 100.0f*SCX, 40.0f*SCX, id, "[kg]",  sp_mass);
@@ -924,6 +946,8 @@ public:
                 double_field("Dist ", 100.0f*SCX, 40.0f*SCX, id, "[AU]",  sun_dist);
                 double_field("Lon ",  100.0f*SCX, 40.0f*SCX, id, "[deg]", sun_lon);
                 double_field("Lat ",  100.0f*SCX, 40.0f*SCX, id, "[deg]", sun_lat);
+                ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
+                ImGui::Checkbox("Account for shadows (spheres)", &srp_shadow_checkbox);
             }
             ImGui::Dummy(ImVec2(0.0f,30.0f*SCY));
 

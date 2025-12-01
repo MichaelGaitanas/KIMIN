@@ -1,57 +1,60 @@
 Simulation name := "PatroclusMenoetius"
 
 Shape models := "Ellipsoids"
-a1 := 63.5
-b1 := 58.5
-c1 := 49
-a2 := 58.5
-b2 := 54
-c2 := 45
+    a1 := 63.5
+    b1 := 58.5
+    c1 := 49
+    a2 := 58.5
+    b2 := 54
+    c2 := 45
 
 Mutual potential order := 2
 
-M1 := 6.69656e+17
-M2 := 5.22984e+17
+Masses :
+    M1 := 6.69656e+17
+    M2 := 5.22984e+17
 
-Numerical method := "RKF78 (adaptive)"
-Epoch := 0
-Duration := 365
-Target error := 1e-15
+Numerical integration :
+    Method := "RKF78 (adaptive)"
+    Epoch := 0
+    Duration := 365
+    Target error := 1e-15
 
-Initial relative position and velocity := "Cartesian"
-x  := 664.6
-y  := 0
-z  := 0
-vx := 0
-vy := 0.010959427634877469
-vz := 0
+Initial state :
+    Relative position and velocity := "Cartesian"
+    x  := 664.6
+    y  := 0
+    z  := 0
+    vx := 0
+    vy := 0.010959427634877469
+    vz := 0
 
-Initial orientations := "Euler angles"
-roll 1  := 0
-pitch 1 := 0
-yaw 1   := 0
-roll 2  := 0
-pitch 2 := 0
-yaw 2   := 0
+    Orientations := "Euler angles (XYZ)"
+    Roll 1  := 0
+    Pitch 1 := 0
+    Yaw 1   := 0
+    Roll 2  := 0
+    Pitch 2 := 0
+    Yaw 2   := 0
 
-Initial angular velocities := "At inertial frame"
-w1ix := 0
-w1iy := 0
-w1iz := 1.64902612622291e-05
-w2ix := 0
-w2iy := 0
-w2iz := 1.64902612622291e-05
+    Angular velocities := "At inertial frame"
+    w1ix := 0
+    w1iy := 0
+    w1iz := 1.64902612622291e-05
+    w2ix := 0
+    w2iy := 0
+    w2iz := 1.64902612622291e-05
 
-Initial position and velocity of the center of mass :
-x  com := 0.0
-y  com := 0.0
-z  com := 0.0
-vx com := 0.0
-vy com := 0.0
-vz com := 0.0
+    C.O.M. motion relative to world :
+    x  := 0.0
+    y  := 0.0
+    z  := 0.0
+    vx := 0.0
+    vy := 0.0
+    vz := 0.0
 
 Collision shapes := "Spheres"
 
-Kinetic impactors := "No"
+Assume kinetic impactors := "No"
 
-Spacecraft orbiter := "No"
+Assume spacecraft orbiter := "No"

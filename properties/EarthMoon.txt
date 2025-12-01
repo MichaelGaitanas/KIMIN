@@ -1,57 +1,60 @@
 Simulation name := "EarthMoon"
 
 Shape models := "Ellipsoids"
-a1 := 6378.137
-b1 := 6378.067
-c1 := 6356.752
-a2 := 1737.6
-b2 := 1735.6
-c2 := 1735
+    a1 := 6378.137
+    b1 := 6378.067
+    c1 := 6356.752
+    a2 := 1737.6
+    b2 := 1735.6
+    c2 := 1735
 
 Mutual potential order := 2
 
-M1 := 5.97216787e+24
-M2 := 7.342e+22
+Masses :
+    M1 := 5.97216787e+24
+    M2 := 7.342e+22
 
-Numerical method := "RKF78 (fixed)"
-Epoch := 0
-Duration := 5000
-Step := 0.06
+Numerical integration :
+    Method := "RKF78 (fixed)"
+    Epoch := 0
+    Duration := 5000
+    Step := 0.06
 
-Initial relative position and velocity := "Keplerian"
-a  := 384400
-e  := 0.0549
-i  := 5.145
-Om := 0
-w  := 0
-M  := 0
+Initial state :
+    Relative position and velocity := "Keplerian"
+    a  := 384400
+    e  := 0.0549
+    i  := 5.145
+    Om := 0
+    w  := 0
+    M  := 0
 
-Initial orientations := "Euler angles"
-roll 1  := 0
-pitch 1 := 0
-yaw 1   := 0
-roll 2  := 0
-pitch 2 := 0
-yaw 2   := 0
+    Orientations := "Euler angles (XYZ)"
+    Roll 1  := 0
+    Pitch 1 := 0
+    Yaw 1   := 0
+    Roll 2  := 0
+    Pitch 2 := 0
+    Yaw 2   := 0
 
-Initial angular velocities := "At inertial frame"
-w1ix := 0
-w1iy := 0
-w1iz := 7.292115e-05
-w2ix := 0
-w2iy := 0
-w2iz := 2.6617e-06
+    Angular velocities := "At inertial frame"
+    w1ix := 0
+    w1iy := 0
+    w1iz := 7.292115e-05
+    w2ix := 0
+    w2iy := 0
+    w2iz := 2.6617e-06
 
-Initial position and velocity of the center of mass :
-x  com := 0.0
-y  com := 0.0
-z  com := 0.0
-vx com := 0.0
-vy com := 0.0
-vz com := 0.0
+    C.O.M. motion relative to world :
+    x  := 0.0
+    y  := 0.0
+    z  := 0.0
+    vx := 0.0
+    vy := 0.0
+    vz := 0.0
 
 Collision shapes := "Spheres"
 
-Kinetic impactors := "No"
+Assume kinetic impactors := "No"
 
-Spacecraft orbiter := "No"
+Assume spacecraft orbiter := "No"

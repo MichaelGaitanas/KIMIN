@@ -400,7 +400,7 @@ dvec3 cart2cyl(const dvec3 &cart)
 //Convert spherical coordinates to Cartesian.
 dvec3 spher2cart(const dvec3 &spher, bool latitude_origin_is_the_north_pole = true)
 {
-    double r = spher[0];
+    double r   = spher[0];
     double lon = spher[1];
     double lat = spher[2];
 

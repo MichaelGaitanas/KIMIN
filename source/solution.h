@@ -330,18 +330,18 @@ public:
         if (integr.properties.ell_checkbox)
         {
             fprintf(file_properties,"Shape models := \"Ellipsoids\"\n");
-            fprintf(file_properties,"a1 := %.15g\n",  integr.properties.semiaxes1[0]);
-            fprintf(file_properties,"b1 := %.15g\n",  integr.properties.semiaxes1[1]);
-            fprintf(file_properties,"c1 := %.15g\n",  integr.properties.semiaxes1[2]);
-            fprintf(file_properties,"a2 := %.15g\n",  integr.properties.semiaxes2[0]);
-            fprintf(file_properties,"b2 := %.15g\n",  integr.properties.semiaxes2[1]);
-            fprintf(file_properties,"c2 := %.15g\n\n",integr.properties.semiaxes2[2]);
+            fprintf(file_properties,"    a1 := %.15g\n",  integr.properties.semiaxes1[0]);
+            fprintf(file_properties,"    b1 := %.15g\n",  integr.properties.semiaxes1[1]);
+            fprintf(file_properties,"    c1 := %.15g\n",  integr.properties.semiaxes1[2]);
+            fprintf(file_properties,"    a2 := %.15g\n",  integr.properties.semiaxes2[0]);
+            fprintf(file_properties,"    b2 := %.15g\n",  integr.properties.semiaxes2[1]);
+            fprintf(file_properties,"    c2 := %.15g\n\n",integr.properties.semiaxes2[2]);
         }
         else
         {
             fprintf(file_properties,"Shape models := \".obj files\"\n");
-            fprintf(file_properties,"file 1 := \"%s\"\n",  integr.properties.obj1_path.c_str());
-            fprintf(file_properties,"file 2 := \"%s\"\n\n",integr.properties.obj2_path.c_str());
+            fprintf(file_properties,"    file 1 := \"%s\"\n",  integr.properties.obj1_path.c_str());
+            fprintf(file_properties,"    file 2 := \"%s\"\n\n",integr.properties.obj2_path.c_str());
         }
 
         if (integr.properties.ord2_checkbox)
@@ -351,110 +351,113 @@ public:
         else
             fprintf(file_properties,"Mutual potential order := 4\n\n");
 
-        fprintf(file_properties,"M1 := %.15g\n",  integr.properties.M1);
-        fprintf(file_properties,"M2 := %.15g\n\n",integr.properties.M2);
+        fprintf(file_properties,"Masses :\n");
+        fprintf(file_properties,"    M1 := %.15g\n",  integr.properties.M1);
+        fprintf(file_properties,"    M2 := %.15g\n\n",integr.properties.M2);
 
+        fprintf(file_properties,"Numerical integration :\n");
         if (integr.properties.integration_method == properties_panel::RKF78_FIXED)
         {
-            fprintf(file_properties,"Numerical method := \"RKF78 (fixed)\"\n");
-            fprintf(file_properties,"Epoch := %.15g\n",integr.properties.epoch);
-            fprintf(file_properties,"Duration := %.15g\n",integr.properties.dur);
-            fprintf(file_properties,"Step := %.15g\n\n",integr.properties.step);
+            fprintf(file_properties,"    Method := \"RKF78 (fixed)\"\n");
+            fprintf(file_properties,"    Epoch := %.15g\n",integr.properties.epoch);
+            fprintf(file_properties,"    Duration := %.15g\n",integr.properties.dur);
+            fprintf(file_properties,"    Step := %.15g\n\n",integr.properties.step);
         }
         else if (integr.properties.integration_method == properties_panel::RKF78_ADAPTIVE)
         {
-            fprintf(file_properties,"Numerical method := \"RKF78 (adaptive)\"\n");
-            fprintf(file_properties,"Epoch := %.15g\n",integr.properties.epoch);
-            fprintf(file_properties,"Duration := %.15g\n",integr.properties.dur);
-            fprintf(file_properties,"Target error := %.15g\n\n",integr.properties.target_error);
+            fprintf(file_properties,"    Method := \"RKF78 (adaptive)\"\n");
+            fprintf(file_properties,"    Epoch := %.15g\n",integr.properties.epoch);
+            fprintf(file_properties,"    Duration := %.15g\n",integr.properties.dur);
+            fprintf(file_properties,"    Target error := %.15g\n\n",integr.properties.target_error);
         }
         else if (integr.properties.integration_method == properties_panel::BSTOER_ADAPTIVE)
         {
-            fprintf(file_properties,"Numerical method := \"BStoer (adaptive)\"\n");
-            fprintf(file_properties,"Epoch := %.15g\n",integr.properties.epoch);
-            fprintf(file_properties,"Duration := %.15g\n",integr.properties.dur);
-            fprintf(file_properties,"Target error := %.15g\n\n",integr.properties.target_error);
+            fprintf(file_properties,"    Method := \"BStoer (adaptive)\"\n");
+            fprintf(file_properties,"    Epoch := %.15g\n",integr.properties.epoch);
+            fprintf(file_properties,"    Duration := %.15g\n",integr.properties.dur);
+            fprintf(file_properties,"    Target error := %.15g\n\n",integr.properties.target_error);
         }
         else //properties_panel::ABM5_FIXED
         {
-            fprintf(file_properties,"Numerical method := \"ABM5 (fixed)\"\n");
-            fprintf(file_properties,"Epoch := %.15g\n",integr.properties.epoch);
-            fprintf(file_properties,"Duration := %.15g\n",integr.properties.dur);
-            fprintf(file_properties,"Step := %.15g\n\n",integr.properties.step);
+            fprintf(file_properties,"    Method := \"ABM5 (fixed)\"\n");
+            fprintf(file_properties,"    Epoch := %.15g\n",integr.properties.epoch);
+            fprintf(file_properties,"    Duration := %.15g\n",integr.properties.dur);
+            fprintf(file_properties,"    Step := %.15g\n\n",integr.properties.step);
         }
 
+        fprintf(file_properties,"Initial state :\n");
         if (integr.properties.pos_vel_var == properties_panel::CARTESIAN)
         {
-            fprintf(file_properties,"Initial relative position and velocity := \"Cartesian\"\n");
-            fprintf(file_properties,"x  := %.15g\n",   integr.properties.cart[0]);
-            fprintf(file_properties,"y  := %.15g\n",   integr.properties.cart[1]);
-            fprintf(file_properties,"z  := %.15g\n",   integr.properties.cart[2]);
-            fprintf(file_properties,"vx := %.15g\n",   integr.properties.cart[3]);
-            fprintf(file_properties,"vy := %.15g\n",   integr.properties.cart[4]);
-            fprintf(file_properties,"vz := %.15g\n\n", integr.properties.cart[5]);
+            fprintf(file_properties,"    Relative position and velocity := \"Cartesian\"\n");
+            fprintf(file_properties,"    x  := %.15g\n",   integr.properties.cart[0]);
+            fprintf(file_properties,"    y  := %.15g\n",   integr.properties.cart[1]);
+            fprintf(file_properties,"    z  := %.15g\n",   integr.properties.cart[2]);
+            fprintf(file_properties,"    vx := %.15g\n",   integr.properties.cart[3]);
+            fprintf(file_properties,"    vy := %.15g\n",   integr.properties.cart[4]);
+            fprintf(file_properties,"    vz := %.15g\n\n", integr.properties.cart[5]);
         }
         else //properties_panel::KEPLERIAN
         {
-            fprintf(file_properties,"Initial relative position and velocity := \"Keplerian\"\n");
-            fprintf(file_properties,"a  := %.15g\n",   integr.properties.kep[0]);
-            fprintf(file_properties,"e  := %.15g\n",   integr.properties.kep[1]);
-            fprintf(file_properties,"i  := %.15g\n",   integr.properties.kep[2]);
-            fprintf(file_properties,"Om := %.15g\n",   integr.properties.kep[3]);
-            fprintf(file_properties,"w  := %.15g\n",   integr.properties.kep[4]);
-            fprintf(file_properties,"M  := %.15g\n\n", integr.properties.kep[5]);
+            fprintf(file_properties,"    Relative position and velocity := \"Keplerian\"\n");
+            fprintf(file_properties,"    a  := %.15g\n",   integr.properties.kep[0]);
+            fprintf(file_properties,"    e  := %.15g\n",   integr.properties.kep[1]);
+            fprintf(file_properties,"    i  := %.15g\n",   integr.properties.kep[2]);
+            fprintf(file_properties,"    Om := %.15g\n",   integr.properties.kep[3]);
+            fprintf(file_properties,"    w  := %.15g\n",   integr.properties.kep[4]);
+            fprintf(file_properties,"    M  := %.15g\n\n", integr.properties.kep[5]);
         }
 
         if (integr.properties.orient_var == properties_panel::EULER_XYZ)
         {
-            fprintf(file_properties,"Initial orientations := \"Euler angles\"\n");
-            fprintf(file_properties,"roll 1  := %.15g\n",   integr.properties.rpy1[0]);
-            fprintf(file_properties,"pitch 1 := %.15g\n",   integr.properties.rpy1[1]);
-            fprintf(file_properties,"yaw 1   := %.15g\n",   integr.properties.rpy1[2]);
-            fprintf(file_properties,"roll 2  := %.15g\n",   integr.properties.rpy2[0]);
-            fprintf(file_properties,"pitch 2 := %.15g\n",   integr.properties.rpy2[1]);
-            fprintf(file_properties,"yaw 2   := %.15g\n\n", integr.properties.rpy2[2]);
+            fprintf(file_properties,"    Orientations := \"Euler angles (XYZ)\"\n");
+            fprintf(file_properties,"    Roll 1  := %.15g\n",   integr.properties.rpy1[0]);
+            fprintf(file_properties,"    Pitch 1 := %.15g\n",   integr.properties.rpy1[1]);
+            fprintf(file_properties,"    Yaw 1   := %.15g\n",   integr.properties.rpy1[2]);
+            fprintf(file_properties,"    Roll 2  := %.15g\n",   integr.properties.rpy2[0]);
+            fprintf(file_properties,"    Pitch 2 := %.15g\n",   integr.properties.rpy2[1]);
+            fprintf(file_properties,"    Yaw 2   := %.15g\n\n", integr.properties.rpy2[2]);
         }
         else //properties_panel::QUATERNION
         {
-            fprintf(file_properties,"Initial orientations := \"Quaternions\"\n");
-            fprintf(file_properties,"q10 := %.15g\n",   integr.properties.q1[0]);
-            fprintf(file_properties,"q11 := %.15g\n",   integr.properties.q1[1]);
-            fprintf(file_properties,"q12 := %.15g\n",   integr.properties.q1[2]);
-            fprintf(file_properties,"q13 := %.15g\n",   integr.properties.q1[3]);
-            fprintf(file_properties,"q20 := %.15g\n",   integr.properties.q2[0]);
-            fprintf(file_properties,"q21 := %.15g\n",   integr.properties.q2[1]);
-            fprintf(file_properties,"q22 := %.15g\n",   integr.properties.q2[2]);
-            fprintf(file_properties,"q23 := %.15g\n\n", integr.properties.q2[3]);
+            fprintf(file_properties,"    Orientations := \"Quaternions (WXYZ)\"\n");
+            fprintf(file_properties,"    q10 := %.15g\n",   integr.properties.q1[0]);
+            fprintf(file_properties,"    q11 := %.15g\n",   integr.properties.q1[1]);
+            fprintf(file_properties,"    q12 := %.15g\n",   integr.properties.q1[2]);
+            fprintf(file_properties,"    q13 := %.15g\n",   integr.properties.q1[3]);
+            fprintf(file_properties,"    q20 := %.15g\n",   integr.properties.q2[0]);
+            fprintf(file_properties,"    q21 := %.15g\n",   integr.properties.q2[1]);
+            fprintf(file_properties,"    q22 := %.15g\n",   integr.properties.q2[2]);
+            fprintf(file_properties,"    q23 := %.15g\n\n", integr.properties.q2[3]);
         }
 
         if (integr.properties.angvel_frame == properties_panel::INERTIAL)
         {
-            fprintf(file_properties,"Initial angular velocities := \"At inertial frame\"\n");
-            fprintf(file_properties,"w1ix := %.15g\n",   integr.properties.w1i[0]);
-            fprintf(file_properties,"w1iy := %.15g\n",   integr.properties.w1i[1]);
-            fprintf(file_properties,"w1iz := %.15g\n",   integr.properties.w1i[2]);
-            fprintf(file_properties,"w2ix := %.15g\n",   integr.properties.w2i[0]);
-            fprintf(file_properties,"w2iy := %.15g\n",   integr.properties.w2i[1]);
-            fprintf(file_properties,"w2iz := %.15g\n\n", integr.properties.w2i[2]);
+            fprintf(file_properties,"    Angular velocities := \"At inertial frame\"\n");
+            fprintf(file_properties,"    w1ix := %.15g\n",   integr.properties.w1i[0]);
+            fprintf(file_properties,"    w1iy := %.15g\n",   integr.properties.w1i[1]);
+            fprintf(file_properties,"    w1iz := %.15g\n",   integr.properties.w1i[2]);
+            fprintf(file_properties,"    w2ix := %.15g\n",   integr.properties.w2i[0]);
+            fprintf(file_properties,"    w2iy := %.15g\n",   integr.properties.w2i[1]);
+            fprintf(file_properties,"    w2iz := %.15g\n\n", integr.properties.w2i[2]);
         }
         else //properties_panel::BODY
         {
-            fprintf(file_properties,"Initial angular velocities := \"At body frames\"\n");
-            fprintf(file_properties,"w1bx := %.15g\n",   integr.properties.w1b[0]);
-            fprintf(file_properties,"w1by := %.15g\n",   integr.properties.w1b[1]);
-            fprintf(file_properties,"w1bz := %.15g\n",   integr.properties.w1b[2]);
-            fprintf(file_properties,"w2bx := %.15g\n",   integr.properties.w2b[0]);
-            fprintf(file_properties,"w2by := %.15g\n",   integr.properties.w2b[1]);
-            fprintf(file_properties,"w2bz := %.15g\n\n", integr.properties.w2b[2]);
+            fprintf(file_properties,"    Angular velocities := \"At body frames\"\n");
+            fprintf(file_properties,"    w1bx := %.15g\n",   integr.properties.w1b[0]);
+            fprintf(file_properties,"    w1by := %.15g\n",   integr.properties.w1b[1]);
+            fprintf(file_properties,"    w1bz := %.15g\n",   integr.properties.w1b[2]);
+            fprintf(file_properties,"    w2bx := %.15g\n",   integr.properties.w2b[0]);
+            fprintf(file_properties,"    w2by := %.15g\n",   integr.properties.w2b[1]);
+            fprintf(file_properties,"    w2bz := %.15g\n\n", integr.properties.w2b[2]);
         }
 
-        fprintf(file_properties,"Initial position and velocity of the center of mass :\n");
-        fprintf(file_properties,"x  com := %.15g\n",   integr.properties.rcom[0]);
-        fprintf(file_properties,"y  com := %.15g\n",   integr.properties.rcom[1]);
-        fprintf(file_properties,"z  com := %.15g\n",   integr.properties.rcom[2]);
-        fprintf(file_properties,"vx com := %.15g\n",   integr.properties.vcom[0]);
-        fprintf(file_properties,"vy com := %.15g\n",   integr.properties.vcom[1]);
-        fprintf(file_properties,"vz com := %.15g\n\n", integr.properties.vcom[2]);
+        fprintf(file_properties,"    C.O.M. motion relative to world :\n");
+        fprintf(file_properties,"    x  := %.15g\n",   integr.properties.rcom[0]);
+        fprintf(file_properties,"    y  := %.15g\n",   integr.properties.rcom[1]);
+        fprintf(file_properties,"    z  := %.15g\n",   integr.properties.rcom[2]);
+        fprintf(file_properties,"    vx := %.15g\n",   integr.properties.vcom[0]);
+        fprintf(file_properties,"    vy := %.15g\n",   integr.properties.vcom[1]);
+        fprintf(file_properties,"    vz := %.15g\n\n", integr.properties.vcom[2]);
 
         if (integr.properties.collision_no)
             fprintf(file_properties,"Collision shapes := \"No collision\"\n\n");
@@ -465,24 +468,32 @@ public:
 
         if (integr.properties.impactors_checkbox)
         {
-            fprintf(file_properties,"Kinetic impactors := \"Yes\"\n");
-
-            fprintf(file_properties,"m1    := %.15g\n", integr.properties.mD1);
-            fprintf(file_properties,"vx1   := %.15g\n", integr.properties.vD1[0]);
-            fprintf(file_properties,"vy1   := %.15g\n", integr.properties.vD1[1]);
-            fprintf(file_properties,"vz1   := %.15g\n", integr.properties.vD1[2]);
-            fprintf(file_properties,"beta1 := %.15g\n", integr.properties.beta1);
-            fprintf(file_properties,"t1    := %.15g\n", integr.properties.tD1/86400.0);
-
-            fprintf(file_properties,"m2    := %.15g\n",   integr.properties.mD2);
-            fprintf(file_properties,"vx2   := %.15g\n",   integr.properties.vD2[0]);
-            fprintf(file_properties,"vy2   := %.15g\n",   integr.properties.vD2[1]);
-            fprintf(file_properties,"vz2   := %.15g\n",   integr.properties.vD2[2]);
-            fprintf(file_properties,"beta2 := %.15g\n",   integr.properties.beta2);
-            fprintf(file_properties,"t2    := %.15g\n\n", integr.properties.tD2/86400.0);
+            fprintf(file_properties,"Assume kinetic impactors := \"Yes\"\n");
+            fprintf(file_properties,"    Body 1 :\n");
+            fprintf(file_properties,"        Mass (dry + fuel) :\n");
+            fprintf(file_properties,"            m := %.15g\n", integr.properties.mD1);
+            fprintf(file_properties,"        Velocity (relative to body) :\n");
+            fprintf(file_properties,"            vx := %.15g\n", integr.properties.vD1[0]);
+            fprintf(file_properties,"            vy := %.15g\n", integr.properties.vD1[1]);
+            fprintf(file_properties,"            vz := %.15g\n", integr.properties.vD1[2]);
+            fprintf(file_properties,"        Momentum enhancement factor (ejecta) :\n");
+            fprintf(file_properties,"            beta := %.15g\n", integr.properties.beta1);
+            fprintf(file_properties,"        Impact epoch :\n");
+            fprintf(file_properties,"            t := %.15g\n", integr.properties.tD1/86400.0);
+            fprintf(file_properties,"    Body 2 :\n");
+            fprintf(file_properties,"        Mass (dry + fuel) :\n");
+            fprintf(file_properties,"            m := %.15g\n", integr.properties.mD2);
+            fprintf(file_properties,"        Velocity (relative to body) :\n");
+            fprintf(file_properties,"            vx := %.15g\n", integr.properties.vD2[0]);
+            fprintf(file_properties,"            vy := %.15g\n", integr.properties.vD2[1]);
+            fprintf(file_properties,"            vz := %.15g\n", integr.properties.vD2[2]);
+            fprintf(file_properties,"        Momentum enhancement factor (ejecta) :\n");
+            fprintf(file_properties,"            beta := %.15g\n", integr.properties.beta2);
+            fprintf(file_properties,"        Impact epoch :\n");
+            fprintf(file_properties,"            t := %.15g\n", integr.properties.tD2/86400.0);
         }
         else
-            fprintf(file_properties, "Kinetic impactors := \"No\"\n\n");
+            fprintf(file_properties, "Assume kinetic impactors := \"No\"\n\n");
 
         if (integr.properties.spacecraft_checkbox)
         {

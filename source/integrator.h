@@ -47,9 +47,9 @@ public:
 
 private:
     //This function builds the right hand sides of the differential equations of motion. It is executed at each step of the integration.
-    void build_rhs(const boost::array<double, 26> &state, boost::array<double, 26> &dstate, double /*t*/)
+    void build_rhs(const boost::array<double, N_ODES> &state, boost::array<double, N_ODES> &dstate, double /*t*/)
     {
-        //Extract the current state vector of the binary into individual variables (for readability mostly).
+        //Extract the current state vector of the binary (for readability mostly).
         dvec3 r  =  { state[0],  state[1],  state[2] };
         dvec3 v  =  { state[3],  state[4],  state[5] };
         dvec4 q1 =  { state[6],  state[7],  state[8],  state[9] };
@@ -125,36 +125,40 @@ private:
 
         if (properties.spacecraft_checkbox)
         {
-            //Spacecraft state (COM frame).
+            //Spacecraft state in binary's COM frame.
             dvec3 rsp = { state[20], state[21], state[22] };
             dvec3 vsp = { state[23], state[24], state[25] };
-            //Individual bodies' COM positions (i.e. COM1 and COM2) in the mutual COM frame.
+            //Individual bodies' COM positions (i.e. COM1 and COM2) in binary's COM frame.
             dvec3 r1 = com1_coeff*r;
             dvec3 r2 = com2_coeff*r;
             //Corresponding body to spacecraft vector.
             dvec3 rho1 = rsp - r1;
             dvec3 rho2 = rsp - r2;
 
-            dvec3 force_spacecraft; //Spacecraft's force due to the combined presence of the 2 rigid bodies.
+            dvec3 asp; //Spacecraft's acceleration due to the combined presence of the 2 rigid bodies + SRP.
             if (properties.ord2_checkbox)
-                force_spacecraft = force_integrals_ord2(rho1, properties.M1, J1, A1) + force_integrals_ord2(rho2, properties.M2, J2, A2);
+                asp = accel_integrals_ord2(rho1, properties.M1, J1, A1) + accel_integrals_ord2(rho2, properties.M2, J2, A2);
             else if (properties.ord3_checkbox)
-                force_spacecraft = force_integrals_ord3(rho1, properties.M1, J1, A1) + force_integrals_ord3(rho2, properties.M2, J2, A2);
-            else //Only 'ord4_checkbox' remains...
-                force_spacecraft = force_integrals_ord4(rho1, properties.M1, J1, A1) + force_integrals_ord4(rho2, properties.M2, J2, A2);
+                asp = accel_integrals_ord3(rho1, properties.M1, J1, A1) + accel_integrals_ord3(rho2, properties.M2, J2, A2);
+            else
+                asp = accel_integrals_ord4(rho1, properties.M1, J1, A1) + accel_integrals_ord4(rho2, properties.M2, J2, A2);
 
             if (properties.srp_checkbox)
             {
-                force_spacecraft = force_spacecraft + force_srp(...);
+                bool sp_in_shadow = false;
+                if (properties.srp_shadow_checkbox)
+                    sp_in_shadow = line_sphere_intersection(rsp, rsun, r1, brillouin1) || line_sphere_intersection(rsp, rsun, r2, brillouin2);
+                if (!sp_in_shadow)
+                    asp = asp + accel_srp(properties.sp_refl, properties.sp_area, properties.sp_mass, rsp, rsun);
             }
 
             //Spacecraft's position and velocity rhs.
             dstate[20] = vsp[0];
             dstate[21] = vsp[1];
             dstate[22] = vsp[2];
-            dstate[23] = force_spacecraft[0];
-            dstate[24] = force_spacecraft[1];
-            dstate[25] = force_spacecraft[2];
+            dstate[23] = asp[0];
+            dstate[24] = asp[1];
+            dstate[25] = asp[2];
         }
         else
             dstate[20] = dstate[21] = dstate[22] = dstate[23] = dstate[24] = dstate[25] = 0.0;
@@ -289,14 +293,17 @@ public:
             }
         }
 
-        //Preparation 7 : SRP assumption.
+        //Preparation 7 : Spacecraft and SRP assumption.
         if (!properties.spacecraft_checkbox)
         {
             properties.rsp[0] = properties.rsp[1] = properties.rsp[2] = 0.0;
             properties.vsp[0] = properties.vsp[1] = properties.vsp[2] = 0.0;
         }
         else if (properties.spacecraft_checkbox && properties.srp_checkbox)
-            rsun = spher2cart({properties.sun_dist, properties.sun_lon*PI/180.0, properties.sun_lat*PI/180.0}); //[AU], [rad], [rad]
+        {
+            rsun = spher2cart({properties.sun_dist, properties.sun_lon*PI/180.0, properties.sun_lat*PI/180.0}); //{[AU], [AU], [AU]}
+            rsun = rsun*AU2KM; //{[km], [km], [km]}
+        }
 
         collision = collision_sp = false; //Assuming no collision when the simulation starts.
         
@@ -311,21 +318,21 @@ public:
         progress.store(0.0f);
 
         //Initial conditions.
-        boost::array<double, 26> state = {  properties.cart[0], properties.cart[1], properties.cart[2],
-                                            properties.cart[3], properties.cart[4], properties.cart[5],
-                                              properties.q1[0],   properties.q1[1],   properties.q1[2], properties.q1[3],
-                                             properties.w1b[0],  properties.w1b[1],  properties.w1b[2],
-                                              properties.q2[0],   properties.q2[1],   properties.q2[2], properties.q2[3],
-                                             properties.w2b[0],  properties.w2b[1],  properties.w2b[2],
-                                             properties.rsp[0],  properties.rsp[1],  properties.rsp[2],
-                                             properties.vsp[0],  properties.vsp[1],  properties.vsp[2] };
+        boost::array<double, N_ODES> state = {  properties.cart[0], properties.cart[1], properties.cart[2],
+                                                properties.cart[3], properties.cart[4], properties.cart[5],
+                                                  properties.q1[0],   properties.q1[1],   properties.q1[2], properties.q1[3],
+                                                 properties.w1b[0],  properties.w1b[1],  properties.w1b[2],
+                                                  properties.q2[0],   properties.q2[1],   properties.q2[2], properties.q2[3],
+                                                 properties.w2b[0],  properties.w2b[1],  properties.w2b[2],
+                                                 properties.rsp[0],  properties.rsp[1],  properties.rsp[2],
+                                                 properties.vsp[0],  properties.vsp[1],  properties.vsp[2] };
         
         double t = t0; //Initialize time.
 
-        boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 26>> rkf78_fixed;
-        auto rkf78_adaptive = boost::numeric::odeint::make_controlled(properties.target_error, properties.target_error, boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 26>>());
-        boost::numeric::odeint::bulirsch_stoer<boost::array<double, 26>> bstoer_adaptive(properties.target_error, properties.target_error);
-        boost::numeric::odeint::adams_bashforth_moulton<5, boost::array<double, 26>> abm_fixed;
+        boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, N_ODES>> rkf78_fixed;
+        auto rkf78_adaptive = boost::numeric::odeint::make_controlled(properties.target_error, properties.target_error, boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, N_ODES>>());
+        boost::numeric::odeint::bulirsch_stoer<boost::array<double, N_ODES>> bstoer_adaptive(properties.target_error, properties.target_error);
+        boost::numeric::odeint::adams_bashforth_moulton<5, boost::array<double, N_ODES>> abm_fixed;
 
         if (properties.integration_method == properties_panel::ABM5_FIXED) //Seed Adams-Bashforth-Moulton only if this is the requested method of integration.
             abm_fixed.initialize(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, dt);
