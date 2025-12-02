@@ -490,25 +490,44 @@ public:
             fprintf(file_properties,"        Momentum enhancement factor (ejecta) :\n");
             fprintf(file_properties,"            beta := %.15g\n", integr.properties.beta2);
             fprintf(file_properties,"        Impact epoch :\n");
-            fprintf(file_properties,"            t := %.15g\n", integr.properties.tD2/86400.0);
+            fprintf(file_properties,"            t := %.15g\n\n", integr.properties.tD2/86400.0);
         }
         else
             fprintf(file_properties, "Assume kinetic impactors := \"No\"\n\n");
 
         if (integr.properties.spacecraft_checkbox)
         {
-            fprintf(file_properties,"Spacecraft orbiter := \"Yes\"\n");
+            fprintf(file_properties,"Assume spacecraft orbiter := \"Yes\"\n");
+            fprintf(file_properties,"    Initial position (relative to C.O.M.) :\n");
+            fprintf(file_properties,"        x  := %.15g\n",   integr.properties.rsp[0]);
+            fprintf(file_properties,"        y  := %.15g\n",   integr.properties.rsp[1]);
+            fprintf(file_properties,"        z  := %.15g\n",   integr.properties.rsp[2]);
+            fprintf(file_properties,"    Initial velocity (relative to C.O.M.) :\n");
+            fprintf(file_properties,"        vx := %.15g\n",   integr.properties.vsp[0]);
+            fprintf(file_properties,"        vy := %.15g\n",   integr.properties.vsp[1]);
+            fprintf(file_properties,"        vz := %.15g\n\n", integr.properties.vsp[2]);
 
-            fprintf(file_properties,"x sp := %.15g\n", integr.properties.rsp[0]);
-            fprintf(file_properties,"y sp := %.15g\n", integr.properties.rsp[1]);
-            fprintf(file_properties,"z sp := %.15g\n", integr.properties.rsp[2]);
-
-            fprintf(file_properties,"vx sp := %.15g\n",   integr.properties.vsp[0]);
-            fprintf(file_properties,"vy sp := %.15g\n",   integr.properties.vsp[1]);
-            fprintf(file_properties,"vz sp := %.15g\n\n", integr.properties.vsp[2]);
+            if (integr.properties.srp_checkbox)
+            {
+                fprintf(file_properties,"    Account for SRP := \"Yes\"\n");
+                fprintf(file_properties,"        SRP parameters : \n");
+                fprintf(file_properties,"            ρ  := %.15g\n", integr.properties.sp_refl);
+                fprintf(file_properties,"            A  := %.15g\n", integr.properties.sp_area);
+                fprintf(file_properties,"            m  := %.15g\n", integr.properties.sp_mass);
+                fprintf(file_properties,"        Sun's position (relative to C.O.M.) : \n");
+                fprintf(file_properties,"            Dist := %.15g\n", integr.properties.sun_dist);
+                fprintf(file_properties,"            Lon  := %.15g\n", integr.properties.sun_lon);
+                fprintf(file_properties,"            Lat  := %.15g\n", integr.properties.sun_lat);
+                if (integr.properties.srp_shadow_checkbox)
+                    fprintf(file_properties,"    Account for shadows := \"Yes\"\n");
+                else
+                    fprintf(file_properties,"    Account for shadows := \"No\"\n");
+            }
+            else
+                fprintf(file_properties,"    Account for SRP := \"No\"\n");
         }
         else
-            fprintf(file_properties,"Spacecraft orbiter := \"No\"\n\n");
+            fprintf(file_properties,"Assume spacecraft orbiter := \"No\"\n\n");
 
         fclose(file_properties);
 

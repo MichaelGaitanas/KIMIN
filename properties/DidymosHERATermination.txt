@@ -62,6 +62,7 @@ Assume spacecraft orbiter := "Yes"
         vx := 0
         vy := 0
         vz := 0.00011
+        
     Account for SRP := "Yes"
         SRP parameters :
             ρ := 0.3
@@ -71,4 +72,4 @@ Assume spacecraft orbiter := "Yes"
             Dist := 1.64
             Lon  := 0
             Lat  := 90
-        Account for shadows (spheres) := "Yes"
+        Account for shadows := "Yes"

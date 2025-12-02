@@ -947,7 +947,7 @@ public:
                 double_field("Lon ",  100.0f*SCX, 40.0f*SCX, id, "[deg]", sun_lon);
                 double_field("Lat ",  100.0f*SCX, 40.0f*SCX, id, "[deg]", sun_lat);
                 ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
-                ImGui::Checkbox("Account for shadows (spheres)", &srp_shadow_checkbox);
+                ImGui::Checkbox("Account for shadows", &srp_shadow_checkbox);
             }
             ImGui::Dummy(ImVec2(0.0f,30.0f*SCY));
 

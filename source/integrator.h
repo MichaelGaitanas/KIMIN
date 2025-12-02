@@ -61,9 +61,6 @@ private:
         //perhaps do it (e.g.) per 10 or more evaluations to gain performance, but let's leave be strict for now.
         q1 = quat2unit(q1);
         q2 = quat2unit(q2);
-
-        //Construct the rotation matrices from the (normalized) quaternions. Even though the quaternions do encode the rotational state
-        //of each body, we need the matrices as well because the expressions of the potential, force and torque are written in matrix form.
         dmat3 A1 = quat2mat(q1);
         dmat3 A2 = quat2mat(q2);
 
