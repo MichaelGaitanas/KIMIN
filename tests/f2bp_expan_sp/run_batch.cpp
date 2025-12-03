@@ -281,8 +281,8 @@ int main()
     auto method = boost::numeric::odeint::make_controlled(ins.atol, ins.rtol, boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 26>>());
 
     //Output files :
-    FILE *fp_map  = fopen("stability_map.txt","w");
-    FILE *fp_info = fopen("batch_info.txt","w");
+    FILE *fp_map  = fopen("io/stability_map.txt","w");
+    FILE *fp_info = fopen("io/batch_info.txt","w");
     if (!fp_map || !fp_info)
     {
         fprintf(stderr, "Error : could not open output files.\n");
