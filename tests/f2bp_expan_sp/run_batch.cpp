@@ -36,22 +36,24 @@ struct inputs
     double q20,q21,q22,q23; //Initial quaternion of asteroid 2.
     double w1x,w1y,w1z; //Initial angular velocity of asteroid 1 (in the inertial C.O.M. frame).
     double w2x,w2y,w2z; //Initial angular velocity of asteroid 2 (in the inertial C.O.M. frame).
-    double asp,esp,isp,Omsp,wsp,Msp; //Initial position/velocity of the spacecraft (in the inertial C.O.M. frame).
     double rhosp, Asp, msp; //Spacecraft's reflectivity coefficient, effective area and mass (for the SRP).
     double dist_sun, lon_sun, lat_sun; //Sun's distance (in AU), longitude and latitude (for the SRP).
     int shadow; //0 means we do not account for shadow in the SRP, 1 means we account for shadow in the SRP. 
+    double a_sp_min, a_sp_max, e_sp_min, e_sp_max; //Initial sate of a,e of the spacecraft.
+    int Na, Ne; //Grid resolution in a(0),e(0) of the spacecraft for the batch.
+    double i_sp, Om_sp, w_sp, M_sp; //Rest of the spacecraft's Keplerian elements.
 
     void read()
     {
-        FILE *fpins = fopen("inputs_run.txt","r");
+        FILE *fpins = fopen("inputs_run_batch.txt", "r");
         if (!fpins)
         {
-            fprintf(stderr, "Error : File 'inputs_run.txt' was not found. Exiting...\n");
+            fprintf(stderr, "Error: file 'inputs_run_batch.txt' was not found. Exiting...\n");
             exit(EXIT_FAILURE);
         }
         if (find_assignment_operator(fpins)) fscanf(fpins, " \"%[^\"]\"", filename1);
         if (find_assignment_operator(fpins)) fscanf(fpins, " \"%[^\"]\"", filename2);
-        if (find_assignment_operator(fpins)) fscanf(fpins, "%d" , &ord);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%d",  &ord);
         if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &M1);
         if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &M2);
         if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &t0);
@@ -78,19 +80,23 @@ struct inputs
         if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &w2x);
         if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &w2y);
         if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &w2z);
-        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &asp);
-        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &esp);
-        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &isp);
-        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &Omsp);
-        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &wsp);
-        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &Msp);
         if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &rhosp);
         if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &Asp);
         if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &msp);
         if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &dist_sun);
         if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &lon_sun);
         if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &lat_sun);
-        if (find_assignment_operator(fpins)) fscanf(fpins, "%d" , &shadow);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%d", &shadow);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &a_sp_min);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &a_sp_max);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &e_sp_min);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &e_sp_max);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%d", &Na);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%d", &Ne);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &i_sp);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &Om_sp);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &w_sp);
+        if (find_assignment_operator(fpins)) fscanf(fpins, "%lf", &M_sp);
         fclose(fpins);
     }
 };
@@ -209,7 +215,7 @@ int main()
 
     ins.read();
     pars.m = ins.M1*ins.M2/(ins.M1 + ins.M2);
-    
+
     printf("Loading polyhedra... ");
     polyhedron poly1;
     poly1.load_obj_file(ins.filename1);
@@ -248,17 +254,13 @@ int main()
     double tmax = ins.tmax; //[sec]
     double dt_guess = 1.0;  //[sec]
 
-    dvec6 cart = kep2cart({ins.a, ins.e, ins.i*PI/180.0, ins.Om*PI/180, ins.w*PI/180, ins.M*PI/180}, G*(ins.M1+ins.M2));
-    dvec3 r   = {cart[0],   cart[1],  cart[2]};        //[km]
-    dvec3 v   = {cart[3],   cart[4],  cart[5]};        //[km/sec]
-    dvec4 q1  = {ins.q10, ins.q11, ins.q12, ins.q13};  //[ ]
-    dvec3 w1i = {ins.w1x, ins.w1y, ins.w1z};           //[rad/sec]
-    dvec4 q2  = {ins.q20, ins.q21, ins.q22, ins.q23};  //[ ]
-    dvec3 w2i = {ins.w2x, ins.w2y, ins.w2z};           //[rad/sec]
-
-    dvec6 cart_sp = kep2cart({ins.asp, ins.esp, ins.isp*PI/180.0, ins.Omsp*PI/180, ins.wsp*PI/180, ins.Msp*PI/180}, G*(ins.M1+ins.M2));
-    dvec3 rsp = {cart_sp[0], cart_sp[1], cart_sp[2]}; //[km]
-    dvec3 vsp = {cart_sp[3], cart_sp[4], cart_sp[5]}; //[km/sec]
+    dvec6 cart_bin = kep2cart({ins.a, ins.e, ins.i*PI/180.0, ins.Om*PI/180, ins.w*PI/180, ins.M*PI/180}, G*(ins.M1+ins.M2));
+    dvec3 r   = {cart_bin[0], cart_bin[1], cart_bin[2]}; //[km]
+    dvec3 v   = {cart_bin[3], cart_bin[4], cart_bin[5]}; //[km/sec]
+    dvec4 q1  = {ins.q10, ins.q11, ins.q12, ins.q13};    //[ ]
+    dvec3 w1i = {ins.w1x, ins.w1y, ins.w1z};             //[rad/sec]
+    dvec4 q2  = {ins.q20, ins.q21, ins.q22, ins.q23};    //[ ]
+    dvec3 w2i = {ins.w2x, ins.w2y, ins.w2z};             //[rad/sec]
 
     q1 = quat2unit(q1);
     q2 = quat2unit(q2);
@@ -266,146 +268,171 @@ int main()
     dvec3 w1b = iner2body(w1i, quat2mat(q1));
     dvec3 w2b = iner2body(w2i, quat2mat(q2));
 
-    bool collision = false;
+    //Template state with only the binary filled in :
+    boost::array<double, 26> state0 = {   r[0],    r[1],    r[2],
+                                          v[0],    v[1],    v[2],
+                                         q1[0],   q1[1],   q1[2], q1[3],
+                                        w1b[0],  w1b[1],  w1b[2],
+                                         q2[0],   q2[1],   q2[2], q2[3],
+                                        w2b[0],  w2b[1],  w2b[2],
+                                          0.0,     0.0,     0.0,   
+                                          0.0,     0.0,     0.0  };
 
-    boost::array<double, 26> state = {   r[0],    r[1],    r[2],
-                                         v[0],    v[1],    v[2],
-                                        q1[0],   q1[1],   q1[2], q1[3],
-                                       w1b[0],  w1b[1],  w1b[2],
-                                        q2[0],   q2[1],   q2[2], q2[3],
-                                       w2b[0],  w2b[1],  w2b[2],
-                                       rsp[0],  rsp[1],  rsp[2],
-                                       vsp[0],  vsp[1],  vsp[2] };
     auto method = boost::numeric::odeint::make_controlled(ins.atol, ins.rtol, boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, 26>>());
-    
-    dmat orbit; //Output matrix, containing the state in time.
 
-    t = t0;
-    while (t <= tmax)
+    //Output files :
+    FILE *fp_map  = fopen("stability_map.txt","w");
+    FILE *fp_info = fopen("batch_info.txt","w");
+    if (!fp_map || !fp_info)
     {
-        double progress = 100.0*(t-t0)/(tmax-t0);
-        printf("\rProgress: %.1f%%", progress);
-        fflush(stdout);
-    
-        //Append the current state in the solution matrix.
-        orbit.push_back({t, state[0],  state[1],  state[2],
-                            state[3],  state[4],  state[5],
-                            state[6],  state[7],  state[8],  state[9],
-                            state[10], state[11], state[12],
-                            state[13], state[14], state[15], state[16],
-                            state[17], state[18], state[19],
-                            state[20], state[21], state[22],
-                            state[23], state[24], state[25]});
-
-        //Check for sphere-sphere collision regarding asteroids or sphere-point collision regarding asteroid-spacecraft (point mass).
-        dvec3 r   = dvec3{state[0],state[1],state[2]};
-        dvec3 rsp = dvec3{state[20],state[21],state[22]};
-        if (sphere_sphere_collision(length(r), pars.brillouin1, pars.brillouin2) ||
-            length(rsp + ins.M2*r/(ins.M1+ins.M2)) <= pars.brillouin1 ||
-            length(rsp - ins.M1*r/(ins.M1+ins.M2)) <= pars.brillouin2 )
-        {
-            collision = true;
-            break;
-        }
-        //Update state.
-        method.try_step(odes, state, t, dt_guess);
+        fprintf(stderr, "Error : could not open output files.\n");
+        exit(EXIT_FAILURE);
     }
-    
-    //Write 'orbit' data into files.
-    FILE *fp_t      = fopen("io/time.txt","w");
-    FILE *fp_pos    = fopen("io/rel_pos.txt","w");
-    FILE *fp_vel    = fopen("io/rel_vel.txt","w");
-    FILE *fp_rpy1   = fopen("io/euler_rpy1.txt","w");
-    FILE *fp_w1i    = fopen("io/ang_vel_w1i.txt","w");
-    FILE *fp_rpy2   = fopen("io/euler_rpy2.txt","w");
-    FILE *fp_w2i    = fopen("io/ang_vel_w2i.txt","w");
-    FILE *fp_EL_err = fopen("io/ener_mom_rel_error.txt","w");
-    FILE *fp_pos_spacecraft  = fopen("io/pos_spacecraft.txt","w");
-    FILE *fp_vel_spacecraft  = fopen("io/vel_spacecraft.txt","w");
-    double energy_at_t0, energy_rel_err;
-    double momentum_at_t0, momentum_rel_err;
-    for (size_t i = 0; i < orbit.size(); ++i)
+
+    int Nmax_global = 0;
+
+    //Precompute constant elements for spacecraft :
+    const double i_sp_rad  = ins.i_sp*PI/180.0;
+    const double Om_sp_rad = ins.Om_sp*PI/180.0;
+    const double w_sp_rad  = ins.w_sp*PI/180.0;
+    const double M_sp_rad  = ins.M_sp*PI/180.0;
+
+    //For progress display.
+    const int total_points = ins.Na*ins.Ne;
+    int point_counter = 0;
+
+    //Grid over (a_sp, e_sp) :
+    for (int ia = 0; ia < ins.Na; ++ia)
     {
-        dvec3 r =   {orbit[i][1], orbit[i][2], orbit[i][3]};
-        dvec3 v =   {orbit[i][4], orbit[i][5], orbit[i][6]};
-        dvec4 q1 =  {orbit[i][7], orbit[i][8], orbit[i][9], orbit[i][10]};
-        dvec3 w1b = {orbit[i][11], orbit[i][12], orbit[i][13]};
-        dvec4 q2 =  {orbit[i][14], orbit[i][15], orbit[i][16], orbit[i][17]};
-        dvec3 w2b = {orbit[i][18], orbit[i][19], orbit[i][20]};
-        dmat3 A1 = quat2mat(q1);
-        dmat3 A2 = quat2mat(q2);
-        dvec3 w1i = body2iner(w1b,A1);
-        dvec3 w2i = body2iner(w2b,A2);
-        dvec3 rpy1 = quat2ang(q1)*180.0/PI;
-        dvec3 rpy2 = quat2ang(q2)*180.0/PI;
-        dvec3 rs = {orbit[i][21], orbit[i][22], orbit[i][23]};
-        dvec3 vs = {orbit[i][24], orbit[i][25], orbit[i][26]};
-        double energy = 0.5*pars.m*dot(v,v) + 0.5*dot( dot(w1b,pars.I1), w1b) + 0.5*dot( dot(w2b,pars.I2), w2b); //Kinetic energy part of the binary.
-
-        //And now we add the corresponding potential.
-        if (ins.ord == 2)
-            energy += mut_pot_integrals_ord2(r, ins.M1,pars.J1,A1, ins.M2,pars.J2,A2);
-        else if (ins.ord == 3)
-            energy += mut_pot_integrals_ord3(r, ins.M1,pars.J1,A1, ins.M2,pars.J2,A2);
-        else
-            energy += mut_pot_integrals_ord4(r, ins.M1,pars.J1,A1, ins.M2,pars.J2,A2);
-        
-        double momentum = length(pars.m*cross(r,v) + dot(A1, dot(pars.I1,w1b)) + dot(A2, dot(pars.I2,w2b)));
-
-        if (i == 0)
+        double a_sp = (ins.Na > 1) ? ins.a_sp_min + (ins.a_sp_max - ins.a_sp_min)*ia/(ins.Na - 1) : ins.a_sp_min;
+        for (int je = 0; je < ins.Ne; ++je)
         {
-            energy_at_t0 = energy;
-            momentum_at_t0 = momentum;
-            energy_rel_err = 0.0;
-            momentum_rel_err = 0.0;
+            double e_sp = (ins.Ne > 1) ? ins.e_sp_min + (ins.e_sp_max - ins.e_sp_min)*je/(ins.Ne - 1) : ins.e_sp_min;
+
+            ++point_counter;
+            double grid_progress = 100.0*point_counter/double(total_points);
+            printf("\rGrid progress: %.1f%%", grid_progress);
+            fflush(stdout);
+
+            //Spacecraft's initial Keplerian elements (COM frame) :
+            dvec6 kep_sp = {a_sp, e_sp, i_sp_rad, Om_sp_rad, w_sp_rad, M_sp_rad};
+
+            dvec6 cart_sp = kep2cart(kep_sp, G*(ins.M1 + ins.M2));
+            dvec3 rsp0 = {cart_sp[0], cart_sp[1], cart_sp[2]};
+            dvec3 vsp0 = {cart_sp[3], cart_sp[4], cart_sp[5]};
+
+            //Initialize state and time.
+            boost::array<double, 26> state = state0;
+            state[20] = rsp0[0];
+            state[21] = rsp0[1];
+            state[22] = rsp0[2];
+            state[23] = vsp0[0];
+            state[24] = vsp0[1];
+            state[25] = vsp0[2];
+
+            double t = t0;
+
+            bool collision_bin = false, collision1 = false, collision2 = false;
+
+            //For plane intersections :
+            bool first_intersection = false;
+            double x0 = 0.0, z0 = 0.0;
+            double max_dist_xz = 0.0;
+            int N_intersections = 0;
+
+            boost::array<double, 26> prev_state = state;
+            double t_prev = t;
+            while (t < tmax)
+            {
+                method.try_step(odes, state, t, dt_guess);
+
+                //Collision check (sphere–sphere + point–sphere)
+                dvec3 r_rel   = { state[0],  state[1],  state[2] };
+                dvec3 rsp_now = { state[20], state[21], state[22] };
+
+                if (sphere_sphere_collision(length(r_rel), pars.brillouin1, pars.brillouin2)) //Asteroid - asteroid
+                {
+                    collision_bin = true;
+                    break;
+                }
+                else if (length(rsp_now + ins.M2*r_rel/(ins.M1 + ins.M2)) <= pars.brillouin1) //Asteroid 1 - spacecraft
+                {
+                    collision1 = true;
+                    break;
+                }
+                else if (length(rsp_now - ins.M1*r_rel/(ins.M1 + ins.M2)) <= pars.brillouin2) //Asteroid 2 - spacecraft
+                {
+                    collision2 = true;
+                    break;
+                }
+
+                //Plane y = 0 intersections (xz plane), with direction vy > 0.
+                double y_old = prev_state[21];
+                double y_new = state[21];
+                double vy_old = prev_state[24];
+
+                if ( (y_old < 0.0 && y_new >= 0.0) || (y_old > 0.0 && y_new <= 0.0) )
+                {
+                    if (vy_old > 0.0 && fabs(y_new - y_old) > 1e-12)
+                    {
+                        //Linear interpolation between prev_state and state :
+                        double lambda = -y_old/(y_new - y_old); //in [0,1]
+
+                        double x_old = prev_state[20];
+                        double z_old = prev_state[22];
+                        double x_new = state[20];
+                        double z_new = state[22];
+
+                        double x_cross = x_old + lambda*(x_new - x_old);
+                        double z_cross = z_old + lambda*(z_new - z_old);
+
+                        if (!first_intersection)
+                        {
+                            first_intersection = true;
+                            x0 = x_cross;
+                            z0 = z_cross;
+                            max_dist_xz = 0.0;
+                        }
+                        else
+                        {
+                            double dx = x_cross - x0;
+                            double dz = z_cross - z0;
+                            double dist = sqrt(dx*dx + dz*dz);
+                            if (dist > max_dist_xz)
+                                max_dist_xz = dist;
+                        }
+                        ++N_intersections;
+                    }
+                }
+                prev_state = state;
+                t_prev = t;
+            }
+
+            //Record global maximum number of intersections among non-colliding cases
+            if (!collision_bin && !collision1 && !collision2 && first_intersection)
+            {
+                if (N_intersections > Nmax_global)
+                    Nmax_global = N_intersections;
+            }
+
+            //Output for this (a_sp, e_sp) :
+            double value;
+            if (collision_bin)
+                value = -1.0;
+            else if (collision1)
+                value = -2.0;
+            else if (collision2)
+                value = -3.0;
+            else if (!first_intersection)
+                value = 0.0; //No intersection detected.
+            else
+                value = max_dist_xz;
+
+            fprintf(fp_map, "%.15g %.15g %.15g\n", a_sp, e_sp, value);
         }
-        else
-        {
-            //Energy :
-            if (fabs(energy_at_t0) > 1e-16)
-                energy_rel_err = fabs((energy - energy_at_t0)/energy_at_t0);
-            else //Fallback to absolute error to avoid division by zero.
-                energy_rel_err = fabs(energy - energy_at_t0);
-        
-            //Momentum :
-            if (fabs(momentum_at_t0) > 1e-16)
-                momentum_rel_err = fabs((momentum - momentum_at_t0)/momentum_at_t0);
-            else //The same...
-                momentum_rel_err = fabs(momentum - momentum_at_t0);
-        }
-
-        fprintf(fp_t,"%.16lf\n", orbit[i][0]/86400.0); //Export t in [days]
-        fprintf(fp_pos,"%.16lf %.16lf %.16lf %.16lf\n",r[0],r[1],r[2], length(r));
-        fprintf(fp_vel,"%.16lf %.16lf %.16lf %.16lf\n",v[0],v[1],v[2], length(v));
-
-        fprintf(fp_rpy1,"%.16lf %.16lf %.16lf\n",rpy1[0],rpy1[1],rpy1[2]);
-        fprintf(fp_w1i,"%.16lf %.16lf %.16lf\n",w1i[0],w1i[1],w1i[2]);
-        fprintf(fp_rpy2,"%.16lf %.16lf %.16lf\n",rpy2[0],rpy2[1],rpy2[2]);
-        fprintf(fp_w2i,"%.16lf %.16lf %.16lf\n",w2i[0],w2i[1],w2i[2]); 
-        fprintf(fp_EL_err,"%.16lf %.16lf\n", energy_rel_err, momentum_rel_err);
-
-        fprintf(fp_pos_spacecraft,"%.16lf %.16lf %.16lf %.16lf\n",rs[0],rs[1],rs[2], length(rs));
-        fprintf(fp_vel_spacecraft,"%.16lf %.16lf %.16lf %.16lf\n",vs[0],vs[1],vs[2], length(vs));
     }
-    fclose(fp_t);
-    fclose(fp_pos);
-    fclose(fp_vel);
-
-    fclose(fp_rpy1);
-    fclose(fp_w1i);
-    fclose(fp_rpy2);
-    fclose(fp_w2i);
-    fclose(fp_EL_err);
-    fclose(fp_pos_spacecraft);
-    fclose(fp_vel_spacecraft);
-
-    FILE *fp_collision = fopen("io/collision.txt","w");
-    fprintf(fp_collision, "Collision detected : %s", collision ? "Yes" : "No");
-    fclose(fp_collision);
-
-    printf("\rProgress: 100%%  ");
-    fflush(stdout);
-    printf("\nDone.\n");
-
+    fprintf(fp_info, "%d %d %.15g\n", Nmax_global, ins.ord, tmax - t0);
+    fclose(fp_map);
+    fclose(fp_info);
     return 0;
 }
