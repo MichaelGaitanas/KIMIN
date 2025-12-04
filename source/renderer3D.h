@@ -137,8 +137,8 @@ public:
 
         sol.integr.properties.poly1.set_as_gl_mesh();
         sol.integr.properties.poly2.set_as_gl_mesh();
-        orb1.set_as_gl_mesh(sol.x, sol.y, sol.z, (float)sol.integr.com1_coeff);
-        orb2.set_as_gl_mesh(sol.x, sol.y, sol.z, (float)sol.integr.com2_coeff);
+        orb1.set_as_gl_mesh(sol.x, sol.y, sol.z, (float)sol.integr.m1);
+        orb2.set_as_gl_mesh(sol.x, sol.y, sol.z, (float)sol.integr.m2);
         if (sol.integr.properties.spacecraft_checkbox)
             orb_sp.set_as_gl_mesh(sol.xsp, sol.ysp, sol.zsp);
         
@@ -201,8 +201,8 @@ public:
                                                               glm::vec3((float)sol.integr.properties.vcom[0],
                                                                         (float)sol.integr.properties.vcom[1],
                                                                         (float)sol.integr.properties.vcom[2]));
-        const glm::vec3 r1_world = rcom + (float)sol.integr.com1_coeff*glm::vec3(sol.x[iframe],sol.y[iframe],sol.z[iframe]);
-        const glm::vec3 r2_world = rcom + (float)sol.integr.com2_coeff*glm::vec3(sol.x[iframe],sol.y[iframe],sol.z[iframe]);
+        const glm::vec3 r1_world = rcom + (float)sol.integr.m1*glm::vec3(sol.x[iframe],sol.y[iframe],sol.z[iframe]);
+        const glm::vec3 r2_world = rcom + (float)sol.integr.m2*glm::vec3(sol.x[iframe],sol.y[iframe],sol.z[iframe]);
 
         const float aspect = win_width/(float)win_height;
         if (cam.frame_of_ref == camera::WORLD)

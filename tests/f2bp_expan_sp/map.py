@@ -5,9 +5,9 @@ from matplotlib.colors import LogNorm
 from matplotlib.colors import ListedColormap, Normalize
 from matplotlib.patches import Patch
 
-MAP_POS_FILE  = "io/stability_map_pos.txt"   # run with e>=0, M_sp, w_sp for e>0 branch
-MAP_NEG_FILE  = "io/stability_map_neg.txt"   # run with e>=0, M_sp, w_sp for e<0 branch
-INFO_POS_FILE = "io/batch_info_pos.txt"      # from the "pos" run
+MAP_POS_FILE  = "io/stability_map_pos_ord2.txt"   # run with e>=0, M_sp, w_sp for e>0 branch
+MAP_NEG_FILE  = "io/stability_map_neg_ord2.txt"   # run with e>=0, M_sp, w_sp for e<0 branch
+INFO_POS_FILE = "io/batch_info_pos_ord2.txt"      # from the "pos" run
 
 
 def load_map(fname):
@@ -94,7 +94,7 @@ def main():
 
     extent = (e_signed.min(), e_signed.max(), a_vals.min(), a_vals.max())
 
-    cmap = plt.get_cmap("viridis").copy()
+    cmap = plt.get_cmap("twilight").copy()
     cmap.set_bad("black")  # NaNs (collisions) → black
 
     im = ax.imshow(
@@ -138,10 +138,10 @@ def main():
     if np.any(coll_b1):
         handles.append(overlay_mask(coll_b1, "red", "Collision with B1"))
     if np.any(coll_b2):
-        handles.append(overlay_mask(coll_b2, "orange",   "Collision with B2"))
+        handles.append(overlay_mask(coll_b2, "darkgreen",   "Collision with B2"))
 
     if handles:
-        ax.legend(handles=handles, loc="upper right", fontsize=8)
+        ax.legend(handles=handles, loc="upper right", fontsize=10)
 
     plt.tight_layout()
     plt.savefig('map_ord'+str(ordV)+'.png', dpi=200)

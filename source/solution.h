@@ -28,14 +28,15 @@ public:
     dvec w2bx, w2by, w2bz;
     dvec xsp, ysp, zsp;
 
-    //The following members were NOT directly evaluated by the integrator. Instead, we use what the integrator evaluated to evaluate the following.
-    dvec dist, vel; //Both are scalars. They are the corresponding magnitudes of (x,y,z) and (vx,vy,vz).
+    //The following members were NOT directly evaluated by the integrator. Instead, we use what the integrator evaluated to evaluate them implicitly.
+    dvec dist, vel; //Binary's mutual distance and mutual velocity magnitude.
     dvec roll1, pitch1, yaw1, relyaw1; 
     dvec roll2, pitch2, yaw2, relyaw2;
     dvec w1ix, w1iy, w1iz;
     dvec w2ix, w2iy, w2iz;
     dvec sma, ecc, inc, raan, argper, manom;
     dvec denergy, dmomentum; //Relative errors, i.e. |(E[i] - E[0])/E[0]| and |(L[i] - L[0])/L[0]|
+    dvec d1sp, d2sp;
 
     solution() { } //This is needed in the scene_panel class.
 
@@ -67,6 +68,8 @@ public:
         sma.resize(N);     ecc.resize(N);       inc.resize(N);   raan.resize(N); argper.resize(N); manom.resize(N);
         denergy.resize(N); dmomentum.resize(N);
 
+        d1sp.resize(N); d2sp.resize(N);
+
         double energy0, momentum0;
         for (size_t i = 0; i < N; ++i)
         {
@@ -88,13 +91,19 @@ public:
             dvec3 rpy2 = quat2ang(q2);
 
             dvec3 rcyl = cart2cyl(r);
+            
             double temp = rpy1[2] - rcyl[1]; //phi1 = thita1z - thita
-            while (temp > PI) temp -= 2.0*PI;
-            while (temp <= -PI) temp += 2.0*PI;
+            while (temp > PI)
+                temp -= 2.0*PI;
+            while (temp <= -PI)
+                temp += 2.0*PI;
             double libr1 = temp;
+
             temp = rpy2[2] - rcyl[1];  //phi2 = thita2z - thita
-            while (temp > PI) temp -= 2.0*PI;
-            while (temp <= -PI) temp += 2.0*PI;
+            while (temp > PI)
+                temp -= 2.0*PI;
+            while (temp <= -PI)
+                temp += 2.0*PI;
             double libr2 = temp;
 
             dvec6 kep  = cart2kep(dvec6{r[0],r[1],r[2], v[0],v[1],v[2]}, G*(integr.properties.M1 + integr.properties.M2));
@@ -135,6 +144,9 @@ public:
             xsp[i] = rsp[0];
             ysp[i] = rsp[1];
             zsp[i] = rsp[2];
+
+            d1sp[i] = length(rsp - integr.m1*r);
+            d2sp[i] = length(rsp - integr.m2*r);
 
             dist[i] = rcyl[0];
             vel[i]  = length(v);
@@ -233,6 +245,8 @@ public:
         reduce(xsp,          sol2D.xsp);
         reduce(ysp,          sol2D.ysp);
         reduce(zsp,          sol2D.zsp);
+        reduce(d1sp,         sol2D.d1sp);
+        reduce(d2sp,         sol2D.d2sp);
         
         reduce(dist,         sol2D.dist);
         reduce(vel,          sol2D.vel);

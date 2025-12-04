@@ -25,7 +25,7 @@ private:
     bvec plot_rpy1, plot_rpy2; //Buttons : [roll, pitch, yaw, rel. yaw] for body 1 and [roll, pitch, yaw, rel. yaw] for body 2.
     bvec plot_w1i, plot_w1b; //Buttons : [ωx, ωy, ωz] and [ω1, ω2, ω3] for body 1.
     bvec plot_w2i, plot_w2b; //Buttons : [ωx, ωy, ωz] and [ω1, ω2, ω3] for body 2.
-    bvec plot_rsp; //Buttons : [x, y, z] of the spacecraft orbiter.
+    bvec plot_rsp; //Buttons : [x, y, z, d1, d2] of the spacecraft orbiter.
     
     bool render_scene, play_video, reset_gpu_essential, auto_replay, orb1_sync, orb2_sync, orb_sp_sync;
 
@@ -48,7 +48,7 @@ public:
                     plot_w1b({false,false,false}),
                     plot_w2i({false,false,false}),
                     plot_w2b({false,false,false}),
-                    plot_rsp({false,false,false}),
+                    plot_rsp({false,false,false, false,false}),
                     render_scene(false),
                     play_video(false),
                     reset_gpu_essential(false),
@@ -314,9 +314,11 @@ private:
                 ImGui::BeginDisabled();
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
             ImGui::Text("Position (binary's C.O.M. frame)");
-            plot_rsp[0] = onoff_button("x##plot_rsp[0]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_rsp[0]); ImGui::SameLine();
-            plot_rsp[1] = onoff_button("y##plot_rsp[1]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_rsp[1]); ImGui::SameLine();
-            plot_rsp[2] = onoff_button("z##plot_rsp[2]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_rsp[2]);
+            plot_rsp[0] = onoff_button("x##plot_rsp[0]",  ImVec2(50.0f*SCX, 20.0f*SCY), plot_rsp[0]); ImGui::SameLine();
+            plot_rsp[1] = onoff_button("y##plot_rsp[1]",  ImVec2(50.0f*SCX, 20.0f*SCY), plot_rsp[1]); ImGui::SameLine();
+            plot_rsp[2] = onoff_button("z##plot_rsp[2]",  ImVec2(50.0f*SCX, 20.0f*SCY), plot_rsp[2]);
+            plot_rsp[3] = onoff_button("d1##plot_rsp[3]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_rsp[3]); ImGui::SameLine();
+            plot_rsp[4] = onoff_button("d2##plot_rsp[4]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_rsp[4]);
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
             if (!sol || sol->t.empty() || !sol->integr.properties.spacecraft_checkbox)
                 ImGui::EndDisabled();
@@ -754,9 +756,11 @@ public:
 
                 if (sol->integr.properties.spacecraft_checkbox)
                 {
-                    if (plot_rsp[0]) plot_rsp[0] = plot("##plot_rsp[0]", "Spacecraft x (binary's C.O.M. frame)", "sp.  x [km]", plot_rsp[0], sol2D.xsp);
-                    if (plot_rsp[1]) plot_rsp[1] = plot("##plot_rsp[1]", "Spacecraft y (binary's C.O.M. frame)", "sp.  y [km]", plot_rsp[1], sol2D.ysp);
-                    if (plot_rsp[2]) plot_rsp[2] = plot("##plot_rsp[2]", "Spacecraft z (binary's C.O.M. frame)", "sp.  z [km]", plot_rsp[2], sol2D.zsp);
+                    if (plot_rsp[0]) plot_rsp[0] = plot("##plot_rsp[0]", "Spacecraft x (binary's C.O.M. frame)", "sp.  x [km]",  plot_rsp[0], sol2D.xsp);
+                    if (plot_rsp[1]) plot_rsp[1] = plot("##plot_rsp[1]", "Spacecraft y (binary's C.O.M. frame)", "sp.  y [km]",  plot_rsp[1], sol2D.ysp);
+                    if (plot_rsp[2]) plot_rsp[2] = plot("##plot_rsp[2]", "Spacecraft z (binary's C.O.M. frame)", "sp.  z [km]",  plot_rsp[2], sol2D.zsp);
+                    if (plot_rsp[3]) plot_rsp[3] = plot("##plot_rsp[3]", "Spacecraft distance from Body 1",      "sp.  d1 [km]", plot_rsp[3], sol2D.d1sp);
+                    if (plot_rsp[4]) plot_rsp[4] = plot("##plot_rsp[4]", "Spacecraft distance from Body 2",      "sp.  d2 [km]", plot_rsp[4], sol2D.d2sp);
                 }
 
             }
