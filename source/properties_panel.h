@@ -84,6 +84,17 @@ public:
     bool impactors_clicked_ok; //Impactors 'OK' button.
 
     bool spacecraft_checkbox; //'Spacecraft orbiter' checkbox state.
+    enum
+    {
+        CARTESIAN_SP_COM,
+        CARTESIAN_SP_COM1,
+        CARTESIAN_SP_COM2,
+        KEPLERIAN_SP_COM,
+        KEPLERIAN_SP_COM1,
+        KEPLERIAN_SP_COM2
+    } pos_vel_sp_var;
+    dvec6 cart; //'x', 'y', 'z', 'υx', 'υy', 'υz' double fields of the relative position/velocity.
+    dvec6 kep; //'a', 'e', 'i', 'Ω', 'ω', 'M' double fields of the relative position/velocity.
     dvec3 rsp, vsp; //Spacecraft's 'x', 'y', 'z' and 'υx', 'υy', 'υz' double fields.
     bool srp_checkbox; //'Account for SRP' checkbox state.
     double sp_refl, sp_area, sp_mass; //Spacecraft's 'ρ', 'A', 'm' double fields.

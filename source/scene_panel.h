@@ -225,10 +225,10 @@ private:
         {
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
             ImGui::Text("Position");
-            plot_cart[0] = onoff_button("x##plot_cart[0]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart[0]); ImGui::SameLine();
-            plot_cart[1] = onoff_button("y##plot_cart[1]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart[1]); ImGui::SameLine();
-            plot_cart[2] = onoff_button("z##plot_cart[2]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart[2]); ImGui::SameLine();
-            plot_cart[3] = onoff_button("r##plot_cart[3]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart[3]);
+            plot_cart[0] = onoff_button("x##plot_cart[0]",    ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart[0]); ImGui::SameLine();
+            plot_cart[1] = onoff_button("y##plot_cart[1]",    ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart[1]); ImGui::SameLine();
+            plot_cart[2] = onoff_button("z##plot_cart[2]",    ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart[2]); ImGui::SameLine();
+            plot_cart[3] = onoff_button("dist##plot_cart[3]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart[3]);
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
 
             ImGui::Text("Velocity");
@@ -314,11 +314,11 @@ private:
                 ImGui::BeginDisabled();
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
             ImGui::Text("Position (binary's C.O.M. frame)");
-            plot_rsp[0] = onoff_button("x##plot_rsp[0]",  ImVec2(50.0f*SCX, 20.0f*SCY), plot_rsp[0]); ImGui::SameLine();
-            plot_rsp[1] = onoff_button("y##plot_rsp[1]",  ImVec2(50.0f*SCX, 20.0f*SCY), plot_rsp[1]); ImGui::SameLine();
-            plot_rsp[2] = onoff_button("z##plot_rsp[2]",  ImVec2(50.0f*SCX, 20.0f*SCY), plot_rsp[2]);
-            plot_rsp[3] = onoff_button("d1##plot_rsp[3]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_rsp[3]); ImGui::SameLine();
-            plot_rsp[4] = onoff_button("d2##plot_rsp[4]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_rsp[4]);
+            plot_rsp[0] = onoff_button("x##plot_rsp[0]",      ImVec2(50.0f*SCX, 20.0f*SCY), plot_rsp[0]); ImGui::SameLine();
+            plot_rsp[1] = onoff_button("y##plot_rsp[1]",      ImVec2(50.0f*SCX, 20.0f*SCY), plot_rsp[1]); ImGui::SameLine();
+            plot_rsp[2] = onoff_button("z##plot_rsp[2]",      ImVec2(50.0f*SCX, 20.0f*SCY), plot_rsp[2]);
+            plot_rsp[3] = onoff_button("dist 1##plot_rsp[3]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_rsp[3]); ImGui::SameLine();
+            plot_rsp[4] = onoff_button("dist 2##plot_rsp[4]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_rsp[4]);
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
             if (!sol || sol->t.empty() || !sol->integr.properties.spacecraft_checkbox)
                 ImGui::EndDisabled();
@@ -708,10 +708,10 @@ public:
             {
                 render_plot_buttons();
 
-                if (plot_cart[0]) plot_cart[0] = plot("##plot_cart[0]", "Mutual x",        "x [km]",        plot_cart[0], sol2D.x);
-                if (plot_cart[1]) plot_cart[1] = plot("##plot_cart[1]", "Mutual y",        "y [km]",        plot_cart[1], sol2D.y);
-                if (plot_cart[2]) plot_cart[2] = plot("##plot_cart[2]", "Mutual z",        "z [km]",        plot_cart[2], sol2D.z);
-                if (plot_cart[3]) plot_cart[3] = plot("##plot_cart[3]", "Mutual distance", "distance [km]", plot_cart[3], sol2D.dist);
+                if (plot_cart[0]) plot_cart[0] = plot("##plot_cart[0]", "Mutual x",        "x [km]", plot_cart[0], sol2D.x);
+                if (plot_cart[1]) plot_cart[1] = plot("##plot_cart[1]", "Mutual y",        "y [km]", plot_cart[1], sol2D.y);
+                if (plot_cart[2]) plot_cart[2] = plot("##plot_cart[2]", "Mutual z",        "z [km]", plot_cart[2], sol2D.z);
+                if (plot_cart[3]) plot_cart[3] = plot("##plot_cart[3]", "Mutual distance", "d [km]", plot_cart[3], sol2D.dist);
 
                 if (plot_cart[4]) plot_cart[4] = plot("##plot_cart[4]", "Mutual υx",            "υx [km/sec]",  plot_cart[4], sol2D.vx);
                 if (plot_cart[5]) plot_cart[5] = plot("##plot_cart[5]", "Mutual υy",            "υy [km/sec]",  plot_cart[5], sol2D.vy);
@@ -756,11 +756,11 @@ public:
 
                 if (sol->integr.properties.spacecraft_checkbox)
                 {
-                    if (plot_rsp[0]) plot_rsp[0] = plot("##plot_rsp[0]", "Spacecraft x (binary's C.O.M. frame)", "sp.  x [km]",  plot_rsp[0], sol2D.xsp);
-                    if (plot_rsp[1]) plot_rsp[1] = plot("##plot_rsp[1]", "Spacecraft y (binary's C.O.M. frame)", "sp.  y [km]",  plot_rsp[1], sol2D.ysp);
-                    if (plot_rsp[2]) plot_rsp[2] = plot("##plot_rsp[2]", "Spacecraft z (binary's C.O.M. frame)", "sp.  z [km]",  plot_rsp[2], sol2D.zsp);
-                    if (plot_rsp[3]) plot_rsp[3] = plot("##plot_rsp[3]", "Spacecraft distance from Body 1",      "sp.  d1 [km]", plot_rsp[3], sol2D.d1sp);
-                    if (plot_rsp[4]) plot_rsp[4] = plot("##plot_rsp[4]", "Spacecraft distance from Body 2",      "sp.  d2 [km]", plot_rsp[4], sol2D.d2sp);
+                    if (plot_rsp[0]) plot_rsp[0] = plot("##plot_rsp[0]", "Spacecraft x (binary's C.O.M. frame)", "x [km]",  plot_rsp[0], sol2D.xsp);
+                    if (plot_rsp[1]) plot_rsp[1] = plot("##plot_rsp[1]", "Spacecraft y (binary's C.O.M. frame)", "y [km]",  plot_rsp[1], sol2D.ysp);
+                    if (plot_rsp[2]) plot_rsp[2] = plot("##plot_rsp[2]", "Spacecraft z (binary's C.O.M. frame)", "z [km]",  plot_rsp[2], sol2D.zsp);
+                    if (plot_rsp[3]) plot_rsp[3] = plot("##plot_rsp[3]", "Spacecraft distance from Body 1",      "d1 [km]", plot_rsp[3], sol2D.d1sp);
+                    if (plot_rsp[4]) plot_rsp[4] = plot("##plot_rsp[4]", "Spacecraft distance from Body 2",      "d2 [km]", plot_rsp[4], sol2D.d2sp);
                 }
 
             }
