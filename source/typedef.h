@@ -12,6 +12,7 @@ typedef std::vector<bool> bvec; //Vector of n booleans.
 typedef std::complex<double> dcomplex; //Complex double (double + i*double).
 typedef std::vector<dcomplex> dcomplexvec; //Vector of n complex doubles.
 
+typedef std::array<double, 2> dvec2; //Vector of 2 doubles.
 typedef std::array<double, 3> dvec3; //Vector of 3 doubles.
 typedef std::array<double, 4> dvec4; //Vector of 4 doubles.
 typedef std::array<double, 6> dvec6; //Vector of 6 doubles.

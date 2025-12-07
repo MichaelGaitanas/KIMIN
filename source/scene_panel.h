@@ -13,6 +13,7 @@
 #include"constants.h"
 #include"typedef.h"
 #include"solution.h"
+#include"solution2D.h"
 #include"renderer3D.h"
 #include"icons.h"
 
@@ -37,7 +38,7 @@ private:
     float frame_accumulator; //Accumulates fractional frames between updates.
 
     solution *sol; //This contains all the orbital data and is used to render the 3D scene (pointer to avoid huge copy).
-    solution sol2D; //This is the downsampled version of the sol, used only for the 2D plots.
+    solution2D sol2D; //This is the downsampled version of the sol, used only for the 2D plots.
 
     renderer3D rend3D;
 
@@ -80,7 +81,9 @@ public:
     void setup(solution &s)
     {
         sol = &s; //Obtain a copy of the adress, not a full deep copy!
-        sol2D = sol->get_reduced_solution(); //Then create a downsampled solution for the 2D plots.
+        sol2D.construct(*sol); //Then create a downsampled solution for the 2D plots.
+        sol->integr.orbit.clear();
+        sol->integr.orbit.shrink_to_fit();
 
         float mutual_max_dist = *std::max_element(sol->dist.begin(), sol->dist.end());
         rend3D.cam.reset(sol->integr.brillouin1 + sol->integr.brillouin2, mutual_max_dist);
@@ -171,12 +174,12 @@ private:
             ImPlot::PlotScatter("Current frame", &sol2D.t[jframe], &data[jframe], 1);
 
             //Collision frame marker logic :
-            if (sol2D.integr.collision) //Asteroid-asteroid collision.
+            if (sol->integr.collision) //Asteroid-asteroid collision.
             {
                 ImPlot::SetNextMarkerStyle(ImPlotMarker_Down, 6.0f*SCX, ImColor(255,0,0,255), 1.0f, ImColor(255,0,0,255));
                 ImPlot::PlotScatter("Collision frame", &sol2D.t.back(), &data.back(), 1);
             }
-            else if (sol2D.integr.collision_sp) //Asteroid-spacecraft collision.
+            else if (sol->integr.collision_sp) //Asteroid-spacecraft collision.
             {
                 ImPlot::SetNextMarkerStyle(ImPlotMarker_Down, 6.0f*SCX, ImColor(255,100,0,255), 1.0f, ImColor(255,100,0,255));
                 ImPlot::PlotScatter("Collision frame", &sol2D.t.back(), &data.back(), 1);

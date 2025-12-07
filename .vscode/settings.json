@@ -104,5 +104,6 @@
         "csetjmp": "cpp",
         "cfloat": "cpp",
         "climits": "cpp"
-    }
+    },
+    "C_Cpp.dimInactiveRegions": false
 }
