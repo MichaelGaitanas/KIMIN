@@ -17,7 +17,7 @@ Numerical integration :
     Step := 0.004
 
 Initial state :
-    Relative position and velocity := "Keplerian"
+    Mutual position and velocity := "Keplerian"
     a  := 100
     e  := 0
     i  := 80
@@ -41,7 +41,7 @@ Initial state :
     w2iy := 0
     w2iz := 0
 
-    C.O.M. motion relative to world :
+    COM motion relative to world :
     x  := 0.0
     y  := 0.0
     z  := 0.0

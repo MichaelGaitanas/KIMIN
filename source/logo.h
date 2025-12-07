@@ -85,7 +85,7 @@ bool render_logo(const char *img_path, const float seconds)
     }
 
     //GPU memory setup regarding image texture.
-    unsigned int tex;
+    unsigned tex;
     glGenTextures(1, &tex);
     glBindTexture(GL_TEXTURE_2D, tex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -119,7 +119,7 @@ bool render_logo(const char *img_path, const float seconds)
                                      quad_width,  quad_height, 0.0f,  1.0f, 1.0f };
 
     //Gpu memory setup regarding position vertices and UVs.
-    unsigned int vao, vbo;
+    unsigned vao, vbo;
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
     glGenBuffers(1, &vbo);

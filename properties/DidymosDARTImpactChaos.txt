@@ -17,7 +17,7 @@ Numerical integration :
     Step := 0.001
 
 Initial state :
-    Relative position and velocity := "Cartesian"
+    Mutual position and velocity := "Cartesian"
     x  := 1.18
     y  := 0
     z  := 0
@@ -41,7 +41,7 @@ Initial state :
     w2iy := 0
     w2iz := 0.000146402
 
-    C.O.M. motion relative to world :
+    COM motion relative to world :
     x  := 0.0
     y  := 0.0
     z  := 0.0

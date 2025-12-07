@@ -253,13 +253,13 @@ public:
         double zmin = rmin[2];
 
         //Now traverse the grid and decide whether a point is inside the polyhedron or not.
-        for (unsigned int i = 0; i < grid_reso[0]; ++i)
+        for (unsigned i = 0; i < grid_reso[0]; ++i)
         {
             double x = xmin + i*(xmax - xmin)/((double)grid_reso[0] - 1.0);
-            for (unsigned int j = 0; j < grid_reso[1]; ++j)
+            for (unsigned j = 0; j < grid_reso[1]; ++j)
             {
                 double y = ymin + j*(ymax - ymin)/((double)grid_reso[1] - 1.0);
-                for (unsigned int k = 0; k < grid_reso[2]; ++k)
+                for (unsigned k = 0; k < grid_reso[2]; ++k)
                 {
                     double z = zmin + k*(zmax - zmin)/((double)grid_reso[2] - 1.0);
                     dvec3 r = dvec3{x,y,z}; //Current point of the grid.
@@ -281,13 +281,13 @@ public:
         double a = 1.1*semiaxes[0];
         double b = 1.1*semiaxes[1];
         double c = 1.1*semiaxes[2];
-        for (unsigned int i = 0; i < grid_reso[0]; ++i)
+        for (unsigned i = 0; i < grid_reso[0]; ++i)
         {
             double x = -a + 2.0*i*a/((double)grid_reso[0] - 1.0);
-            for (unsigned int j = 0; j < grid_reso[1]; ++j)
+            for (unsigned j = 0; j < grid_reso[1]; ++j)
             {
                 double y = -b + 2.0*j*b/((double)grid_reso[1] - 1.0);
-                for (unsigned int k = 0; k < grid_reso[2]; ++k)
+                for (unsigned k = 0; k < grid_reso[2]; ++k)
                 {
                     double z = -c + 2.0*k*c/((double)grid_reso[2] - 1.0);
                     if ( x*x/(a*a) + y*y/(b*b) + z*z/(c*c) < 1.0 )

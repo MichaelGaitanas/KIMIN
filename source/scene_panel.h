@@ -19,13 +19,16 @@
 class scene_panel
 {
 private:
-    bvec plot_cart; //Buttons : [x, y, z, r] and [υx, υy, υz, υ].
+    bvec plot_cart; //Buttons : [x, y, z, dist] and [υx, υy, υz, υel].
     bvec plot_kep; //Buttons : [a, e, i, Ω, ω, M].
     bvec plot_dener_dmom; //Buttons : [energy, momentum].
     bvec plot_rpy1, plot_rpy2; //Buttons : [roll, pitch, yaw, rel. yaw] for body 1 and [roll, pitch, yaw, rel. yaw] for body 2.
     bvec plot_w1i, plot_w1b; //Buttons : [ωx, ωy, ωz] and [ω1, ω2, ω3] for body 1.
     bvec plot_w2i, plot_w2b; //Buttons : [ωx, ωy, ωz] and [ω1, ω2, ω3] for body 2.
-    bvec plot_rsp; //Buttons : [x, y, z, d1, d2] of the spacecraft orbiter.
+    //Spacecraft's buttons at each frame : [x, y, z, dist] and [υx, υy, υz, υel] or [a, e, i, Ω, ω, M].
+    bvec plot_cart_sp,  plot_kep_sp;
+    bvec plot_cart_sp1, plot_kep_sp1;
+    bvec plot_cart_sp2, plot_kep_sp2;
     
     bool render_scene, play_video, reset_gpu_essential, auto_replay, orb1_sync, orb2_sync, orb_sp_sync;
 
@@ -48,7 +51,12 @@ public:
                     plot_w1b({false,false,false}),
                     plot_w2i({false,false,false}),
                     plot_w2b({false,false,false}),
-                    plot_rsp({false,false,false, false,false}),
+                    plot_cart_sp({false,false,false,false, false,false,false,false}),
+                    plot_kep_sp({false,false,false,false,false,false}),
+                    plot_cart_sp1({false,false,false,false, false,false,false,false}),
+                    plot_kep_sp1({false,false,false,false,false,false}),
+                    plot_cart_sp2({false,false,false,false, false,false,false,false}),
+                    plot_kep_sp2({false,false,false,false,false,false}),
                     render_scene(false),
                     play_video(false),
                     reset_gpu_essential(false),
@@ -84,10 +92,15 @@ public:
 
         uint64_t init_orb_count = (frames > 0 ? 1 : 0);
         rend3D.orb1.draw_count = rend3D.orb2.draw_count = init_orb_count;
+        
         //At every new simulation, if the user does not assume a 3rd body spacecraft, then any previous plots regarding the 3rd body shall disappear.
         if (!sol->integr.properties.spacecraft_checkbox)
         {
-            plot_rsp = {false,false,false};
+            for (size_t i = 0; i < plot_cart_sp.size(); ++i)
+                plot_cart_sp[i] = plot_cart_sp1[i] = plot_cart_sp2[i] = false;
+            for (size_t i = 0; i < plot_kep_sp.size(); ++i)
+                plot_kep_sp[i] = plot_kep_sp1[i] = plot_kep_sp2[i] = false;
+
             rend3D.orb_sp.draw_count = 0;
             orb_sp_sync = false;
             rend3D.render_orb_sp = false;
@@ -126,7 +139,7 @@ private:
     inline size_t map_frame_to_reduced_sol(const size_t iframe, const size_t original_size, const size_t reduced_size)
     {
         //Edge cases :
-        if (reduced_size == 0 || original_size <= 1 || reduced_size <= 1)
+        if (original_size <= 1 || reduced_size <= 1)
             return 0;
         
         double step = (original_size - 1.0)/(reduced_size - 1.0);
@@ -224,18 +237,15 @@ private:
         if (ImGui::TreeNodeEx("Mutual"))
         {
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
-            ImGui::Text("Position");
+            ImGui::Text("Position and velocity");
             plot_cart[0] = onoff_button("x##plot_cart[0]",    ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart[0]); ImGui::SameLine();
             plot_cart[1] = onoff_button("y##plot_cart[1]",    ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart[1]); ImGui::SameLine();
             plot_cart[2] = onoff_button("z##plot_cart[2]",    ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart[2]); ImGui::SameLine();
             plot_cart[3] = onoff_button("dist##plot_cart[3]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart[3]);
-            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
-
-            ImGui::Text("Velocity");
-            plot_cart[4] = onoff_button("υx##plot_cart[4]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart[4]); ImGui::SameLine();
-            plot_cart[5] = onoff_button("υy##plot_cart[5]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart[5]); ImGui::SameLine();
-            plot_cart[6] = onoff_button("υz##plot_cart[6]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart[6]); ImGui::SameLine();
-            plot_cart[7] = onoff_button("υ##plot_cart[7]" , ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart[7]);
+            plot_cart[4] = onoff_button("υx##plot_cart[4]",   ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart[4]); ImGui::SameLine();
+            plot_cart[5] = onoff_button("υy##plot_cart[5]",   ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart[5]); ImGui::SameLine();
+            plot_cart[6] = onoff_button("υz##plot_cart[6]",   ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart[6]); ImGui::SameLine();
+            plot_cart[7] = onoff_button("υel##plot_cart[7]" , ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart[7]);
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
 
             ImGui::Text("Keplerian elements");
@@ -308,24 +318,77 @@ private:
         }
 
         //Spacecraft's plots.
-        if (ImGui::TreeNodeEx("Spacecraft orbiter"))
+        if (ImGui::TreeNodeEx("Spacecraft"))
         {
             if (!sol || sol->t.empty() || !sol->integr.properties.spacecraft_checkbox)
                 ImGui::BeginDisabled();
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
-            ImGui::Text("Position (binary's C.O.M. frame)");
-            plot_rsp[0] = onoff_button("x##plot_rsp[0]",      ImVec2(50.0f*SCX, 20.0f*SCY), plot_rsp[0]); ImGui::SameLine();
-            plot_rsp[1] = onoff_button("y##plot_rsp[1]",      ImVec2(50.0f*SCX, 20.0f*SCY), plot_rsp[1]); ImGui::SameLine();
-            plot_rsp[2] = onoff_button("z##plot_rsp[2]",      ImVec2(50.0f*SCX, 20.0f*SCY), plot_rsp[2]);
-            plot_rsp[3] = onoff_button("dist 1##plot_rsp[3]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_rsp[3]); ImGui::SameLine();
-            plot_rsp[4] = onoff_button("dist 2##plot_rsp[4]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_rsp[4]);
+            
+            ImGui::Text("Position and velocity (binary COM)");
+            plot_cart_sp[0] = onoff_button("x##plot_cart_sp[0]",    ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart_sp[0]); ImGui::SameLine();
+            plot_cart_sp[1] = onoff_button("y##plot_cart_sp[1]",    ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart_sp[1]); ImGui::SameLine();
+            plot_cart_sp[2] = onoff_button("z##plot_cart_sp[2]",    ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart_sp[2]); ImGui::SameLine();
+            plot_cart_sp[3] = onoff_button("dist##plot_cart_sp[3]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart_sp[3]);
+            plot_cart_sp[4] = onoff_button("υx##plot_cart_sp[4]",   ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart_sp[4]); ImGui::SameLine();
+            plot_cart_sp[5] = onoff_button("υy##plot_cart_sp[5]",   ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart_sp[5]); ImGui::SameLine();
+            plot_cart_sp[6] = onoff_button("υz##plot_cart_sp[6]",   ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart_sp[6]); ImGui::SameLine();
+            plot_cart_sp[7] = onoff_button("υel##plot_cart_sp[7]" , ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart_sp[7]);
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
+
+            ImGui::Text("Keplerian elements (binary COM)");
+            plot_kep_sp[0] = onoff_button("a##plot_kep_sp[0]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep_sp[0]); ImGui::SameLine();
+            plot_kep_sp[1] = onoff_button("e##plot_kep_sp[1]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep_sp[1]); ImGui::SameLine();
+            plot_kep_sp[2] = onoff_button("i##plot_kep_sp[2]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep_sp[2]); ImGui::SameLine();
+            plot_kep_sp[3] = onoff_button("Ω##plot_kep_sp[3]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep_sp[3]); ImGui::SameLine();
+            plot_kep_sp[4] = onoff_button("ω##plot_kep_sp[4]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep_sp[4]); ImGui::SameLine();
+            plot_kep_sp[5] = onoff_button("M##plot_kep_sp[5]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep_sp[5]);
+            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
+
+            ImGui::Text("Position and velocity (body 1)");
+            plot_cart_sp1[0] = onoff_button("x##plot_cart_sp1[0]",    ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart_sp1[0]); ImGui::SameLine();
+            plot_cart_sp1[1] = onoff_button("y##plot_cart_sp1[1]",    ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart_sp1[1]); ImGui::SameLine();
+            plot_cart_sp1[2] = onoff_button("z##plot_cart_sp1[2]",    ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart_sp1[2]); ImGui::SameLine();
+            plot_cart_sp1[3] = onoff_button("dist##plot_cart_sp1[3]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart_sp1[3]);
+            plot_cart_sp1[4] = onoff_button("υx##plot_cart_sp1[4]",   ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart_sp1[4]); ImGui::SameLine();
+            plot_cart_sp1[5] = onoff_button("υy##plot_cart_sp1[5]",   ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart_sp1[5]); ImGui::SameLine();
+            plot_cart_sp1[6] = onoff_button("υz##plot_cart_sp1[6]",   ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart_sp1[6]); ImGui::SameLine();
+            plot_cart_sp1[7] = onoff_button("υel##plot_cart_sp1[7]" , ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart_sp1[7]);
+            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
+
+            ImGui::Text("Keplerian elements (body 1)");
+            plot_kep_sp1[0] = onoff_button("a##plot_kep_sp1[0]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep_sp1[0]); ImGui::SameLine();
+            plot_kep_sp1[1] = onoff_button("e##plot_kep_sp1[1]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep_sp1[1]); ImGui::SameLine();
+            plot_kep_sp1[2] = onoff_button("i##plot_kep_sp1[2]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep_sp1[2]); ImGui::SameLine();
+            plot_kep_sp1[3] = onoff_button("Ω##plot_kep_sp1[3]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep_sp1[3]); ImGui::SameLine();
+            plot_kep_sp1[4] = onoff_button("ω##plot_kep_sp1[4]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep_sp1[4]); ImGui::SameLine();
+            plot_kep_sp1[5] = onoff_button("M##plot_kep_sp1[5]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep_sp1[5]);
+            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
+
+            ImGui::Text("Position and velocity (body 2)");
+            plot_cart_sp2[0] = onoff_button("x##plot_cart_sp2[0]",    ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart_sp2[0]); ImGui::SameLine();
+            plot_cart_sp2[1] = onoff_button("y##plot_cart_sp2[1]",    ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart_sp2[1]); ImGui::SameLine();
+            plot_cart_sp2[2] = onoff_button("z##plot_cart_sp2[2]",    ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart_sp2[2]); ImGui::SameLine();
+            plot_cart_sp2[3] = onoff_button("dist##plot_cart_sp2[3]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart_sp2[3]);
+            plot_cart_sp2[4] = onoff_button("υx##plot_cart_sp2[4]",   ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart_sp2[4]); ImGui::SameLine();
+            plot_cart_sp2[5] = onoff_button("υy##plot_cart_sp2[5]",   ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart_sp2[5]); ImGui::SameLine();
+            plot_cart_sp2[6] = onoff_button("υz##plot_cart_sp2[6]",   ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart_sp2[6]); ImGui::SameLine();
+            plot_cart_sp2[7] = onoff_button("υel##plot_cart_sp2[7]" , ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart_sp2[7]);
+            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
+
+            ImGui::Text("Keplerian elements (body 2)");
+            plot_kep_sp2[0] = onoff_button("a##plot_kep_sp2[0]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep_sp2[0]); ImGui::SameLine();
+            plot_kep_sp2[1] = onoff_button("e##plot_kep_sp2[1]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep_sp2[1]); ImGui::SameLine();
+            plot_kep_sp2[2] = onoff_button("i##plot_kep_sp2[2]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep_sp2[2]); ImGui::SameLine();
+            plot_kep_sp2[3] = onoff_button("Ω##plot_kep_sp2[3]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep_sp2[3]); ImGui::SameLine();
+            plot_kep_sp2[4] = onoff_button("ω##plot_kep_sp2[4]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep_sp2[4]); ImGui::SameLine();
+            plot_kep_sp2[5] = onoff_button("M##plot_kep_sp2[5]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep_sp2[5]);
+            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
+
             if (!sol || sol->t.empty() || !sol->integr.properties.spacecraft_checkbox)
                 ImGui::EndDisabled();
 
             ImGui::TreePop();
         }
-
         ImGui::PopStyleVar();
     }
 
@@ -616,7 +679,6 @@ private:
             ImGui::EndDisabled();
 
         //Hardware logic :
-
         ImGuiIO &io = ImGui::GetIO();
         if (render_scene && !io.WantCaptureMouse)
         {
@@ -650,7 +712,6 @@ private:
         }
 
         //Frame increment logic :
-
         if (play_video && render_scene && iframe < frames - 1)
         {
             if (framerate == 0) //The slider is set to 0 => paused. Do not increment iframe.
@@ -660,7 +721,7 @@ private:
             else if (framerate < 60) //We do a time-based step to achieve the chosen framerate.
             {
                 frame_accumulator += ImGui::GetIO().DeltaTime;
-                float step = 1.0f/static_cast<float>(framerate);
+                float step = 1.0f/framerate;
                 //In case DeltaTime is large (e.g. if the user drags the window), use a while() so we don't 'miss' increments.
                 while (frame_accumulator >= step && iframe < frames - 1)
                 {
@@ -671,7 +732,6 @@ private:
             else //framerate == 60 => let it play as fast as the machine can handle, i.e. increment every time we render.
                 iframe++;
         }
-        
         
         //Finally, render the 3D content.
         if (render_scene && sol && !sol->t.empty())
@@ -708,15 +768,14 @@ public:
             {
                 render_plot_buttons();
 
-                if (plot_cart[0]) plot_cart[0] = plot("##plot_cart[0]", "Mutual x",        "x [km]", plot_cart[0], sol2D.x);
-                if (plot_cart[1]) plot_cart[1] = plot("##plot_cart[1]", "Mutual y",        "y [km]", plot_cart[1], sol2D.y);
-                if (plot_cart[2]) plot_cart[2] = plot("##plot_cart[2]", "Mutual z",        "z [km]", plot_cart[2], sol2D.z);
-                if (plot_cart[3]) plot_cart[3] = plot("##plot_cart[3]", "Mutual distance", "d [km]", plot_cart[3], sol2D.dist);
-
-                if (plot_cart[4]) plot_cart[4] = plot("##plot_cart[4]", "Mutual υx",            "υx [km/sec]",  plot_cart[4], sol2D.vx);
-                if (plot_cart[5]) plot_cart[5] = plot("##plot_cart[5]", "Mutual υy",            "υy [km/sec]",  plot_cart[5], sol2D.vy);
-                if (plot_cart[6]) plot_cart[6] = plot("##plot_cart[6]", "Mutual υz",            "υz [km/sec]",  plot_cart[6], sol2D.vz);
-                if (plot_cart[7]) plot_cart[7] = plot("##plot_cart[7]", "Mutual υ (magnitude)", "υ [km/sec]",   plot_cart[7], sol2D.vel);
+                if (plot_cart[0]) plot_cart[0] = plot("##plot_cart[0]", "Mutual x",             "x [km]",      plot_cart[0], sol2D.x);
+                if (plot_cart[1]) plot_cart[1] = plot("##plot_cart[1]", "Mutual y",             "y [km]",      plot_cart[1], sol2D.y);
+                if (plot_cart[2]) plot_cart[2] = plot("##plot_cart[2]", "Mutual z",             "z [km]",      plot_cart[2], sol2D.z);
+                if (plot_cart[3]) plot_cart[3] = plot("##plot_cart[3]", "Mutual distance",      "d [km]",      plot_cart[3], sol2D.dist);
+                if (plot_cart[4]) plot_cart[4] = plot("##plot_cart[4]", "Mutual υx",            "υx [km/sec]", plot_cart[4], sol2D.vx);
+                if (plot_cart[5]) plot_cart[5] = plot("##plot_cart[5]", "Mutual υy",            "υy [km/sec]", plot_cart[5], sol2D.vy);
+                if (plot_cart[6]) plot_cart[6] = plot("##plot_cart[6]", "Mutual υz",            "υz [km/sec]", plot_cart[6], sol2D.vz);
+                if (plot_cart[7]) plot_cart[7] = plot("##plot_cart[7]", "Mutual υ (magnitude)", "υ [km/sec]",  plot_cart[7], sol2D.vel);
 
                 if (plot_kep[0]) plot_kep[0] = plot("##plot_kep[0]", "Semi - major axis",           "a [km]",  plot_kep[0], sol2D.sma);
                 if (plot_kep[1]) plot_kep[1] = plot("##plot_kep[1]", "Eccentricity",                "e [  ]",  plot_kep[1], sol2D.ecc);
@@ -756,13 +815,56 @@ public:
 
                 if (sol->integr.properties.spacecraft_checkbox)
                 {
-                    if (plot_rsp[0]) plot_rsp[0] = plot("##plot_rsp[0]", "Spacecraft x (binary's C.O.M. frame)", "x [km]",  plot_rsp[0], sol2D.xsp);
-                    if (plot_rsp[1]) plot_rsp[1] = plot("##plot_rsp[1]", "Spacecraft y (binary's C.O.M. frame)", "y [km]",  plot_rsp[1], sol2D.ysp);
-                    if (plot_rsp[2]) plot_rsp[2] = plot("##plot_rsp[2]", "Spacecraft z (binary's C.O.M. frame)", "z [km]",  plot_rsp[2], sol2D.zsp);
-                    if (plot_rsp[3]) plot_rsp[3] = plot("##plot_rsp[3]", "Spacecraft distance from Body 1",      "d1 [km]", plot_rsp[3], sol2D.d1sp);
-                    if (plot_rsp[4]) plot_rsp[4] = plot("##plot_rsp[4]", "Spacecraft distance from Body 2",      "d2 [km]", plot_rsp[4], sol2D.d2sp);
-                }
+                    if (plot_cart_sp[0]) plot_cart_sp[0] = plot("##plot_cart_sp[0]", "Spacecraft x (binary COM)",             "x [km]",       plot_cart_sp[0], sol2D.xsp);
+                    if (plot_cart_sp[1]) plot_cart_sp[1] = plot("##plot_cart_sp[1]", "Spacecraft y (binary COM)",             "y [km]",       plot_cart_sp[1], sol2D.ysp);
+                    if (plot_cart_sp[2]) plot_cart_sp[2] = plot("##plot_cart_sp[2]", "Spacecraft z (binary COM)",             "z [km]",       plot_cart_sp[2], sol2D.zsp);
+                    if (plot_cart_sp[3]) plot_cart_sp[3] = plot("##plot_cart_sp[3]", "Spacecraft distance (binary COM)",      "d [km]",       plot_cart_sp[3], sol2D.dist_sp);
+                    if (plot_cart_sp[4]) plot_cart_sp[4] = plot("##plot_cart_sp[4]", "Spacecraft υx (binary COM)",            "υx [km/sec]",  plot_cart_sp[4], sol2D.vxsp);
+                    if (plot_cart_sp[5]) plot_cart_sp[5] = plot("##plot_cart_sp[5]", "Spacecraft υy (binary COM)",            "υy [km/sec]",  plot_cart_sp[5], sol2D.vysp);
+                    if (plot_cart_sp[6]) plot_cart_sp[6] = plot("##plot_cart_sp[6]", "Spacecraft υz (binary COM)",            "υz [km/sec]",  plot_cart_sp[6], sol2D.vzsp);
+                    if (plot_cart_sp[7]) plot_cart_sp[7] = plot("##plot_cart_sp[7]", "Spacecraft υ (magnitude) (binary COM)", "υ [km/sec]",   plot_cart_sp[7], sol2D.vel_sp);
 
+                    if (plot_kep_sp[0]) plot_kep_sp[0] = plot("##plot_kep_sp[0]", "Spacecraft semi - major axis",           "a [km]",  plot_kep_sp[0], sol2D.sma_sp);
+                    if (plot_kep_sp[1]) plot_kep_sp[1] = plot("##plot_kep_sp[1]", "Spacecraft eccentricity",                "e [  ]",  plot_kep_sp[1], sol2D.ecc_sp);
+                    if (plot_kep_sp[2]) plot_kep_sp[2] = plot("##plot_kep_sp[2]", "Spacecraft inclination",                 "i [deg]", plot_kep_sp[2], sol2D.inc_sp);
+                    if (plot_kep_sp[3]) plot_kep_sp[3] = plot("##plot_kep_sp[3]", "Spacecraft longitude of ascending node", "Ω [deg]", plot_kep_sp[3], sol2D.raan_sp);
+                    if (plot_kep_sp[4]) plot_kep_sp[4] = plot("##plot_kep_sp[4]", "Spacecraft argument of periapsis",       "ω [deg]", plot_kep_sp[4], sol2D.argper_sp);
+                    if (plot_kep_sp[5]) plot_kep_sp[5] = plot("##plot_kep_sp[5]", "Spacecraft mean anomaly",                "M [deg]", plot_kep_sp[5], sol2D.manom_sp);
+
+
+                    if (plot_cart_sp1[0]) plot_cart_sp1[0] = plot("##plot_cart_sp1[0]", "Spacecraft x (body 1)",             "x [km]",       plot_cart_sp1[0], sol2D.xsp1);
+                    if (plot_cart_sp1[1]) plot_cart_sp1[1] = plot("##plot_cart_sp1[1]", "Spacecraft y (body 1)",             "y [km]",       plot_cart_sp1[1], sol2D.ysp1);
+                    if (plot_cart_sp1[2]) plot_cart_sp1[2] = plot("##plot_cart_sp1[2]", "Spacecraft z (body 1)",             "z [km]",       plot_cart_sp1[2], sol2D.zsp1);
+                    if (plot_cart_sp1[3]) plot_cart_sp1[3] = plot("##plot_cart_sp1[3]", "Spacecraft distance (body 1)",      "d [km]",       plot_cart_sp1[3], sol2D.dist_sp1);
+                    if (plot_cart_sp1[4]) plot_cart_sp1[4] = plot("##plot_cart_sp1[4]", "Spacecraft υx (body 1)",            "υx [km/sec]",  plot_cart_sp1[4], sol2D.vxsp1);
+                    if (plot_cart_sp1[5]) plot_cart_sp1[5] = plot("##plot_cart_sp1[5]", "Spacecraft υy (body 1)",            "υy [km/sec]",  plot_cart_sp1[5], sol2D.vysp1);
+                    if (plot_cart_sp1[6]) plot_cart_sp1[6] = plot("##plot_cart_sp1[6]", "Spacecraft υz (body 1)",            "υz [km/sec]",  plot_cart_sp1[6], sol2D.vzsp1);
+                    if (plot_cart_sp1[7]) plot_cart_sp1[7] = plot("##plot_cart_sp1[7]", "Spacecraft υ (magnitude) (body 1)", "υ [km/sec]",   plot_cart_sp1[7], sol2D.vel_sp1);
+
+                    if (plot_kep_sp1[0]) plot_kep_sp1[0] = plot("##plot_kep_sp1[0]", "Spacecraft semi - major axis",           "a [km]",  plot_kep_sp1[0], sol2D.sma_sp1);
+                    if (plot_kep_sp1[1]) plot_kep_sp1[1] = plot("##plot_kep_sp1[1]", "Spacecraft eccentricity",                "e [  ]",  plot_kep_sp1[1], sol2D.ecc_sp1);
+                    if (plot_kep_sp1[2]) plot_kep_sp1[2] = plot("##plot_kep_sp1[2]", "Spacecraft inclination",                 "i [deg]", plot_kep_sp1[2], sol2D.inc_sp1);
+                    if (plot_kep_sp1[3]) plot_kep_sp1[3] = plot("##plot_kep_sp1[3]", "Spacecraft longitude of ascending node", "Ω [deg]", plot_kep_sp1[3], sol2D.raan_sp1);
+                    if (plot_kep_sp1[4]) plot_kep_sp1[4] = plot("##plot_kep_sp1[4]", "Spacecraft argument of periapsis",       "ω [deg]", plot_kep_sp1[4], sol2D.argper_sp1);
+                    if (plot_kep_sp1[5]) plot_kep_sp1[5] = plot("##plot_kep_sp1[5]", "Spacecraft mean anomaly",                "M [deg]", plot_kep_sp1[5], sol2D.manom_sp1);
+
+
+                    if (plot_cart_sp2[0]) plot_cart_sp2[0] = plot("##plot_cart_sp2[0]", "Spacecraft x (body 2)",             "x [km]",       plot_cart_sp2[0], sol2D.xsp2);
+                    if (plot_cart_sp2[1]) plot_cart_sp2[1] = plot("##plot_cart_sp2[1]", "Spacecraft y (body 2)",             "y [km]",       plot_cart_sp2[1], sol2D.ysp2);
+                    if (plot_cart_sp2[2]) plot_cart_sp2[2] = plot("##plot_cart_sp2[2]", "Spacecraft z (body 2)",             "z [km]",       plot_cart_sp2[2], sol2D.zsp2);
+                    if (plot_cart_sp2[3]) plot_cart_sp2[3] = plot("##plot_cart_sp2[3]", "Spacecraft distance (body 2)",      "d [km]",       plot_cart_sp2[3], sol2D.dist_sp2);
+                    if (plot_cart_sp2[4]) plot_cart_sp2[4] = plot("##plot_cart_sp2[4]", "Spacecraft υx (body 2)",            "υx [km/sec]",  plot_cart_sp2[4], sol2D.vxsp2);
+                    if (plot_cart_sp2[5]) plot_cart_sp2[5] = plot("##plot_cart_sp2[5]", "Spacecraft υy (body 2)",            "υy [km/sec]",  plot_cart_sp2[5], sol2D.vysp2);
+                    if (plot_cart_sp2[6]) plot_cart_sp2[6] = plot("##plot_cart_sp2[6]", "Spacecraft υz (body 2)",            "υz [km/sec]",  plot_cart_sp2[6], sol2D.vzsp2);
+                    if (plot_cart_sp2[7]) plot_cart_sp2[7] = plot("##plot_cart_sp2[7]", "Spacecraft υ (magnitude) (body 2)", "υ [km/sec]",   plot_cart_sp2[7], sol2D.vel_sp2);
+
+                    if (plot_kep_sp2[0]) plot_kep_sp2[0] = plot("##plot_kep_sp2[0]", "Spacecraft semi - major axis",           "a [km]",  plot_kep_sp2[0], sol2D.sma_sp2);
+                    if (plot_kep_sp2[1]) plot_kep_sp2[1] = plot("##plot_kep_sp2[1]", "Spacecraft eccentricity",                "e [  ]",  plot_kep_sp2[1], sol2D.ecc_sp2);
+                    if (plot_kep_sp2[2]) plot_kep_sp2[2] = plot("##plot_kep_sp2[2]", "Spacecraft inclination",                 "i [deg]", plot_kep_sp2[2], sol2D.inc_sp2);
+                    if (plot_kep_sp2[3]) plot_kep_sp2[3] = plot("##plot_kep_sp2[3]", "Spacecraft longitude of ascending node", "Ω [deg]", plot_kep_sp2[3], sol2D.raan_sp2);
+                    if (plot_kep_sp2[4]) plot_kep_sp2[4] = plot("##plot_kep_sp2[4]", "Spacecraft argument of periapsis",       "ω [deg]", plot_kep_sp2[4], sol2D.argper_sp2);
+                    if (plot_kep_sp2[5]) plot_kep_sp2[5] = plot("##plot_kep_sp2[5]", "Spacecraft mean anomaly",                "M [deg]", plot_kep_sp2[5], sol2D.manom_sp2);
+                }
             }
             ImGui::PopStyleColor();
         }

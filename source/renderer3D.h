@@ -28,7 +28,7 @@ private:
     std::unique_ptr<skybox> sky;
     sun sunquad;
 
-    unsigned int depth_fbo, depth_tex; //IDs to hold the depth framebuffer and the depth texture for the shadow map algorithm.
+    unsigned depth_fbo, depth_tex; //IDs to hold the depth framebuffer and the depth texture for the shadow map algorithm.
 
 public:
     camera cam;

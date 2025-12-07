@@ -27,7 +27,7 @@ public:
     dmat3 I1, I2; //Moments of inertia.
     dtens J1, J2; //Inertial integrals.
     double brillouin1, brillouin2; //Brillouin radii of the 2 bodies.
-    bool collision, collision_sp; //Collision detection flag for the binary and the spacecraft (respectively).
+    bool collision, collision_sp; //Collision flags for the binary and the spacecraft.
     bool maneuver1, maneuver2; //Whether or not a beta-kick (equivalent maneuver) has been applied to the corresponding body.
 
     dvec3 rsun; //Constant sun's position relative to the COM of the binary in Cartesian coords.
@@ -36,13 +36,14 @@ public:
 
     dmat orbit; //This is the solution matrix of the differential equations that will be propagated (time + state vector).
 
+
     integrator() { } //Needed to instantiate an integrator object in the solution class.
 
-    integrator(const properties_panel &properties) //And this is needed to instantiate the integrator in the gui class.
+    integrator(const properties_panel &properties) //Needed to instantiate the integrator in the gui class.
     {
         this->properties = properties;
         //Note : In the following member functions, whatever change is made upon the 'properties' variable, has nothing to do with the gui's displayed properties.
-        //We operate only on THIS class member 'properties', which is a deep copy of the gui's input.
+        //We operate only on THIS class member 'properties', which is a deep copy of the gui's properties.
     }
 
 private:
@@ -171,35 +172,34 @@ public:
         m1 = -properties.M2/(properties.M1 + properties.M2);
         m2 =  properties.M1/(properties.M1 + properties.M2);
 
-        //Preparation 1 : If the user chose Keplerian elements as initial position/velocity, then, transform
+        //Preparation : If the user chose Keplerian elements as initial position/velocity, then, transform
         //them to Cartesian coords because the F2BP odes are written in Cartesian form.
         if (properties.pos_vel_var == properties_panel::KEPLERIAN)
-            properties.cart = kep2cart(dvec6{properties.kep[0],
-                                             properties.kep[1],
-                                             properties.kep[2]*PI/180.0,
-                                             properties.kep[3]*PI/180.0,
-                                             properties.kep[4]*PI/180.0,
-                                             properties.kep[5]*PI/180.0}, G*(properties.M1 + properties.M2));
+            properties.cart = kep2cart({properties.kep[0],
+                                        properties.kep[1],
+                                        properties.kep[2]*PI/180.0,
+                                        properties.kep[3]*PI/180.0,
+                                        properties.kep[4]*PI/180.0,
+                                        properties.kep[5]*PI/180.0}, G*(properties.M1 + properties.M2));
         
-        //Preparation 2 : If the user chose Euler angles as initial orientations, then, transform them to
+        //Preparation : If the user chose Euler angles as initial orientations, then, transform them to
         //quaternions because the F2BP odes are written in quaternion form.
         if (properties.orient_var == properties_panel::EULER_XYZ)
         {
-            //Note : ang2quat() ensures that the returned quaternion is normalized, so we don't need to apply quat2unit().
             properties.q1 = ang2quat(properties.rpy1*PI/180.0);
             properties.q2 = ang2quat(properties.rpy2*PI/180.0);
         }
 
-        //Preparation 3 : If the user chose to input the angular velocities in the inertial frame, then, transform them
+        //Preparation : If the user chose to input the angular velocities in the inertial frame, then, transform them
         //to the corresponding body frames because the Euler equations of rotation are written in body frame form.
         if (properties.angvel_frame == properties_panel::INERTIAL)
         {
-            //In this case, the user chose angular velocities to be in the inertial/world frame, so we convert them to the body frames.
+            //In this case, the user chose angular velocities to be in the inertial frame, so we convert them to the body frames.
             properties.w1b = iner2body(properties.w1i, quat2mat(properties.q1));
             properties.w2b = iner2body(properties.w2i, quat2mat(properties.q2));
         }
 
-        //Preparation 4 : Based on the user's choice 'ell_checkbox' or '.obj files', we need to evaluate :
+        //Preparation : Based on the user's choice 'ell_checkbox' or '.obj files', we need to evaluate :
         //1) The Brillouin radii, 2) The inertial inertial integrals of the corresponding chosen order.
         if (properties.ell_checkbox)
         {
@@ -252,7 +252,7 @@ public:
             }
         }
         
-        //Preparation 5 : Convert the time in [sec]
+        //Preparation : Convert the time in [sec]
         t0 = properties.epoch*86400.0; //[sec]
         tmax = t0 + properties.dur*86400.0; //[sec]
         if (properties.integration_method == properties_panel::RKF78_FIXED || properties.integration_method == properties_panel::ABM5_FIXED)
@@ -260,46 +260,61 @@ public:
         else
             init_guess_time_step = ODES_INIT_GUESS_TIME_STEP; //[sec]
 
-        //Preparation 6 : Convert impact times in [sec]. Then, apply maneuvers BEFORE the while integration loop, only if the impact times are chosen to be at t = t0.
+        //Preparation : Convert impact times in [sec].
         maneuver1 = maneuver2 = false;
         if (properties.impactors_checkbox)
         {
             properties.tD1 *= 86400.0;
             properties.tD2 *= 86400.0;
-            if (fabs(t0 - properties.tD1) < 1e-15)
-            {
-                properties.cart[3] -= properties.beta1*properties.mD1*properties.vD1[0]/properties.M1;
-                properties.cart[4] -= properties.beta1*properties.mD1*properties.vD1[1]/properties.M1;
-                properties.cart[5] -= properties.beta1*properties.mD1*properties.vD1[2]/properties.M1;
-                if (properties.spacecraft_checkbox)
-                {
-                    properties.vsp = properties.vsp - properties.beta1*properties.mD1*properties.vD1/(properties.M1 + properties.M2);
-                }
-                maneuver1 = true;
-            }
-            if (fabs(t0 - properties.tD2) < 1e-15)
-            {
-                properties.cart[3] += properties.beta2*properties.mD2*properties.vD2[0]/properties.M2;
-                properties.cart[4] += properties.beta2*properties.mD2*properties.vD2[1]/properties.M2;
-                properties.cart[5] += properties.beta2*properties.mD2*properties.vD2[2]/properties.M2;
-                if (properties.spacecraft_checkbox)
-                {
-                    properties.vsp = properties.vsp - properties.beta2*properties.mD2*properties.vD2/(properties.M1 + properties.M2);
-                }
-                maneuver2 = true;
-            }
         }
 
-        //Preparation 7 : Spacecraft and SRP assumption.
+        //Preparation : Spacecraft i.c. and SRP assumptions.
         if (!properties.spacecraft_checkbox)
         {
-            properties.rsp[0] = properties.rsp[1] = properties.rsp[2] = 0.0;
-            properties.vsp[0] = properties.vsp[1] = properties.vsp[2] = 0.0;
+            for (int i = 0; i < 6; ++i)
+                properties.cart_sp[i] = 0.0;
         }
-        else if (properties.spacecraft_checkbox && properties.srp_checkbox)
+        else
         {
-            rsun = spher2cart({properties.sun_dist, properties.sun_lon*PI/180.0, properties.sun_lat*PI/180.0}); //{[AU], [AU], [AU]}
-            rsun = rsun*AU2KM; //{[km], [km], [km]}
+            //First case is that the user set the i.c. in CARTESIAN_SP, so we do no check for that.
+            //In any other case, we must evaluate the position and velocity in Cartesian coords relative to the binary's COM.
+            if (properties.pos_vel_sp_var == properties_panel::CARTESIAN_SP1)
+                properties.cart_sp = m1*properties.cart + properties.cart_sp1;
+            else if (properties.pos_vel_sp_var == properties_panel::CARTESIAN_SP2)
+                properties.cart_sp = m2*properties.cart + properties.cart_sp2;
+            else if (properties.pos_vel_sp_var == properties_panel::KEPLERIAN_SP)
+                 properties.cart_sp = kep2cart({properties.kep_sp[0],
+                                                properties.kep_sp[1],
+                                                properties.kep_sp[2]*PI/180.0,
+                                                properties.kep_sp[3]*PI/180.0,
+                                                properties.kep_sp[4]*PI/180.0,
+                                                properties.kep_sp[5]*PI/180.0}, G*(properties.M1 + properties.M2));
+            else if (properties.pos_vel_sp_var == properties_panel::KEPLERIAN_SP1)
+            {
+                properties.cart_sp1 = kep2cart({properties.kep_sp1[0],
+                                                properties.kep_sp1[1],
+                                                properties.kep_sp1[2]*PI/180.0,
+                                                properties.kep_sp1[3]*PI/180.0,
+                                                properties.kep_sp1[4]*PI/180.0,
+                                                properties.kep_sp1[5]*PI/180.0}, G*properties.M1);
+                properties.cart_sp = m1*properties.cart + properties.cart_sp1;
+            }
+            else if (properties.pos_vel_sp_var == properties_panel::KEPLERIAN_SP2)
+            {
+                properties.cart_sp2 = kep2cart({properties.kep_sp2[0],
+                                                properties.kep_sp2[1],
+                                                properties.kep_sp2[2]*PI/180.0,
+                                                properties.kep_sp2[3]*PI/180.0,
+                                                properties.kep_sp2[4]*PI/180.0,
+                                                properties.kep_sp2[5]*PI/180.0}, G*properties.M2);
+                properties.cart_sp = m2*properties.cart + properties.cart_sp2;
+            }
+
+            if (properties.srp_checkbox)
+            {
+                rsun = spher2cart({properties.sun_dist, properties.sun_lon*PI/180.0, properties.sun_lat*PI/180.0}); //{[AU], [AU], [AU]}
+                rsun = rsun*AU2KM; //{[km], [km], [km]}
+            }
         }
 
         collision = collision_sp = false; //Assuming no collision when the simulation starts.
@@ -315,43 +330,50 @@ public:
         progress.store(0.0f);
 
         //Initial conditions.
-        boost::array<double, N_ODES> state = {  properties.cart[0], properties.cart[1], properties.cart[2],
-                                                properties.cart[3], properties.cart[4], properties.cart[5],
-                                                  properties.q1[0],   properties.q1[1],   properties.q1[2], properties.q1[3],
-                                                 properties.w1b[0],  properties.w1b[1],  properties.w1b[2],
-                                                  properties.q2[0],   properties.q2[1],   properties.q2[2], properties.q2[3],
-                                                 properties.w2b[0],  properties.w2b[1],  properties.w2b[2],
-                                                 properties.rsp[0],  properties.rsp[1],  properties.rsp[2],
-                                                 properties.vsp[0],  properties.vsp[1],  properties.vsp[2] };
+        boost::array<double, N_ODES> state = {      properties.cart[0],     properties.cart[1],     properties.cart[2],
+                                                    properties.cart[3],     properties.cart[4],     properties.cart[5],
+                                                      properties.q1[0],       properties.q1[1],       properties.q1[2], properties.q1[3],
+                                                     properties.w1b[0],      properties.w1b[1],      properties.w1b[2],
+                                                      properties.q2[0],       properties.q2[1],       properties.q2[2], properties.q2[3],
+                                                     properties.w2b[0],      properties.w2b[1],      properties.w2b[2],
+                                                 properties.cart_sp[0],  properties.cart_sp[1],  properties.cart_sp[2],
+                                                 properties.cart_sp[3],  properties.cart_sp[4],  properties.cart_sp[5] };
         
         double t = t0; //Initialize time.
 
         boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, N_ODES>> rkf78_fixed;
         auto rkf78_adaptive = boost::numeric::odeint::make_controlled(properties.target_error, properties.target_error, boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, N_ODES>>());
         boost::numeric::odeint::bulirsch_stoer<boost::array<double, N_ODES>> bstoer_adaptive(properties.target_error, properties.target_error);
-        boost::numeric::odeint::adams_bashforth_moulton<5, boost::array<double, N_ODES>> abm_fixed;
+        boost::numeric::odeint::adams_bashforth_moulton<5, boost::array<double, N_ODES>> abm5_fixed;
 
         if (properties.integration_method == properties_panel::ABM5_FIXED) //Seed Adams-Bashforth-Moulton only if this is the requested method of integration.
-            abm_fixed.initialize(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, dt);
-        
-        char formatted_text[128];
+            abm5_fixed.initialize(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, dt);
         
         //Shoot it!!!
         while (t <= tmax)
         {
-            //1) Orbits : append the current state into the final 'orbit' matrix. No matter what, at least the initial condition is gonna be taken into account (provided that the user input properties are correct).
-            orbit.push_back({t, state[0],  state[1],  state[2],
-                                state[3],  state[4],  state[5],
-                                state[6],  state[7],  state[8],  state[9],
-                                state[10], state[11], state[12],
-                                state[13], state[14], state[15], state[16],
-                                state[17], state[18], state[19],
-                                state[20], state[21], state[22] });
+            //Solution storage : append the current state into the final 'orbit' matrix. No matter what, at least the initial condition is gonna be stored.
+            if (properties.spacecraft_checkbox)
+                orbit.push_back({t, state[0],  state[1],  state[2],
+                                    state[3],  state[4],  state[5],
+                                    state[6],  state[7],  state[8],  state[9],
+                                    state[10], state[11], state[12],
+                                    state[13], state[14], state[15], state[16],
+                                    state[17], state[18], state[19],
+                                    state[20], state[21], state[22],
+                                    state[23], state[24], state[25] });
+            else
+                orbit.push_back({t, state[0],  state[1],  state[2],
+                                    state[3],  state[4],  state[5],
+                                    state[6],  state[7],  state[8],  state[9],
+                                    state[10], state[11], state[12],
+                                    state[13], state[14], state[15], state[16],
+                                    state[17], state[18], state[19] });
 
-            //2) Kinetic impacts : apply corresponding maneuvers in case that kinetic impactors were assumed in the gui.
+            //Kinetic impacts : apply corresponding maneuvers if impactors are chosen.
             if (properties.impactors_checkbox)
             {
-                if (!maneuver1 && t >= properties.tD1)
+                if (!maneuver1 && (t + 1e-15) >= properties.tD1)
                 {
                     state[3] -= properties.beta1*properties.mD1*properties.vD1[0]/properties.M1;
                     state[4] -= properties.beta1*properties.mD1*properties.vD1[1]/properties.M1;
@@ -364,7 +386,7 @@ public:
                     }
                     maneuver1 = true;
                 }
-                if (!maneuver2 && t >= properties.tD2)
+                if (!maneuver2 && (t + 1e-15) >= properties.tD2)
                 {
                     state[3] += properties.beta2*properties.mD2*properties.vD2[0]/properties.M2;
                     state[4] += properties.beta2*properties.mD2*properties.vD2[1]/properties.M2;
@@ -379,81 +401,82 @@ public:
                 }
             }
 
-            //3) Collisions : check for asteroid-asteroid and spacecraft-asteroid collisions.
-            if (properties.collision_spheres) //Spheres checkbox.
+            //Collisions : check for asteroid-asteroid or spacecraft-asteroid collision.
+            char buffer[128];
+            if (properties.collision_spheres)
             {
                 //Sphere asteroid-asteroid collision.
                 if (sphere_sphere_collision(length(dvec3{state[0],state[1],state[2]}), brillouin1, brillouin2))
                 {
-                    sprintf(formatted_text,"< Collision (asteroid - asteroid) detected at t = %5.2lf [days]. >\n", t/86400.0);
-                    console.add_text(formatted_text);
+                    sprintf(buffer,"< Collision (asteroid - asteroid) detected at t = %5.2lf [days]. >\n", t/86400.0);
+                    console.add_text(buffer);
                     collision = true;
                     break;
                 }
-                
-                //Sphere spacecraft-asteroid (sphere-point test).
+                //Sphere spacecraft-asteroid.
                 if (properties.spacecraft_checkbox)
                 {
-                    const dvec3 r = dvec3{state[0],state[1],state[2]};
+                    const dvec3 r = {state[0],state[1],state[2]};
                     const dvec3 r1 = m1*r;
                     const dvec3 r2 = m2*r;
-                    const dvec3 rsp = dvec3{state[20],state[21],state[22]};
+                    const dvec3 rsp = {state[20],state[21],state[22]};
                     if (sphere_point_collision(length(rsp - r1), brillouin1))
                     {
-                        sprintf(formatted_text,"< Collision (asteroid - spacecraft) at t = %5.2lf [days]. >\n", t/86400.0);
-                        console.add_text(formatted_text);
+                        sprintf(buffer,"< Collision (asteroid - spacecraft) at t = %5.2lf [days]. >\n", t/86400.0);
+                        console.add_text(buffer);
                         collision_sp = true;
                         break;
                     }
                     if (sphere_point_collision(length(rsp - r2), brillouin2))
                     {
-                        sprintf(formatted_text,"< Collision (asteroid - spacecraft) at t = %5.2lf [days]. >\n", t/86400.0);
-                        console.add_text(formatted_text);
+                        sprintf(buffer,"< Collision (asteroid - spacecraft) at t = %5.2lf [days]. >\n", t/86400.0);
+                        console.add_text(buffer);
                         collision_sp = true;
                         break;
                     }
                 }
             }
-            else if (properties.collision_polyhedra) //Polyhedra checkbox, but with sphere gates.
+            else if (properties.collision_polyhedra)
             {
-                const dvec3 r = dvec3{state[0],state[1],state[2]};
+                const dvec3 r = {state[0],state[1],state[2]};
                 const dvec3 r1 = m1*r;
                 const dvec3 r2 = m2*r;
+                //We apply sphere-sphere gate first, because polyhedron-polyhedron collision requires first the Brillouin spheres to collide (which is a lot faster to test).
                 if (sphere_sphere_collision(length(r), brillouin1, brillouin2))
                 {
-                    const dmat3 A1 = quat2mat(dvec4{state[6],state[7],state[8],state[9]});
-                    const dmat3 A2 = quat2mat(dvec4{state[13],state[14],state[15],state[16]});
+                    const dmat3 A1 = quat2mat({state[6],  state[7],  state[8],  state[9]});
+                    const dmat3 A2 = quat2mat({state[13], state[14], state[15], state[16]});
                     if (polyhedron_polyhedron_collision(properties.poly1, A1, r1, properties.poly2, A2, r2))
                     {
-                        sprintf(formatted_text,"< Collision (asteroid - asteroid) at t = %5.2lf [days]. >\n", t/86400.0);
-                        console.add_text(formatted_text);
+                        sprintf(buffer,"< Collision (asteroid - asteroid) at t = %5.2lf [days]. >\n", t/86400.0);
+                        console.add_text(buffer);
                         collision = true;
                         break;
                     }
                 }
 
-                //Polyhedron spacecraft-asteroid (sphere-point gate, then polyhedron-point).
+                //Polyhedron spacecraft-asteroid (again, sphere-point gate, then polyhedron-point).
                 if (properties.spacecraft_checkbox)
                 {
-                    const dvec3 rsp = dvec3{state[20],state[21],state[22]};
+                    const dvec3 rsp = {state[20],state[21],state[22]};
                     if (sphere_point_collision(length(rsp - r1), brillouin1))
                     {
-                        const dmat3 A1 = quat2mat(dvec4{state[6],state[7],state[8],state[9]});
+                        const dmat3 A1 = quat2mat({state[6],state[7],state[8],state[9]});
                         if (polyhedron_point_collision(properties.poly1, A1, r1, rsp))
                         {
-                            sprintf(formatted_text,"< Collision (spacecraft - asteroid) at t = %5.2lf [days]. >\n", t/86400.0);
-                            console.add_text(formatted_text);
+                            sprintf(buffer,"< Collision (spacecraft - asteroid) at t = %5.2lf [days]. >\n", t/86400.0);
+                            console.add_text(buffer);
                             collision_sp = true;
                             break;
                         }
                     }
                     if (sphere_point_collision(length(rsp - r2), brillouin2))
                     {
-                        const dmat3 A2 = quat2mat(dvec4{state[13],state[14],state[15],state[16]});
+                        const dmat3 A2 = quat2mat({state[13],state[14],state[15],state[16]});
                         if (polyhedron_point_collision(properties.poly2, A2, r2, rsp))
                         {
-                            sprintf(formatted_text,"< Collision (spacecraft - asteroid, polyhedron) at t = %5.2lf [days]. >\n", t/86400.0);
-                            console.add_text(formatted_text);
+                            sprintf(buffer,"< Collision (spacecraft - asteroid, polyhedron) at t = %5.2lf [days]. >\n", t/86400.0);
+                            console.add_text(buffer);
                             collision_sp = true;
                             break;
                         }
@@ -461,15 +484,15 @@ public:
                 }
             }
 
-            //Check the abort flag (the user might want to kill the integration by pressing the 'Abort' button in the gui).
+            //Abort flag : the user might want to kill the integration via the 'Abort' button in the gui.
             if (abort_flag.load())
             {
-                sprintf(formatted_text, "< Aborted at t = %5.2lf [days]. > \n", t/86400.0);
-                console.add_text(formatted_text);
+                sprintf(buffer, "< Aborted at t = %5.2lf [days]. > \n", t/86400.0);
+                console.add_text(buffer);
                 break;
             }
             
-            //Update the state vector by doing 1 step of the numerical method.
+            //State update : do 1 step of whatever numerical method is chosen.
             if (properties.integration_method == properties_panel::RKF78_FIXED)
             {
                 rkf78_fixed.do_step(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, dt);
@@ -481,15 +504,16 @@ public:
                 bstoer_adaptive.try_step(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, init_guess_time_step);
             else //properties_panel::ABM5_FIXED
             {
-                abm_fixed.do_step(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, dt);
+                abm5_fixed.do_step(std::bind(&integrator::build_rhs, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), state, t, dt);
                 t += dt;
             }
             //Note : Boost's do_step() does NOT update internally t, hence we have to do it ourselves. But try_step() DOES update internally t, hence we do not touch it in this case.
 
-            //Update the progressbar value in [0,1].
+            //Progressbar : set the progress value of the integrator in [0,1].
             progress.store((t-t0)/(tmax-t0));
         }
 
+        //If everything went right, give the 'Done.' message.
         if (!abort_flag.load() && !collision && !collision_sp)
         {
             progress.store(1.0f);

@@ -196,10 +196,9 @@ double H2M(const double H, const double e)
 
 //Convert Keplerian elements to Cartesian.
 //Note : a must be nonzero, and e must be in [0,1) or (1,inf). Expect however high sensitivity when e is close to 1 from the right (e.g. e = 1.1), due to M2H().
-//The angles i,Om,w,M, can be any real number.
 dvec6 kep2cart(const dvec6 &kep, const double GM)
 {
-    //Extract into symbols for visibility.
+    //Extract into symbols.
     double a  = kep[0];
     double e  = kep[1]; 
     double i  = kep[2];
@@ -230,10 +229,10 @@ dvec6 kep2cart(const dvec6 &kep, const double GM)
     double sqrt_GM_div_p = sqrt(GM/p);
 
     //Precompute trigonometric stuff.
-    double sini = sin(i), cosi = cos(i);
+    double sini  = sin(i),  cosi  = cos(i);
     double sinOm = sin(Om), cosOm = cos(Om);
-    double sinw = sin(w), cosw = cos(w);
-    double sinf = sin(f), cosf = cos(f);
+    double sinw  = sin(w),  cosw  = cos(w);
+    double sinf  = sin(f),  cosf  = cos(f);
 
     //Cartesian elements defined on the orbital plane (plz = plvz = 0).
     double plx = p*cosf/(1.0 + e*cosf);
@@ -242,17 +241,17 @@ dvec6 kep2cart(const dvec6 &kep, const double GM)
     double plvy = sqrt_GM_div_p*(e + cosf);
 
     //Rotation matrix (3rd column is not needed since plz = plvz = 0).
-    double A11 = cosw*cosOm - sinw*cosi*sinOm;
+    double A11 =  cosw*cosOm - sinw*cosi*sinOm;
     double A12 = -sinw*cosOm - cosw*cosi*sinOm;
-    double A21 = cosw*sinOm + sinw*cosi*cosOm;
+    double A21 =  cosw*sinOm + sinw*cosi*cosOm;
     double A22 = -sinw*sinOm + cosw*cosi*cosOm;
-    double A31 = sinw*sini;
-    double A32 = cosw*sini;
+    double A31 =  sinw*sini;
+    double A32 =  cosw*sini;
 
     //Inertial Cartesian elements.
-    double x = A11*plx + A12*ply;
-    double y = A21*plx + A22*ply;
-    double z = A31*plx + A32*ply;
+    double x  = A11*plx  + A12*ply;
+    double y  = A21*plx  + A22*ply;
+    double z  = A31*plx  + A32*ply;
     double vx = A11*plvx + A12*plvy;
     double vy = A21*plvx + A22*plvy;
     double vz = A31*plvx + A32*plvy;

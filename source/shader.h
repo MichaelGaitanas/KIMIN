@@ -14,7 +14,7 @@
 class shader
 {
 private:
-    unsigned int ID; //Shader program ID. With this, we recognize which shader to use.
+    unsigned ID; //Shader program ID. With this, we recognize which shader to use.
 
 public:
     //Parse and read the vertex and fragment shader source files. Then compile both. Then link.

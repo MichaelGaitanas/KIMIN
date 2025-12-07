@@ -34,7 +34,7 @@ private:
 
     //OpenGL related members. They are used after the numerical integration ends, in order to render the 3D scene.
     bool gl_ready; //Whether or not the mesh data are uploaded to the gpu.
-    unsigned int vao, vbo; //Vertex array and vertex buffer objects.
+    unsigned vao, vbo; //Vertex array and vertex buffer objects.
     size_t gl_vertex_count; //Triangle vertices in the interleaved buffer.
 
 public:
@@ -92,7 +92,7 @@ public:
         }
 
         double x,y,z; //Vertices.
-        unsigned int vi1,vi2,vi3; //Faces.
+        unsigned vi1,vi2,vi3; //Faces.
         std::string line;
         while (getline(objfile, line))
         {
@@ -165,9 +165,9 @@ public:
         size_t j = 0;
         for (size_t i = 0; i < faces.size(); ++i)
         {
-            unsigned int f0 = faces[i][0];
-            unsigned int f1 = faces[i][1];
-            unsigned int f2 = faces[i][2];
+            unsigned f0 = faces[i][0];
+            unsigned f1 = faces[i][1];
+            unsigned f2 = faces[i][2];
             //Store each edge as a sorted pair (smallest index first).
             edges[j++] = {std::min(f0,f1), std::max(f0,f1)};
             edges[j++] = {std::min(f1,f2), std::max(f1,f2)};
@@ -196,9 +196,9 @@ public:
         size_t j = 0;
         for (size_t i = 0; i < faces.size(); ++i)
         {
-            unsigned int f0 = faces[i][0];
-            unsigned int f1 = faces[i][1];
-            unsigned int f2 = faces[i][2];
+            unsigned f0 = faces[i][0];
+            unsigned f1 = faces[i][1];
+            unsigned f2 = faces[i][2];
             //Store each edge as a sorted pair (smallest index first).
             local_edges[j++] = {std::min(f0,f1), std::max(f0,f1)};
             local_edges[j++] = {std::min(f1,f2), std::max(f1,f2)};

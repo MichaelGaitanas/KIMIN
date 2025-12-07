@@ -8,7 +8,7 @@
 class grid
 {
 private:
-    unsigned int vao, vbo;
+    unsigned vao, vbo;
 
 public:
 

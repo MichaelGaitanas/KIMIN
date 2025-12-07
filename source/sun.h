@@ -6,7 +6,7 @@
 class sun
 {
 private:
-    unsigned int vao, vbo;
+    unsigned vao, vbo;
 
 public:
     float ang_deg, disc_intensity, disc_edge_soft, limb_strength, limb_power;

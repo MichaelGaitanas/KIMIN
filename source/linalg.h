@@ -84,6 +84,54 @@ dvec4 operator/(const dvec4 &v, const double c)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+//Define the operation v1 + v2 (v1,v2 are 6x1 vectors).
+dvec6 operator+(const dvec6 &v1, const dvec6 &v2)
+{
+    return {v1[0] + v2[0],
+            v1[1] + v2[1],
+            v1[2] + v2[2],
+            v1[3] + v2[3],
+            v1[4] + v2[4],
+            v1[5] + v2[5]};
+}
+
+//Define the operation v1 - v2 (v1,v2 are 6x1 vectors).
+dvec6 operator-(const dvec6 &v1, const dvec6 &v2)
+{
+    return {v1[0] - v2[0],
+            v1[1] - v2[1],
+            v1[2] - v2[2],
+            v1[3] - v2[3],
+            v1[4] - v2[4],
+            v1[5] - v2[5]};
+}
+
+//Define the operation -v (v is 6x1 vector).
+dvec6 operator-(const dvec6 &v)
+{
+    return {-v[0], -v[1], -v[2], -v[3], -v[4], -v[5]};
+}
+
+//Define the operation c*v (c is scalar, v is 6x1 vector).
+dvec6 operator*(const double c, const dvec6 &v)
+{
+    return {c*v[0], c*v[1], c*v[2], c*v[3], c*v[4], c*v[5]};
+}
+
+//Define the operation v*c (v is 6x1 vector, c is scalar).
+dvec6 operator*(const dvec6 &v, const double c)
+{
+    return {v[0]*c, v[1]*c, v[2]*c, v[3]*c, v[4]*c, v[5]*c};
+}
+
+//Define the operation v/c (v is c is 6x1 vector, c is scalar).
+dvec6 operator/(const dvec6 &v, const double c)
+{
+    return {v[0]/c, v[1]/c, v[2]/c, v[3]/c, v[4]/c, v[5]/c};
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 //Define the operation A1 + A2 (A1,A2 are 3x3 matrices).
 dmat3 operator+(const dmat3 &A1, const dmat3 &A2)
 {

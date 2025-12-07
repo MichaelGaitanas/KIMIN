@@ -86,16 +86,15 @@ public:
     bool spacecraft_checkbox; //'Spacecraft orbiter' checkbox state.
     enum
     {
-        CARTESIAN_SP_COM,
-        CARTESIAN_SP_COM1,
-        CARTESIAN_SP_COM2,
-        KEPLERIAN_SP_COM,
-        KEPLERIAN_SP_COM1,
-        KEPLERIAN_SP_COM2
+        CARTESIAN_SP,
+        CARTESIAN_SP1,
+        CARTESIAN_SP2,
+        KEPLERIAN_SP,
+        KEPLERIAN_SP1,
+        KEPLERIAN_SP2
     } pos_vel_sp_var;
-    dvec6 cart; //'x', 'y', 'z', 'υx', 'υy', 'υz' double fields of the relative position/velocity.
-    dvec6 kep; //'a', 'e', 'i', 'Ω', 'ω', 'M' double fields of the relative position/velocity.
-    dvec3 rsp, vsp; //Spacecraft's 'x', 'y', 'z' and 'υx', 'υy', 'υz' double fields.
+    dvec6 cart_sp, cart_sp1, cart_sp2; //Spacecraft's 'x', 'y', 'z' and 'υx', 'υy', 'υz' double fields in whatever frame is selected.
+    dvec6 kep_sp, kep_sp1, kep_sp2; //Spacecraft's a', 'e', 'i', 'Ω', 'ω', 'M' double fields in whatever frame is selected.
     bool srp_checkbox; //'Account for SRP' checkbox state.
     double sp_refl, sp_area, sp_mass; //Spacecraft's 'ρ', 'A', 'm' double fields.
     double sun_dist, sun_lon, sun_lat; //Sun's 'Dist', 'Lon', 'Lat' double fields.
@@ -109,8 +108,8 @@ public:
 
     properties_panel() : sim_name(""),
                          ell_checkbox(false),
-                         semiaxes1(dvec3{0.0,0.0,0.0}),
-                         semiaxes2(dvec3{0.0,0.0,0.0}),
+                         semiaxes1({0.0,0.0,0.0}),
+                         semiaxes2({0.0,0.0,0.0}),
                          ell_clicked_ok(false),
                          obj_checkbox(false),
                          obj1_path(""),
@@ -125,38 +124,43 @@ public:
                          epoch(0.0),
                          dur(0.0),
                          step(0.0),
-                         target_error(1.0e-12),
+                         target_error(1e-12),
                          pos_vel_var(CARTESIAN),
-                         cart(dvec6{0.0,0.0,0.0,0.0,0.0,0.0}),
-                         kep(dvec6{0.0,0.0,0.0,0.0,0.0,0.0}),
+                         cart({0.0,0.0,0.0,0.0,0.0,0.0}),
+                         kep({0.0,0.0,0.0,0.0,0.0,0.0}),
                          orient_var(EULER_XYZ),
-                         rpy1(dvec3{0.0,0.0,0.0}),
-                         rpy2(dvec3{0.0,0.0,0.0}),
-                         q1(dvec4{1.0,0.0,0.0,0.0}),
-                         q2(dvec4{1.0,0.0,0.0,0.0}),
+                         rpy1({0.0,0.0,0.0}),
+                         rpy2({0.0,0.0,0.0}),
+                         q1({1.0,0.0,0.0,0.0}),
+                         q2({1.0,0.0,0.0,0.0}),
                          angvel_frame(INERTIAL),
-                         w1i(dvec3{0.0,0.0,0.0}),
-                         w2i(dvec3{0.0,0.0,0.0}),
-                         w1b(dvec3{0.0,0.0,0.0}),
-                         w2b(dvec3{0.0,0.0,0.0}),
-                         rcom(dvec3{0.0,0.0,0.0}),
-                         vcom(dvec3{0.0,0.0,0.0}),
+                         w1i({0.0,0.0,0.0}),
+                         w2i({0.0,0.0,0.0}),
+                         w1b({0.0,0.0,0.0}),
+                         w2b({0.0,0.0,0.0}),
+                         rcom({0.0,0.0,0.0}),
+                         vcom({0.0,0.0,0.0}),
                          collision_no(false),
                          collision_spheres(false),
                          collision_polyhedra(false),
                          impactors_checkbox(false),
                          mD1(0.0),
                          mD2(0.0),
-                         vD1(dvec3{0.0,0.0,0.0}),
-                         vD2(dvec3{0.0,0.0,0.0}),
+                         vD1({0.0,0.0,0.0}),
+                         vD2({0.0,0.0,0.0}),
                          beta1(0.0),
                          beta2(0.0),
                          tD1(0.0),
                          tD2(0.0),
                          impactors_clicked_ok(false),
                          spacecraft_checkbox(false),
-                         rsp(dvec3{0.0,0.0,0.0}),
-                         vsp(dvec3{0.0,0.0,0.0}),
+                         pos_vel_sp_var(CARTESIAN_SP),
+                         cart_sp({0.0,0.0,0.0,0.0,0.0,0.0}),
+                         cart_sp1({0.0,0.0,0.0,0.0,0.0,0.0}),
+                         cart_sp2({0.0,0.0,0.0,0.0,0.0,0.0}),
+                         kep_sp({0.0,0.0,0.0,0.0,0.0,0.0}),
+                         kep_sp1({0.0,0.0,0.0,0.0,0.0,0.0}),
+                         kep_sp2({0.0,0.0,0.0,0.0,0.0,0.0}),
                          srp_checkbox(false),
                          sp_refl(0.0),
                          sp_area(0.0),
@@ -339,8 +343,40 @@ public:
             fscanf(fp, " \"%127[^\"]\"", buffer);
             if (strcmp(buffer, "Yes") == 0)
             {
-                for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &rsp[i]);
-                for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &vsp[i]);
+                if (find_assignment_operator(fp))
+                {
+                    fscanf(fp, " \"%127[^\"]\"", buffer);
+                    if (strcmp(buffer, "Cartesian (binary COM)") == 0)
+                    {
+                        pos_vel_sp_var = CARTESIAN_SP;
+                        for (int i = 0; i < 6; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &cart_sp[i]);
+                    }
+                    else if (strcmp(buffer, "Cartesian (body 1)") == 0)
+                    {
+                        pos_vel_sp_var = CARTESIAN_SP1;
+                        for (int i = 0; i < 6; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &cart_sp1[i]);   
+                    }
+                    else if (strcmp(buffer, "Cartesian (body 2)") == 0)
+                    {
+                        pos_vel_sp_var = CARTESIAN_SP2;
+                        for (int i = 0; i < 6; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &cart_sp2[i]);   
+                    }
+                    else if (strcmp(buffer, "Keplerian (binary COM)") == 0)
+                    {
+                        pos_vel_sp_var = KEPLERIAN_SP;
+                        for (int i = 0; i < 6; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &kep_sp[i]);
+                    }
+                    else if (strcmp(buffer, "Keplerian (body 1)") == 0)
+                    {
+                        pos_vel_sp_var = KEPLERIAN_SP1;
+                        for (int i = 0; i < 6; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &kep_sp1[i]);
+                    }
+                    else // pos_vel_sp_var = KEPLERIAN_SP2;
+                    {
+                        pos_vel_sp_var = KEPLERIAN_SP2;
+                        for (int i = 0; i < 6; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &kep_sp2[i]);
+                    }
+                }
 
                 if (find_assignment_operator(fp))
                 {
@@ -403,24 +439,24 @@ public:
     //If at least 1 rule is not satisfied, the corresponding errors are displayed in the console and the simulation will not run, until fixed.
     bool validate(console_panel &console)
     {   
-        //Possible error 1 : Simulation name (empty, pure spaces, begin with space, illegal characters).
+        //Possible error : Simulation name (empty, pure spaces, begin with space, illegal characters).
         std::string sim_name_copy = sim_name;
         if ( (sim_name_copy.empty()) || (sim_name_copy.find_first_not_of(' ') == std::string::npos) || (sim_name_copy[0] == ' ') || (sim_name_copy.find_first_of("<>:\"/\\|?*") != std::string::npos) )
             {console.add_timed_text("[Error] : 'Simulation name' is invalid.\n"); return false;}
 
-        //Possible error 2 : Shape model checkboxes (at least one must be checked when the 'Run' button has been pressed).
+        //Possible error : Shape model checkboxes (at least one must be checked when the 'Run' button has been pressed).
         if (!ell_checkbox && !obj_checkbox)
             {console.add_timed_text("[Error] : Neither 'Ellipsoids', nor '.obj files' is selected for determining the shapes.\n"); return false;}
 
-        //Possible error 3 : 'OK' button in the Elliposid parameters window (it must be clicked so that the parameters are taken into account).
+        //Possible error : 'OK' button in the Elliposid parameters window (it must be clicked so that the parameters are taken into account).
         if (ell_checkbox && !ell_clicked_ok)
             {console.add_timed_text("[Error] : 'OK' button must be pressed in the 'Ellipsoid parameters' window.\n"); return false;}
 
-        //Possible error 4 : 'OK' button in the '.obj files' window (it must be clicked so that the .obj files are taken into account).
+        //Possible error : 'OK' button in the '.obj files' window (it must be clicked so that the .obj files are taken into account).
         if (obj_checkbox && !obj_clicked_ok)
             {console.add_timed_text("[Error] : 'OK' button must be pressed in the '.obj files' window.\n"); return false;}
 
-        //Possible error 5 : Ellipsoids semiaxes (all semiaxes must be > 0).
+        //Possible error : Ellipsoids semiaxes (all semiaxes must be > 0).
         if (ell_checkbox)
         {
             if (semiaxes1[0] <= 0.0 || semiaxes1[1] <= 0.0 || semiaxes1[2] <= 0.0)
@@ -441,7 +477,7 @@ public:
             }
         }
 
-        //Possible error 6 : .obj files (at least one .obj file per body must be selected). Also the polyhedra must be closed manifold geometries.
+        //Possible error : .obj files (at least one .obj file per body must be selected). Also the polyhedra must be closed manifold geometries.
         if (obj_checkbox)
         {   
             if (obj1_path.empty())
@@ -478,7 +514,7 @@ public:
             }
         }
 
-        //Possible error 7 : Mutual potential checkboxes (at least one must be checked).
+        //Possible error : Mutual potential checkboxes (at least one must be checked).
         if (!ord2_checkbox && !ord3_checkbox && !ord4_checkbox)
             {console.add_timed_text("[Error] : Neither 'Order 2', nor 'Order 3', nor 'Order 4' mutual potential is selected.\n"); return false;}
 
@@ -486,7 +522,7 @@ public:
         if (M1 <= 0.0 || M2 <= 0.0)
             {console.add_timed_text("[Error] : 'M1', 'M2' must be positive numbers.\n"); return false;}
 
-        //Possible error 9 : Time parameters ('Epoch' and 'Duration' must be >= 0, 'Step' must be <= 'Duration' and 'Target error' must be > 0).
+        //Possible error : Time parameters ('Epoch' and 'Duration' must be >= 0, 'Step' must be <= 'Duration' and 'Target error' must be > 0).
         if (integration_method == RKF78_FIXED || integration_method == ABM5_FIXED)
         {
             if (!(epoch >= 0.0 && dur > 0.0 && step <= dur && step > 0.0))
@@ -498,21 +534,21 @@ public:
                 {console.add_timed_text("[Error] : Invalid set of 'Epoch', 'Duration', 'Target error'.\n"); return false;}
         }
 
-        //Possible error 10 : Relative position/velocity (mutual distance must be > 0).
-        if (pos_vel_var == CARTESIAN && length(dvec3{cart[0], cart[1], cart[2]}) <= 0.0)
-            {console.add_timed_text("[Error] : Invalid set of 'x', 'y', 'z' (mutual distance must be positive).\n"); return false;}
-
-        //Possible error 11 : Relative Keplerian elements ( 'a' must be > 0, 'e' must be in [0,1)U(1,inf) )
-        if (pos_vel_var == KEPLERIAN)
+        //Possible error : Relative position/velocity (mutual distance must be > 0, 'a' must be nonzero, 'e' must be in [0,1)U(1,inf)).
+        if (pos_vel_var == CARTESIAN)
         {
-            if (kep[0] <= 0.0)
-                {console.add_timed_text("[Error] : Semi-major axis 'a' must be positive.\n"); return false;}
+            if (length(dvec3{cart[0], cart[1], cart[2]}) <= 0.0)
+                {console.add_timed_text("[Error] : Invalid set of 'x', 'y', 'z' (mutual distance must be positive).\n"); return false;}
+        }
+        else //pos_vel_var == KEPLERIAN
+        {
+            if (fabs(kep[0]) <= 1e-15)
+                {console.add_timed_text("[Error] : Binary's semi-major axis 'a' must be nonzero.\n"); return false;}
             if (kep[1] < 0.0 || fabs(kep[1] - 1.0) <= 1e-15)
-                {console.add_timed_text("[Error] : Eccentricity 'e' must be in [0,1)U(1,inf).\n"); return false;}
+                {console.add_timed_text("[Error] : Binary's eccentricity 'e' must be in [0,1)U(1,inf).\n"); return false;}
         }
 
-        //Possible error 12 : Quaternion (both must be nonzero).
-        //Note : In case of non normalized quaternion input, the program normalizes them both automatically.
+        //Possible error : Quaternion (both must be nonzero).
         if (orient_var == QUATERNION)
         {
             if (length(q1) <= 1e-15)
@@ -527,25 +563,49 @@ public:
                 q2 = quat2unit(q2); //This correction will be visible in the gui.
         }
 
-        //Possible error 13 : Collision shapes (at least one must be checked).
+        //Possible error : Collision shapes (at least one must be checked).
         if (!collision_no && !collision_spheres && !collision_polyhedra)
             {console.add_timed_text("[Error] : At least one collision criterion must be selected.\n"); return false;}
 
-        //Possible error 14 : 'OK' button in the impactors' parameters window (it must be clicked so that the parameters are taken into account).
+        //Possible error : 'OK' button in the impactors' parameters window (it must be clicked so that the parameters are taken into account).
         if (impactors_checkbox && !impactors_clicked_ok)
             {console.add_timed_text("[Error] : 'OK' button must be pressed in the 'Impactors' parameters' window.\n"); return false;}
 
-        //Possible error 15 : Impactors' parameters (masses must be >= 0).
+        //Possible error : Impactors' parameters (masses must be >= 0).
         if (impactors_checkbox && (mD1 < 0.0 || mD2 < 0.0))
             {console.add_timed_text("[Error] : Both impactors' masses, 'm1' and 'm2' must be non negative.\n"); return false;}
 
-        //Possible error 16 : Times of impacts must range in the simulated time range, i.e. in [Epoch, Epoch + Duration].
+        //Possible error : Times of impacts must range in the simulated time range, i.e. in [Epoch, Epoch + Duration].
         if (impactors_checkbox && (tD1 < epoch || tD1 > epoch + dur || tD2 < epoch || tD2 > epoch + dur))
             {console.add_timed_text("[Error] : Impact times must range in [Epoch,  Epoch + Duration].\n"); return false;}
 
-        //Possible error 17 : SRP inputs must be valid and 'OK' button must be clicked in the end.
         if (spacecraft_checkbox)
         {
+            //Possible error : Initial position/velocity, must be valid (similar to binary's logic).
+            if (pos_vel_sp_var == KEPLERIAN_SP)
+            {
+                if (fabs(kep_sp[0]) <= 1e-15)
+                    {console.add_timed_text("[Error] : Spacecraft's semi-major axis 'a' must be nonzero.\n"); return false;}
+                if (kep_sp[1] < 0.0 || fabs(kep_sp[1] - 1.0) <= 1e-15)
+                    {console.add_timed_text("[Error] : Spacecraft's eccentricity 'e' must be in [0,1)U(1,inf).\n"); return false;}
+            }
+            else if (pos_vel_sp_var == KEPLERIAN_SP1)
+            {
+                if (fabs(kep_sp1[0]) <= 1e-15)
+                    {console.add_timed_text("[Error] : Spacecraft's semi-major axis 'a' must be nonzero.\n"); return false;}
+                if (kep_sp1[1] < 0.0 || fabs(kep_sp1[1] - 1.0) <= 1e-15)
+                    {console.add_timed_text("[Error] : Spacecraft's eccentricity 'e' must be in [0,1)U(1,inf).\n"); return false;}
+            }
+            else if (pos_vel_sp_var == KEPLERIAN_SP2)
+            {
+                if (fabs(kep_sp2[0]) <= 1e-15)
+                    {console.add_timed_text("[Error] : Spacecraft's semi-major axis 'a' must be nonzero.\n"); return false;}
+                if (kep_sp2[1] < 0.0 || fabs(kep_sp2[1] - 1.0) <= 1e-15)
+                    {console.add_timed_text("[Error] : Spacecraft's eccentricity 'e' must be in [0,1)U(1,inf).\n"); return false;}
+            }
+            //Regarding the spacecraft's cartesian state, we do not impose constraints for now...
+            
+            //Possible error : SRP inputs must be valid.
             if (srp_checkbox)
             {
                 if (sp_refl < 0.0 || sp_refl > 1.0 + 1e-15)
@@ -556,13 +616,13 @@ public:
                     {console.add_timed_text("[Error] : Spacecraft's mass 'm' must positive.\n"); return false;}
                 if (sun_dist < 1e-15)
                     {console.add_timed_text("[Error] : Sun's distance 'Dist' must be positive.\n"); return false;}
-                if (2.0*length(rsp)/(sun_dist*AU2KM) > MAX_SRP_REL_VARIATION) //This is to block very short spacecraft - star distance input.
+                if (sun_dist <= MIN_SUN_DIST_SRP) //This is to block very short spacecraft - Sun distance input.
                 {
-                    console.add_timed_text("[Error] : Initial Sun - spacecraft distance is too short for the parallel-ray SRP model. "
-                                           "Increase 'Dist' or set the spacecraft closer to the binary's C.O.M.\n");
+                    console.add_timed_text("[Error] : Initial Sun distance is too short for the parallel-ray SRP model. Increase 'Dist' (Sun - binary distance).\n");
                     return false;
                 }
             }
+            //Possible error : 'OK' button must be clicked in the end.
             if (!spacecraft_clicked_ok)
                 {console.add_timed_text("[Error] : 'OK' button must be pressed in the 'Spacecraft's state' window.\n"); return false;}
         }
@@ -735,12 +795,12 @@ public:
         ImGui::Text("Initial state");
         ImGui::Indent();
 
-        ImGui::Text("Relative position and velocity");
+        ImGui::Text("Mutual position and velocity");
 
         //Initial position/velocity variables, either in the form of Cartesian coords, or Keplerian elements.
         ImGui::PushItemWidth(200.0f*SCX);
             ImGui::PushID(id++);
-                static const char *cart_kep_var[2] = {"Cartesian", "Keplerian"}; //Nature of the relative position and velocity variables.
+                static const char *cart_kep_var[2] = {"Cartesian", "Keplerian"}; //Nature of the mutual position and velocity variables.
                 ImGui::Combo("  ", (int*)(&pos_vel_var), cart_kep_var, IM_ARRAYSIZE(cart_kep_var));
             ImGui::PopID();
         ImGui::PopItemWidth();
@@ -829,7 +889,7 @@ public:
         ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
 
         //C.O.M. initial position and velocity.
-        ImGui::Text("C.O.M. motion relative to world");
+        ImGui::Text("COM motion (world frame)");
         double_field("x ",  100.0f*SCX, 70.0f*SCX, id, "[km]",     rcom[0]);
         double_field("y ",  100.0f*SCX, 70.0f*SCX, id, "[km]",     rcom[1]);
         double_field("z ",  100.0f*SCX, 70.0f*SCX, id, "[km]",     rcom[2]);
@@ -864,7 +924,7 @@ public:
         {
             ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, 0.0f), ImGuiCond_FirstUseEver); 
             ImGui::SetNextWindowSize(ImVec2(0.15f*sx, 0.4f*sy), ImGuiCond_FirstUseEver); 
-            ImGui::Begin("Impactors' parameters", &impactors_checkbox);
+            ImGui::Begin("Impactor parameters", &impactors_checkbox);
 
             //Radiobuttons logic : At least one will always be active and to this, (the active one) the impactor's parameters shall correspond.
             static int impactor_refers_to_body = 1;
@@ -928,17 +988,76 @@ public:
         {
             ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, 0.0f), ImGuiCond_FirstUseEver); 
             ImGui::SetNextWindowSize(ImVec2(0.15f*sx, 0.4f*sy), ImGuiCond_FirstUseEver); 
-            ImGui::Begin("Spacecraft's state", &spacecraft_checkbox);
+            ImGui::Begin("Spacecraft state", &spacecraft_checkbox);
 
-            ImGui::Text("Position (relative to C.O.M.)");
-            double_field("x ", 100.0f*SCX, 40.0f*SCX, id, "[km]", rsp[0]);
-            double_field("y ", 100.0f*SCX, 40.0f*SCX, id, "[km]", rsp[1]);
-            double_field("z ", 100.0f*SCX, 40.0f*SCX, id, "[km]", rsp[2]);
-            ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
-            ImGui::Text("Velocity (relative to C.O.M.)");
-            double_field("υx ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", vsp[0]);
-            double_field("υy ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", vsp[1]);
-            double_field("υz ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", vsp[2]);
+            ImGui::Text("Position and velocity");
+
+            //Initial position/velocity variables, either in the form of Cartesian coords, or Keplerian elements.
+            ImGui::PushItemWidth(200.0f*SCX);
+                ImGui::PushID(id++);
+                    static const char *cart_kep_sp_var[6] = {"Cartesian (binary COM)",
+                                                             "Cartesian (body 1)",
+                                                             "Cartesian (body 2)",
+                                                             "Keplerian (binary COM)",
+                                                             "Keplerian (body 1)",
+                                                             "Keplerian (body 2)"};
+                    ImGui::Combo("  ", (int*)(&pos_vel_sp_var), cart_kep_sp_var, IM_ARRAYSIZE(cart_kep_sp_var));
+                ImGui::PopID();
+            ImGui::PopItemWidth();
+            if (pos_vel_sp_var == CARTESIAN_SP)
+            {
+                double_field("x ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp[0]);
+                double_field("y ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp[1]);
+                double_field("z ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp[2]);
+                double_field("υx ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp[3]);
+                double_field("υy ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp[4]);
+                double_field("υz ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp[5]);
+            }
+            else if (pos_vel_sp_var == CARTESIAN_SP1)
+            {
+                double_field("x ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp1[0]);
+                double_field("y ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp1[1]);
+                double_field("z ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp1[2]);
+                double_field("υx ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp1[3]);
+                double_field("υy ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp1[4]);
+                double_field("υz ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp1[5]);
+            }
+            else if (pos_vel_sp_var == CARTESIAN_SP2)
+            {
+                double_field("x ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp2[0]);
+                double_field("y ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp2[1]);
+                double_field("z ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp2[2]);
+                double_field("υx ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp2[3]);
+                double_field("υy ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp2[4]);
+                double_field("υz ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp2[5]);
+            }
+            else if (pos_vel_sp_var == KEPLERIAN_SP)
+            {
+                double_field("a ", 100.0f*SCX, 40.0f*SCX, id, "[km]",   kep_sp[0]);
+                double_field("e ", 100.0f*SCX, 40.0f*SCX, id, "[    ]", kep_sp[1]);
+                double_field("i ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp[2]);
+                double_field("Ω ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp[3]);
+                double_field("ω ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp[4]);
+                double_field("M ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp[5]);
+            }
+            else if (pos_vel_sp_var == KEPLERIAN_SP1)
+            {
+                double_field("a ", 100.0f*SCX, 40.0f*SCX, id, "[km]",   kep_sp1[0]);
+                double_field("e ", 100.0f*SCX, 40.0f*SCX, id, "[    ]", kep_sp1[1]);
+                double_field("i ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp1[2]);
+                double_field("Ω ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp1[3]);
+                double_field("ω ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp1[4]);
+                double_field("M ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp1[5]);
+            }
+            else //pos_vel_sp_var == KEPLERIAN_SP2
+            {
+                double_field("a ", 100.0f*SCX, 40.0f*SCX, id, "[km]",   kep_sp2[0]);
+                double_field("e ", 100.0f*SCX, 40.0f*SCX, id, "[    ]", kep_sp2[1]);
+                double_field("i ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp2[2]);
+                double_field("Ω ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp2[3]);
+                double_field("ω ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp2[4]);
+                double_field("M ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp2[5]);
+            }
 
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
             ImGui::Separator();
@@ -953,7 +1072,7 @@ public:
                 double_field("A ", 100.0f*SCX, 40.0f*SCX, id, "[m^2]", sp_area);
                 double_field("m ", 100.0f*SCX, 40.0f*SCX, id, "[kg]",  sp_mass);
                 ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
-                ImGui::Text("Sun's position (relative to C.O.M.)");
+                ImGui::Text("Sun's position (binary COM)");
                 double_field("Dist ", 100.0f*SCX, 40.0f*SCX, id, "[AU]",  sun_dist);
                 double_field("Lon ",  100.0f*SCX, 40.0f*SCX, id, "[deg]", sun_lon);
                 double_field("Lat ",  100.0f*SCX, 40.0f*SCX, id, "[deg]", sun_lat);

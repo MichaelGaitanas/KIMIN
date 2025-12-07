@@ -21,7 +21,7 @@ Numerical integration :
     Target error := 1e-15
 
 Initial state :
-    Relative position and velocity := "Cartesian"
+    Mutual position and velocity := "Cartesian"
     x  := 664.6
     y  := 0
     z  := 0
@@ -45,7 +45,7 @@ Initial state :
     w2iy := 0
     w2iz := 1.64902612622291e-05
 
-    C.O.M. motion relative to world :
+    COM motion relative to world :
     x  := 0.0
     y  := 0.0
     z  := 0.0

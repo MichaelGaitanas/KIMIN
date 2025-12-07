@@ -17,7 +17,7 @@ Numerical integration :
     Target error := 1e-14
 
 Initial state :
-    Relative position and velocity := "Keplerian"
+    Mutual position and velocity := "Keplerian"
     a  := 1.18
     e  := 0.04
     i  := 0
@@ -41,7 +41,7 @@ Initial state :
     w2iy := 0
     w2iz := 0.000146402
 
-    C.O.M. motion relative to world :
+    COM motion relative to world :
     x  := 0.0
     y  := 0.0
     z  := 0.0
@@ -54,11 +54,11 @@ Collision shapes := "Polyhedra"
 Assume kinetic impactors := "No"
 
 Assume spacecraft orbiter := "Yes"
-    Initial position (relative to C.O.M.) :
+    Position and velocity := "Cartesian (binary COM)"
+    Initial position and velocity :
         x  := 3
         y  := 0
         z  := 0
-    Initial velocity (relative to C.O.M.) :
         vx := 0
         vy := 0
         vz := 0.00011
@@ -68,7 +68,7 @@ Assume spacecraft orbiter := "Yes"
             ρ := 0.3
             A := 13
             m := 1128
-        Sun's position (relative to C.O.M.) :
+        Sun's position (binary COM) :
             Dist := 1.64
             Lon  := 0
             Lat  := 90

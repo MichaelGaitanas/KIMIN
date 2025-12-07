@@ -17,11 +17,11 @@ typedef std::array<double, 4> dvec4; //Vector of 4 doubles.
 typedef std::array<double, 6> dvec6; //Vector of 6 doubles.
 typedef std::vector<double> dvec; //Vector of n doubles.
 
-typedef std::array<unsigned int, 2> uvec2; //Vector of 2 unsigned ints.
-typedef std::array<unsigned int, 3> uvec3; //Vector of 3 unsigned ints.
+typedef std::array<unsigned, 2> uvec2; //Vector of 2 unsigned integers.
+typedef std::array<unsigned, 3> uvec3; //Vector of 3 unsigned integers.
 
-typedef std::vector<uvec2> umatnx2; //nx2 matrix of unsigned ints.
-typedef std::vector<uvec3> umatnx3; //nx3 matrix of unsigned ints.
+typedef std::vector<uvec2> umatnx2; //nx2 matrix of unsigned integers.
+typedef std::vector<uvec3> umatnx3; //nx3 matrix of unsigned integers.
 
 typedef std::array<dvec3, 3> dmat3; //3x3 matrix of doubles.
 typedef std::vector<dvec3> dmatnx3; //nx3 matrix of doubles.

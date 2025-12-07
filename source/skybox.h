@@ -8,10 +8,10 @@
 class skybox
 {
 private:
-    unsigned int vao, vbo, ebo ; //Vertex array object, vertex buffer object and element (index) buffer object.
+    unsigned vao, vbo, ebo ; //Vertex array object, vertex buffer object and element (index) buffer object.
 
 public:
-    unsigned int tex;  //Texture ID.
+    unsigned tex;  //Texture ID.
 
     //Construct the mesh procedurally (i.e. no geometry data like vertices or UVs are read from a file), setup the mesh in the gpu memory, load the 6 images and tell how to wrap them.
     //Note : Make sure that all 6 images have the same size in pixels (e.g. 2048x2048, 500x500, etc...) AND the same type of extensions (e.g. jpg, png, bmp, ...).
@@ -32,24 +32,24 @@ public:
                           -1.0f,  1.0f, -1.0f };
 
         //Cube indices.
-        unsigned int inds[] = { //Right.
-                                1, 2, 6,
-                                6, 5, 1,
-                                //Left.
-                                0, 4, 7,
-                                7, 3, 0,
-                                //Top.
-                                4, 5, 6,
-                                6, 7, 4,
-                                //Bottom.
-                                0, 3, 2,
-                                2, 1, 0,
-                                //Front.
-                                3, 7, 6,
-                                6, 2, 3, 
-                                //Back.
-                                0, 1, 5,
-                                5, 4, 0 };
+        unsigned inds[] = { //Right.
+                            1, 2, 6,
+                            6, 5, 1,
+                            //Left.
+                            0, 4, 7,
+                            7, 3, 0,
+                            //Top.
+                            4, 5, 6,
+                            6, 7, 4,
+                            //Bottom.
+                            0, 3, 2,
+                            2, 1, 0,
+                            //Front.
+                            3, 7, 6,
+                            6, 2, 3, 
+                            //Back.
+                            0, 1, 5,
+                            5, 4, 0 };
 
         //Setup skybox's data in the memory.
         glGenVertexArrays(1, &vao);

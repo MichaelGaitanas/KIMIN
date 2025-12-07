@@ -13,7 +13,7 @@ class orbit
 {
 private:
     bool gl_ready;
-    unsigned int vao, vbo;
+    unsigned vao, vbo;
     float thickness; //This is basically the rasterized line width of the trajectory.
 
 public:
