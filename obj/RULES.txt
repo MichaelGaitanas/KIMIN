@@ -20,7 +20,7 @@ Regarding the .obj files that exist in the polyhedra/ directory, the following r
    valid in theory, the corresponding detailed mutual roto-translational dynamics and graphics rendering might lack accuracy, as the software is designed
    to handle asteroid-scaled sizes.
    
-7) For the currently existing .obj meshes, the vertices are assumed to be in [km].
+7) For the currently existing .obj meshes, all vertices are assumed to be in [km].
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 

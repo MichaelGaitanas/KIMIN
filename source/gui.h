@@ -58,6 +58,7 @@ public:
 
         ImGuiIO &io = ImGui::GetIO();
         io.IniFilename = nullptr;
+        io.ConfigWindowsMoveFromTitleBarOnly = true;
         io.Fonts->AddFontFromFileTTF("../fonts/RobotoRegular.ttf", 15.0f*SCY, nullptr, io.Fonts->GetGlyphRangesGreek());
         (void)io;
 

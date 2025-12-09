@@ -23,6 +23,7 @@ constexpr int GLFW_REQUESTED_DEPTH_BITS = 32;
 constexpr float CLEAR_COLOR_R = 0.06f;
 constexpr float CLEAR_COLOR_G = 0.06f;
 constexpr float CLEAR_COLOR_B = 0.06f;
+constexpr float AXES_LENGTH = 2.98179f;
 
 constexpr char SIM_ROOT_DIR[] = "../simulations/";
 

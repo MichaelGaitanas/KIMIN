@@ -35,20 +35,20 @@ public:
     }
 
     //This function computes the light's projection and view matrix that are passed as uniforms to the shaders in the renderer3D.h.
-    void set_geometry(const float shadow_extent, const glm::vec3 &pos_com)
+    void set_geometry(const float ortho_extent, const glm::vec3 &pos_com)
     {
         const float fc = 1.01f, fl = 1.02f; //Scale factors that are used to scale the size of the orthographic box of the directional light.
         const float lon_rad = glm::radians(lon), lat_rad = glm::radians(lat);
         dir = glm::vec3(cos(lon_rad)*sin(lat_rad),
                         sin(lon_rad)*sin(lat_rad),
                         cos(lat_rad));
-        const float light_dist = fl*shadow_extent; //Directional light's 'dummy' distance.
+        const float light_dist = fl*ortho_extent; //Directional light's 'dummy' distance.
 
         const glm::vec3 up = (glm::abs(dir.z) > 0.999f) ? glm::vec3(0.0f,1.0f,0.0f) : glm::vec3(0.0f,0.0f,1.0f);
 
-        const glm::mat4 projection = glm::ortho(-fc*shadow_extent,fc*shadow_extent,
-                                                -fc*shadow_extent,fc*shadow_extent,
-                                                (fl-fc)*shadow_extent, 2.0f*fc*shadow_extent);
+        const glm::mat4 projection = glm::ortho(-fc*ortho_extent,fc*ortho_extent,
+                                                -fc*ortho_extent,fc*ortho_extent,
+                                                (fl-fc)*ortho_extent, 2.0f*fc*ortho_extent);
         const glm::mat4 view = glm::lookAt(pos_com + light_dist*dir, pos_com, up);
         pv = projection*view;
     }

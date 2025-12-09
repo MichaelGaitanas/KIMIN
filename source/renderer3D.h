@@ -214,7 +214,7 @@ public:
         else //camera::BODY2
             cam.set_geometry_body(aspect, r2_world, r1_world, (float)sol.integr.brillouin2);
 
-        sunlight.set_geometry((float)sol.integr.brillouin1 + (float)sol.integr.brillouin2 + (float)sol.dist[iframe], rcom);
+        sunlight.set_geometry((float)(AXES_LENGTH*std::max(sol.integr.brillouin1, sol.integr.brillouin2) + sol.dist[iframe]), rcom);
 
         const glm::mat4 I = glm::mat4(1.0f);
 

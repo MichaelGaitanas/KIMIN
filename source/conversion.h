@@ -5,6 +5,7 @@
 
 #include<cmath>
 #include<cstdio>
+#include<algorithm>
 
 #include"constants.h"
 #include"typedef.h"
@@ -104,17 +105,6 @@ dvec3 iner2body(const dvec3 &viner, const dmat3 &A)
 dvec3 body2iner(const dvec3 &vbody, const dmat3 &A)
 {
     return dot(A, vbody);
-}
-
-//Bound cos(x) in case of excess from [-1,1].
-//This function is only meant to be called from cart2kep() (see below).
-double clamp_cos(double cosx)
-{
-    if (cosx > 1.0)
-        return 1.0;
-    if (cosx < -1.0)
-        return -1.0;
-    return cosx;
 }
 
 //Perform unsigned modulo 2*PI to the argument 'angle'.
@@ -299,14 +289,14 @@ dvec6 cart2kep(const dvec6 &cart, const double GM)
 
     //Inclination (3rd Keplerian element).
     double cosi = hz/h;
-    double i = acos(clamp_cos(cosi));
+    double i = acos(std::clamp(cosi, -1.0, 1.0));
 
     //Longitude of ascending node (4th Keplerian element).
     double Om;
     if (n > 1e-15)
     {
         double cosOm = nx/n;
-        Om = acos(clamp_cos(cosOm));
+        Om = acos(std::clamp(cosOm, -1.0, 1.0));
         if (ny < 0.0)
             Om = 2.0*PI - Om;
     }
@@ -321,14 +311,14 @@ dvec6 cart2kep(const dvec6 &cart, const double GM)
         if (n > 1e-15)
         {
             cosw = (nx*ex + ny*ey)/(e*n);
-            w = acos(clamp_cos(cosw));
+            w = acos(std::clamp(cosw, -1.0, 1.0));
             if (ez < 0.0)
                 w = 2.0*PI - w;
         }
         else
         {
             cosw = ex/e;
-            w = acos(clamp_cos(cosw));
+            w = acos(std::clamp(cosw, -1.0, 1.0));
         }
     }
     else
@@ -341,14 +331,14 @@ dvec6 cart2kep(const dvec6 &cart, const double GM)
         if (e > 1e-15)
         {
             cosf = (ex*x + ey*y + ez*z)/(e*r);
-            f = acos(clamp_cos(cosf));
+            f = acos(std::clamp(cosf, -1.0, 1.0));
             if (rdotv < 0.0)
                 f = 2.0*PI - f;
         }
         else
         {
             cosf = (nx*x + ny*y)/(n*r);
-            f = acos(clamp_cos(cosf));
+            f = acos(std::clamp(cosf, -1.0, 1.0));
             if (-x*ny + y*nx < 0.0)
                 f = 2.0*PI - f;
         }
@@ -356,7 +346,7 @@ dvec6 cart2kep(const dvec6 &cart, const double GM)
     else
     {
         cosf = x/r;
-        f = acos(clamp_cos(cosf));
+        f = acos(std::clamp(cosf, -1.0, 1.0));
     }
 
     //Mean anomaly (6th Keplerian element).

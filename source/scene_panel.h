@@ -844,12 +844,12 @@ public:
                     if (plot_cart_sp1[6]) plot_cart_sp1[6] = plot("##plot_cart_sp1[6]", "Spacecraft υz (body 1)",            "υz [km/sec]",  plot_cart_sp1[6], sol2D.vzsp1);
                     if (plot_cart_sp1[7]) plot_cart_sp1[7] = plot("##plot_cart_sp1[7]", "Spacecraft υ (magnitude) (body 1)", "υ [km/sec]",   plot_cart_sp1[7], sol2D.vel_sp1);
 
-                    if (plot_kep_sp1[0]) plot_kep_sp1[0] = plot("##plot_kep_sp1[0]", "Spacecraft semi - major axis",           "a [km]",  plot_kep_sp1[0], sol2D.sma_sp1);
-                    if (plot_kep_sp1[1]) plot_kep_sp1[1] = plot("##plot_kep_sp1[1]", "Spacecraft eccentricity",                "e [  ]",  plot_kep_sp1[1], sol2D.ecc_sp1);
-                    if (plot_kep_sp1[2]) plot_kep_sp1[2] = plot("##plot_kep_sp1[2]", "Spacecraft inclination",                 "i [deg]", plot_kep_sp1[2], sol2D.inc_sp1);
-                    if (plot_kep_sp1[3]) plot_kep_sp1[3] = plot("##plot_kep_sp1[3]", "Spacecraft longitude of ascending node", "Ω [deg]", plot_kep_sp1[3], sol2D.raan_sp1);
-                    if (plot_kep_sp1[4]) plot_kep_sp1[4] = plot("##plot_kep_sp1[4]", "Spacecraft argument of periapsis",       "ω [deg]", plot_kep_sp1[4], sol2D.argper_sp1);
-                    if (plot_kep_sp1[5]) plot_kep_sp1[5] = plot("##plot_kep_sp1[5]", "Spacecraft mean anomaly",                "M [deg]", plot_kep_sp1[5], sol2D.manom_sp1);
+                    if (plot_kep_sp1[0]) plot_kep_sp1[0] = plot("##plot_kep_sp1[0]", "Spacecraft semi - major axis (body 1)",           "a [km]",  plot_kep_sp1[0], sol2D.sma_sp1);
+                    if (plot_kep_sp1[1]) plot_kep_sp1[1] = plot("##plot_kep_sp1[1]", "Spacecraft eccentricity (body 1)",                "e [  ]",  plot_kep_sp1[1], sol2D.ecc_sp1);
+                    if (plot_kep_sp1[2]) plot_kep_sp1[2] = plot("##plot_kep_sp1[2]", "Spacecraft inclination (body 1)",                 "i [deg]", plot_kep_sp1[2], sol2D.inc_sp1);
+                    if (plot_kep_sp1[3]) plot_kep_sp1[3] = plot("##plot_kep_sp1[3]", "Spacecraft longitude of ascending node (body 1)", "Ω [deg]", plot_kep_sp1[3], sol2D.raan_sp1);
+                    if (plot_kep_sp1[4]) plot_kep_sp1[4] = plot("##plot_kep_sp1[4]", "Spacecraft argument of periapsis (body 1)",       "ω [deg]", plot_kep_sp1[4], sol2D.argper_sp1);
+                    if (plot_kep_sp1[5]) plot_kep_sp1[5] = plot("##plot_kep_sp1[5]", "Spacecraft mean anomaly (body 1)",                "M [deg]", plot_kep_sp1[5], sol2D.manom_sp1);
 
 
                     if (plot_cart_sp2[0]) plot_cart_sp2[0] = plot("##plot_cart_sp2[0]", "Spacecraft x (body 2)",             "x [km]",       plot_cart_sp2[0], sol2D.xsp2);
@@ -861,12 +861,12 @@ public:
                     if (plot_cart_sp2[6]) plot_cart_sp2[6] = plot("##plot_cart_sp2[6]", "Spacecraft υz (body 2)",            "υz [km/sec]",  plot_cart_sp2[6], sol2D.vzsp2);
                     if (plot_cart_sp2[7]) plot_cart_sp2[7] = plot("##plot_cart_sp2[7]", "Spacecraft υ (magnitude) (body 2)", "υ [km/sec]",   plot_cart_sp2[7], sol2D.vel_sp2);
 
-                    if (plot_kep_sp2[0]) plot_kep_sp2[0] = plot("##plot_kep_sp2[0]", "Spacecraft semi - major axis",           "a [km]",  plot_kep_sp2[0], sol2D.sma_sp2);
-                    if (plot_kep_sp2[1]) plot_kep_sp2[1] = plot("##plot_kep_sp2[1]", "Spacecraft eccentricity",                "e [  ]",  plot_kep_sp2[1], sol2D.ecc_sp2);
-                    if (plot_kep_sp2[2]) plot_kep_sp2[2] = plot("##plot_kep_sp2[2]", "Spacecraft inclination",                 "i [deg]", plot_kep_sp2[2], sol2D.inc_sp2);
-                    if (plot_kep_sp2[3]) plot_kep_sp2[3] = plot("##plot_kep_sp2[3]", "Spacecraft longitude of ascending node", "Ω [deg]", plot_kep_sp2[3], sol2D.raan_sp2);
-                    if (plot_kep_sp2[4]) plot_kep_sp2[4] = plot("##plot_kep_sp2[4]", "Spacecraft argument of periapsis",       "ω [deg]", plot_kep_sp2[4], sol2D.argper_sp2);
-                    if (plot_kep_sp2[5]) plot_kep_sp2[5] = plot("##plot_kep_sp2[5]", "Spacecraft mean anomaly",                "M [deg]", plot_kep_sp2[5], sol2D.manom_sp2);
+                    if (plot_kep_sp2[0]) plot_kep_sp2[0] = plot("##plot_kep_sp2[0]", "Spacecraft semi - major axis (body 2)",           "a [km]",  plot_kep_sp2[0], sol2D.sma_sp2);
+                    if (plot_kep_sp2[1]) plot_kep_sp2[1] = plot("##plot_kep_sp2[1]", "Spacecraft eccentricity (body 2)",                "e [  ]",  plot_kep_sp2[1], sol2D.ecc_sp2);
+                    if (plot_kep_sp2[2]) plot_kep_sp2[2] = plot("##plot_kep_sp2[2]", "Spacecraft inclination (body 2)",                 "i [deg]", plot_kep_sp2[2], sol2D.inc_sp2);
+                    if (plot_kep_sp2[3]) plot_kep_sp2[3] = plot("##plot_kep_sp2[3]", "Spacecraft longitude of ascending node (body 2)", "Ω [deg]", plot_kep_sp2[3], sol2D.raan_sp2);
+                    if (plot_kep_sp2[4]) plot_kep_sp2[4] = plot("##plot_kep_sp2[4]", "Spacecraft argument of periapsis (body 2)",       "ω [deg]", plot_kep_sp2[4], sol2D.argper_sp2);
+                    if (plot_kep_sp2[5]) plot_kep_sp2[5] = plot("##plot_kep_sp2[5]", "Spacecraft mean anomaly (body 2)",                "M [deg]", plot_kep_sp2[5], sol2D.manom_sp2);
                 }
             }
             ImGui::PopStyleColor();
