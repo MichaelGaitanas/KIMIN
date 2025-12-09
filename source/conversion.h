@@ -347,6 +347,8 @@ dvec6 cart2kep(const dvec6 &cart, const double GM)
     {
         cosf = x/r;
         f = acos(std::clamp(cosf, -1.0, 1.0));
+        if (y < 0.0)
+            f = 2.0*PI - f;
     }
 
     //Mean anomaly (6th Keplerian element).
