@@ -109,15 +109,7 @@ public:
             rend3D.render_orb_sp = false;
         }
         else
-        {
             rend3D.orb_sp.draw_count = init_orb_count;
-            if (sol->integr.properties.srp_checkbox)
-            {
-                rend3D.sunlight.is_constrained = true;
-                rend3D.sunlight.lon = sol->integr.properties.sun_lon;
-                rend3D.sunlight.lat = sol->integr.properties.sun_lat;
-            }
-        }
     }
 
 private:
@@ -504,34 +496,6 @@ private:
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
 
-        //Sun setup logic :
-
-        ImGui::Text("Sun direction");
-
-        if (rend3D.sunlight.is_constrained)
-        {
-            ImGui::SameLine();
-            ImGui::Text("(constrained due to SRP)");
-            ImGui::BeginDisabled();
-        }
-
-        ImGui::Text("Lon");
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(40.0f*SCX);
-        ImGui::SliderFloat("[deg]##rend3D.sunlight.lon", &rend3D.sunlight.lon, 0.0f, 360.0f, "%.1f");
-
-        ImGui::Text("Lat");
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(40.0f*SCX);
-        ImGui::SliderFloat("[deg]##rend3D.sunlight.lat", &rend3D.sunlight.lat, 0.0f, 180.0f, "%.1f");
-
-        if (rend3D.sunlight.is_constrained)
-            ImGui::EndDisabled();
-
-        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
-
         //Shadow setup logic :
 
         ImGui::Text("Shadow map");
@@ -700,9 +664,7 @@ private:
                 const ImVec2 d = io.MouseDelta;
                 if (d.x != 0.0f || d.y != 0.0f)
                 {
-                    if (io.KeyCtrl && !rend3D.sunlight.is_constrained)
-                        rend3D.sunlight.rotate_lon_lat(d.x, d.y);
-                    else if (rend3D.cam.frame_of_ref == camera::WORLD || rend3D.cam.frame_of_ref == camera::COM)
+                    if (rend3D.cam.frame_of_ref == camera::WORLD || rend3D.cam.frame_of_ref == camera::COM)
                         rend3D.cam.rotate_lon_lat_inertial(d.x, d.y);
                     else if (rend3D.cam.frame_of_ref == camera::BODY1 || rend3D.cam.frame_of_ref == camera::BODY2)
                         rend3D.cam.move_upon_vplane(d.x, d.y, rend3D.win_width, rend3D.win_height);

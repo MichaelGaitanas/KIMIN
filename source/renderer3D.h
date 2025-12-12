@@ -201,8 +201,8 @@ public:
         }
 
         const glm::vec3 rcom = get_analytic_rcom(sol, iframe);
-        const glm::vec3 r1_world = rcom + (float)sol.integr.m1*glm::vec3(sol.x[iframe],sol.y[iframe],sol.z[iframe]);
-        const glm::vec3 r2_world = rcom + (float)sol.integr.m2*glm::vec3(sol.x[iframe],sol.y[iframe],sol.z[iframe]);
+        const glm::vec3 r1 = (float)sol.integr.m1*glm::vec3(sol.x[iframe],sol.y[iframe],sol.z[iframe]);
+        const glm::vec3 r2 = (float)sol.integr.m2*glm::vec3(sol.x[iframe],sol.y[iframe],sol.z[iframe]);
 
         const float aspect = win_width/(float)win_height;
         if (cam.frame_of_ref == camera::WORLD)
@@ -210,21 +210,25 @@ public:
         else if (cam.frame_of_ref == camera::COM)
             cam.set_geometry_inertial(aspect, rcom);
         else if (cam.frame_of_ref == camera::BODY1)
-            cam.set_geometry_body(aspect, r1_world, r2_world, (float)sol.integr.brillouin1);
+            cam.set_geometry_body(aspect, r1, r2, (float)sol.integr.brillouin1);
         else //camera::BODY2
-            cam.set_geometry_body(aspect, r2_world, r1_world, (float)sol.integr.brillouin2);
+            cam.set_geometry_body(aspect, r2, r1, (float)sol.integr.brillouin2);
 
-        sunlight.set_geometry((float)(OBJ_AXES_LENGTH*std::max(sol.integr.brillouin1, sol.integr.brillouin2) + sol.dist[iframe]), rcom);
+        
+        glm::vec3 rsun_com = -rcom;
+        float sun_dist = glm::length(rsun_com);
+        glm::vec3 sun_dir = rsun_com/sun_dist;
+        sunlight.set_geometry((float)(OBJ_AXES_LENGTH*std::max(sol.integr.brillouin1, sol.integr.brillouin2) + sol.dist[iframe]), glm::vec3(0.0f), sun_dir);
 
         const glm::mat4 I = glm::mat4(1.0f);
 
-        const glm::mat4 T1R1 = glm::translate(I, r1_world)*
+        const glm::mat4 T1R1 = glm::translate(I, r1)*
                          glm::rotate(I, glm::radians((float)sol.yaw1[iframe]),   glm::vec3(0.0f,0.0f,1.0f))*
                          glm::rotate(I, glm::radians((float)sol.pitch1[iframe]), glm::vec3(0.0f,1.0f,0.0f))*
                          glm::rotate(I, glm::radians((float)sol.roll1[iframe]),  glm::vec3(1.0f,0.0f,0.0f));
         const glm::mat4 S1 = glm::scale(I, glm::vec3((float)sol.integr.brillouin1));
 
-        const glm::mat4 T2R2 = glm::translate(I, r2_world)*
+        const glm::mat4 T2R2 = glm::translate(I, r2)*
                          glm::rotate(I, glm::radians((float)sol.yaw2[iframe]),   glm::vec3(0.0f,0.0f,1.0f))*
                          glm::rotate(I, glm::radians((float)sol.pitch2[iframe]), glm::vec3(0.0f,1.0f,0.0f))*
                          glm::rotate(I, glm::radians((float)sol.roll2[iframe]),  glm::vec3(1.0f,0.0f,0.0f));
@@ -285,12 +289,13 @@ public:
         }
 
         //Sun rendering pass :
+        float ang_deg = glm::degrees(asinf(RSUN/glm::length(rcom)));
         sh_sun.use();
         sh_sun.set_mat4_uniform("projection",      cam.projection);
         sh_sun.set_mat4_uniform("view",            cam.view);
         sh_sun.set_vec3_uniform("light_dir_world", sunlight.dir);
         sh_sun.set_vec3_uniform("sun_color",       sun_col);
-        sh_sun.set_float_uniform("sun_angular_radius_deg", sunquad.ang_deg);
+        sh_sun.set_float_uniform("sun_angular_radius_deg", ang_deg);
         sh_sun.set_float_uniform("sun_distance", 10.0f*cam.max_dist); //Put the Sun comfortably 'far'. The aim is to make occlude only the skybox but no other mesh.
         sh_sun.set_float_uniform("sun_scale", 1.0f);
         sh_sun.set_float_uniform("sun_disc_intensity", sunquad.disc_intensity);
