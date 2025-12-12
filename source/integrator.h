@@ -30,10 +30,7 @@ public:
     bool collision, collision_sp; //Collision flags for the binary and the spacecraft.
     bool maneuver1, maneuver2; //Whether or not a beta-kick (equivalent maneuver) has been applied to the corresponding body.
 
-    dvec3 rsun; //Constant sun's position relative to the COM of the binary in Cartesian coords.
-
     double t0, tmax, dt, init_guess_time_step; //Integration time.
-
     dmat orbit; //This is the solution matrix of the differential equations that will be propagated (time + state vector).
 
 
@@ -41,14 +38,34 @@ public:
 
     integrator(const properties_panel &properties) //Needed to instantiate the integrator in the gui class.
     {
-        this->properties = properties;
-        //Note : In the following member functions, whatever change is made upon the 'properties' variable, has nothing to do with the gui's displayed properties.
-        //We operate only on THIS class member 'properties', which is a deep copy of the gui's properties.
+        this->properties = properties; //Deep copy of the gui's properties.
     }
 
 private:
+    //This function evaluates analytically the equation of motion of the COM in the Heliocentric frame.
+    dvec3 get_analytic_rcom(const dvec6 &cart_com0, const double t)
+    {
+        dvec3 rcom0 = {cart_com0[0],cart_com0[1],cart_com0[2]};
+        dvec3 vcom0 = {cart_com0[3],cart_com0[4],cart_com0[5]};
+        dvec3 r = rcom0 + vcom0*(t - t0); //Heliocentric COM position due to initial state (straight line).
+        if (properties.impactors_checkbox)
+        {
+            if (t >= properties.tD1) //Impact 1 contribution.
+            {
+                const dvec3 dvcm1 = properties.beta1*properties.mD1*properties.vD1/(properties.M1 + properties.M2);
+                r = r + dvcm1*(t - properties.tD1);
+            }
+            if (t >= properties.tD2) //Impact 2 contribution.
+            {
+                const dvec3 dvcm2 = properties.beta2*properties.mD2*properties.vD2/(properties.M1 + properties.M2);
+                r = r + dvcm2*(t - properties.tD2);
+            }
+        }
+        return r;
+    }
+
     //This function builds the right hand sides of the differential equations of motion. It is executed at each step of the integration.
-    void build_rhs(const boost::array<double, N_ODES> &state, boost::array<double, N_ODES> &dstate, double /*t*/)
+    void build_rhs(const boost::array<double, N_ODES> &state, boost::array<double, N_ODES> &dstate, double t)
     {
         //Extract the current state vector of the binary (for readability mostly).
         dvec3 r  =  { state[0],  state[1],  state[2] };
@@ -144,6 +161,7 @@ private:
             if (properties.srp_checkbox)
             {
                 bool sp_in_shadow = false;
+                dvec3 rsun = -get_analytic_rcom(properties.cart_com, t);
                 if (properties.srp_shadow_checkbox)
                     sp_in_shadow = line_sphere_intersection(rsp, rsun, r1, brillouin1) || line_sphere_intersection(rsp, rsun, r2, brillouin2);
                 if (!sp_in_shadow)
@@ -198,6 +216,16 @@ public:
             properties.w1b = iner2body(properties.w1i, quat2mat(properties.q1));
             properties.w2b = iner2body(properties.w2i, quat2mat(properties.q2));
         }
+
+        //Preparation : If the user chose Keplerian elements as initial Heliocentric position/velocity of the COM, then, transform
+        //them to Cartesian coords.
+        if (properties.pos_vel_com_var == properties_panel::KEPLERIAN_COM)
+            properties.cart_com = kep2cart({properties.kep_com[0],
+                                            properties.kep_com[1],
+                                            properties.kep_com[2]*PI/180.0,
+                                            properties.kep_com[3]*PI/180.0,
+                                            properties.kep_com[4]*PI/180.0,
+                                            properties.kep_com[5]*PI/180.0}, G*MSUN);
 
         //Preparation : Based on the user's choice 'ell_checkbox' or '.obj files', we need to evaluate :
         //1) The Brillouin radii, 2) The inertial inertial integrals of the corresponding chosen order.
@@ -309,12 +337,6 @@ public:
                                                 properties.kep_sp2[5]*PI/180.0}, G*properties.M2);
                 properties.cart_sp = m2*properties.cart + properties.cart_sp2;
             }
-
-            if (properties.srp_checkbox)
-            {
-                rsun = spher2cart({properties.sun_dist, properties.sun_lon*PI/180.0, properties.sun_lat*PI/180.0}); //{[AU], [AU], [AU]}
-                rsun = rsun*AU2KM; //{[km], [km], [km]}
-            }
         }
 
         collision = collision_sp = false; //Assuming no collision when the simulation starts.
@@ -401,7 +423,7 @@ public:
                 }
             }
 
-            //Collisions : check for asteroid-asteroid or spacecraft-asteroid collision.
+            //Collisions : check for asteroid-asteroid, spacecraft-asteroid collision or Sun close approach.
             char buffer[128];
             if (properties.collision_spheres)
             {
@@ -482,6 +504,13 @@ public:
                         }
                     }
                 }
+            }
+            //Sun-COM close approach :
+            if (length(get_analytic_rcom(properties.cart_com, t)) < MIN_SUN_BODY_DIST)
+            {
+                sprintf(buffer,"< Binary COM too close to Sun at t = %5.2lf [days]. >\n", t/86400.0);
+                console.add_text(buffer);
+                break;
             }
 
             //Abort flag : the user might want to kill the integration via the 'Abort' button in the gui.

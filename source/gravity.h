@@ -1155,7 +1155,7 @@ dvec3 accel_masc(const dvec3 &r, const double M, const dmatnx3 &masc, const dmat
 //Acceleration of a body (e.g. spacecraft) due to SRP - cannonball model.
 dvec3 accel_srp(const double rho, const double A, const double m, const dvec3 &rbody, const dvec3 &rsun)
 {
-    dvec3 dr = rbody - rsun;
+    dvec3 dr = rbody - rsun; //Sun to spacecraft vector.
     double drlen = length(dr);
     return (1.0 + rho)*(A/m)*4.56e-9*AU2KM*AU2KM*dr/(drlen*drlen*drlen); //[km/sec^2]
 }

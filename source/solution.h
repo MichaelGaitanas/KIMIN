@@ -346,13 +346,26 @@ public:
             fprintf(fp_properties,"    w2bz := %.15g\n\n", integr.properties.w2b[2]);
         }
 
-        fprintf(fp_properties,"    COM motion relative to world :\n");
-        fprintf(fp_properties,"    x  := %.15g\n",   integr.properties.rcom[0]);
-        fprintf(fp_properties,"    y  := %.15g\n",   integr.properties.rcom[1]);
-        fprintf(fp_properties,"    z  := %.15g\n",   integr.properties.rcom[2]);
-        fprintf(fp_properties,"    vx := %.15g\n",   integr.properties.vcom[0]);
-        fprintf(fp_properties,"    vy := %.15g\n",   integr.properties.vcom[1]);
-        fprintf(fp_properties,"    vz := %.15g\n\n", integr.properties.vcom[2]);
+        if (integr.properties.pos_vel_com_var == properties_panel::CARTESIAN_COM)
+        {
+            fprintf(fp_properties,"    Binary COM (Heliocentric) := \"Cartesian\"\n");
+            fprintf(fp_properties,"    x  := %.15g\n",   integr.properties.cart_com[0]);
+            fprintf(fp_properties,"    y  := %.15g\n",   integr.properties.cart_com[1]);
+            fprintf(fp_properties,"    z  := %.15g\n",   integr.properties.cart_com[2]);
+            fprintf(fp_properties,"    vx := %.15g\n",   integr.properties.cart_com[3]);
+            fprintf(fp_properties,"    vy := %.15g\n",   integr.properties.cart_com[4]);
+            fprintf(fp_properties,"    vz := %.15g\n\n", integr.properties.cart_com[5]);
+        }
+        else //properties_panel::KEPLERIAN_COM
+        {
+            fprintf(fp_properties,"    Binary COM (Heliocentric) := \"Keplerian\"\n");
+            fprintf(fp_properties,"    a  := %.15g\n",   integr.properties.kep_com[0]);
+            fprintf(fp_properties,"    e  := %.15g\n",   integr.properties.kep_com[1]);
+            fprintf(fp_properties,"    i  := %.15g\n",   integr.properties.kep_com[2]);
+            fprintf(fp_properties,"    Om := %.15g\n",   integr.properties.kep_com[3]);
+            fprintf(fp_properties,"    w  := %.15g\n",   integr.properties.kep_com[4]);
+            fprintf(fp_properties,"    M  := %.15g\n\n", integr.properties.kep_com[5]);
+        }
 
         if (integr.properties.collision_no)
             fprintf(fp_properties,"Collision shapes := \"No collision\"\n\n");
@@ -461,10 +474,6 @@ public:
                 fprintf(fp_properties,"            ρ  := %.15g\n", integr.properties.sp_refl);
                 fprintf(fp_properties,"            A  := %.15g\n", integr.properties.sp_area);
                 fprintf(fp_properties,"            m  := %.15g\n", integr.properties.sp_mass);
-                fprintf(fp_properties,"        Sun's position (binary COM) : \n");
-                fprintf(fp_properties,"            Dist := %.15g\n", integr.properties.sun_dist);
-                fprintf(fp_properties,"            Lon  := %.15g\n", integr.properties.sun_lon);
-                fprintf(fp_properties,"            Lat  := %.15g\n", integr.properties.sun_lat);
                 if (integr.properties.srp_shadow_checkbox)
                     fprintf(fp_properties,"    Account for shadows := \"Yes\"\n");
                 else

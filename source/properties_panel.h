@@ -72,7 +72,13 @@ public:
     dvec3 w1i, w2i; //'ω1ix', 'ω1iy', 'ω1iz', 'ω2ix', 'ω2iy, 'ω2iz' double fields.
     dvec3 w1b, w2b; //'ω1bx', 'ω1by', 'ω1bz', 'ω2bx', 'ω2by, 'ω2bz' double fields.
 
-    dvec3 rcom, vcom; //'x', 'y', 'z', 'υx', 'υy', 'υz' double fields of the center of mass of the binary.
+    enum
+    {
+        CARTESIAN_COM,
+        KEPLERIAN_COM
+    } pos_vel_com_var;
+    dvec6 cart_com; //'x', 'y', 'z', 'υx', 'υy', 'υz' double fields of the COM position/velocity.
+    dvec6 kep_com; //'a', 'e', 'i', 'Ω', 'ω', 'M' double fields of the COM position/velocity.
 
     bool collision_no, collision_spheres, collision_polyhedra; //Which type of collision criterion to apply in the simulation.
 
@@ -97,7 +103,6 @@ public:
     dvec6 kep_sp, kep_sp1, kep_sp2; //Spacecraft's a', 'e', 'i', 'Ω', 'ω', 'M' double fields in whatever frame is selected.
     bool srp_checkbox; //'Account for SRP' checkbox state.
     double sp_refl, sp_area, sp_mass; //Spacecraft's 'ρ', 'A', 'm' double fields.
-    double sun_dist, sun_lon, sun_lat; //Sun's 'Dist', 'Lon', 'Lat' double fields.
     bool srp_shadow_checkbox; //'Account for shadow' checkbox state.
     bool spacecraft_clicked_ok; //Spacecraft's 'OK' button.
 
@@ -138,8 +143,9 @@ public:
                          w2i({0.0,0.0,0.0}),
                          w1b({0.0,0.0,0.0}),
                          w2b({0.0,0.0,0.0}),
-                         rcom({0.0,0.0,0.0}),
-                         vcom({0.0,0.0,0.0}),
+                         pos_vel_com_var(CARTESIAN_COM),
+                         cart_com({0.0,0.0,0.0,0.0,0.0,0.0}),
+                         kep_com({0.0,0.0,0.0,0.0,0.0,0.0}),
                          collision_no(false),
                          collision_spheres(false),
                          collision_polyhedra(false),
@@ -165,9 +171,6 @@ public:
                          sp_refl(0.0),
                          sp_area(0.0),
                          sp_mass(0.0),
-                         sun_dist(0.0),
-                         sun_lon(0.0),
-                         sun_lat(0.0),
                          srp_shadow_checkbox(false),
                          spacecraft_clicked_ok(false),
                          run_pressed(false),
@@ -305,8 +308,17 @@ public:
         }
 
         //Parse the C.O.M. initial state.
-        for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &rcom[i]);
-        for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &vcom[i]);
+        if (find_assignment_operator(fp)) fscanf(fp, " \"%127[^\"]\"", buffer);
+        if (strcmp(buffer, "Cartesian") == 0)
+        {
+            pos_vel_com_var = CARTESIAN_COM;
+            for (int i = 0; i < 6; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &cart_com[i]);
+        }
+        else
+        {
+            pos_vel_com_var = KEPLERIAN_COM;
+            for (int i = 0; i < 6; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &kep_com[i]);
+        }
 
         //Parse the collision shapes.
         if (find_assignment_operator(fp)) fscanf(fp, " \"%127[^\"]\"", buffer);
@@ -386,10 +398,6 @@ public:
                         if (find_assignment_operator(fp)) fscanf(fp, "%lf", &sp_refl);
                         if (find_assignment_operator(fp)) fscanf(fp, "%lf", &sp_area);
                         if (find_assignment_operator(fp)) fscanf(fp, "%lf", &sp_mass);
-
-                        if (find_assignment_operator(fp)) fscanf(fp, "%lf", &sun_dist);
-                        if (find_assignment_operator(fp)) fscanf(fp, "%lf", &sun_lon);
-                        if (find_assignment_operator(fp)) fscanf(fp, "%lf", &sun_lat);
 
                         if (find_assignment_operator(fp))
                         {
@@ -563,6 +571,26 @@ public:
                 q2 = quat2unit(q2); //This correction will be visible in the gui.
         }
 
+        //Possible error : Binary system must not be too close to the Sun (the test is not so strict though, but let us proceed for now).
+        if (pos_vel_com_var == CARTESIAN_COM)
+        {
+            if (length(dvec3{cart_com[0],cart_com[1],cart_com[2]}) < MIN_SUN_BODY_DIST)
+                {console.add_timed_text("[Error] : Binary COM is too close to the Sun. Increase heliocentric distance.\n"); return false;}
+        }
+        else //pos_vel_com_var == KEPLERIAN_COM
+        {
+            if (fabs(kep_com[0]) <= 1e-15)
+                {console.add_timed_text("[Error] : Heliocentric semi-major axis 'a' must be nonzero.\n"); return false;}
+            if (kep_com[1] < 0.0 || fabs(kep_com[1] - 1.0) <= 1e-15)
+                {console.add_timed_text("[Error] : Heliocentric eccentricity 'e' must be in [0,1)U(1,inf).\n"); return false;}
+            else
+            {
+                dvec6 temp_cart_com = kep2cart(kep_com, G*MSUN);
+                if (length(dvec3{temp_cart_com[0],temp_cart_com[1],temp_cart_com[2]}) < MIN_SUN_BODY_DIST)
+                    {console.add_timed_text("[Error] : Binary COM is too close to the Sun. Increase heliocentric distance.\n"); return false;}
+            }
+        }
+
         //Possible error : Collision shapes (at least one must be checked).
         if (!collision_no && !collision_spheres && !collision_polyhedra)
             {console.add_timed_text("[Error] : At least one collision criterion must be selected.\n"); return false;}
@@ -603,7 +631,6 @@ public:
                 if (kep_sp2[1] < 0.0 || fabs(kep_sp2[1] - 1.0) <= 1e-15)
                     {console.add_timed_text("[Error] : Spacecraft's eccentricity 'e' must be in [0,1)U(1,inf).\n"); return false;}
             }
-            //Regarding the spacecraft's cartesian state, we do not impose constraints for now...
             
             //Possible error : SRP inputs must be valid.
             if (srp_checkbox)
@@ -614,13 +641,6 @@ public:
                     {console.add_timed_text("[Error] : Spacecraft's area 'A' must positive.\n"); return false;}
                 if (sp_mass < 1e-15)
                     {console.add_timed_text("[Error] : Spacecraft's mass 'm' must positive.\n"); return false;}
-                if (sun_dist < 1e-15)
-                    {console.add_timed_text("[Error] : Sun's distance 'Dist' must be positive.\n"); return false;}
-                if (sun_dist <= MIN_SUN_DIST_SRP) //This is to block very short spacecraft - Sun distance input.
-                {
-                    console.add_timed_text("[Error] : Initial Sun distance is too short for the parallel-ray SRP model. Increase 'Dist' (Sun - binary distance).\n");
-                    return false;
-                }
             }
             //Possible error : 'OK' button must be clicked in the end.
             if (!spacecraft_clicked_ok)
@@ -889,13 +909,31 @@ public:
         ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
 
         //C.O.M. initial position and velocity.
-        ImGui::Text("COM motion (world frame)");
-        double_field("x ",  100.0f*SCX, 70.0f*SCX, id, "[km]",     rcom[0]);
-        double_field("y ",  100.0f*SCX, 70.0f*SCX, id, "[km]",     rcom[1]);
-        double_field("z ",  100.0f*SCX, 70.0f*SCX, id, "[km]",     rcom[2]);
-        double_field("υx ", 100.0f*SCX, 70.0f*SCX, id, "[km/sec]", vcom[0]);
-        double_field("υy ", 100.0f*SCX, 70.0f*SCX, id, "[km/sec]", vcom[1]);
-        double_field("υz ", 100.0f*SCX, 70.0f*SCX, id, "[km/sec]", vcom[2]);
+        ImGui::Text("Binary COM (Heliocentric)");
+        ImGui::PushItemWidth(200.0f*SCX);
+            ImGui::PushID(id++);
+                static const char *cart_kep_com_var[2] = {"Cartesian", "Keplerian"};
+                ImGui::Combo("  ", (int*)(&pos_vel_com_var), cart_kep_com_var, IM_ARRAYSIZE(cart_kep_com_var));
+            ImGui::PopID();
+        ImGui::PopItemWidth();
+        if (pos_vel_com_var == CARTESIAN_COM)
+        {
+            double_field("x ",  100.0f*SCX, 55.0f*SCX, id, "[km]",     cart_com[0]);
+            double_field("y ",  100.0f*SCX, 55.0f*SCX, id, "[km]",     cart_com[1]);
+            double_field("z ",  100.0f*SCX, 55.0f*SCX, id, "[km]",     cart_com[2]);
+            double_field("υx ", 100.0f*SCX, 55.0f*SCX, id, "[km/sec]", cart_com[3]);
+            double_field("υy ", 100.0f*SCX, 55.0f*SCX, id, "[km/sec]", cart_com[4]);
+            double_field("υz ", 100.0f*SCX, 55.0f*SCX, id, "[km/sec]", cart_com[5]);
+        }
+        else //pos_vel_com_var == KEPLERIAN_COM
+        {
+            double_field("a ", 100.0f*SCX, 55.0f*SCX, id, "[km]",   kep_com[0]);
+            double_field("e ", 100.0f*SCX, 55.0f*SCX, id, "[    ]", kep_com[1]);
+            double_field("i ", 100.0f*SCX, 55.0f*SCX, id, "[deg]",  kep_com[2]);
+            double_field("Ω ", 100.0f*SCX, 55.0f*SCX, id, "[deg]",  kep_com[3]);
+            double_field("ω ", 100.0f*SCX, 55.0f*SCX, id, "[deg]",  kep_com[4]);
+            double_field("M ", 100.0f*SCX, 55.0f*SCX, id, "[deg]",  kep_com[5]);
+        }
 
         ImGui::Unindent();
 
@@ -1071,11 +1109,6 @@ public:
                 double_field("ρ ", 100.0f*SCX, 40.0f*SCX, id, "[  ]",  sp_refl);
                 double_field("A ", 100.0f*SCX, 40.0f*SCX, id, "[m^2]", sp_area);
                 double_field("m ", 100.0f*SCX, 40.0f*SCX, id, "[kg]",  sp_mass);
-                ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
-                ImGui::Text("Sun's position (binary COM)");
-                double_field("Dist ", 100.0f*SCX, 40.0f*SCX, id, "[AU]",  sun_dist);
-                double_field("Lon ",  100.0f*SCX, 40.0f*SCX, id, "[deg]", sun_lon);
-                double_field("Lat ",  100.0f*SCX, 40.0f*SCX, id, "[deg]", sun_lat);
                 ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
                 ImGui::Checkbox("Account for shadows", &srp_shadow_checkbox);
             }

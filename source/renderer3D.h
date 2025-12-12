@@ -158,10 +158,15 @@ public:
             orb_sp.draw_count = std::min<size_t>(1, sol.t.size());
     }
 
-    //This function evaluates analytically the equation of motion of the COM in world coordinates.
-    glm::vec3 get_analytic_rcom(const solution &sol, const size_t iframe, const glm::vec3 &rcom0, const glm::vec3 &vcom0)
+    glm::vec3 get_analytic_rcom(const solution &sol, const size_t iframe)
     {
         const double ti = sol.t[iframe]*86400.0;
+        const glm::vec3 rcom0 = glm::vec3((float)sol.integr.properties.cart_com[0],
+                                          (float)sol.integr.properties.cart_com[1],
+                                          (float)sol.integr.properties.cart_com[2]);
+        const glm::vec3 vcom0 = glm::vec3((float)sol.integr.properties.cart_com[3],
+                                          (float)sol.integr.properties.cart_com[4],
+                                          (float)sol.integr.properties.cart_com[5]);
         glm::vec3 r = rcom0 + vcom0*(float)(ti - sol.integr.t0); //COM position due to initial state.
         if (sol.integr.properties.impactors_checkbox)
         {
@@ -195,12 +200,7 @@ public:
             reset_gpu_essential = false;
         }
 
-        const glm::vec3 rcom = get_analytic_rcom(sol, iframe, glm::vec3((float)sol.integr.properties.rcom[0],
-                                                                        (float)sol.integr.properties.rcom[1],
-                                                                        (float)sol.integr.properties.rcom[2]),
-                                                              glm::vec3((float)sol.integr.properties.vcom[0],
-                                                                        (float)sol.integr.properties.vcom[1],
-                                                                        (float)sol.integr.properties.vcom[2]));
+        const glm::vec3 rcom = get_analytic_rcom(sol, iframe);
         const glm::vec3 r1_world = rcom + (float)sol.integr.m1*glm::vec3(sol.x[iframe],sol.y[iframe],sol.z[iframe]);
         const glm::vec3 r2_world = rcom + (float)sol.integr.m2*glm::vec3(sol.x[iframe],sol.y[iframe],sol.z[iframe]);
 
@@ -214,7 +214,7 @@ public:
         else //camera::BODY2
             cam.set_geometry_body(aspect, r2_world, r1_world, (float)sol.integr.brillouin2);
 
-        sunlight.set_geometry((float)(AXES_LENGTH*std::max(sol.integr.brillouin1, sol.integr.brillouin2) + sol.dist[iframe]), rcom);
+        sunlight.set_geometry((float)(OBJ_AXES_LENGTH*std::max(sol.integr.brillouin1, sol.integr.brillouin2) + sol.dist[iframe]), rcom);
 
         const glm::mat4 I = glm::mat4(1.0f);
 

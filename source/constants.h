@@ -4,8 +4,9 @@
 constexpr double PI = 3.1415926535897932384626433832795;
 constexpr double G = 6.67430e-20; //[km^3/(kg*sec^2)]
 constexpr double AU2KM = 149597870.7; //[km]
+constexpr double MSUN = 1.989e30; //[kg]
 constexpr double PSRP = 4.56e-6; //[N/m^2]
-constexpr double MIN_SUN_DIST_SRP = 0.005; //[AU]
+constexpr double MIN_SUN_BODY_DIST = 0.005; //[AU]
 constexpr double ODES_INIT_GUESS_TIME_STEP = 1.0; //[sec]
 
 constexpr size_t N_SOL2D = 5000;
@@ -17,7 +18,7 @@ constexpr float CAM_INIT_FOV = 60.0f; //[deg]
 constexpr float CLEAR_COLOR_R = 0.06f;
 constexpr float CLEAR_COLOR_G = 0.06f;
 constexpr float CLEAR_COLOR_B = 0.06f;
-constexpr float AXES_LENGTH = 2.98179f; //[km]
+constexpr float OBJ_AXES_LENGTH = 2.98179f; //[km]
 //These are defined as variables because their values are hardware dependent, hence computed
 //as soon as the KIMIN launches (in window.h). They remain constant however throughout the runtime.
 float SCX, SCY;

@@ -41,7 +41,7 @@ Initial state :
     w2iy := 0
     w2iz := 0
 
-    COM motion relative to world :
+    Binary COM (Heliocentric) := "Cartesian"
     x  := 0.0
     y  := 0.0
     z  := 0.0
