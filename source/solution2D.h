@@ -13,7 +13,7 @@
 #include"typedef.h"
 #include"linalg.h"
 #include"conversion.h"
-#include"properties_panel.h"
+#include"properties.h"
 #include"integrator.h"
 #include"solution.h"
 
@@ -59,25 +59,25 @@ public:
     {
         t.clear();
 
-        x.clear(); y.clear(); z.clear(); dist.clear();
-        vx.clear(); vy.clear(); vz.clear(); vel.clear();
-        sma.clear(); ecc.clear(); inc.clear(); raan.clear(); argper.clear(); manom.clear();
+        x.clear();       y.clear();         z.clear();    dist.clear();
+        vx.clear();      vy.clear();        vz.clear();   vel.clear();
+        sma.clear();     ecc.clear();       inc.clear();  raan.clear(); argper.clear(); manom.clear();
         denergy.clear(); dmomentum.clear();
-        roll1.clear(); pitch1.clear(); yaw1.clear(); relyaw1.clear();
-        w1ix.clear(); w1iy.clear(); w1iz.clear();
-        w1bx.clear(); w1by.clear(); w1bz.clear();
-        roll2.clear(); pitch2.clear(); yaw2.clear(); relyaw2.clear();
-        w2ix.clear(); w2iy.clear(); w2iz.clear();
-        w2bx.clear(); w2by.clear(); w2bz.clear();
+        roll1.clear();   pitch1.clear();    yaw1.clear(); relyaw1.clear();
+        w1ix.clear();    w1iy.clear();      w1iz.clear();
+        w1bx.clear();    w1by.clear();      w1bz.clear();
+        roll2.clear();   pitch2.clear();    yaw2.clear(); relyaw2.clear();
+        w2ix.clear();    w2iy.clear();      w2iz.clear();
+        w2bx.clear();    w2by.clear();      w2bz.clear();
 
-        xsp.clear();  ysp.clear();  zsp.clear(); dist_sp.clear();
-        vxsp.clear(); vysp.clear(); vzsp.clear(); vel_sp.clear();
-        sma_sp.clear(); ecc_sp.clear(); inc_sp.clear(); raan_sp.clear(); argper_sp.clear(); manom_sp.clear();
-        xsp1.clear();  ysp1.clear();  zsp1.clear();  dist_sp1.clear();
-        vxsp1.clear(); vysp1.clear(); vzsp1.clear(); vel_sp1.clear();
+        xsp.clear();     ysp.clear();     zsp.clear();     dist_sp.clear();
+        vxsp.clear();    vysp.clear();    vzsp.clear();    vel_sp.clear();
+        sma_sp.clear();  ecc_sp.clear();  inc_sp.clear();  raan_sp.clear();  argper_sp.clear();  manom_sp.clear();
+        xsp1.clear();    ysp1.clear();    zsp1.clear();    dist_sp1.clear();
+        vxsp1.clear();   vysp1.clear();   vzsp1.clear();   vel_sp1.clear();
         sma_sp1.clear(); ecc_sp1.clear(); inc_sp1.clear(); raan_sp1.clear(); argper_sp1.clear(); manom_sp1.clear();
-        xsp2.clear();  ysp2.clear();  zsp2.clear();  dist_sp2.clear();
-        vxsp2.clear(); vysp2.clear(); vzsp2.clear(); vel_sp2.clear();
+        xsp2.clear();    ysp2.clear();    zsp2.clear();    dist_sp2.clear();
+        vxsp2.clear();   vysp2.clear();   vzsp2.clear();   vel_sp2.clear();
         sma_sp2.clear(); ecc_sp2.clear(); inc_sp2.clear(); raan_sp2.clear(); argper_sp2.clear(); manom_sp2.clear();
     }
 
@@ -95,15 +95,15 @@ public:
 
         double energy0 = 0.5*sol.integr.m*dot(v0,v0) + 0.5*dot( dot(w1b0, sol.integr.I1), w1b0) + 0.5*dot( dot(w2b0, sol.integr.I2), w2b0);
 
-        if (sol.integr.properties.ord2_checkbox)
-            energy0 += mut_pot_integrals_ord2(r0, sol.integr.properties.M1, sol.integr.J1, A10,
-                                                  sol.integr.properties.M2, sol.integr.J2, A20);
-        else if (sol.integr.properties.ord3_checkbox)
-            energy0 += mut_pot_integrals_ord3(r0, sol.integr.properties.M1, sol.integr.J1, A10,
-                                                  sol.integr.properties.M2, sol.integr.J2, A20);
+        if (sol.integr.props.ord2_checkbox)
+            energy0 += mut_pot_integrals_ord2(r0, sol.integr.props.M1, sol.integr.J1, A10,
+                                                  sol.integr.props.M2, sol.integr.J2, A20);
+        else if (sol.integr.props.ord3_checkbox)
+            energy0 += mut_pot_integrals_ord3(r0, sol.integr.props.M1, sol.integr.J1, A10,
+                                                  sol.integr.props.M2, sol.integr.J2, A20);
         else
-            energy0 += mut_pot_integrals_ord4(r0, sol.integr.properties.M1, sol.integr.J1, A10,
-                                                  sol.integr.properties.M2, sol.integr.J2, A20);
+            energy0 += mut_pot_integrals_ord4(r0, sol.integr.props.M1, sol.integr.J1, A10,
+                                                  sol.integr.props.M2, sol.integr.J2, A20);
 
         double momentum0 = length( sol.integr.m*cross(r0,v0) + dot(A10, dot(sol.integr.I1, w1b0)) + dot(A20, dot(sol.integr.I2, w2b0)) );
 
@@ -141,7 +141,7 @@ public:
         w2ix.resize(N2D);   w2iy.resize(N2D);    w2iz.resize(N2D);
         w2bx.resize(N2D);   w2by.resize(N2D);    w2bz.resize(N2D);
         
-        if (sol.integr.properties.spacecraft_checkbox)
+        if (sol.integr.props.spacecraft_checkbox)
         {
             xsp.resize(N2D);    ysp.resize(N2D);    zsp.resize(N2D);    dist_sp.resize(N2D);
             vxsp.resize(N2D);   vysp.resize(N2D);   vzsp.resize(N2D);   vel_sp.resize(N2D);
@@ -162,16 +162,16 @@ public:
 
         #ifdef _OPENMP
             int total_threads = omp_get_max_threads();
-            int half_threads  = (total_threads > 1 ? total_threads/2 : 1);
+            int used_threads  = (total_threads > 1 ? total_threads/2 : 1);
         #else
-            constexpr int half_threads = 1;
+            constexpr int used_threads = 1;
         #endif
-        (void)half_threads;
+        (void)used_threads;
 
         size_t i;
         #ifdef _OPENMP
             #pragma omp parallel for schedule(static)\
-                                     num_threads(half_threads)
+                                     num_threads(used_threads)
         #endif
         for (i = 0; i < N2D; ++i)
         {
@@ -210,18 +210,18 @@ public:
                 temp += 2.0*PI;
             double libration2 = temp;
 
-            dvec6 kep = cart2kep({r[0],r[1],r[2], v[0],v[1],v[2]}, G*(sol.integr.properties.M1 + sol.integr.properties.M2));
+            dvec6 kep = cart2kep({r[0],r[1],r[2], v[0],v[1],v[2]}, G*(sol.integr.props.M1 + sol.integr.props.M2));
             
             //Kinetic energy part (evaluated in body frames - that's ok coz energy is scalar and scalars are preserved under rotations) :
             double energy = 0.5*sol.integr.m*dot(v,v) + 0.5*dot( dot(w1b, sol.integr.I1), w1b) + 0.5*dot( dot(w2b, sol.integr.I2), w2b);
 
             //Potential energy part :
-            if (sol.integr.properties.ord2_checkbox)
-                energy += mut_pot_integrals_ord2(r, sol.integr.properties.M1, sol.integr.J1, A1, sol.integr.properties.M2, sol.integr.J2, A2);
-            else if (sol.integr.properties.ord3_checkbox)
-                energy += mut_pot_integrals_ord3(r, sol.integr.properties.M1, sol.integr.J1, A1, sol.integr.properties.M2, sol.integr.J2, A2);
+            if (sol.integr.props.ord2_checkbox)
+                energy += mut_pot_integrals_ord2(r, sol.integr.props.M1, sol.integr.J1, A1, sol.integr.props.M2, sol.integr.J2, A2);
+            else if (sol.integr.props.ord3_checkbox)
+                energy += mut_pot_integrals_ord3(r, sol.integr.props.M1, sol.integr.J1, A1, sol.integr.props.M2, sol.integr.J2, A2);
             else
-                energy += mut_pot_integrals_ord4(r, sol.integr.properties.M1, sol.integr.J1, A1, sol.integr.properties.M2, sol.integr.J2, A2);
+                energy += mut_pot_integrals_ord4(r, sol.integr.props.M1, sol.integr.J1, A1, sol.integr.props.M2, sol.integr.J2, A2);
             
             //Momentum magnitude (now evaluated it in the C.O.M. frame because it is a vector) :
             //Note : All 3 components of the momentum vector are conserved in time, but I just choose to store and plot the magnitude only.
@@ -293,16 +293,16 @@ public:
             w2bz[i] = w2b[2];
 
             //Spacecraft :
-            if (sol.integr.properties.spacecraft_checkbox)
+            if (sol.integr.props.spacecraft_checkbox)
             {
                 dvec3 rsp = {sol.integr.orbit[j][21], sol.integr.orbit[j][22], sol.integr.orbit[j][23]};
                 dvec3 vsp = {sol.integr.orbit[j][24], sol.integr.orbit[j][25], sol.integr.orbit[j][26]};
 
                 dvec3 rsp1 = rsp - sol.integr.m1*r, vsp1 = vsp - sol.integr.m1*v;
                 dvec3 rsp2 = rsp - sol.integr.m2*r, vsp2 = vsp - sol.integr.m2*v;
-                dvec6 kep_sp  = cart2kep({ rsp[0],  rsp[1],  rsp[2],   vsp[0],  vsp[1],  vsp[2]}, G*(sol.integr.properties.M1 + sol.integr.properties.M2));
-                dvec6 kep_sp1 = cart2kep({rsp1[0], rsp1[1], rsp1[2],  vsp1[0], vsp1[1], vsp1[2]}, G*sol.integr.properties.M1);
-                dvec6 kep_sp2 = cart2kep({rsp2[0], rsp2[1], rsp2[2],  vsp2[0], vsp2[1], vsp2[2]}, G*sol.integr.properties.M2);
+                dvec6 kep_sp  = cart2kep({ rsp[0],  rsp[1],  rsp[2],   vsp[0],  vsp[1],  vsp[2]}, G*(sol.integr.props.M1 + sol.integr.props.M2));
+                dvec6 kep_sp1 = cart2kep({rsp1[0], rsp1[1], rsp1[2],  vsp1[0], vsp1[1], vsp1[2]}, G*sol.integr.props.M1);
+                dvec6 kep_sp2 = cart2kep({rsp2[0], rsp2[1], rsp2[2],  vsp2[0], vsp2[1], vsp2[2]}, G*sol.integr.props.M2);
 
                 xsp[i]     = rsp[0];
                 ysp[i]     = rsp[1];

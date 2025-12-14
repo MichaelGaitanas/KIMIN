@@ -4,7 +4,7 @@ Shape models := ".obj files"
     file 1 := "didymain2019_R04km.obj"
     file 2 := "dimorphos_ellipsoid_R01km.obj"
 
-Mutual potential order := 4
+Potential expansion order := 4
 
 Masses :
     M1 := 515041825125.529
@@ -48,6 +48,8 @@ Initial state :
     vx := 0.0
     vy := 0.0
     vz := 0.0
+
+Assume Sun's gravity := "Yes"
 
 Collision shapes := "Spheres"
 

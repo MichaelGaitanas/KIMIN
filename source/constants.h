@@ -15,7 +15,6 @@ constexpr size_t N_ODES = 26;
 
 constexpr float CAM_MIN_FOV = 1.0f; //[deg]
 constexpr float CAM_MAX_FOV = 179.0f; //[deg]
-constexpr float CAM_INIT_FOV = 60.0f; //[deg]
 constexpr float CLEAR_COLOR_R = 0.06f;
 constexpr float CLEAR_COLOR_G = 0.06f;
 constexpr float CLEAR_COLOR_B = 0.06f;
@@ -34,6 +33,7 @@ constexpr int GLFW_SSAS_SAMPLES = 4;
 constexpr int GLFW_REQUESTED_DEPTH_BITS = 32;
 
 constexpr char SIM_ROOT_DIR[] = "../simulations/";
+constexpr char PROPERTIES_DIR[] = "../properties/";
 constexpr char PATH_TO_FONTS[] = "../fonts/RobotoRegular.ttf";
 constexpr char PATH_TO_ICONS[] = "../fonts/Icons.otf";
 constexpr char PATH_TO_LOGO_IMAGE[] = "../logo/logo.jpg";

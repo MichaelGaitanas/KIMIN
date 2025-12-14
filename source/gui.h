@@ -16,10 +16,10 @@
 #include"../imgui/implot.h"
 
 #include"constants.h"
-#include"top_bar_panel.h"
-#include"properties_panel.h"
-#include"console_panel.h"
-#include"scene_panel.h"
+#include"topbar.h"
+#include"properties.h"
+#include"console.h"
+#include"scene.h"
 #include"integrator.h"
 #include"solution.h"
 #include"icons.h"
@@ -27,24 +27,24 @@
 class gui
 {
 public:
-    //The following members are basically what you see in the gui, once KIMIN is launched.
-    top_bar_panel topbar;
-    properties_panel properties;
-    console_panel console;
-    scene_panel scene;
+    //The following members are basically what you see in the monitor gui, once KIMIN is launched.
+    topbar tbar;
+    properties props;
+    console cons;
+    scene sce;
 
-    //A solution contains all data regarding a simulation (user inputs, numerical integrator results, orbit, etc.).
+    //A solution contains all data regarding a simulation (user inputs, numerical integrator results, events, etc.).
     solution sol, sol_pending;
 
-    //These variables are meant to track and control separate thread tasks, in order to prevent the gui from 'freezing'.
+    //These variables are meant to track and control separate thread heavy tasks, in order to prevent the gui from freezing.
     std::atomic<bool> task_is_running, task_was_aborted, solution_is_ready;
     std::atomic<float> task_progress;
 
-    //Initialize imgui, implot (along with some settings) and the class members.
-    gui(GLFWwindow *wpointer) : topbar(),
-                                properties(),
-                                console(),
-                                scene(),
+    //Initialize class members, as well as imgui and implot.
+    gui(GLFWwindow *wpointer) : tbar(),
+                                props(),
+                                cons(),
+                                sce(),
                                 sol(),
                                 sol_pending(),
                                 task_is_running(false),
@@ -154,7 +154,7 @@ public:
         if (solution_is_ready.exchange(false, std::memory_order_acquire))
         {
             sol = std::move(sol_pending);
-            scene.setup(sol); //This happens in the main thread!
+            sce.setup(sol); //This happens in the master thread!
         }
     }
 
@@ -169,24 +169,24 @@ private:
     void poll_properties_events()
     {
         //'Run' protocol.
-        if (properties.run_pressed && !task_is_running.load())
+        if (props.run_pressed && !task_is_running.load())
         {
             //(Re)set the 2 flags.
-            properties.run_pressed = false;
+            props.run_pressed = false;
             task_was_aborted.store(false);
             
             std::thread task([this]()
             {
-                if (properties.validate(console)) //If no input errors are found, proceed with the simulation.
+                if (props.validate(cons)) //If no input errors are found, proceed with the simulation.
                 {
-                    integrator integr(properties);
-                    integr.prepare(console);
+                    integrator integr(props);
+                    integr.prepare(cons);
                     task_is_running.store(true); //From this point on, we assume that the task is running because this affects the state of the 'Abort' button, which can be pressed only during the integration.
-                    integr.run(task_was_aborted, task_progress, console);
+                    integr.run(task_was_aborted, task_progress, cons);
                     if (!task_was_aborted.load())
                     {
                         sol_pending = solution(integr);
-                        sol_pending.construct(console);
+                        sol_pending.construct(cons);
                         integr.orbit.clear();
                         integr.orbit.shrink_to_fit();
                         solution_is_ready.store(true, std::memory_order_release);
@@ -198,43 +198,43 @@ private:
         }
 
         //'Abort' protocol.
-        if (properties.abort_pressed && task_is_running.load())
+        if (props.abort_pressed && task_is_running.load())
         {
-            properties.abort_pressed = false; //Reset abort_pressed to prevent repeated triggering.
+            props.abort_pressed = false; //Reset abort_pressed to prevent repeated triggering.
             task_was_aborted.store(true);
             task_is_running.store(false);
         }
     }
 
-    //Export the solution when requested from the top bar panel. This happens with separate threads, just like
-    //the integr->prepare(), integr->run(), etc... However, note that currently, this is not thread safe because
-    //one might attempt to export a previous solution, while a new one is on the fly. I'll fix it, but for now, only
-    //export when solution is completed.
+    //Export the solution when requested from the topbar panel. This happens with separate threads, just like
+    //the integr.prepare(), integr.run(), etc... However, note that currently, this is not thread safe because
+    //one might attempt to export a previous solution, while a new one is on the fly. I'll fix it, but for now,
+    //only export when solution is completed.
     void poll_topbar_events()
     {
-        //Event 1 : What happens after choosing to import a properties file :
-        if (topbar.import_props_confirm && !topbar.properties_path.empty())
+        //Event : What happens after choosing to import a properties file :
+        if (tbar.import_properties_confirm && !tbar.properties_path.empty())
         {
-            properties.import_file(topbar.properties_path.c_str(), console);
-            topbar.import_props_confirm = false;
+            props.import_file(tbar.properties_path.c_str(), cons);
+            tbar.import_properties_confirm = false;
         }
 
-        //Event 2 : What happens after choosing to a simulation solution :
+        //Event : What happens after choosing a simulation solution :
         if (!sol.t.empty())
         {
-            topbar.export_is_enabled = true;
-            if (topbar.export_sol_clicked)
+            tbar.export_solution_is_enabled = true;
+            if (tbar.export_solution_clicked)
             {
                 std::thread task([this]()
                 {
-                    sol.export_files(console);
+                    sol.export_files(cons);
                 });
                 task.detach();
-                topbar.export_sol_clicked = false; //Since we exported, reset the flag.
+                tbar.export_solution_clicked = false; //Since we exported, reset the flag.
             }
         }
         else
-            topbar.export_is_enabled = false;
+            tbar.export_solution_is_enabled = false;
     }
 };
 

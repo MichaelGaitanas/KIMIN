@@ -8,7 +8,7 @@ Shape models := "Ellipsoids"
     b2 := 1735.6
     c2 := 1735
 
-Mutual potential order := 2
+Potential expansion order := 2
 
 Masses :
     M1 := 5.97216787e+24
@@ -52,6 +52,8 @@ Initial state :
     vx := 0.0
     vy := 0.0
     vz := 0.0
+
+Assume Sun's gravity := "No"
 
 Collision shapes := "Spheres"
 

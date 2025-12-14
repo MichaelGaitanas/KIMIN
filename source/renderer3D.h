@@ -96,7 +96,7 @@ public:
             glDeleteFramebuffers(1, &depth_fbo);
     }
 
-    //(Re)set the depth framebuffer, used for shadowing. This is one of the resets that we can't run in scene_panel::setup() due to the separate thread issue.
+    //(Re)set the depth framebuffer, used for shadowing. This is one of the resets that we can't run in scene::setup() due to the separate thread issue.
     //So this will run only once in the render_3D_content() after the simulation is terminated or it will run every time the user changes the 'depth_reso' from the gui exposed slider.
     void setup_depth_fbo()
     {
@@ -126,20 +126,20 @@ public:
     }
 
     //Reset all GPU resources that depend on a finished simulation. It is called from the render thread when reset_gpu_essential == true.
-    //This function is basically the continuation of the scene_panel::setup(const solution &sol), but unfortunately they run on different threads. Hence the separation.
+    //This function is basically the continuation of the scene::setup(const solution &sol), but unfortunately they run on different threads. Hence the separation.
     void reset_gpu_resources(solution &sol)
     {
-        sol.integr.properties.poly1.clear_gl_mesh();
-        sol.integr.properties.poly2.clear_gl_mesh();
+        sol.integr.props.poly1.clear_gl_mesh();
+        sol.integr.props.poly2.clear_gl_mesh();
         orb1.clear();
         orb2.clear();
         orb_sp.clear();
 
-        sol.integr.properties.poly1.set_as_gl_mesh();
-        sol.integr.properties.poly2.set_as_gl_mesh();
+        sol.integr.props.poly1.set_as_gl_mesh();
+        sol.integr.props.poly2.set_as_gl_mesh();
         orb1.set_as_gl_mesh(sol.x, sol.y, sol.z, (float)sol.integr.m1);
         orb2.set_as_gl_mesh(sol.x, sol.y, sol.z, (float)sol.integr.m2);
-        if (sol.integr.properties.spacecraft_checkbox)
+        if (sol.integr.props.spacecraft_checkbox)
             orb_sp.set_as_gl_mesh(sol.xsp, sol.ysp, sol.zsp);
         
         setup_depth_fbo();
@@ -152,39 +152,39 @@ public:
                                                  "../skybox/starfield2k/front.jpg",
                                                  "../skybox/starfield2k/back.jpg");
 
-        //Wtf? Is this necessary to be here? Why not in the scene_panel.h?
+        //Wtf? Is this necessary to be here? Why not in the scene.h?
         orb1.draw_count = orb2.draw_count = std::min<size_t>(1, sol.t.size());
-        if (sol.integr.properties.spacecraft_checkbox)
+        if (sol.integr.props.spacecraft_checkbox)
             orb_sp.draw_count = std::min<size_t>(1, sol.t.size());
     }
 
     glm::vec3 get_analytic_rcom(const solution &sol, const size_t iframe)
     {
         const double ti = sol.t[iframe]*86400.0;
-        const glm::vec3 rcom0 = glm::vec3((float)sol.integr.properties.cart_com[0],
-                                          (float)sol.integr.properties.cart_com[1],
-                                          (float)sol.integr.properties.cart_com[2]);
-        const glm::vec3 vcom0 = glm::vec3((float)sol.integr.properties.cart_com[3],
-                                          (float)sol.integr.properties.cart_com[4],
-                                          (float)sol.integr.properties.cart_com[5]);
+        const glm::vec3 rcom0 = glm::vec3((float)sol.integr.props.cart_com[0],
+                                          (float)sol.integr.props.cart_com[1],
+                                          (float)sol.integr.props.cart_com[2]);
+        const glm::vec3 vcom0 = glm::vec3((float)sol.integr.props.cart_com[3],
+                                          (float)sol.integr.props.cart_com[4],
+                                          (float)sol.integr.props.cart_com[5]);
         glm::vec3 r = rcom0 + vcom0*(float)(ti - sol.integr.t0); //COM position due to initial state.
-        if (sol.integr.properties.impactors_checkbox)
+        if (sol.integr.props.impactors_checkbox)
         {
-            if (ti >= sol.integr.properties.tD1) //Impact 1 contribution.
+            if (ti >= sol.integr.props.tD1) //Impact 1 contribution.
             {
-                const float c = (sol.integr.properties.beta1*sol.integr.properties.mD1)/(sol.integr.properties.M1 + sol.integr.properties.M2);
-                const glm::vec3 dvcm1 = c*glm::vec3((float)sol.integr.properties.vD1[0],
-                                                    (float)sol.integr.properties.vD1[1],
-                                                    (float)sol.integr.properties.vD1[2]);
-                r += dvcm1*(float)(ti - sol.integr.properties.tD1);
+                const float c = (sol.integr.props.beta1*sol.integr.props.mD1)/(sol.integr.props.M1 + sol.integr.props.M2);
+                const glm::vec3 dvcm1 = c*glm::vec3((float)sol.integr.props.vD1[0],
+                                                    (float)sol.integr.props.vD1[1],
+                                                    (float)sol.integr.props.vD1[2]);
+                r += dvcm1*(float)(ti - sol.integr.props.tD1);
             }
-            if (ti >= sol.integr.properties.tD2) //Impact 2 contribution.
+            if (ti >= sol.integr.props.tD2) //Impact 2 contribution.
             {
-                const float c = (sol.integr.properties.beta2*sol.integr.properties.mD2)/(sol.integr.properties.M1 + sol.integr.properties.M2);
-                const glm::vec3 dvcm2 = c*glm::vec3((float)sol.integr.properties.vD2[0],
-                                                    (float)sol.integr.properties.vD2[1],
-                                                    (float)sol.integr.properties.vD2[2]);
-                r += dvcm2*(float)(ti - sol.integr.properties.tD2);
+                const float c = (sol.integr.props.beta2*sol.integr.props.mD2)/(sol.integr.props.M1 + sol.integr.props.M2);
+                const glm::vec3 dvcm2 = c*glm::vec3((float)sol.integr.props.vD2[0],
+                                                    (float)sol.integr.props.vD2[1],
+                                                    (float)sol.integr.props.vD2[2]);
+                r += dvcm2*(float)(ti - sol.integr.props.tD2);
             }
         }
         return r;
@@ -203,31 +203,18 @@ public:
         const glm::vec3 rcom = get_analytic_rcom(sol, iframe);
         const glm::vec3 r1 = (float)sol.integr.m1*glm::vec3(sol.x[iframe],sol.y[iframe],sol.z[iframe]);
         const glm::vec3 r2 = (float)sol.integr.m2*glm::vec3(sol.x[iframe],sol.y[iframe],sol.z[iframe]);
+        const float sun_dist = glm::length(rcom);
+        const glm::vec3 sun_dir = -rcom/sun_dist;
 
-        const float aspect = win_width/(float)win_height;
-        if (cam.frame_of_ref == camera::WORLD)
-            cam.set_geometry_inertial(aspect, glm::vec3(0.0f));
-        else if (cam.frame_of_ref == camera::COM)
-            cam.set_geometry_inertial(aspect, rcom);
-        else if (cam.frame_of_ref == camera::BODY1)
-            cam.set_geometry_body(aspect, r1, r2, (float)sol.integr.brillouin1);
-        else //camera::BODY2
-            cam.set_geometry_body(aspect, r2, r1, (float)sol.integr.brillouin2);
-
-        
-        glm::vec3 rsun_com = -rcom;
-        float sun_dist = glm::length(rsun_com);
-        glm::vec3 sun_dir = rsun_com/sun_dist;
-        sunlight.set_geometry((float)(OBJ_AXES_LENGTH*std::max(sol.integr.brillouin1, sol.integr.brillouin2) + sol.dist[iframe]), glm::vec3(0.0f), sun_dir);
+        cam.set_geometry(win_width/(float)win_height);
+        sunlight.set_geometry((float)(OBJ_AXES_LENGTH*std::max(sol.integr.brillouin1, sol.integr.brillouin2) + sol.dist[iframe]), sun_dir);
 
         const glm::mat4 I = glm::mat4(1.0f);
-
         const glm::mat4 T1R1 = glm::translate(I, r1)*
                          glm::rotate(I, glm::radians((float)sol.yaw1[iframe]),   glm::vec3(0.0f,0.0f,1.0f))*
                          glm::rotate(I, glm::radians((float)sol.pitch1[iframe]), glm::vec3(0.0f,1.0f,0.0f))*
                          glm::rotate(I, glm::radians((float)sol.roll1[iframe]),  glm::vec3(1.0f,0.0f,0.0f));
         const glm::mat4 S1 = glm::scale(I, glm::vec3((float)sol.integr.brillouin1));
-
         const glm::mat4 T2R2 = glm::translate(I, r2)*
                          glm::rotate(I, glm::radians((float)sol.yaw2[iframe]),   glm::vec3(0.0f,0.0f,1.0f))*
                          glm::rotate(I, glm::radians((float)sol.pitch2[iframe]), glm::vec3(0.0f,1.0f,0.0f))*
@@ -242,12 +229,12 @@ public:
         sh_dlight.set_mat4_uniform("projection", cam.projection);
         sh_dlight.set_mat4_uniform("view", cam.view);
         sh_dlight.set_mat4_uniform("light_pv", sunlight.pv);
-        sh_dlight.set_vec3_uniform("light_dir", sunlight.dir);
+        sh_dlight.set_vec3_uniform("light_dir", sun_dir);
         sh_depth.use();
         sh_depth.set_mat4_uniform("light_pv", sunlight.pv);
         sh_depth.set_mat4_uniform("model", T1R1);
         if (render_body1)
-            sol.integr.properties.poly1.render();
+            sol.integr.props.poly1.render();
         if (render_axes1)
         {
             sh_depth.set_mat4_uniform("model", T1R1*S1);
@@ -255,7 +242,7 @@ public:
         }
         sh_depth.set_mat4_uniform("model", T2R2);
         if (render_body2)
-            sol.integr.properties.poly2.render();
+            sol.integr.props.poly2.render();
         if (render_axes2)
         {
             sh_depth.set_mat4_uniform("model", T2R2*S2);
@@ -289,11 +276,11 @@ public:
         }
 
         //Sun rendering pass :
-        float ang_deg = glm::degrees(asinf(RSUN/glm::length(rcom)));
+        float ang_deg = glm::degrees(asinf(RSUN/sun_dist));
         sh_sun.use();
         sh_sun.set_mat4_uniform("projection",      cam.projection);
         sh_sun.set_mat4_uniform("view",            cam.view);
-        sh_sun.set_vec3_uniform("light_dir_world", sunlight.dir);
+        sh_sun.set_vec3_uniform("light_dir_world", sun_dir);
         sh_sun.set_vec3_uniform("sun_color",       sun_col);
         sh_sun.set_float_uniform("sun_angular_radius_deg", ang_deg);
         sh_sun.set_float_uniform("sun_distance", 10.0f*cam.max_dist); //Put the Sun comfortably 'far'. The aim is to make occlude only the skybox but no other mesh.
@@ -316,7 +303,7 @@ public:
         sh_dlight.set_mat4_uniform("model", T1R1);
         sh_dlight.set_vec3_uniform("mesh_col", body1_col);
         if (render_body1)
-            sol.integr.properties.poly1.render();
+            sol.integr.props.poly1.render();
         if (render_axes1)
         {
             sh_dlight.set_mat4_uniform("model", T1R1*S1);
@@ -327,7 +314,7 @@ public:
         sh_dlight.set_mat4_uniform("model", T2R2);
         sh_dlight.set_vec3_uniform("mesh_col", body2_col);
         if (render_body2)
-            sol.integr.properties.poly2.render();
+            sol.integr.props.poly2.render();
         if (render_axes2)
         {
             sh_dlight.set_mat4_uniform("model", T2R2*S2);
@@ -338,14 +325,12 @@ public:
         glBindTexture(GL_TEXTURE_2D, 0);
 
         //Orbits rendering pass :
-        if (render_orb1 || render_orb2 || render_orb_sp) //This is to avoid to compute 3 times the translation matrix, the shader bind (glUseProgram()) and all uniform traffic (glUniform*()).
+        if (render_orb1 || render_orb2 || render_orb_sp)
         {
-            const glm::mat4 Tcom = glm::translate(I, rcom);
-
             sh_orb.use();
             sh_orb.set_mat4_uniform("projection", cam.projection);
             sh_orb.set_mat4_uniform("view", cam.view);
-            sh_orb.set_mat4_uniform("model", Tcom);
+            sh_orb.set_mat4_uniform("model", I);
             if (render_orb1)
             {
                 sh_orb.set_vec3_uniform("mesh_col", orb1_col);
@@ -369,7 +354,7 @@ public:
             sh_grid.use();
             sh_grid.set_mat4_uniform("uProj", cam.projection);
             sh_grid.set_mat4_uniform("uView", cam.view);
-            sh_grid.set_float_uniform("uFadeEnd", 2.0f*cam.get_active_dist());
+            sh_grid.set_float_uniform("uFadeEnd", 2.0f*cam.dist);
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             glDepthFunc(GL_LEQUAL);

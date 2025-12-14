@@ -295,18 +295,18 @@ double mut_pot_masc(const dvec3 &r, const double M1, const dmatnx3 &masc1, const
 {
     #ifdef _OPENMP
         int total_threads = omp_get_max_threads();
-        int half_threads  = (total_threads > 1 ? total_threads/2 : 1);
+        int used_threads  = (total_threads > 1 ? total_threads/2 : 1);
     #else
-        constexpr int half_threads = 1;
+        constexpr int used_threads = 1;
     #endif
-    (void)half_threads;
+    (void)used_threads;
 
     size_t i,j, N1 = masc1.size(), N2 = masc2.size();
     double sum = 0.0;
     #ifdef _OPENMP
         #pragma omp parallel for reduction(+:sum)\
                                  schedule(dynamic)\
-                                 num_threads(half_threads)
+                                 num_threads(used_threads)
     #endif
     for (i = 0; i < N1; ++i)
     {
@@ -475,18 +475,18 @@ double pot_masc(const dvec3 &r, const double M, const dmatnx3 &masc, const dmat3
 {
     #ifdef _OPENMP
         int total_threads = omp_get_max_threads();
-        int half_threads  = (total_threads > 1 ? total_threads/2 : 1);
+        int used_threads  = (total_threads > 1 ? total_threads/2 : 1);
     #else
-        constexpr int half_threads = 1;
+        constexpr int used_threads = 1;
     #endif
-    (void)half_threads;
+    (void)used_threads;
 
     size_t i, N = masc.size();
     double sum = 0.0;
     #ifdef _OPENMP
         #pragma omp parallel for reduction(+:sum)\
                                  schedule(dynamic)\
-                                 num_threads(half_threads)
+                                 num_threads(used_threads)
     #endif
     for (i = 0; i < N; ++i)
         sum += 1.0/length(r - dot(A, masc[i]));
@@ -500,8 +500,8 @@ double pot_masc(const dvec3 &r, const double M, const dmatnx3 &masc, const dmat3
 /* Gravity force and torque expressions. */
 
 //Mutual force of 2 rigid bodies AND the torque felt by the primary, assuming inertial integral expansion of order 2 approximation.
-dvec6 mut_force_tau1i_integrals_ord2(const dvec3 &r, const double M1, const dtens &J1, const dmat3 &A1,
-                                                     const double M2, const dtens &J2, const dmat3 &A2)
+dvec6 mut_force_torque1i_integrals_ord2(const dvec3 &r, const double M1, const dtens &J1, const dmat3 &A1,
+                                                        const double M2, const dtens &J2, const dmat3 &A2)
 {   
     double I1x = J1[0][2][0] + J1[0][0][2];
     double I1y = J1[2][0][0] + J1[0][0][2];
@@ -572,8 +572,8 @@ dvec6 mut_force_tau1i_integrals_ord2(const dvec3 &r, const double M1, const dten
 }
 
 //Mutual force of 2 rigid bodies AND the torque felt by the primary, assuming inertial integral expansion of order 3 approximation.
-dvec6 mut_force_tau1i_integrals_ord3(const dvec3 &r, const double M1, const dtens &J1, const dmat3 &A1,
-                                                     const double M2, const dtens &J2, const dmat3 &A2)
+dvec6 mut_force_torque1i_integrals_ord3(const dvec3 &r, const double M1, const dtens &J1, const dmat3 &A1,
+                                                        const double M2, const dtens &J2, const dmat3 &A2)
 {
     double J1xxx = J1[3][0][0];
     double J1yyy = J1[0][3][0];
@@ -676,8 +676,8 @@ dvec6 mut_force_tau1i_integrals_ord3(const dvec3 &r, const double M1, const dten
 }
 
 //Mutual force of 2 rigid bodies AND the torque felt by the primary, assuming inertial integral expansion of order 4 approximation.
-dvec6 mut_force_tau1i_integrals_ord4(const dvec3 &r, const double M1, const dtens &J1, const dmat3 &A1,
-                                                     const double M2, const dtens &J2, const dmat3 &A2)
+dvec6 mut_force_torque1i_integrals_ord4(const dvec3 &r, const double M1, const dtens &J1, const dmat3 &A1,
+                                                        const double M2, const dtens &J2, const dmat3 &A2)
 {
     double J1xx = J1[2][0][0];
     double J1yy = J1[0][2][0];
@@ -894,23 +894,23 @@ dvec6 mut_force_tau1i_integrals_ord4(const dvec3 &r, const double M1, const dten
 }
 
 //Mutual force of 2 rigid bodies AND the torque felt by the primary, assuming mascon distributions with constant densities.
-dvec6 mut_force_tau1i_masc(const dvec3 &r, const double M1, const dmatnx3 &masc1, const dmat3 &A1,
-                                           const double M2, const dmatnx3 &masc2, const dmat3 &A2)
+dvec6 mut_force_torque1i_masc(const dvec3 &r, const double M1, const dmatnx3 &masc1, const dmat3 &A1,
+                                              const double M2, const dmatnx3 &masc2, const dmat3 &A2)
 {
     #ifdef _OPENMP
         int total_threads = omp_get_max_threads();
-        int half_threads  = (total_threads > 1 ? total_threads/2 : 1);
+        int used_threads  = (total_threads > 1 ? total_threads/2 : 1);
     #else
-        constexpr int half_threads = 1;
+        constexpr int used_threads = 1;
     #endif
-    (void)half_threads;
+    (void)used_threads;
 
     size_t i,j, N1 = masc1.size(), N2 = masc2.size();
     double sumfx = 0.0, sumfy = 0.0, sumfz = 0.0, sumtx = 0.0, sumty = 0.0, sumtz = 0.0;
     #ifdef _OPENMP
         #pragma omp parallel for reduction(+:sumfx,sumfy,sumfz,sumtx,sumty,sumtz)\
                                  schedule(dynamic)\
-                                 num_threads(half_threads)
+                                 num_threads(used_threads)
     #endif
     for (i = 0; i < N1; ++i)
     {
@@ -1124,11 +1124,11 @@ dvec3 accel_masc(const dvec3 &r, const double M, const dmatnx3 &masc, const dmat
 {
     #ifdef _OPENMP
         int total_threads = omp_get_max_threads();
-        int half_threads  = (total_threads > 1 ? total_threads/2 : 1);
+        int used_threads  = (total_threads > 1 ? total_threads/2 : 1);
     #else
-        constexpr int half_threads = 1;
+        constexpr int used_threads = 1;
     #endif
-    (void)half_threads;
+    (void)used_threads;
 
 
     size_t i, N = masc.size();
@@ -1136,7 +1136,7 @@ dvec3 accel_masc(const dvec3 &r, const double M, const dmatnx3 &masc, const dmat
     #ifdef _OPENMP
         #pragma omp parallel for reduction(+:sumfx,sumfy,sumfz)\
                                  schedule(dynamic)\
-                                 num_threads(half_threads)
+                                 num_threads(used_threads)
     #endif
     for (i = 0; i < N; ++i)
     {

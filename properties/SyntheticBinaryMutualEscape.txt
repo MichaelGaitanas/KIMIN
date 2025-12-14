@@ -4,7 +4,7 @@ Shape models := ".obj files"
     file 1 := "eros196k_R17km.obj"
     file 2 := "procgen1_4k_R3km.obj"
 
-Mutual potential order := 2
+Potential expansion order := 2
 
 Masses :
     M1 := 6.687e+15
@@ -48,6 +48,8 @@ Initial state :
     vx := 0.0
     vy := 0.0
     vz := 0.0
+
+Assume Sun's gravity := "No"
 
 Collision shapes := "Spheres"
 

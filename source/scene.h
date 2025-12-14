@@ -1,7 +1,7 @@
 /* This class handles the rendering logic of the right (scene) panel in the gui. */
 
-#ifndef SCENE_PANEL_H
-#define SCENE_PANEL_H
+#ifndef SCENE_H
+#define SCENE_H
 
 #include<algorithm>
 
@@ -17,7 +17,7 @@
 #include"renderer3D.h"
 #include"icons.h"
 
-class scene_panel
+class scene
 {
 private:
     bvec plot_cart; //Buttons : [x, y, z, dist] and [υx, υy, υz, υel].
@@ -43,35 +43,35 @@ private:
     renderer3D rend3D;
 
 public:
-    scene_panel() : plot_cart({false,false,false,false, false,false,false,false}),
-                    plot_kep({false,false,false,false,false,false}),
-                    plot_dener_dmom({false,false}),
-                    plot_rpy1({false,false,false,false}),
-                    plot_rpy2({false,false,false,false}),
-                    plot_w1i({false,false,false}),
-                    plot_w1b({false,false,false}),
-                    plot_w2i({false,false,false}),
-                    plot_w2b({false,false,false}),
-                    plot_cart_sp({false,false,false,false, false,false,false,false}),
-                    plot_kep_sp({false,false,false,false,false,false}),
-                    plot_cart_sp1({false,false,false,false, false,false,false,false}),
-                    plot_kep_sp1({false,false,false,false,false,false}),
-                    plot_cart_sp2({false,false,false,false, false,false,false,false}),
-                    plot_kep_sp2({false,false,false,false,false,false}),
-                    render_scene(false),
-                    play_video(false),
-                    reset_gpu_essential(false),
-                    auto_replay(false),
-                    orb1_sync(false),
-                    orb2_sync(false),
-                    orb_sp_sync(false),
-                    iframe(0),
-                    frames(0),
-                    framerate(60),
-                    frame_accumulator(0.0f),
-                    sol(nullptr),
-                    sol2D(),
-                    rend3D()
+    scene() : plot_cart({false,false,false,false, false,false,false,false}),
+              plot_kep({false,false,false,false,false,false}),
+              plot_dener_dmom({false,false}),
+              plot_rpy1({false,false,false,false}),
+              plot_rpy2({false,false,false,false}),
+              plot_w1i({false,false,false}),
+              plot_w1b({false,false,false}),
+              plot_w2i({false,false,false}),
+              plot_w2b({false,false,false}),
+              plot_cart_sp({false,false,false,false, false,false,false,false}),
+              plot_kep_sp({false,false,false,false,false,false}),
+              plot_cart_sp1({false,false,false,false, false,false,false,false}),
+              plot_kep_sp1({false,false,false,false,false,false}),
+              plot_cart_sp2({false,false,false,false, false,false,false,false}),
+              plot_kep_sp2({false,false,false,false,false,false}),
+              render_scene(false),
+              play_video(false),
+              reset_gpu_essential(false),
+              auto_replay(false),
+              orb1_sync(false),
+              orb2_sync(false),
+              orb_sp_sync(false),
+              iframe(0),
+              frames(0),
+              framerate(60),
+              frame_accumulator(0.0f),
+              sol(nullptr),
+              sol2D(),
+              rend3D()
     { }
 
     //Reset essential stuff upon a simulation termination.
@@ -85,8 +85,7 @@ public:
         sol->integr.orbit.clear();
         sol->integr.orbit.shrink_to_fit();
 
-        float mutual_max_dist = *std::max_element(sol->dist.begin(), sol->dist.end());
-        rend3D.cam.reset(sol->integr.brillouin1 + sol->integr.brillouin2, mutual_max_dist);
+        rend3D.cam.reset(sol->integr.brillouin1 + sol->integr.brillouin2, *std::max_element(sol->dist.begin(), sol->dist.end()));
 
         iframe = 0;
         frames = static_cast<uint64_t>(sol->t.size());
@@ -96,8 +95,8 @@ public:
         uint64_t init_orb_count = (frames > 0 ? 1 : 0);
         rend3D.orb1.draw_count = rend3D.orb2.draw_count = init_orb_count;
         
-        //At every new simulation, if the user does not assume a 3rd body spacecraft, then any previous plots regarding the 3rd body shall disappear.
-        if (!sol->integr.properties.spacecraft_checkbox)
+        //At every new simulation, if the user hasn't assumed a spacecraft, then any previous plots regarding the spacecraft shall disappear.
+        if (!sol->integr.props.spacecraft_checkbox)
         {
             for (size_t i = 0; i < plot_cart_sp.size(); ++i)
                 plot_cart_sp[i] = plot_cart_sp1[i] = plot_cart_sp2[i] = false;
@@ -113,7 +112,7 @@ public:
     }
 
 private:
-    //This function controls the on/off logic of a clickable button in the gui.
+    //This function controls the on/off logic of a clickable labeled button in the gui.
     bool onoff_button(const char *label, const ImVec2 &dimensions, bool state)
     {
         if (state)
@@ -128,7 +127,7 @@ private:
         return state;
     }
 
-    //Because the 'sol2D' (the one used for 2D plotting) is reduced in size compared to the 'sol' (the one used for exporting or 3D rendering), we have to map
+    //Because the 'sol2D' (the one used for 2D plotting) is reduced in size compared to the 'sol' (the one used for exporting and 3D rendering), we have to map
     //the 'iframe' index to another index 'jframe', so that the scatter point of the current frame corresponds to the correct time.
     //This function serves the aforementioned purpose. 
     inline size_t map_frame_to_reduced_sol(const size_t iframe, const size_t original_size, const size_t reduced_size)
@@ -145,13 +144,13 @@ private:
         return jframe;
     }
 
-    //This function plots the data {t, data(t)}.
+    //This function plots the data [t, f(t)].
     bool plot(const char *imgui_id, const char *implot_id, const char *yaxis_str, bool plot_status, dvec &data)
     {
         float sx = ImGui::GetIO().DisplaySize.x;
         float sy = ImGui::GetIO().DisplaySize.y;
 
-        ImGui::SetNextWindowPos( ImVec2(0.6f*sx, 0.0f), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowPos(ImVec2(0.6f*sx, 0.0f), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(0.25f*sx, 0.4f*sy), ImGuiCond_FirstUseEver);
         ImGui::Begin(imgui_id, &plot_status);
         if (ImPlot::BeginPlot(implot_id, ImVec2(ImGui::GetWindowSize().x - 20.0f*SCX, ImGui::GetWindowSize().y - 40.0f*SCY)))
@@ -166,7 +165,7 @@ private:
             ImPlot::PlotScatter("Current frame", &sol2D.t[jframe], &data[jframe], 1);
 
             //Collision frame marker logic :
-            if (sol->integr.collision) //Asteroid-asteroid collision.
+            if (sol->integr.collision_mut) //Asteroid-asteroid collision.
             {
                 ImPlot::SetNextMarkerStyle(ImPlotMarker_Down, 6.0f*SCX, ImColor(255,0,0,255), 1.0f, ImColor(255,0,0,255));
                 ImPlot::PlotScatter("Collision frame", &sol2D.t.back(), &data.back(), 1);
@@ -181,46 +180,6 @@ private:
         }
         ImGui::End();
         return plot_status;
-    }
-
-    //Since imgui does not provide a 2D slider - joystick, we emulate one ourselves.
-    bool imgui_slider_float_2D(const char *label, const char *hash, ImVec2 *value, ImVec2 min, ImVec2 max, ImVec2 size)
-    {
-        ImGui::Text("%s", label);
-        ImGui::SetCursorPosX(0.15f*ImGui::GetIO().DisplaySize.x/2.0f - size.x/2.0f);
-        ImVec2 pos = ImGui::GetCursorScreenPos();
-        ImGui::InvisibleButton(hash, size); //We use a framed button so hover/disabled visuals match other controls.
-
-        bool changed = false;
-        if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left, 0))
-        {
-            ImVec2 mouse = ImGui::GetIO().MousePos;
-            float x = (mouse.x - pos.x)/size.x;
-            float y = (mouse.y - pos.y)/size.y;
-            value->x = min.x + x*(max.x - min.x);
-            value->y = min.y + y*(max.y - min.y);
-            changed = true;
-        }
-        value->x = std::clamp(value->x, min.x, max.x);
-        value->y = std::clamp(value->y, min.y, max.y);
-
-        //Colors that respect BeginDisabled() dimming.
-        ImU32 col_bg     = ImGui::GetColorU32(ImGuiCol_FrameBg);
-        ImU32 col_border = ImGui::GetColorU32(ImGuiCol_Border);
-        ImU32 col_handle = ImGui::GetColorU32(ImGui::IsItemActive() ? ImGuiCol_SliderGrabActive : ImGuiCol_SliderGrab);
-
-        //Draw background & border.
-        ImDrawList *draw_list = ImGui::GetWindowDrawList();
-        draw_list->AddRectFilled(pos, ImVec2(pos.x + size.x, pos.y + size.y), col_bg, 0.0f); //Interior.
-        draw_list->AddRect(pos, ImVec2(pos.x + size.x, pos.y + size.y), col_border); //Border.
-
-        //Circular handle logic :
-        float tx = (value->x - min.x)/(max.x - min.x);
-        float ty = (value->y - min.y)/(max.y - min.y);
-        ImVec2 handle = ImVec2(pos.x + tx*size.x, pos.y + ty*size.y);
-        draw_list->AddCircleFilled(handle, 5.0f*SCX, col_handle);
-
-        return changed;
     }
     
     //Render on the gui the 2D plot buttons.
@@ -265,10 +224,10 @@ private:
         {
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
             ImGui::Text("Euler angles (XYZ)");
-            plot_rpy1[0] = onoff_button("roll##plot_rpy1[0]",      ImVec2(50.0f*SCX, 20.0f*SCY), plot_rpy1[0]); ImGui::SameLine();
-            plot_rpy1[1] = onoff_button("pitch##plot_rpy1[1]",     ImVec2(50.0f*SCX, 20.0f*SCY), plot_rpy1[1]); ImGui::SameLine();
-            plot_rpy1[2] = onoff_button("yaw##plot_rpy1[2]",       ImVec2(50.0f*SCX, 20.0f*SCY), plot_rpy1[2]); ImGui::SameLine();
-            plot_rpy1[3] = onoff_button("rel. yaw##plot_rpy1[3]",  ImVec2(60.0f*SCX, 20.0f*SCY), plot_rpy1[3]);
+            plot_rpy1[0] = onoff_button("roll##plot_rpy1[0]",     ImVec2(50.0f*SCX, 20.0f*SCY), plot_rpy1[0]); ImGui::SameLine();
+            plot_rpy1[1] = onoff_button("pitch##plot_rpy1[1]",    ImVec2(50.0f*SCX, 20.0f*SCY), plot_rpy1[1]); ImGui::SameLine();
+            plot_rpy1[2] = onoff_button("yaw##plot_rpy1[2]",      ImVec2(50.0f*SCX, 20.0f*SCY), plot_rpy1[2]); ImGui::SameLine();
+            plot_rpy1[3] = onoff_button("rel. yaw##plot_rpy1[3]", ImVec2(60.0f*SCX, 20.0f*SCY), plot_rpy1[3]);
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
 
             ImGui::Text("Angular velocity (inertial frame)");
@@ -315,7 +274,7 @@ private:
         //Spacecraft's plots.
         if (ImGui::TreeNodeEx("Spacecraft"))
         {
-            if (!sol || sol->t.empty() || !sol->integr.properties.spacecraft_checkbox)
+            if (!sol || sol->t.empty() || !sol->integr.props.spacecraft_checkbox)
                 ImGui::BeginDisabled();
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
             
@@ -379,7 +338,7 @@ private:
             plot_kep_sp2[5] = onoff_button("M##plot_kep_sp2[5]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep_sp2[5]);
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
 
-            if (!sol || sol->t.empty() || !sol->integr.properties.spacecraft_checkbox)
+            if (!sol || sol->t.empty() || !sol->integr.props.spacecraft_checkbox)
                 ImGui::EndDisabled();
 
             ImGui::TreePop();
@@ -443,48 +402,20 @@ private:
         ImGui::Text("Camera setup");
         ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
 
-        //Frame view (World, Barycentric, Body 1, Body 2).
-        ImGui::Text("Frame view");
-        ImGui::PushItemWidth(250.0f*SCX);
-        static const char *cam_frames[4] = {"World", "Center of mass", "Body 1", "Body 2"};
-        ImGui::Combo("##rend3D.cam.frame_of_ref", (int*)(&rend3D.cam.frame_of_ref), cam_frames, IM_ARRAYSIZE(cam_frames));
-        ImGui::PopItemWidth();
+        ImGui::Text("Dist");
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(40.0f*SCX);
+        ImGui::SliderFloat("[km]##rend3D.cam.dist", &rend3D.cam.dist, rend3D.cam.min_dist, rend3D.cam.max_dist, "%.3f", ImGuiSliderFlags_Logarithmic);
 
-        if (rend3D.cam.frame_of_ref == camera::WORLD || rend3D.cam.frame_of_ref == camera::COM)
-        {
-            ImGui::Text("Dist");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(40.0f*SCX);
-            ImGui::SliderFloat("[km]##rend3D.cam.dist_world_or_com", &rend3D.cam.get_active_dist(), rend3D.cam.min_dist, rend3D.cam.max_dist, "%.3f", ImGuiSliderFlags_Logarithmic);
+        ImGui::Text("Lon");
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(40.0f*SCX);
+        ImGui::SliderFloat("[deg]##rend3D.cam.lon", &rend3D.cam.lon, 0.0f, 360.0f, "%.1f");
 
-            ImGui::Text("Lon");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(40.0f*SCX);
-            ImGui::SliderFloat("[deg]##rend3D.cam.lon_world_or_com", &rend3D.cam.get_active_lon(), 0.0f, 360.0f, "%.1f");
-
-            ImGui::Text("Lat");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(40.0f*SCX);
-            ImGui::SliderFloat("[deg]##rend3D.cam.lat_world_or_com", &rend3D.cam.get_active_lat(), 0.0f, 180.0f, "%.1f");
-        }
-        else //camera::BODY1 or camera::BODY2
-        {
-            ImGui::Text("R - offset");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(70.0f*SCX);
-            ImGui::SetNextItemWidth(130.0f*SCX);
-            ImGui::SliderFloat("[Brillouin]##rend3D.cam.rscale", &rend3D.cam.rscale, 3.0f, 10.0f, "%.1f");
-
-            ImGui::Text("V - scale");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(70.0f*SCX);
-            ImGui::SetNextItemWidth(130.0f*SCX);
-            ImGui::SliderFloat("[Brillouin]##rend3D.cam.vscale", &rend3D.cam.vscale, 0.0f, 5.0f, "%.1f");
-
-            //This is a 2D joystick, used to shift the mounted camera left-right-up-down from the radial direction so that the body in front does not block the view.
-            //rend3D.cam.voffset_ndc.x = rend3D.cam.voffset_ndc.y = 0.0f; //Recenter joystick.
-            imgui_slider_float_2D("V - offset", "##rend3D.cam.voffset_ndc", (ImVec2*)&rend3D.cam.voffset_ndc, ImVec2(-1.0f,-1.0f), ImVec2(1.0f,1.0f), ImVec2(100.0f*SCX, 100.0f*SCY));
-        }
+        ImGui::Text("Lat");
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(40.0f*SCX);
+        ImGui::SliderFloat("[deg]##rend3D.cam.lat", &rend3D.cam.lat, 0.0f, 180.0f, "%.1f");
         ImGui::Dummy(ImVec2(0.0f, 8.0f*SCY));
 
         ImGui::Text("FoV");
@@ -552,7 +483,7 @@ private:
         ImGui::SetCursorPosX(90.0f*SCX);
         ImGui::SetNextItemWidth(100.0f*SCX);
         uint64_t visible_orb1_frame = (frames > 0) ? static_cast<uint64_t>(rend3D.orb1.draw_count) : 0;
-        
+
         if (!rend3D.render_orb1)
         {
             ImGui::BeginDisabled();
@@ -596,8 +527,7 @@ private:
         if (!rend3D.render_orb2)
             ImGui::EndDisabled();
 
-
-        if (!sol || sol->t.empty() || !sol->integr.properties.spacecraft_checkbox)
+        if (!sol || sol->t.empty() || !sol->integr.props.spacecraft_checkbox)
             ImGui::BeginDisabled();
 
         ImGui::Text("Orbiter");
@@ -626,7 +556,7 @@ private:
         if (!rend3D.render_orb_sp)
             ImGui::EndDisabled();
 
-        if (!sol || sol->t.empty() || !sol->integr.properties.spacecraft_checkbox)
+        if (!sol || sol->t.empty() || !sol->integr.props.spacecraft_checkbox)
             ImGui::EndDisabled();
 
         ImGui::PopStyleColor();
@@ -653,22 +583,14 @@ private:
             {
                 if (io.KeyCtrl)
                     rend3D.cam.scroll_fov(io.MouseWheel);
-                else if (rend3D.cam.frame_of_ref == camera::WORLD || rend3D.cam.frame_of_ref == camera::COM)
-                    rend3D.cam.scroll_dist_inertial(io.MouseWheel);
-                else if (rend3D.cam.frame_of_ref == camera::BODY1 || rend3D.cam.frame_of_ref == camera::BODY2)
-                    rend3D.cam.scroll_dist_body(io.MouseWheel);
+                else
+                    rend3D.cam.scroll_dist(io.MouseWheel);
             }
-
             if (io.MouseDown[ImGuiMouseButton_Middle])
             {
                 const ImVec2 d = io.MouseDelta;
                 if (d.x != 0.0f || d.y != 0.0f)
-                {
-                    if (rend3D.cam.frame_of_ref == camera::WORLD || rend3D.cam.frame_of_ref == camera::COM)
-                        rend3D.cam.rotate_lon_lat_inertial(d.x, d.y);
-                    else if (rend3D.cam.frame_of_ref == camera::BODY1 || rend3D.cam.frame_of_ref == camera::BODY2)
-                        rend3D.cam.move_upon_vplane(d.x, d.y, rend3D.win_width, rend3D.win_height);
-                }
+                    rend3D.cam.rotate_lon_lat(d.x, d.y);
             }
 
             //Toggle play/pause state via spacebar key, but only when the cursor is in the 3D viewport region.
@@ -778,7 +700,7 @@ public:
                 if (plot_dener_dmom[0]) plot_dener_dmom[0] = plot("##plot_dener_dmom[0]", "Energy relative error",             "| (E[i+1] - E[0])/E[0] |", plot_dener_dmom[0], sol2D.denergy);
                 if (plot_dener_dmom[1]) plot_dener_dmom[1] = plot("##plot_dener_dmom[1]", "Momentum magnitude relative error", "| (L[i+1] - L[0])/L[0] |", plot_dener_dmom[1], sol2D.dmomentum);
 
-                if (sol->integr.properties.spacecraft_checkbox)
+                if (sol->integr.props.spacecraft_checkbox)
                 {
                     if (plot_cart_sp[0]) plot_cart_sp[0] = plot("##plot_cart_sp[0]", "Spacecraft x (binary COM)",             "x [km]",       plot_cart_sp[0], sol2D.xsp);
                     if (plot_cart_sp[1]) plot_cart_sp[1] = plot("##plot_cart_sp[1]", "Spacecraft y (binary COM)",             "y [km]",       plot_cart_sp[1], sol2D.ysp);

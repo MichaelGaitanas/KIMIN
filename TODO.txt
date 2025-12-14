@@ -5,4 +5,3 @@
 - Add SRP to asteroids and 3rd body (cannonball & faceted model).
 - Add non-inertial terms for the barycentric frame.
 - Add binary's revolution around the Sun.
-- Fix hard-coded positions/sizes in the GUI.

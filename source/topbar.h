@@ -1,10 +1,13 @@
 /* This class handles the rendering logic of the top bar in the gui. */
 
-#ifndef TOP_BAR_PANEL_H
-#define TOP_BAR_PANEL_H
+#ifndef TOPBAR_H
+#define TOPBAR_H
 
 #include<vector>
 #include<filesystem>
+#include<string>
+
+#include<GLFW/glfw3.h>
 
 #include"../imgui/imgui.h"
 #include"../imgui/imgui_impl_glfw.h"
@@ -12,20 +15,20 @@
 
 #include"constants.h"
 
-class top_bar_panel
+class topbar
 {
 public:
-    bool import_props_clicked, import_props_confirm;
+    bool import_properties_clicked, import_properties_confirm;
     std::string properties_path;
     std::vector<std::filesystem::path> properties_list;
-    bool export_is_enabled, export_sol_clicked;
+    bool export_solution_is_enabled, export_solution_clicked;
     
-    top_bar_panel() : import_props_clicked(false),
-                      import_props_confirm(false),
-                      properties_path(""),
-                      properties_list{},
-                      export_is_enabled(false),
-                      export_sol_clicked(false)
+    topbar() : import_properties_clicked(false),
+               import_properties_confirm(false),
+               properties_path(""),
+               properties_list{},
+               export_solution_is_enabled(false),
+               export_solution_clicked(false)
     { }
 
     void render(GLFWwindow *wpointer, bool &confirm_exit)
@@ -36,11 +39,11 @@ public:
             {
                 if (ImGui::MenuItem("Import properties"))
                 {
-                    import_props_clicked = true;
-                    properties_list = list_properties_files(); //List the files (once) right after the click to 'Import properties'. Remember, this will work even if u paste a new file while the app is running.
+                    import_properties_clicked = true;
+                    properties_list = list_properties_files(); //List the files after the click to 'Import properties'. This will work even if u paste a new file while the KIMIN is running.
                 }
-                if (ImGui::MenuItem("Export active solution", nullptr, false, export_is_enabled))
-                    export_sol_clicked = true;
+                if (ImGui::MenuItem("Export active solution", nullptr, false, export_solution_is_enabled))
+                    export_solution_clicked = true;
                 ImGui::EndMenu();
             }
             ImGui::EndMainMenuBar();
@@ -48,11 +51,11 @@ public:
 
         float sx = ImGui::GetIO().DisplaySize.x;
         float sy = ImGui::GetIO().DisplaySize.y;
-        if (import_props_clicked)
+        if (import_properties_clicked)
         {
             ImGui::SetNextWindowSize(ImVec2(0.4f*sx, 0.4f*sy), ImGuiCond_Appearing);
             ImGui::SetNextWindowPos( ImVec2(0.5f*sx, 0.5f*sy), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f)); 
-            ImGui::Begin("Select properties file", &import_props_clicked);
+            ImGui::Begin("Select properties file", &import_properties_clicked);
             if (ImGui::TreeNodeEx("Available properties files", ImGuiTreeNodeFlags_Framed))
             {
                 for (size_t i = 0; i < properties_list.size(); ++i)
@@ -73,9 +76,9 @@ public:
             //Final "Import file" button. This must be pressed, otherwise the properties pannel will not be updated.
             if (ImGui::Button("Import file", ImVec2(70.0f*SCX,30.0f*SCY)))
             {
-                import_props_clicked = false; //This will close the window.
+                import_properties_clicked = false; //This will close the window.
                 if (!properties_path.empty())
-                    import_props_confirm = true; //And this is will communicate with gui::poll_topbar_events(), which then will communicate with properties::import_file().
+                    import_properties_confirm = true; //And this is will communicate with gui::poll_topbar_events(), which then will communicate with properties::import_file().
             }
 
             if (properties_path.empty())
@@ -90,17 +93,16 @@ public:
             ImGui::SetNextWindowSize(ImVec2(0.1f*sx, 0.1f*sy), ImGuiCond_Always);
             ImGui::Begin("Exit KIMIN ?", &confirm_exit, ImGuiWindowFlags_NoResize);
             
-            ImVec2 butt_size(50.0f*SCX, 30.0f*SCY);
-            float butt_spacing = ImGui::GetStyle().ItemSpacing.x;
-            float total_width = 2.0f*butt_size.x + butt_spacing;
+            ImVec2 button_size(50.0f*SCX, 30.0f*SCY);
+            float total_width = 2.0f*button_size.x + ImGui::GetStyle().ItemSpacing.x;
             float avail_width = ImGui::GetContentRegionAvail().x;
             float xoffset = 0.5f*(avail_width - total_width);
             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + xoffset);
-            //Now draw the two buttons:
-            if (ImGui::Button("No", butt_size))
+            //Now draw the two buttons :
+            if (ImGui::Button("No", button_size))
                 confirm_exit = false;
             ImGui::SameLine();
-            if (ImGui::Button("Yes", butt_size))
+            if (ImGui::Button("Yes", button_size))
                 glfwSetWindowShouldClose(wpointer, true);
 
             ImGui::End();
@@ -113,7 +115,7 @@ private:
         std::vector<std::filesystem::path> paths;
 
         //First scan all simulations/ child directories.
-        std::filesystem::path simsdir = "../simulations";
+        std::filesystem::path simsdir = SIM_ROOT_DIR;
         if (std::filesystem::exists(simsdir) && std::filesystem::is_directory(simsdir))
             for (auto &entry : std::filesystem::directory_iterator(simsdir))
                 if (entry.is_directory())
@@ -124,7 +126,7 @@ private:
                 }
 
         //Then scan the properties/ directory.
-        std::filesystem::path propsdir = "../properties";
+        std::filesystem::path propsdir = PROPERTIES_DIR;
         if (std::filesystem::exists(propsdir) && std::filesystem::is_directory(propsdir))
         {
             for (auto &entry : std::filesystem::directory_iterator(propsdir))

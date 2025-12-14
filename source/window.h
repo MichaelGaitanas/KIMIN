@@ -1,4 +1,4 @@
-/* This class handles the glfw window functionality. */
+/* This class handles the glfw window core functionality. */
 
 #ifndef WINDOW_H
 #define WINDOW_H
@@ -74,6 +74,7 @@ public:
         height = mode->height;
         SCX = (mode->width)/1920.0f;
         SCY = (mode->height)/1080.0f;
+        //Now the computer knows how much to scale things based on your monitor's resolution.
 
         wpointer = glfwCreateWindow(width, height, "KIMIN - Kinetic Impact Mission to NEO", nullptr, nullptr);
         if (wpointer == nullptr)
@@ -117,14 +118,14 @@ public:
         glEnable(GL_DEPTH_TEST);
         while (!glfwWindowShouldClose(wpointer))
         {
-            glClear(GL_COLOR_BUFFER_BIT); //Depth is cleared in ui.scene.render(), where it is necessary.
+            glClear(GL_COLOR_BUFFER_BIT); //Depth is cleared in ui.sce.render(), where it is necessary.
 
             ui.begin();
-            ui.topbar.render(wpointer, confirm_exit);
-            ui.properties.render(ui.task_is_running.load(), ui.task_was_aborted.load(), ui.task_progress.load());
-            ui.console.render();
+            ui.tbar.render(wpointer, confirm_exit);
+            ui.props.render(ui.task_is_running.load(), ui.task_was_aborted.load(), ui.task_progress.load());
+            ui.cons.render();
             ui.update_solution_if_ready();
-            ui.scene.render(width, height);
+            ui.sce.render(width, height);
             ui.render();
             ui.poll_events();
 

@@ -1,13 +1,13 @@
 /* This class handles the rendering logic of the down panel (console) in the gui. */
 
-#ifndef CONSOLE_PANEL_H
-#define CONSOLE_PANEL_H
+#ifndef CONSOLE_H
+#define CONSOLE_H
 
 #include<cstdarg>
 #include<sstream>
 #include<string>
 
-#include<boost/date_time.hpp>
+//#include<boost/date_time.hpp>
 #include<GL/glew.h>
 #include<GLFW/glfw3.h>
 
@@ -17,7 +17,7 @@
 
 #include"constants.h"
 
-class console_panel
+class console
 {
 private:
     ImGuiTextBuffer buffer{};
@@ -39,17 +39,19 @@ private:
         }
     }
 
+    /*
     std::string get_local_time()
     {
         boost::posix_time::ptime timeloc = boost::posix_time::second_clock::local_time();
         std::ostringstream datetime;
-        datetime << "[" << timeloc << "] ";
+        datetime << "[" << timeloc << "]  ";
         return datetime.str();
     }
+    */
 
 public:
     //Add formatted text to the console.
-    void add_text(const char *format, ...) IM_FMTARGS(2)
+    void print(const char *format, ...) IM_FMTARGS(2)
     {
         va_list args;
         va_start(args, format);
@@ -60,11 +62,13 @@ public:
     }
 
     //Add formatted local time and then formatted text to the console.
+    /*
     void add_timed_text(const char *text)
     {
         add_text(get_local_time().c_str());
         add_text(text);
     }
+    */
 
     //Render the console window.
     void render()

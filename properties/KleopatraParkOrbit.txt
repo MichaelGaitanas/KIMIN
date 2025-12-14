@@ -4,7 +4,7 @@ Shape models := ".obj files"
     file 1 := "kleopatra4k_R114km.obj"
     file 2 := "cube2x2x2_R1km.obj"
 
-Mutual potential order := 3
+Potential expansion order := 3
 
 Masses :
     M1 := 4.64e+18
@@ -48,6 +48,8 @@ Initial state :
     vx := 0.0
     vy := 0.0
     vz := 0.0
+
+Assume Sun's gravity := "No"
 
 Collision shapes := "Polyhedra"
 
