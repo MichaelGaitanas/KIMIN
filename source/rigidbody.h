@@ -202,7 +202,7 @@ bool polyhedron_polyhedron_collision(const polyhedron &poly1, const dmat3 &A1, c
     return false;
 }
 
-//This function tells if there exists an intersection point between a line segment (formed by the vectors r1,r2)
+//This function tells if an intersection point exists between a line segment (formed by the vectors r1,r2)
 //and a sphere with center at rsphere and radius R.
 bool line_sphere_intersection(const dvec3 &r1, const dvec3 &r2, const dvec3 &rsphere, const double R)
 {

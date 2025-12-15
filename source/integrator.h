@@ -42,7 +42,7 @@ public:
     }
 
 private:
-    //This function evaluates analytically the equation of motion of the COM of the binary in the Heliocentric frame.
+    //In case Sun's gravity is off, this function evaluates analytically the equation of motion of the COM of the binary in the Heliocentric frame.
     dvec3 get_analytic_rcom(const dvec6 &cart_com0, const double t)
     {
         const dvec3 rcom0 = {cart_com0[0],cart_com0[1],cart_com0[2]};
@@ -67,36 +67,52 @@ private:
     //This function builds the right hand sides of the differential equations of motion. It is executed at each step of the integration.
     void build_rhs(const boost::array<double, N_ODES> &state, boost::array<double, N_ODES> &dstate, double t)
     {
-        //Extract the current state vector of the binary (for readability mostly).
-        dvec3 r  =  { state[0],  state[1],  state[2] };
-        dvec3 v  =  { state[3],  state[4],  state[5] };
-        dvec4 q1 =  { state[6],  state[7],  state[8],  state[9] };
-        dvec3 w1b = { state[10], state[11], state[12] };
-        dvec4 q2 =  { state[13], state[14], state[15], state[16] };
-        dvec3 w2b = { state[17], state[18], state[19] };
+        //Extract binary's mutual state (position & velocity) and absolute orientations (orientations & angular velocities).
+        dvec3 rmut = {state[0],  state[1],  state[2]};
+        dvec3 vmut = {state[3],  state[4],  state[5]};
+        dvec4 q1   = {state[6],  state[7],  state[8],  state[9]};
+        dvec3 w1b  = {state[10], state[11], state[12]};
+        dvec4 q2   = {state[13], state[14], state[15], state[16]};
+        dvec3 w2b  = {state[17], state[18], state[19]};
+        //Extract COM's state.
+        dvec3 rcom = {state[20], state[21], state[22]};
+        dvec3 vcom = {state[23], state[24], state[25]};
 
-        //Normalize the quaternions. We can probably skip doing this at every evaluation of the RHS and
-        //perhaps do it e.g. per 10 or more evaluations to gain performance, but let's leave be strict for now.
+        //Compute rotation matrices from normalized quaternions.
         q1 = quat2unit(q1);
         q2 = quat2unit(q2);
         dmat3 A1 = quat2mat(q1);
         dmat3 A2 = quat2mat(q2);
 
-        //Calculate the force and the torque of body 1 in the inertial frame, depending on the user's choice of the mutual potential order.
+        //Calculate the mutual force and the torque acted on body 1 in the inertial (Heliocentric) frame.
         dvec6 force_and_torque1i;
         if (props.ord2_checkbox)
-            force_and_torque1i = mut_force_torque1i_integrals_ord2(r, props.M1,J1,A1, props.M2,J2,A2);
+            force_and_torque1i = mut_force_torque1i_integrals_ord2(rmut, props.M1,J1,A1, props.M2,J2,A2);
         else if (props.ord3_checkbox)
-            force_and_torque1i = mut_force_torque1i_integrals_ord3(r, props.M1,J1,A1, props.M2,J2,A2);
-        else //Only 'ord4_checkbox' remains...
-            force_and_torque1i = mut_force_torque1i_integrals_ord4(r, props.M1,J1,A1, props.M2,J2,A2);
+            force_and_torque1i = mut_force_torque1i_integrals_ord3(rmut, props.M1,J1,A1, props.M2,J2,A2);
+        else
+            force_and_torque1i = mut_force_torque1i_integrals_ord4(rmut, props.M1,J1,A1, props.M2,J2,A2);
         
-        dvec3 force = {force_and_torque1i[0], force_and_torque1i[1], force_and_torque1i[2]};
+        //Mutual and COM acceleration due to binary's gravity (no Sun yet).
+        dvec3 amut = {force_and_torque1i[0], force_and_torque1i[1], force_and_torque1i[2]}/m;
+        dvec3 acom = {0.0,0.0,0.0};
+        if (props.sun_gravity) //Now add Sun's contribution to both the amut and acom.
+        {
+            //Individual bodies' inertial (Heliocentric) positions, i.e. COM1 and COM2.
+            dvec3 r1 = rcom + m1*rmut;
+            dvec3 r2 = rcom + m2*rmut;
+            double r1len = length(r1);
+            double r2len = length(r2);
+            double rcomlen = length(rcom);
+            amut = amut - G*MSUN*(r2/(r2len*r2len*r2len) - r1/(r1len*r1len*r1len));
+            acom = -G*MSUN*rcom/(rcomlen*rcomlen*rcomlen);
+        }
+        //Else the mutual state is governed only by the binary's mutual gravity and the COM shall move at a straight line in space. Bye bye Solar system!
 
         dvec3 torque1i = {force_and_torque1i[3], force_and_torque1i[4], force_and_torque1i[5]};
         dvec3 torque2i = -torque1i - cross(r,force);
 
-        //Convert the torques into the corresponding body frames because Euler's ODEs are written in the body frames.
+        //Convert the torques into the corresponding body frames because Euler's ODEs are written in the body frame.
         dvec3 torque1b = iner2body(torque1i,A1);
         dvec3 torque2b = iner2body(torque2i,A2);
 
@@ -106,15 +122,15 @@ private:
         dvec4 dq2 = quat_rhs(q2,w2b);
         dvec3 dw2b = euler_rhs(w2b,I2,torque2b);
 
-        //Mutual position rhs (x,y,z).
-        dstate[0] = v[0];
-        dstate[1] = v[1];
-        dstate[2] = v[2];
+        //Mutual position rhs (xmut,ymut,zmut).
+        dstate[0] = vmut[0];
+        dstate[1] = vmut[1];
+        dstate[2] = vmut[2];
 
-        //Mutual velocity rhs (vx,vy,vz).
-        dstate[3] = force[0]/m;
-        dstate[4] = force[1]/m;
-        dstate[5] = force[2]/m;
+        //Mutual velocity rhs (vxmut,vymut,vzmut).
+        dstate[3] = amut[0];
+        dstate[4] = amut[1];
+        dstate[5] = amut[2];
 
         //Quaternion rhs of rigid body 1 (q10,q11,q12,q13).
         dstate[6] = dq1[0];
@@ -138,20 +154,31 @@ private:
         dstate[18] = dw2b[1];
         dstate[19] = dw2b[2];
 
+        //COM position rhs (xcom,ycom,zcom).
+        dstate[20] = vcom[0];
+        dstate[21] = vcom[1];
+        dstate[22] = vcom[2];
+
+        //COM velocity rhs (vxcom,vycom,vzcom).
+        dstate[23] = acom[0];
+        dstate[24] = acom[1];
+        dstate[25] = acom[2];
+
         //Now handle the spacecraft's ODEs :
         if (props.spacecraft_checkbox)
         {
-            //Spacecraft's state in binary's COM frame.
-            dvec3 rsp = { state[20], state[21], state[22] };
-            dvec3 vsp = { state[23], state[24], state[25] };
-            //Individual bodies' COM positions (i.e. COM1 and COM2) in binary's COM frame.
-            dvec3 r1 = m1*r;
-            dvec3 r2 = m2*r;
+            //Spacecraft's state in the inertial (Heliocentric) frame.
+            dvec3 rsp = {state[26], state[27], state[28]};
+            dvec3 vsp = {state[29], state[30], state[31]};
+            //Individual bodies' inertial (Heliocentric) positions, i.e. COM1 and COM2.
+            dvec3 r1 = rcom + m1*rmut;
+            dvec3 r2 = rcom + m2*rmut;
             //Corresponding body-to-spacecraft vector.
             dvec3 rho1 = rsp - r1;
             dvec3 rho2 = rsp - r2;
 
-            dvec3 asp; //Spacecraft's acceleration due to the combined presence of the 2 rigid bodies + SRP.
+            //Spacecraft's acceleration due to the combined presence of the 2 rigid bodies (no Sun, no SRP yet).
+            dvec3 asp;
             if (props.ord2_checkbox)
                 asp = accel_integrals_ord2(rho1, props.M1, J1, A1) + accel_integrals_ord2(rho2, props.M2, J2, A2);
             else if (props.ord3_checkbox)
@@ -159,10 +186,16 @@ private:
             else
                 asp = accel_integrals_ord4(rho1, props.M1, J1, A1) + accel_integrals_ord4(rho2, props.M2, J2, A2);
 
-            if (props.srp_checkbox)
+            if (props.sun_gravity) //Add Sun's gravity.
+            {
+                double rsplen = length(rsp);
+                asp = asp - G*MSUN*rsp/(rsplen*rsplen*rsplen);
+            }
+
+            if (props.srp_checkbox) //Add SRP.
             {
                 bool sp_in_shadow = false;
-                dvec3 rsun = -get_analytic_rcom(props.cart_com, t);
+                dvec3 rsun = 0.0; //Sun is now at the origin.
                 if (props.srp_shadow_checkbox)
                     sp_in_shadow = line_sphere_intersection(rsp, rsun, r1, brillouin1) || line_sphere_intersection(rsp, rsun, r2, brillouin2);
                 if (!sp_in_shadow)

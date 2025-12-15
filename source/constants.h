@@ -11,7 +11,7 @@ constexpr double MIN_SUN_BODY_DIST = 0.01; //[AU]
 constexpr double ODES_INIT_GUESS_TIME_STEP = 1.0; //[sec]
 
 constexpr size_t N_SOL2D = 5000;
-constexpr size_t N_ODES = 26;
+constexpr size_t N_ODES = 32;
 
 constexpr float CAM_MIN_FOV = 1.0f; //[deg]
 constexpr float CAM_MAX_FOV = 179.0f; //[deg]
