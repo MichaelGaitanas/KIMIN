@@ -158,38 +158,6 @@ public:
             orb_sp.draw_count = std::min<size_t>(1, sol.t.size());
     }
 
-    glm::vec3 get_analytic_rcom(const solution &sol, const size_t iframe)
-    {
-        const double ti = sol.t[iframe]*86400.0;
-        const glm::vec3 rcom0 = glm::vec3((float)sol.integr.props.cart_com[0],
-                                          (float)sol.integr.props.cart_com[1],
-                                          (float)sol.integr.props.cart_com[2]);
-        const glm::vec3 vcom0 = glm::vec3((float)sol.integr.props.cart_com[3],
-                                          (float)sol.integr.props.cart_com[4],
-                                          (float)sol.integr.props.cart_com[5]);
-        glm::vec3 r = rcom0 + vcom0*(float)(ti - sol.integr.t0); //COM position due to initial state.
-        if (sol.integr.props.impactors_checkbox)
-        {
-            if (ti >= sol.integr.props.tD1) //Impact 1 contribution.
-            {
-                const float c = (sol.integr.props.beta1*sol.integr.props.mD1)/(sol.integr.props.M1 + sol.integr.props.M2);
-                const glm::vec3 dvcm1 = c*glm::vec3((float)sol.integr.props.vD1[0],
-                                                    (float)sol.integr.props.vD1[1],
-                                                    (float)sol.integr.props.vD1[2]);
-                r += dvcm1*(float)(ti - sol.integr.props.tD1);
-            }
-            if (ti >= sol.integr.props.tD2) //Impact 2 contribution.
-            {
-                const float c = (sol.integr.props.beta2*sol.integr.props.mD2)/(sol.integr.props.M1 + sol.integr.props.M2);
-                const glm::vec3 dvcm2 = c*glm::vec3((float)sol.integr.props.vD2[0],
-                                                    (float)sol.integr.props.vD2[1],
-                                                    (float)sol.integr.props.vD2[2]);
-                r += dvcm2*(float)(ti - sol.integr.props.tD2);
-            }
-        }
-        return r;
-    }
-
     //This function handles the rendering logic of the 3D content.
     void render_3D_content(solution &sol, const size_t iframe, bool &reset_gpu_essential)
     {

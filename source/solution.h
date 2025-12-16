@@ -22,17 +22,12 @@ class solution
 public:
     integrator integr;
 
-    //The following vector members constitute the DENSE version of the solution of the ODEs and each vector is used for :
-    //1) Exporting to files.
-    //2) 3D rendering.
-    //3) Both.
+    //The following vector members constitute the DENSE version of the solution of the ODEs and each vector is used for either exporting to files or 3D rendering or both.
 
     dvec t;
 
-    //Mutual of the binary :
-    dvec x, y, z, dist;
-    dvec vx, vy, vz;
-    dvec sma, ecc, inc, raan, argper, manom;
+    //Mutual state of the binary :
+    dvec xmut, ymut, zmut, dist_mut;
 
     //Body 1 :
     dvec roll1, pitch1, yaw1;
@@ -42,9 +37,11 @@ public:
     dvec roll2, pitch2, yaw2;
     dvec w2ix, w2iy, w2iz;
 
-    //Spacecraft (in binary's COM frame) :
-    dvec xsp,  ysp,  zsp;
-    dvec vxsp, vysp, vzsp;
+    //COM (in Heliocentric frame) :
+    dvec xcom_helio, ycom_helio, zcom_helio;
+
+    //Spacecraft (in Heliocentric frame) :
+    dvec xsp_helio, ysp_helio, zsp_helio;
 
     solution() { } //This is needed to instantiate solution in the scene class.
 
@@ -61,20 +58,19 @@ public:
         const size_t N = integr.orbit.size();
         t.resize(N);
         
-        x.resize(N);   y.resize(N);   z.resize(N);   dist.resize(N);
-        vx.resize(N);  vy.resize(N);  vz.resize(N);
-        sma.resize(N); ecc.resize(N); inc.resize(N); raan.resize(N); argper.resize(N); manom.resize(N);
+        xmut.resize(N); ymut.resize(N); zmut.resize(N); dist_mut.resize(N);
         
         roll1.resize(N); pitch1.resize(N); yaw1.resize(N);
         w1ix.resize(N);  w1iy.resize(N);   w1iz.resize(N);
 
         roll2.resize(N); pitch2.resize(N); yaw2.resize(N);       
         w2ix.resize(N);  w2iy.resize(N);   w2iz.resize(N);
+
+        xcom_helio.resize(N); ycom_helio.resize(N); zcom_helio.resize(N);
         
         if (integr.props.spacecraft_checkbox)
         {
-            xsp.resize(N);  ysp.resize(N);  zsp.resize(N);
-            vxsp.resize(N); vysp.resize(N); vzsp.resize(N);
+            xsp_helio.resize(N); ysp_helio.resize(N); zsp_helio.resize(N);
         }
 
         #ifdef _OPENMP
@@ -92,14 +88,15 @@ public:
         #endif
         for (i = 0; i < N; ++i)
         {
-            //Remember, integr.orbit[i][] contains either (t, x,y,z, vx,vy,vz, q10,q11,q12,q13, w1bx,w1by,w1bz, q20,q21,q22,q23, w2bx,w2by,w2bz, xsp,ysp,zsp, vxsp,vysp,vzsp)
-            //                                         or (t, x,y,z, vx,vy,vz, q10,q11,q12,q13, w1bx,w1by,w1bz, q20,q21,q22,q23, w2bx,w2by,w2bz)
-            dvec3 r   = {integr.orbit[i][1],  integr.orbit[i][2],  integr.orbit[i][3]};
-            dvec3 v   = {integr.orbit[i][4],  integr.orbit[i][5],  integr.orbit[i][6]};
-            dvec4 q1  = {integr.orbit[i][7],  integr.orbit[i][8],  integr.orbit[i][9],  integr.orbit[i][10]};
-            dvec3 w1b = {integr.orbit[i][11], integr.orbit[i][12], integr.orbit[i][13]};
-            dvec4 q2  = {integr.orbit[i][14], integr.orbit[i][15], integr.orbit[i][16], integr.orbit[i][17]};
-            dvec3 w2b = {integr.orbit[i][18], integr.orbit[i][19], integr.orbit[i][20]};
+            //Remember, integr.orbit[i][] contains either (t, rmut,vmut, q1,w1b, q2,w2b, rcom_helio,vcom_helio, rsp_helio,vsp_helio)
+            //                                         or (t, rmut,vmut, q1,w1b, q2,w2b, rcom_helio,vcom_helio)
+            dvec3 rmut       = {integr.orbit[i][1],  integr.orbit[i][2],  integr.orbit[i][3]};
+            dvec3 vmut       = {integr.orbit[i][4],  integr.orbit[i][5],  integr.orbit[i][6]};
+            dvec4 q1         = {integr.orbit[i][7],  integr.orbit[i][8],  integr.orbit[i][9],  integr.orbit[i][10]};
+            dvec3 w1b        = {integr.orbit[i][11], integr.orbit[i][12], integr.orbit[i][13]};
+            dvec4 q2         = {integr.orbit[i][14], integr.orbit[i][15], integr.orbit[i][16], integr.orbit[i][17]};
+            dvec3 w2b        = {integr.orbit[i][18], integr.orbit[i][19], integr.orbit[i][20]};
+            dvec3 rcom_helio = {integr.orbit[i][21], integr.orbit[i][22], integr.orbit[i][23]};
 
             dmat3 A1   = quat2mat(q1);
             dmat3 A2   = quat2mat(q2);
@@ -107,26 +104,13 @@ public:
             dvec3 w2i  = body2iner(w2b,A2);
             dvec3 rpy1 = quat2ang(q1);
             dvec3 rpy2 = quat2ang(q2);
-
-            dvec6 kep = cart2kep({r[0],r[1],r[2], v[0],v[1],v[2]}, G*(integr.props.M1 + integr.props.M2));
             
-            t[i] = integr.orbit[i][0]/86400.0; //[days]
+            t[i] = integr.orbit[i][0]/86400.0; //Back in [days].
 
-            x[i]    = r[0];
-            y[i]    = r[1];
-            z[i]    = r[2];
-            dist[i] = length(r);
-
-            vx[i] = v[0];
-            vy[i] = v[1];
-            vz[i] = v[2];
-
-            sma[i]    = kep[0];
-            ecc[i]    = kep[1];
-            inc[i]    = kep[2]*180.0/PI;
-            raan[i]   = kep[3]*180.0/PI;
-            argper[i] = kep[4]*180.0/PI;
-            manom[i]  = kep[5]*180.0/PI;
+            xmut[i]     = rmut[0];
+            ymut[i]     = rmut[1];
+            zmut[i]     = rmut[2];
+            dist_mut[i] = length(rmut);
 
             roll1[i]  = rpy1[0]*180.0/PI;
             pitch1[i] = rpy1[1]*180.0/PI;
@@ -144,18 +128,18 @@ public:
             w2iy[i] = w2i[1];
             w2iz[i] = w2i[2];
 
+            //Remember these are in [km] because we converted the input properties from [AU] to [km] in integrator::prepare().
+            xcom_helio[i] = rcom_helio[0];
+            ycom_helio[i] = rcom_helio[1];
+            zcom_helio[i] = rcom_helio[2];
+
             if (integr.props.spacecraft_checkbox)
             {
-                dvec3 rsp = {integr.orbit[i][21], integr.orbit[i][22], integr.orbit[i][23]};
-                dvec3 vsp = {integr.orbit[i][24], integr.orbit[i][25], integr.orbit[i][26]};
-
-                xsp[i] = rsp[0];
-                ysp[i] = rsp[1];
-                zsp[i] = rsp[2];
-
-                vxsp[i] = vsp[0];
-                vysp[i] = vsp[1];
-                vzsp[i] = vsp[2];
+                dvec3 rsp_helio = {integr.orbit[i][27], integr.orbit[i][28], integr.orbit[i][29]};
+                //Same here, all are in [km].
+                xsp_helio[i] = rsp_helio[0];
+                ysp_helio[i] = rsp_helio[1];
+                zsp_helio[i] = rsp_helio[2];
             }
         }
         cons.print("Done.\n");
@@ -169,11 +153,9 @@ public:
         std::filesystem::create_directory(SIM_ROOT_DIR); //Create the root directory that shall host all simulations if it does not exist already.
         std::filesystem::create_directory(sim_dir); //Create the current simulation directory that shall host all solution files.
 
-        //Create the .txt contents :
+        //Export binary history :
         FILE *fp_t    = fopen((sim_dir + "/time.txt"       ).c_str(), "w");
-        FILE *fp_pos  = fopen((sim_dir + "/rel_pos.txt"    ).c_str(), "w");
-        FILE *fp_vel  = fopen((sim_dir + "/rel_vel.txt"    ).c_str(), "w");
-        FILE *fp_kep  = fopen((sim_dir + "/keplerian.txt"  ).c_str(), "w");
+        FILE *fp_rmut = fopen((sim_dir + "/mutual_pos.txt" ).c_str(), "w");
         FILE *fp_rpy1 = fopen((sim_dir + "/euler_rpy1.txt" ).c_str(), "w");
         FILE *fp_w1i  = fopen((sim_dir + "/ang_vel_w1i.txt").c_str(), "w");
         FILE *fp_rpy2 = fopen((sim_dir + "/euler_rpy2.txt" ).c_str(), "w");
@@ -181,43 +163,34 @@ public:
         for (size_t i = 0; i < t.size(); ++i)
         {
             fprintf(fp_t,    "%.16lf\n", t[i]);
-            fprintf(fp_pos,  "%.16lf %.16lf %.16lf\n",                        x[i],      y[i],    z[i]);
-            fprintf(fp_vel,  "%.16lf %.16lf %.16lf\n",                       vx[i],     vy[i],   vz[i]);
-            fprintf(fp_kep,  "%.16lf %.16lf %.16lf %.16lf %.16lf %.16lf\n", sma[i],    ecc[i],  inc[i], raan[i], argper[i], manom[i]);
-            fprintf(fp_rpy1, "%.16lf %.16lf %.16lf\n",                    roll1[i], pitch1[i], yaw1[i]);
-            fprintf(fp_w1i,  "%.16lf %.16lf %.16lf\n",                     w1ix[i],   w1iy[i], w1iz[i]);
-            fprintf(fp_rpy2, "%.16lf %.16lf %.16lf\n",                    roll2[i], pitch2[i], yaw2[i]);
-            fprintf(fp_w2i,  "%.16lf %.16lf %.16lf\n",                     w2ix[i],   w2iy[i], w2iz[i]); 
+            fprintf(fp_rmut, "%.16lf %.16lf %.16lf\n",  xmut[i],   ymut[i], zmut[i]);
+            fprintf(fp_rpy1, "%.16lf %.16lf %.16lf\n", roll1[i], pitch1[i], yaw1[i]);
+            fprintf(fp_w1i,  "%.16lf %.16lf %.16lf\n",  w1ix[i],   w1iy[i], w1iz[i]);
+            fprintf(fp_rpy2, "%.16lf %.16lf %.16lf\n", roll2[i], pitch2[i], yaw2[i]);
+            fprintf(fp_w2i,  "%.16lf %.16lf %.16lf\n",  w2ix[i],   w2iy[i], w2iz[i]); 
         }
         fclose(fp_t);
-        fclose(fp_pos);
-        fclose(fp_vel);
-        fclose(fp_kep);
+        fclose(fp_rmut);
         fclose(fp_rpy1);
         fclose(fp_w1i);
         fclose(fp_rpy2);
         fclose(fp_w2i);
 
-        //Export spacecraft.
+        //Export spacecraft history :
         if (integr.props.spacecraft_checkbox)
         {
-            FILE *fp_pos_sp = fopen((sim_dir + "/pos_spacecraft.txt").c_str(), "w");
-            FILE *fp_vel_sp = fopen((sim_dir + "/vel_spacecraft.txt").c_str(), "w");
+            FILE *fp_rsp_helio = fopen((sim_dir + "/spacecraft_pos_helio.txt").c_str(), "w");
             for (size_t i = 0; i < t.size(); ++i)
-            {
-                fprintf(fp_pos_sp, "%.16lf %.16lf %.16lf\n",  xsp[i],  ysp[i],  zsp[i]);
-                fprintf(fp_vel_sp, "%.16lf %.16lf %.16lf\n", vxsp[i], vysp[i], vzsp[i]);
-            }
-            fclose(fp_pos_sp);
-            fclose(fp_vel_sp);
+                fprintf(fp_rsp_helio, "%.16lf %.16lf %.16lf\n", xsp_helio[i]/AU2KM, ysp_helio[i]/AU2KM, zsp_helio[i]/AU2KM); //Deliberatly saved as [AU] in the file.
+            fclose(fp_rsp_helio);
         }
 
-        //Export the collision status.
+        //Export collision status :
         FILE *fp_collision = fopen((sim_dir + "/collision.txt").c_str(),"w");
         fprintf(fp_collision,"Collision detected : %s", (integr.collision_mut || integr.collision_sp) ? "Yes" : "No");
         fclose(fp_collision);
 
-        //Export the input properties.
+        //Export input properties :
         FILE *fp_props = fopen((sim_dir + "/properties.txt").c_str(),"w");
         fprintf(fp_props,"Simulation name := \"%s\"\n\n", integr.props.sim_name);
         
@@ -239,11 +212,11 @@ public:
         }
 
         if (integr.props.ord2_checkbox)
-            fprintf(fp_props,"Mutual potential order := 2\n\n");
+            fprintf(fp_props,"Potential expansion order := 2\n\n");
         else if (integr.props.ord3_checkbox)
-            fprintf(fp_props,"Mutual potential order := 3\n\n");
+            fprintf(fp_props,"Potential expansion order := 3\n\n");
         else
-            fprintf(fp_props,"Mutual potential order := 4\n\n");
+            fprintf(fp_props,"Potential expansion order := 4\n\n");
 
         fprintf(fp_props,"Masses :\n");
         fprintf(fp_props,"    M1 := %.15g\n",  integr.props.M1);
@@ -282,7 +255,7 @@ public:
         fprintf(fp_props,"Initial state :\n");
         if (integr.props.pos_vel_mut_var == properties::CARTESIAN_MUT)
         {
-            fprintf(fp_props,"    Relative position and velocity := \"Cartesian\"\n");
+            fprintf(fp_props,"    Mutual position and velocity := \"Cartesian\"\n");
             fprintf(fp_props,"    x  := %.15g\n",   integr.props.cart_mut[0]);
             fprintf(fp_props,"    y  := %.15g\n",   integr.props.cart_mut[1]);
             fprintf(fp_props,"    z  := %.15g\n",   integr.props.cart_mut[2]);
@@ -292,7 +265,7 @@ public:
         }
         else //properties::KEPLERIAN_MUT
         {
-            fprintf(fp_props,"    Relative position and velocity := \"Keplerian\"\n");
+            fprintf(fp_props,"    Mutual position and velocity := \"Keplerian\"\n");
             fprintf(fp_props,"    a  := %.15g\n",   integr.props.kep_mut[0]);
             fprintf(fp_props,"    e  := %.15g\n",   integr.props.kep_mut[1]);
             fprintf(fp_props,"    i  := %.15g\n",   integr.props.kep_mut[2]);
@@ -324,47 +297,54 @@ public:
             fprintf(fp_props,"    q23 := %.15g\n\n", integr.props.q2[3]);
         }
 
-        if (integr.props.angvel_frame == properties::INERTIAL_ANGVEL)
+        if (integr.props.angvel_frame == properties::ANGVEL_HELIO)
         {
-            fprintf(fp_props,"    Angular velocities := \"At inertial frame\"\n");
-            fprintf(fp_props,"    w1ix := %.15g\n",   integr.props.w1i[0]);
-            fprintf(fp_props,"    w1iy := %.15g\n",   integr.props.w1i[1]);
-            fprintf(fp_props,"    w1iz := %.15g\n",   integr.props.w1i[2]);
-            fprintf(fp_props,"    w2ix := %.15g\n",   integr.props.w2i[0]);
-            fprintf(fp_props,"    w2iy := %.15g\n",   integr.props.w2i[1]);
-            fprintf(fp_props,"    w2iz := %.15g\n\n", integr.props.w2i[2]);
+            fprintf(fp_props,"    Angular velocities := \"Heliocentric (inertial)\"\n");
+            fprintf(fp_props,"    w1x := %.15g\n",   integr.props.w1i[0]);
+            fprintf(fp_props,"    w1y := %.15g\n",   integr.props.w1i[1]);
+            fprintf(fp_props,"    w1z := %.15g\n",   integr.props.w1i[2]);
+            fprintf(fp_props,"    w2x := %.15g\n",   integr.props.w2i[0]);
+            fprintf(fp_props,"    w2y := %.15g\n",   integr.props.w2i[1]);
+            fprintf(fp_props,"    w2z := %.15g\n\n", integr.props.w2i[2]);
         }
-        else //properties::BODY_ANGVEL
+        else //properties::ANGVEL_BODY
         {
-            fprintf(fp_props,"    Angular velocities := \"At body frames\"\n");
-            fprintf(fp_props,"    w1bx := %.15g\n",   integr.props.w1b[0]);
-            fprintf(fp_props,"    w1by := %.15g\n",   integr.props.w1b[1]);
-            fprintf(fp_props,"    w1bz := %.15g\n",   integr.props.w1b[2]);
-            fprintf(fp_props,"    w2bx := %.15g\n",   integr.props.w2b[0]);
-            fprintf(fp_props,"    w2by := %.15g\n",   integr.props.w2b[1]);
-            fprintf(fp_props,"    w2bz := %.15g\n\n", integr.props.w2b[2]);
+            fprintf(fp_props,"    Angular velocities := \"Body frames\"\n");
+            fprintf(fp_props,"    w11 := %.15g\n",   integr.props.w1b[0]);
+            fprintf(fp_props,"    w12 := %.15g\n",   integr.props.w1b[1]);
+            fprintf(fp_props,"    w13 := %.15g\n",   integr.props.w1b[2]);
+            fprintf(fp_props,"    w21 := %.15g\n",   integr.props.w2b[0]);
+            fprintf(fp_props,"    w22 := %.15g\n",   integr.props.w2b[1]);
+            fprintf(fp_props,"    w23 := %.15g\n\n", integr.props.w2b[2]);
         }
 
-        if (integr.props.pos_vel_com_var == properties::CARTESIAN_COM)
+        if (integr.props.pos_vel_com_var == properties::CARTESIAN_COM_HELIO)
         {
             fprintf(fp_props,"    Binary COM (Heliocentric) := \"Cartesian\"\n");
-            fprintf(fp_props,"    x  := %.15g\n",   integr.props.cart_com[0]);
-            fprintf(fp_props,"    y  := %.15g\n",   integr.props.cart_com[1]);
-            fprintf(fp_props,"    z  := %.15g\n",   integr.props.cart_com[2]);
-            fprintf(fp_props,"    vx := %.15g\n",   integr.props.cart_com[3]);
-            fprintf(fp_props,"    vy := %.15g\n",   integr.props.cart_com[4]);
-            fprintf(fp_props,"    vz := %.15g\n\n", integr.props.cart_com[5]);
+            //Remember the gui property cart_com_helio[0-2] was in [AU], but the copy was converted in [km] in integrator::prepare().
+            //We want to save in the file the [AU] version to match with the user input.
+            fprintf(fp_props,"    x  := %.15g\n",   integr.props.cart_com_helio[0]/AU2KM);
+            fprintf(fp_props,"    y  := %.15g\n",   integr.props.cart_com_helio[1]/AU2KM);
+            fprintf(fp_props,"    z  := %.15g\n",   integr.props.cart_com_helio[2]/AU2KM);
+            fprintf(fp_props,"    vx := %.15g\n",   integr.props.cart_com_helio[3]);
+            fprintf(fp_props,"    vy := %.15g\n",   integr.props.cart_com_helio[4]);
+            fprintf(fp_props,"    vz := %.15g\n\n", integr.props.cart_com_helio[5]);
         }
-        else //properties::KEPLERIAN_COM
+        else //properties::KEPLERIAN_COM_HELIO
         {
             fprintf(fp_props,"    Binary COM (Heliocentric) := \"Keplerian\"\n");
-            fprintf(fp_props,"    a  := %.15g\n",   integr.props.kep_com[0]);
-            fprintf(fp_props,"    e  := %.15g\n",   integr.props.kep_com[1]);
-            fprintf(fp_props,"    i  := %.15g\n",   integr.props.kep_com[2]);
-            fprintf(fp_props,"    Om := %.15g\n",   integr.props.kep_com[3]);
-            fprintf(fp_props,"    w  := %.15g\n",   integr.props.kep_com[4]);
-            fprintf(fp_props,"    M  := %.15g\n\n", integr.props.kep_com[5]);
+            fprintf(fp_props,"    a  := %.15g\n",   integr.props.kep_com_helio[0]);
+            fprintf(fp_props,"    e  := %.15g\n",   integr.props.kep_com_helio[1]);
+            fprintf(fp_props,"    i  := %.15g\n",   integr.props.kep_com_helio[2]);
+            fprintf(fp_props,"    Om := %.15g\n",   integr.props.kep_com_helio[3]);
+            fprintf(fp_props,"    w  := %.15g\n",   integr.props.kep_com_helio[4]);
+            fprintf(fp_props,"    M  := %.15g\n\n", integr.props.kep_com_helio[5]);
         }
+
+        if (integr.props.sun_gravity)
+            fprintf(fp_props,"Assume Sun's gravity := \"Yes\"\n");
+        else
+            fprintf(fp_props,"Assume Sun's gravity := \"No\"\n");
 
         if (integr.props.collision_no)
             fprintf(fp_props,"Collision shapes := \"No collision\"\n\n");
@@ -405,65 +385,65 @@ public:
         if (integr.props.spacecraft_checkbox)
         {
             fprintf(fp_props,"Assume spacecraft orbiter := \"Yes\"\n");
-            if (integr.props.pos_vel_sp_var == properties::CARTESIAN_SP)
+            if (integr.props.pos_vel_sp_var == properties::CARTESIAN_SP_COM)
             {
                 fprintf(fp_props,"    Position and velocity := \"Cartesian (binary COM)\"\n");
-                fprintf(fp_props,"        x  := %.15g\n",   integr.props.cart_sp[0]);
-                fprintf(fp_props,"        y  := %.15g\n",   integr.props.cart_sp[1]);
-                fprintf(fp_props,"        z  := %.15g\n",   integr.props.cart_sp[2]);
-                fprintf(fp_props,"        vx := %.15g\n",   integr.props.cart_sp[3]);
-                fprintf(fp_props,"        vy := %.15g\n",   integr.props.cart_sp[4]);
-                fprintf(fp_props,"        vz := %.15g\n\n", integr.props.cart_sp[5]);
+                fprintf(fp_props,"        x  := %.15g\n",   integr.props.cart_sp_com[0]);
+                fprintf(fp_props,"        y  := %.15g\n",   integr.props.cart_sp_com[1]);
+                fprintf(fp_props,"        z  := %.15g\n",   integr.props.cart_sp_com[2]);
+                fprintf(fp_props,"        vx := %.15g\n",   integr.props.cart_sp_com[3]);
+                fprintf(fp_props,"        vy := %.15g\n",   integr.props.cart_sp_com[4]);
+                fprintf(fp_props,"        vz := %.15g\n\n", integr.props.cart_sp_com[5]);
             }
-            else if (integr.props.pos_vel_sp_var == properties::CARTESIAN_SP1)
+            else if (integr.props.pos_vel_sp_var == properties::CARTESIAN_SP_COM1)
             {
                 fprintf(fp_props,"    Position and velocity := \"Cartesian (body 1)\"\n");
-                fprintf(fp_props,"        x  := %.15g\n",   integr.props.cart_sp1[0]);
-                fprintf(fp_props,"        y  := %.15g\n",   integr.props.cart_sp1[1]);
-                fprintf(fp_props,"        z  := %.15g\n",   integr.props.cart_sp1[2]);
-                fprintf(fp_props,"        vx := %.15g\n",   integr.props.cart_sp1[3]);
-                fprintf(fp_props,"        vy := %.15g\n",   integr.props.cart_sp1[4]);
-                fprintf(fp_props,"        vz := %.15g\n\n", integr.props.cart_sp1[5]);
+                fprintf(fp_props,"        x  := %.15g\n",   integr.props.cart_sp_com1[0]);
+                fprintf(fp_props,"        y  := %.15g\n",   integr.props.cart_sp_com1[1]);
+                fprintf(fp_props,"        z  := %.15g\n",   integr.props.cart_sp_com1[2]);
+                fprintf(fp_props,"        vx := %.15g\n",   integr.props.cart_sp_com1[3]);
+                fprintf(fp_props,"        vy := %.15g\n",   integr.props.cart_sp_com1[4]);
+                fprintf(fp_props,"        vz := %.15g\n\n", integr.props.cart_sp_com1[5]);
             }
-            else if (integr.props.pos_vel_sp_var == properties::CARTESIAN_SP2)
+            else if (integr.props.pos_vel_sp_var == properties::CARTESIAN_SP_COM2)
             {
                 fprintf(fp_props,"    Position and velocity := \"Cartesian (body 2)\"\n");
-                fprintf(fp_props,"        x  := %.15g\n",   integr.props.cart_sp2[0]);
-                fprintf(fp_props,"        y  := %.15g\n",   integr.props.cart_sp2[1]);
-                fprintf(fp_props,"        z  := %.15g\n",   integr.props.cart_sp2[2]);
-                fprintf(fp_props,"        vx := %.15g\n",   integr.props.cart_sp2[3]);
-                fprintf(fp_props,"        vy := %.15g\n",   integr.props.cart_sp2[4]);
-                fprintf(fp_props,"        vz := %.15g\n\n", integr.props.cart_sp2[5]);
+                fprintf(fp_props,"        x  := %.15g\n",   integr.props.cart_sp_com2[0]);
+                fprintf(fp_props,"        y  := %.15g\n",   integr.props.cart_sp_com2[1]);
+                fprintf(fp_props,"        z  := %.15g\n",   integr.props.cart_sp_com2[2]);
+                fprintf(fp_props,"        vx := %.15g\n",   integr.props.cart_sp_com2[3]);
+                fprintf(fp_props,"        vy := %.15g\n",   integr.props.cart_sp_com2[4]);
+                fprintf(fp_props,"        vz := %.15g\n\n", integr.props.cart_sp_com2[5]);
             }
-            else if (integr.props.pos_vel_sp_var == properties::KEPLERIAN_SP)
+            else if (integr.props.pos_vel_sp_var == properties::KEPLERIAN_SP_COM)
             {
                 fprintf(fp_props,"    Position and velocity := \"Keplerian (binary COM)\"\n");
-                fprintf(fp_props,"        a  := %.15g\n",   integr.props.kep_sp[0]);
-                fprintf(fp_props,"        e  := %.15g\n",   integr.props.kep_sp[1]);
-                fprintf(fp_props,"        i  := %.15g\n",   integr.props.kep_sp[2]);
-                fprintf(fp_props,"        Om := %.15g\n",   integr.props.kep_sp[3]);
-                fprintf(fp_props,"        w  := %.15g\n",   integr.props.kep_sp[4]);
-                fprintf(fp_props,"        M  := %.15g\n\n", integr.props.kep_sp[5]);
+                fprintf(fp_props,"        a  := %.15g\n",   integr.props.kep_sp_com[0]);
+                fprintf(fp_props,"        e  := %.15g\n",   integr.props.kep_sp_com[1]);
+                fprintf(fp_props,"        i  := %.15g\n",   integr.props.kep_sp_com[2]);
+                fprintf(fp_props,"        Om := %.15g\n",   integr.props.kep_sp_com[3]);
+                fprintf(fp_props,"        w  := %.15g\n",   integr.props.kep_sp_com[4]);
+                fprintf(fp_props,"        M  := %.15g\n\n", integr.props.kep_sp_com[5]);
             }
-            else if (integr.props.pos_vel_sp_var == properties::KEPLERIAN_SP1)
+            else if (integr.props.pos_vel_sp_var == properties::KEPLERIAN_SP_COM1)
             {
                 fprintf(fp_props,"    Position and velocity := \"Keplerian (body 1)\"\n");
-                fprintf(fp_props,"        a  := %.15g\n",   integr.props.kep_sp1[0]);
-                fprintf(fp_props,"        e  := %.15g\n",   integr.props.kep_sp1[1]);
-                fprintf(fp_props,"        i  := %.15g\n",   integr.props.kep_sp1[2]);
-                fprintf(fp_props,"        Om := %.15g\n",   integr.props.kep_sp1[3]);
-                fprintf(fp_props,"        w  := %.15g\n",   integr.props.kep_sp1[4]);
-                fprintf(fp_props,"        M  := %.15g\n\n", integr.props.kep_sp1[5]);
+                fprintf(fp_props,"        a  := %.15g\n",   integr.props.kep_sp_com1[0]);
+                fprintf(fp_props,"        e  := %.15g\n",   integr.props.kep_sp_com1[1]);
+                fprintf(fp_props,"        i  := %.15g\n",   integr.props.kep_sp_com1[2]);
+                fprintf(fp_props,"        Om := %.15g\n",   integr.props.kep_sp_com1[3]);
+                fprintf(fp_props,"        w  := %.15g\n",   integr.props.kep_sp_com1[4]);
+                fprintf(fp_props,"        M  := %.15g\n\n", integr.props.kep_sp_com1[5]);
             }
-            else if (integr.props.pos_vel_sp_var == properties::KEPLERIAN_SP2)
+            else if (integr.props.pos_vel_sp_var == properties::KEPLERIAN_SP_COM2)
             {
                 fprintf(fp_props,"    Position and velocity := \"Keplerian (body 2)\"\n");
-                fprintf(fp_props,"        a  := %.15g\n",   integr.props.kep_sp2[0]);
-                fprintf(fp_props,"        e  := %.15g\n",   integr.props.kep_sp2[1]);
-                fprintf(fp_props,"        i  := %.15g\n",   integr.props.kep_sp2[2]);
-                fprintf(fp_props,"        Om := %.15g\n",   integr.props.kep_sp2[3]);
-                fprintf(fp_props,"        w  := %.15g\n",   integr.props.kep_sp2[4]);
-                fprintf(fp_props,"        M  := %.15g\n\n", integr.props.kep_sp2[5]);
+                fprintf(fp_props,"        a  := %.15g\n",   integr.props.kep_sp_com2[0]);
+                fprintf(fp_props,"        e  := %.15g\n",   integr.props.kep_sp_com2[1]);
+                fprintf(fp_props,"        i  := %.15g\n",   integr.props.kep_sp_com2[2]);
+                fprintf(fp_props,"        Om := %.15g\n",   integr.props.kep_sp_com2[3]);
+                fprintf(fp_props,"        w  := %.15g\n",   integr.props.kep_sp_com2[4]);
+                fprintf(fp_props,"        M  := %.15g\n\n", integr.props.kep_sp_com2[5]);
             }
 
             if (integr.props.srp_checkbox)

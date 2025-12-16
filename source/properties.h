@@ -68,19 +68,19 @@ public:
 
     enum
     {
-        INERTIAL_ANGVEL,
-        BODY_ANGVEL
+        ANGVEL_HELIO,
+        ANGVEL_BODY
     } angvel_frame;
-    dvec3 w1i, w2i; //'ω1ix', 'ω1iy', 'ω1iz', 'ω2ix', 'ω2iy, 'ω2iz' double fields.
-    dvec3 w1b, w2b; //'ω1bx', 'ω1by', 'ω1bz', 'ω2bx', 'ω2by, 'ω2bz' double fields.
+    dvec3 w1i, w2i; //'ω1x', 'ω1y', 'ω1z', 'ω2x', 'ω2y', 'ω2z' double fields.
+    dvec3 w1b, w2b; //'ω11', 'ω12', 'ω13', 'ω21', 'ω22', 'ω23' double fields.
 
     enum
     {
-        CARTESIAN_COM,
-        KEPLERIAN_COM
+        CARTESIAN_COM_HELIO,
+        KEPLERIAN_COM_HELIO
     } pos_vel_com_var;
-    dvec6 cart_com; //Binary's COM Cartesian elements 'x', 'y', 'z', 'υx', 'υy', 'υz' in Heliocentric frame.
-    dvec6 kep_com;  //Binary's COM Keplerian elements'a', 'e', 'i', 'Ω', 'ω', 'M' in Heliocentric frame.
+    dvec6 cart_com_helio; //Binary's COM Cartesian elements 'x', 'y', 'z', 'υx', 'υy', 'υz' in Heliocentric frame.
+    dvec6 kep_com_helio;  //Binary's COM Keplerian elements'a', 'e', 'i', 'Ω', 'ω', 'M' in Heliocentric frame.
 
     bool sun_gravity; //Assume Sun's gravity choice.
 
@@ -96,15 +96,15 @@ public:
     bool spacecraft_checkbox; //'Spacecraft orbiter' checkbox state.
     enum
     {
-        CARTESIAN_SP,
-        CARTESIAN_SP1,
-        CARTESIAN_SP2,
-        KEPLERIAN_SP,
-        KEPLERIAN_SP1,
-        KEPLERIAN_SP2
+        CARTESIAN_SP_COM,
+        CARTESIAN_SP_COM1,
+        CARTESIAN_SP_COM2,
+        KEPLERIAN_SP_COM,
+        KEPLERIAN_SP_COM1,
+        KEPLERIAN_SP_COM2
     } pos_vel_sp_var;
-    dvec6 cart_sp, cart_sp1, cart_sp2; //Spacecraft's Cartesian elements 'x', 'y', 'z' and 'υx', 'υy', 'υz' in whatever frame is selected.
-    dvec6 kep_sp, kep_sp1, kep_sp2; //Spacecraft's Keplerian elements 'a', 'e', 'i', 'Ω', 'ω', 'M' double fields in whatever frame is selected.
+    dvec6 cart_sp_com, cart_sp_com1, cart_sp_com2; //Spacecraft's Cartesian elements 'x', 'y', 'z' and 'υx', 'υy', 'υz' in either COM, COM1 or COM2 frame.
+    dvec6 kep_sp_com, kep_sp_com1, kep_sp_com2; //Spacecraft's Keplerian elements 'a', 'e', 'i', 'Ω', 'ω', 'M' double fields in either COM, COM1 or COM2 frame.
     bool srp_checkbox; //'Account for SRP' checkbox state.
     double sp_refl, sp_area, sp_mass; //Spacecraft's 'ρ', 'A', 'm' double fields.
     bool srp_shadow_checkbox; //'Account for shadow' checkbox state.
@@ -142,14 +142,14 @@ public:
                    rpy2({0.0,0.0,0.0}),
                    q1({1.0,0.0,0.0,0.0}),
                    q2({1.0,0.0,0.0,0.0}),
-                   angvel_frame(INERTIAL_ANGVEL),
+                   angvel_frame(ANGVEL_HELIO),
                    w1i({0.0,0.0,0.0}),
                    w2i({0.0,0.0,0.0}),
                    w1b({0.0,0.0,0.0}),
                    w2b({0.0,0.0,0.0}),
-                   pos_vel_com_var(CARTESIAN_COM),
-                   cart_com({0.0,0.0,0.0,0.0,0.0,0.0}),
-                   kep_com({0.0,0.0,0.0,0.0,0.0,0.0}),
+                   pos_vel_com_var(CARTESIAN_COM_HELIO),
+                   cart_com_helio({0.0,0.0,0.0,0.0,0.0,0.0}),
+                   kep_com_helio({0.0,0.0,0.0,0.0,0.0,0.0}),
                    sun_gravity(false),
                    collision_no(false),
                    collision_spheres(false),
@@ -165,13 +165,13 @@ public:
                    tD2(0.0),
                    impactors_clicked_ok(false),
                    spacecraft_checkbox(false),
-                   pos_vel_sp_var(CARTESIAN_SP),
-                   cart_sp({0.0,0.0,0.0,0.0,0.0,0.0}),
-                   cart_sp1({0.0,0.0,0.0,0.0,0.0,0.0}),
-                   cart_sp2({0.0,0.0,0.0,0.0,0.0,0.0}),
-                   kep_sp({0.0,0.0,0.0,0.0,0.0,0.0}),
-                   kep_sp1({0.0,0.0,0.0,0.0,0.0,0.0}),
-                   kep_sp2({0.0,0.0,0.0,0.0,0.0,0.0}),
+                   pos_vel_sp_var(CARTESIAN_SP_COM),
+                   cart_sp_com({0.0,0.0,0.0,0.0,0.0,0.0}),
+                   cart_sp_com1({0.0,0.0,0.0,0.0,0.0,0.0}),
+                   cart_sp_com2({0.0,0.0,0.0,0.0,0.0,0.0}),
+                   kep_sp_com({0.0,0.0,0.0,0.0,0.0,0.0}),
+                   kep_sp_com1({0.0,0.0,0.0,0.0,0.0,0.0}),
+                   kep_sp_com2({0.0,0.0,0.0,0.0,0.0,0.0}),
                    srp_checkbox(false),
                    sp_refl(0.0),
                    sp_area(0.0),
@@ -299,15 +299,15 @@ public:
 
         //Parse the binary's initial angular velocity.
         if (find_assignment_operator(fp)) fscanf(fp, " \"%127[^\"]\"", buffer);
-        if (strcmp(buffer, "At inertial frame") == 0)
+        if (strcmp(buffer, "Heliocentric (inertial)") == 0)
         {
-            angvel_frame = INERTIAL_ANGVEL;
+            angvel_frame = ANGVEL_HELIO;
             for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &w1i[i]);
             for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &w2i[i]);
         }
         else
         {
-            angvel_frame = BODY_ANGVEL;
+            angvel_frame = ANGVEL_BODY;
             for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &w1b[i]);
             for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &w2b[i]);
         }
@@ -316,13 +316,13 @@ public:
         if (find_assignment_operator(fp)) fscanf(fp, " \"%127[^\"]\"", buffer);
         if (strcmp(buffer, "Cartesian") == 0)
         {
-            pos_vel_com_var = CARTESIAN_COM;
-            for (int i = 0; i < 6; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &cart_com[i]);
+            pos_vel_com_var = CARTESIAN_COM_HELIO;
+            for (int i = 0; i < 6; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &cart_com_helio[i]);
         }
         else
         {
-            pos_vel_com_var = KEPLERIAN_COM;
-            for (int i = 0; i < 6; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &kep_com[i]);
+            pos_vel_com_var = KEPLERIAN_COM_HELIO;
+            for (int i = 0; i < 6; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &kep_com_helio[i]);
         }
 
         //Parse the Sun's gravity assumption.
@@ -371,33 +371,33 @@ public:
                     fscanf(fp, " \"%127[^\"]\"", buffer);
                     if (strcmp(buffer, "Cartesian (binary COM)") == 0)
                     {
-                        pos_vel_sp_var = CARTESIAN_SP;
-                        for (int i = 0; i < 6; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &cart_sp[i]);
+                        pos_vel_sp_var = CARTESIAN_SP_COM;
+                        for (int i = 0; i < 6; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &cart_sp_com[i]);
                     }
                     else if (strcmp(buffer, "Cartesian (body 1)") == 0)
                     {
-                        pos_vel_sp_var = CARTESIAN_SP1;
-                        for (int i = 0; i < 6; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &cart_sp1[i]);   
+                        pos_vel_sp_var = CARTESIAN_SP_COM1;
+                        for (int i = 0; i < 6; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &cart_sp_com1[i]);   
                     }
                     else if (strcmp(buffer, "Cartesian (body 2)") == 0)
                     {
-                        pos_vel_sp_var = CARTESIAN_SP2;
-                        for (int i = 0; i < 6; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &cart_sp2[i]);   
+                        pos_vel_sp_var = CARTESIAN_SP_COM2;
+                        for (int i = 0; i < 6; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &cart_sp_com2[i]);   
                     }
                     else if (strcmp(buffer, "Keplerian (binary COM)") == 0)
                     {
-                        pos_vel_sp_var = KEPLERIAN_SP;
-                        for (int i = 0; i < 6; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &kep_sp[i]);
+                        pos_vel_sp_var = KEPLERIAN_SP_COM;
+                        for (int i = 0; i < 6; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &kep_sp_com[i]);
                     }
                     else if (strcmp(buffer, "Keplerian (body 1)") == 0)
                     {
-                        pos_vel_sp_var = KEPLERIAN_SP1;
-                        for (int i = 0; i < 6; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &kep_sp1[i]);
+                        pos_vel_sp_var = KEPLERIAN_SP_COM1;
+                        for (int i = 0; i < 6; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &kep_sp_com1[i]);
                     }
-                    else //pos_vel_sp_var == KEPLERIAN_SP2;
+                    else //pos_vel_sp_var == KEPLERIAN_SP_COM2;
                     {
-                        pos_vel_sp_var = KEPLERIAN_SP2;
-                        for (int i = 0; i < 6; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &kep_sp2[i]);
+                        pos_vel_sp_var = KEPLERIAN_SP_COM2;
+                        for (int i = 0; i < 6; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &kep_sp_com2[i]);
                     }
                 }
 
@@ -480,7 +480,7 @@ public:
         if (!ord2_checkbox && !ord3_checkbox && !ord4_checkbox)
             {cons.print("[Error] : Neither 'Order 2', nor 'Order 3', nor 'Order 4' mutual potential is selected.\n"); return false;}
 
-        //Rule 8 : Masses (both M1 and M2 must be > 0).
+        //Rule : Masses (both M1 and M2 must be > 0).
         if (M1 <= 0.0 || M2 <= 0.0)
             {cons.print("[Error] : 'M1', 'M2' must be positive.\n"); return false;}
 
@@ -528,24 +528,24 @@ public:
         }
 
         //Rule : The binary system must not be too close to the Sun.
-        if (pos_vel_com_var == CARTESIAN_COM)
+        if (pos_vel_com_var == CARTESIAN_COM_HELIO)
         {
-            if (length(dvec3{cart_com[0],cart_com[1],cart_com[2]}) < MIN_SUN_BODY_DIST)
+            if (length(dvec3{cart_com_helio[0],cart_com_helio[1],cart_com_helio[2]}) < MIN_SUN_BODY_DIST)
                 {cons.print("[Error] : Binary's Heliocentric COM is too close to the Sun. Increase heliocentric distance.\n"); return false;}
         }
-        else //pos_vel_com_var == KEPLERIAN_COM
+        else //pos_vel_com_var == KEPLERIAN_COM_HELIO
         {
             //COM's Heliocentric 'a' must be nonzero, 'e' must be in [0,1)U(1,inf).
-            if (fabs(kep_com[0]) <= 1e-15)
+            if (fabs(kep_com_helio[0]) <= 1e-15)
                 {cons.print("[Error] : Binary's Heliocentric semi-major axis 'a' must be nonzero.\n"); return false;}
-            if (kep_com[1] < 0.0 || fabs(kep_com[1] - 1.0) <= 1e-15)
+            if (kep_com_helio[1] < 0.0 || fabs(kep_com_helio[1] - 1.0) <= 1e-15)
                 {cons.print("[Error] : Binary's Heliocentric eccentricity 'e' must be in [0,1)U(1,inf).\n"); return false;}
             
             //So if no return; statement is called, it means that Heliocentric Keplerian elements were chosen and they are valid according to the above rules.
             //Therefore do the following :
-            dvec6 temp_kep_com = {kep_com[0]*AU2KM, kep_com[1], kep_com[2]*PI/180.0, kep_com[3]*PI/180.0, kep_com[4]*PI/180.0, kep_com[5]*PI/180.0};
-            dvec6 temp_cart_com = kep2cart(temp_kep_com, G*MSUN);
-            if (length(dvec3{temp_cart_com[0],temp_cart_com[1],temp_cart_com[2]}) < MIN_SUN_BODY_DIST*AU2KM)
+            dvec6 temp_kep_com_helio = {kep_com_helio[0]*AU2KM, kep_com_helio[1], kep_com_helio[2]*PI/180.0, kep_com_helio[3]*PI/180.0, kep_com_helio[4]*PI/180.0, kep_com_helio[5]*PI/180.0};
+            dvec6 temp_cart_com_helio = kep2cart(temp_kep_com_helio, G*MSUN);
+            if (length(dvec3{temp_cart_com_helio[0], temp_cart_com_helio[1], temp_cart_com_helio[2]}) < MIN_SUN_BODY_DIST*AU2KM)
                 {cons.print("[Error] : Binary COM is too close to the Sun. Increase heliocentric distance.\n"); return false;}   
         }
 
@@ -573,25 +573,25 @@ public:
         if (spacecraft_checkbox)
         {
             //Rule : Initial position/velocity, must be valid (similar to binary's mutual state logic).
-            if (pos_vel_sp_var == KEPLERIAN_SP)
+            if (pos_vel_sp_var == KEPLERIAN_SP_COM)
             {
-                if (fabs(kep_sp[0]) <= 1e-15)
+                if (fabs(kep_sp_com[0]) <= 1e-15)
                     {cons.print("[Error] : Spacecraft's semi-major axis 'a' must be nonzero.\n"); return false;}
-                if (kep_sp[1] < 0.0 || fabs(kep_sp[1] - 1.0) <= 1e-15)
+                if (kep_sp_com[1] < 0.0 || fabs(kep_sp_com[1] - 1.0) <= 1e-15)
                     {cons.print("[Error] : Spacecraft's eccentricity 'e' must be in [0,1)U(1,inf).\n"); return false;}
             }
-            else if (pos_vel_sp_var == KEPLERIAN_SP1)
+            else if (pos_vel_sp_var == KEPLERIAN_SP_COM1)
             {
-                if (fabs(kep_sp1[0]) <= 1e-15)
+                if (fabs(kep_sp_com1[0]) <= 1e-15)
                     {cons.print("[Error] : Spacecraft's semi-major axis 'a' must be nonzero.\n"); return false;}
-                if (kep_sp1[1] < 0.0 || fabs(kep_sp1[1] - 1.0) <= 1e-15)
+                if (kep_sp_com1[1] < 0.0 || fabs(kep_sp_com1[1] - 1.0) <= 1e-15)
                     {cons.print("[Error] : Spacecraft's eccentricity 'e' must be in [0,1)U(1,inf).\n"); return false;}
             }
-            else if (pos_vel_sp_var == KEPLERIAN_SP2)
+            else if (pos_vel_sp_var == KEPLERIAN_SP_COM2)
             {
-                if (fabs(kep_sp2[0]) <= 1e-15)
+                if (fabs(kep_sp_com2[0]) <= 1e-15)
                     {cons.print("[Error] : Spacecraft's semi-major axis 'a' must be nonzero.\n"); return false;}
-                if (kep_sp2[1] < 0.0 || fabs(kep_sp2[1] - 1.0) <= 1e-15)
+                if (kep_sp_com2[1] < 0.0 || fabs(kep_sp_com2[1] - 1.0) <= 1e-15)
                     {cons.print("[Error] : Spacecraft's eccentricity 'e' must be in [0,1)U(1,inf).\n"); return false;}
             }
             
@@ -623,7 +623,6 @@ public:
             {
                 poly1.load_obj_file("../obj/polyhedra/uvsphere64x64_R1km.obj");
                 poly2 = poly1;
-
                 poly1.set_scale(semiaxes1);
                 poly1.gen_norms();
                 poly2.set_scale(semiaxes2);
@@ -906,11 +905,11 @@ public:
         //Angular velocities reference frames (inertial or corresponding body frame).
         ImGui::PushItemWidth(200.0f*SCX);
             ImGui::PushID(id++);
-                static const char *omega_frame[2] = {"At inertial frame", "At body frames"}; //Which frame for the angular velocities.
+                static const char *omega_frame[2] = {"Heliocentric (inertial)", "Body frames"}; //Which frame for the angular velocities.
                 ImGui::Combo("  ", (int*)(&angvel_frame), omega_frame, IM_ARRAYSIZE(omega_frame));
             ImGui::PopID();
         ImGui::PopItemWidth();
-        if (angvel_frame == INERTIAL_ANGVEL)
+        if (angvel_frame == ANGVEL_HELIO)
         {
             double_field("ω1x ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w1i[0]);
             double_field("ω1y ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w1i[1]);
@@ -920,7 +919,7 @@ public:
             double_field("ω2y ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w2i[1]);
             double_field("ω2z ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w2i[2]);
         }
-        else //angvel_frame == BODY_ANGVEL
+        else //angvel_frame == ANGVEL_BODY
         {
             double_field("ω11 ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w1b[0]);
             double_field("ω12 ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w1b[1]);
@@ -940,23 +939,23 @@ public:
                 ImGui::Combo("  ", (int*)(&pos_vel_com_var), cart_kep_com_var, IM_ARRAYSIZE(cart_kep_com_var));
             ImGui::PopID();
         ImGui::PopItemWidth();
-        if (pos_vel_com_var == CARTESIAN_COM)
+        if (pos_vel_com_var == CARTESIAN_COM_HELIO)
         {
-            double_field("x ",  100.0f*SCX, 55.0f*SCX, id, "[AU]",     cart_com[0]);
-            double_field("y ",  100.0f*SCX, 55.0f*SCX, id, "[AU]",     cart_com[1]);
-            double_field("z ",  100.0f*SCX, 55.0f*SCX, id, "[AU]",     cart_com[2]);
-            double_field("υx ", 100.0f*SCX, 55.0f*SCX, id, "[km/sec]", cart_com[3]);
-            double_field("υy ", 100.0f*SCX, 55.0f*SCX, id, "[km/sec]", cart_com[4]);
-            double_field("υz ", 100.0f*SCX, 55.0f*SCX, id, "[km/sec]", cart_com[5]);
+            double_field("x ",  100.0f*SCX, 55.0f*SCX, id, "[AU]",     cart_com_helio[0]);
+            double_field("y ",  100.0f*SCX, 55.0f*SCX, id, "[AU]",     cart_com_helio[1]);
+            double_field("z ",  100.0f*SCX, 55.0f*SCX, id, "[AU]",     cart_com_helio[2]);
+            double_field("υx ", 100.0f*SCX, 55.0f*SCX, id, "[km/sec]", cart_com_helio[3]);
+            double_field("υy ", 100.0f*SCX, 55.0f*SCX, id, "[km/sec]", cart_com_helio[4]);
+            double_field("υz ", 100.0f*SCX, 55.0f*SCX, id, "[km/sec]", cart_com_helio[5]);
         }
-        else //pos_vel_com_var == KEPLERIAN_COM
+        else //pos_vel_com_var == KEPLERIAN_COM_HELIO
         {
-            double_field("a ", 100.0f*SCX, 55.0f*SCX, id, "[AU]",   kep_com[0]);
-            double_field("e ", 100.0f*SCX, 55.0f*SCX, id, "[    ]", kep_com[1]);
-            double_field("i ", 100.0f*SCX, 55.0f*SCX, id, "[deg]",  kep_com[2]);
-            double_field("Ω ", 100.0f*SCX, 55.0f*SCX, id, "[deg]",  kep_com[3]);
-            double_field("ω ", 100.0f*SCX, 55.0f*SCX, id, "[deg]",  kep_com[4]);
-            double_field("M ", 100.0f*SCX, 55.0f*SCX, id, "[deg]",  kep_com[5]);
+            double_field("a ", 100.0f*SCX, 55.0f*SCX, id, "[AU]",   kep_com_helio[0]);
+            double_field("e ", 100.0f*SCX, 55.0f*SCX, id, "[    ]", kep_com_helio[1]);
+            double_field("i ", 100.0f*SCX, 55.0f*SCX, id, "[deg]",  kep_com_helio[2]);
+            double_field("Ω ", 100.0f*SCX, 55.0f*SCX, id, "[deg]",  kep_com_helio[3]);
+            double_field("ω ", 100.0f*SCX, 55.0f*SCX, id, "[deg]",  kep_com_helio[4]);
+            double_field("M ", 100.0f*SCX, 55.0f*SCX, id, "[deg]",  kep_com_helio[5]);
         }
 
         ImGui::Unindent();
@@ -1070,59 +1069,59 @@ public:
                     ImGui::Combo("  ", (int*)(&pos_vel_sp_var), cart_kep_sp_var, IM_ARRAYSIZE(cart_kep_sp_var));
                 ImGui::PopID();
             ImGui::PopItemWidth();
-            if (pos_vel_sp_var == CARTESIAN_SP)
+            if (pos_vel_sp_var == CARTESIAN_SP_COM)
             {
-                double_field("x ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp[0]);
-                double_field("y ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp[1]);
-                double_field("z ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp[2]);
-                double_field("υx ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp[3]);
-                double_field("υy ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp[4]);
-                double_field("υz ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp[5]);
+                double_field("x ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp_com[0]);
+                double_field("y ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp_com[1]);
+                double_field("z ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp_com[2]);
+                double_field("υx ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp_com[3]);
+                double_field("υy ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp_com[4]);
+                double_field("υz ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp_com[5]);
             }
-            else if (pos_vel_sp_var == CARTESIAN_SP1)
+            else if (pos_vel_sp_var == CARTESIAN_SP_COM1)
             {
-                double_field("x ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp1[0]);
-                double_field("y ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp1[1]);
-                double_field("z ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp1[2]);
-                double_field("υx ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp1[3]);
-                double_field("υy ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp1[4]);
-                double_field("υz ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp1[5]);
+                double_field("x ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp_com1[0]);
+                double_field("y ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp_com1[1]);
+                double_field("z ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp_com1[2]);
+                double_field("υx ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp_com1[3]);
+                double_field("υy ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp_com1[4]);
+                double_field("υz ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp_com1[5]);
             }
-            else if (pos_vel_sp_var == CARTESIAN_SP2)
+            else if (pos_vel_sp_var == CARTESIAN_SP_COM2)
             {
-                double_field("x ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp2[0]);
-                double_field("y ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp2[1]);
-                double_field("z ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp2[2]);
-                double_field("υx ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp2[3]);
-                double_field("υy ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp2[4]);
-                double_field("υz ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp2[5]);
+                double_field("x ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp_com2[0]);
+                double_field("y ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp_com2[1]);
+                double_field("z ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp_com2[2]);
+                double_field("υx ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp_com2[3]);
+                double_field("υy ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp_com2[4]);
+                double_field("υz ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp_com2[5]);
             }
-            else if (pos_vel_sp_var == KEPLERIAN_SP)
+            else if (pos_vel_sp_var == KEPLERIAN_SP_COM)
             {
-                double_field("a ", 100.0f*SCX, 40.0f*SCX, id, "[km]",   kep_sp[0]);
-                double_field("e ", 100.0f*SCX, 40.0f*SCX, id, "[    ]", kep_sp[1]);
-                double_field("i ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp[2]);
-                double_field("Ω ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp[3]);
-                double_field("ω ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp[4]);
-                double_field("M ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp[5]);
+                double_field("a ", 100.0f*SCX, 40.0f*SCX, id, "[km]",   kep_sp_com[0]);
+                double_field("e ", 100.0f*SCX, 40.0f*SCX, id, "[    ]", kep_sp_com[1]);
+                double_field("i ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com[2]);
+                double_field("Ω ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com[3]);
+                double_field("ω ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com[4]);
+                double_field("M ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com[5]);
             }
-            else if (pos_vel_sp_var == KEPLERIAN_SP1)
+            else if (pos_vel_sp_var == KEPLERIAN_SP_COM1)
             {
-                double_field("a ", 100.0f*SCX, 40.0f*SCX, id, "[km]",   kep_sp1[0]);
-                double_field("e ", 100.0f*SCX, 40.0f*SCX, id, "[    ]", kep_sp1[1]);
-                double_field("i ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp1[2]);
-                double_field("Ω ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp1[3]);
-                double_field("ω ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp1[4]);
-                double_field("M ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp1[5]);
+                double_field("a ", 100.0f*SCX, 40.0f*SCX, id, "[km]",   kep_sp_com1[0]);
+                double_field("e ", 100.0f*SCX, 40.0f*SCX, id, "[    ]", kep_sp_com1[1]);
+                double_field("i ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com1[2]);
+                double_field("Ω ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com1[3]);
+                double_field("ω ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com1[4]);
+                double_field("M ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com1[5]);
             }
-            else //pos_vel_sp_var == KEPLERIAN_SP2
+            else //pos_vel_sp_var == KEPLERIAN_SP_COM2
             {
-                double_field("a ", 100.0f*SCX, 40.0f*SCX, id, "[km]",   kep_sp2[0]);
-                double_field("e ", 100.0f*SCX, 40.0f*SCX, id, "[    ]", kep_sp2[1]);
-                double_field("i ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp2[2]);
-                double_field("Ω ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp2[3]);
-                double_field("ω ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp2[4]);
-                double_field("M ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp2[5]);
+                double_field("a ", 100.0f*SCX, 40.0f*SCX, id, "[km]",   kep_sp_com2[0]);
+                double_field("e ", 100.0f*SCX, 40.0f*SCX, id, "[    ]", kep_sp_com2[1]);
+                double_field("i ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com2[2]);
+                double_field("Ω ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com2[3]);
+                double_field("ω ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com2[4]);
+                double_field("M ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com2[5]);
             }
 
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));

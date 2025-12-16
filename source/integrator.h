@@ -30,6 +30,7 @@ public:
     bool collision_mut, collision_sp; //Collision flags for the binary and the spacecraft.
     bool maneuver1, maneuver2; //Whether or not a beta-kick (equivalent maneuver) has been applied to the corresponding body.
 
+    dvec6 cart_sp_helio;
     double t0, tmax, dt, init_guess_time_step; //Integration time.
     dmat orbit; //This is the solution matrix of the differential equations that will be propagated (time + state vector).
 
@@ -42,32 +43,10 @@ public:
     }
 
 private:
-    //In case Sun's gravity is off, this function evaluates analytically the equation of motion of the COM of the binary in the Heliocentric frame.
-    dvec3 get_analytic_rcom(const dvec6 &cart_com0, const double t)
-    {
-        const dvec3 rcom0 = {cart_com0[0],cart_com0[1],cart_com0[2]};
-        const dvec3 vcom0 = {cart_com0[3],cart_com0[4],cart_com0[5]};
-        dvec3 r = rcom0 + vcom0*(t - t0); //Due to initial state setting (straight line until we add Sun's gravity).
-        if (props.impactors_checkbox)
-        {
-            if ((t + 1e-15) >= props.tD1) //Impact 1 contribution.
-            {
-                const dvec3 delta_vcom1 = props.beta1*props.mD1*props.vD1/(props.M1 + props.M2);
-                r = r + delta_vcom1*(t - props.tD1);
-            }
-            if ((t + 1e-15) >= props.tD2) //Impact 2 contribution.
-            {
-                const dvec3 delta_vcom2 = props.beta2*props.mD2*props.vD2/(props.M1 + props.M2);
-                r = r + delta_vcom2*(t - props.tD2);
-            }
-        }
-        return r;
-    }
-
     //This function builds the right hand sides of the differential equations of motion. It is executed at each step of the integration.
-    void build_rhs(const boost::array<double, N_ODES> &state, boost::array<double, N_ODES> &dstate, double t)
+    void build_rhs(const boost::array<double, N_ODES> &state, boost::array<double, N_ODES> &dstate, double /*t*/)
     {
-        //Extract binary's mutual state (position & velocity) and absolute orientations (orientations & angular velocities).
+        //Extract binary's mutual position & velocity and absolute orientations & angular velocities.
         dvec3 rmut = {state[0],  state[1],  state[2]};
         dvec3 vmut = {state[3],  state[4],  state[5]};
         dvec4 q1   = {state[6],  state[7],  state[8],  state[9]};
@@ -75,14 +54,11 @@ private:
         dvec4 q2   = {state[13], state[14], state[15], state[16]};
         dvec3 w2b  = {state[17], state[18], state[19]};
         //Extract COM's state.
-        dvec3 rcom = {state[20], state[21], state[22]};
-        dvec3 vcom = {state[23], state[24], state[25]};
+        dvec3 rcom_helio = {state[20], state[21], state[22]};
+        dvec3 vcom_helio = {state[23], state[24], state[25]};
 
         //Compute rotation matrices from normalized quaternions.
-        q1 = quat2unit(q1);
-        q2 = quat2unit(q2);
-        dmat3 A1 = quat2mat(q1);
-        dmat3 A2 = quat2mat(q2);
+        dmat3 A1 = quat2mat(q1), A2 = quat2mat(q2);
 
         //Calculate the mutual force and the torque acted on body 1 in the inertial (Heliocentric) frame.
         dvec6 force_and_torque1i;
@@ -93,24 +69,25 @@ private:
         else
             force_and_torque1i = mut_force_torque1i_integrals_ord4(rmut, props.M1,J1,A1, props.M2,J2,A2);
         
+        dvec3 force = {force_and_torque1i[0], force_and_torque1i[1], force_and_torque1i[2]};
         //Mutual and COM acceleration due to binary's gravity (no Sun yet).
-        dvec3 amut = {force_and_torque1i[0], force_and_torque1i[1], force_and_torque1i[2]}/m;
-        dvec3 acom = {0.0,0.0,0.0};
-        if (props.sun_gravity) //Now add Sun's contribution to both the amut and acom.
+        dvec3 amut = force/m;
+        dvec3 acom_helio = {0.0,0.0,0.0};
+        if (props.sun_gravity) //Now add Sun's contribution to both the amut and acom_helio.
         {
             //Individual bodies' inertial (Heliocentric) positions, i.e. COM1 and COM2.
-            dvec3 r1 = rcom + m1*rmut;
-            dvec3 r2 = rcom + m2*rmut;
-            double r1len = length(r1);
-            double r2len = length(r2);
-            double rcomlen = length(rcom);
-            amut = amut - G*MSUN*(r2/(r2len*r2len*r2len) - r1/(r1len*r1len*r1len));
-            acom = -G*MSUN*rcom/(rcomlen*rcomlen*rcomlen);
+            dvec3 r1_helio = rcom_helio + m1*rmut;
+            dvec3 r2_helio = rcom_helio + m2*rmut;
+            double d1 = length(r1_helio);
+            double d2 = length(r2_helio);
+            double dcom = length(rcom_helio);
+            amut = amut - G*MSUN*(r2_helio/(d2*d2*d2) - r1_helio/(d1*d1*d1));
+            acom_helio = -G*MSUN*rcom_helio/(dcom*dcom*dcom);
         }
         //Else the mutual state is governed only by the binary's mutual gravity and the COM shall move at a straight line in space. Bye bye Solar system!
 
         dvec3 torque1i = {force_and_torque1i[3], force_and_torque1i[4], force_and_torque1i[5]};
-        dvec3 torque2i = -torque1i - cross(r,force);
+        dvec3 torque2i = -torque1i - cross(rmut, force);
 
         //Convert the torques into the corresponding body frames because Euler's ODEs are written in the body frame.
         dvec3 torque1b = iner2body(torque1i,A1);
@@ -155,77 +132,75 @@ private:
         dstate[19] = dw2b[2];
 
         //COM position rhs (xcom,ycom,zcom).
-        dstate[20] = vcom[0];
-        dstate[21] = vcom[1];
-        dstate[22] = vcom[2];
+        dstate[20] = vcom_helio[0];
+        dstate[21] = vcom_helio[1];
+        dstate[22] = vcom_helio[2];
 
         //COM velocity rhs (vxcom,vycom,vzcom).
-        dstate[23] = acom[0];
-        dstate[24] = acom[1];
-        dstate[25] = acom[2];
+        dstate[23] = acom_helio[0];
+        dstate[24] = acom_helio[1];
+        dstate[25] = acom_helio[2];
 
         //Now handle the spacecraft's ODEs :
         if (props.spacecraft_checkbox)
         {
             //Spacecraft's state in the inertial (Heliocentric) frame.
-            dvec3 rsp = {state[26], state[27], state[28]};
-            dvec3 vsp = {state[29], state[30], state[31]};
+            dvec3 rsp_helio = {state[26], state[27], state[28]};
+            dvec3 vsp_helio = {state[29], state[30], state[31]};
             //Individual bodies' inertial (Heliocentric) positions, i.e. COM1 and COM2.
-            dvec3 r1 = rcom + m1*rmut;
-            dvec3 r2 = rcom + m2*rmut;
+            dvec3 r1_helio = rcom_helio + m1*rmut;
+            dvec3 r2_helio = rcom_helio + m2*rmut;
             //Corresponding body-to-spacecraft vector.
-            dvec3 rho1 = rsp - r1;
-            dvec3 rho2 = rsp - r2;
-
+            dvec3 rho1 = rsp_helio - r1_helio;
+            dvec3 rho2 = rsp_helio - r2_helio;
             //Spacecraft's acceleration due to the combined presence of the 2 rigid bodies (no Sun, no SRP yet).
-            dvec3 asp;
+            dvec3 asp_helio;
             if (props.ord2_checkbox)
-                asp = accel_integrals_ord2(rho1, props.M1, J1, A1) + accel_integrals_ord2(rho2, props.M2, J2, A2);
+                asp_helio = accel_integrals_ord2(rho1, props.M1, J1, A1) + accel_integrals_ord2(rho2, props.M2, J2, A2);
             else if (props.ord3_checkbox)
-                asp = accel_integrals_ord3(rho1, props.M1, J1, A1) + accel_integrals_ord3(rho2, props.M2, J2, A2);
+                asp_helio = accel_integrals_ord3(rho1, props.M1, J1, A1) + accel_integrals_ord3(rho2, props.M2, J2, A2);
             else
-                asp = accel_integrals_ord4(rho1, props.M1, J1, A1) + accel_integrals_ord4(rho2, props.M2, J2, A2);
+                asp_helio = accel_integrals_ord4(rho1, props.M1, J1, A1) + accel_integrals_ord4(rho2, props.M2, J2, A2);
 
             if (props.sun_gravity) //Add Sun's gravity.
             {
-                double rsplen = length(rsp);
-                asp = asp - G*MSUN*rsp/(rsplen*rsplen*rsplen);
+                double dsp = length(rsp_helio);
+                asp_helio = asp_helio - G*MSUN*rsp_helio/(dsp*dsp*dsp);
             }
 
             if (props.srp_checkbox) //Add SRP.
             {
                 bool sp_in_shadow = false;
-                dvec3 rsun = 0.0; //Sun is now at the origin.
+                dvec3 rsun_helio = {0.0,0.0,0.0}; //Sun is at the origin.
                 if (props.srp_shadow_checkbox)
-                    sp_in_shadow = line_sphere_intersection(rsp, rsun, r1, brillouin1) || line_sphere_intersection(rsp, rsun, r2, brillouin2);
+                    sp_in_shadow = line_sphere_intersection(rsp_helio, rsun_helio, r1_helio, brillouin1) || line_sphere_intersection(rsp_helio, rsun_helio, r2_helio, brillouin2);
                 if (!sp_in_shadow)
-                    asp = asp + accel_srp(props.sp_refl, props.sp_area, props.sp_mass, rsp, rsun);
+                    asp_helio = asp_helio + accel_srp(props.sp_refl, props.sp_area, props.sp_mass, rsp_helio, rsun_helio);
             }
 
             //Spacecraft's position and velocity rhs.
-            dstate[20] = vsp[0];
-            dstate[21] = vsp[1];
-            dstate[22] = vsp[2];
-            dstate[23] = asp[0];
-            dstate[24] = asp[1];
-            dstate[25] = asp[2];
+            dstate[26] = vsp_helio[0];
+            dstate[27] = vsp_helio[1];
+            dstate[28] = vsp_helio[2];
+            dstate[29] = asp_helio[0];
+            dstate[30] = asp_helio[1];
+            dstate[31] = asp_helio[2];
         }
         else
-            dstate[20] = dstate[21] = dstate[22] = dstate[23] = dstate[24] = dstate[25] = 0.0;
+            dstate[26] = dstate[27] = dstate[28] = dstate[29] = dstate[30] = dstate[31] = 0.0;
     }
 
 public:
     //Before the actual integration of the ODEs starts, we do some preparations.
     void prepare(console &cons)
     {
-        cons.print("[Polyhedron] : Computing inertial integrals... ");
+        cons.print("[Integrator] : Preparing integrator... ");
 
         m  =  props.M1*props.M2/(props.M1 + props.M2);
         m1 = -props.M2/(props.M1 + props.M2);
         m2 =  props.M1/(props.M1 + props.M2);
 
-        //Preparation : If the user chose Keplerian elements as initial position/velocity, then, transform
-        //them to Cartesian coords because the F2BP odes are written in Cartesian form.
+        //Preparation : If the user chose Keplerian elements as initial position/velocity, then, transform them to Cartesian coords.
         if (props.pos_vel_mut_var == properties::KEPLERIAN_MUT)
             props.cart_mut = kep2cart({props.kep_mut[0],
                                        props.kep_mut[1],
@@ -234,37 +209,79 @@ public:
                                        props.kep_mut[4]*PI/180.0,
                                        props.kep_mut[5]*PI/180.0}, G*(props.M1 + props.M2));
         
-        //Preparation : If the user chose Euler angles as initial orientations, then, transform them to
-        //quaternions because the F2BP odes are written in quaternion form.
+        //Preparation : If the user chose Euler angles as initial orientations, then, transform them to quaternions.
         if (props.orient_var == properties::EULER_XYZ)
         {
             props.q1 = ang2quat(props.rpy1*PI/180.0);
             props.q2 = ang2quat(props.rpy2*PI/180.0);
         }
 
-        //Preparation : If the user chose to input the angular velocities in the inertial frame, then, transform them
-        //to the corresponding body frames because the Euler equations of rotation are written in body frame form.
-        if (props.angvel_frame == properties::INERTIAL_ANGVEL)
+        //Preparation : If the user chose to input the angular velocities in the inertial frame, then, transform them to the corresponding body frames.
+        if (props.angvel_frame == properties::ANGVEL_HELIO)
         {
             props.w1b = iner2body(props.w1i, quat2mat(props.q1));
             props.w2b = iner2body(props.w2i, quat2mat(props.q2));
         }
 
         //Preparation : If the user chose Keplerian elements as initial Heliocentric position/velocity of the COM, then, transform them to Cartesian.
-        if (props.pos_vel_com_var == properties::KEPLERIAN_COM)
-            props.cart_com = kep2cart({props.kep_com[0]*AU2KM,
-                                       props.kep_com[1],
-                                       props.kep_com[2]*PI/180.0,
-                                       props.kep_com[3]*PI/180.0,
-                                       props.kep_com[4]*PI/180.0,
-                                       props.kep_com[5]*PI/180.0}, G*MSUN); //[km], [km/sec]
+        if (props.pos_vel_com_var == properties::KEPLERIAN_COM_HELIO)
+            props.cart_com_helio = kep2cart({props.kep_com_helio[0]*AU2KM,
+                                             props.kep_com_helio[1],
+                                             props.kep_com_helio[2]*PI/180.0,
+                                             props.kep_com_helio[3]*PI/180.0,
+                                             props.kep_com_helio[4]*PI/180.0,
+                                             props.kep_com_helio[5]*PI/180.0}, G*MSUN); //[km], [km/sec]
         else
         {
-            props.cart_com[0] *= AU2KM;
-            props.cart_com[1] *= AU2KM;
-            props.cart_com[2] *= AU2KM;
+            props.cart_com_helio[0] *= AU2KM;
+            props.cart_com_helio[1] *= AU2KM;
+            props.cart_com_helio[2] *= AU2KM;
             //[km], [km/sec]
         }
+
+        cart_sp_helio = {0.0,0.0,0.0,0.0,0.0,0.0};
+        if (props.spacecraft_checkbox)
+        {
+            //In the app's GUI, the spacecraft's i.c. is in either COM frame or body 1 frame (COM1) or body 2 frame (COM2).
+            //But the build_rhs() is in Heliocentric frame. Therefore we convert position/velocity in Heliocentric Cartesian coords.
+            if (props.pos_vel_sp_var == properties::CARTESIAN_SP_COM)
+                cart_sp_helio = props.cart_com_helio + props.cart_sp_com;
+            else if (props.pos_vel_sp_var == properties::CARTESIAN_SP_COM1)
+                cart_sp_helio = props.cart_com_helio + m1*props.cart_mut + props.cart_sp_com1;
+            else if (props.pos_vel_sp_var == properties::CARTESIAN_SP_COM2)
+                cart_sp_helio = props.cart_com_helio + m2*props.cart_mut + props.cart_sp_com2;
+            else if (props.pos_vel_sp_var == properties::KEPLERIAN_SP_COM)
+            {
+                props.cart_sp_com = kep2cart({props.kep_sp_com[0],
+                                              props.kep_sp_com[1],
+                                              props.kep_sp_com[2]*PI/180.0,
+                                              props.kep_sp_com[3]*PI/180.0,
+                                              props.kep_sp_com[4]*PI/180.0,
+                                              props.kep_sp_com[5]*PI/180.0}, G*(props.M1 + props.M2));
+                cart_sp_helio = props.cart_com_helio + props.cart_sp_com;
+            }
+            else if (props.pos_vel_sp_var == properties::KEPLERIAN_SP_COM1)
+            {
+                props.cart_sp_com1 = kep2cart({props.kep_sp_com1[0],
+                                               props.kep_sp_com1[1],
+                                               props.kep_sp_com1[2]*PI/180.0,
+                                               props.kep_sp_com1[3]*PI/180.0,
+                                               props.kep_sp_com1[4]*PI/180.0,
+                                               props.kep_sp_com1[5]*PI/180.0}, G*props.M1);
+                cart_sp_helio = props.cart_com_helio + m1*props.cart_mut + props.cart_sp_com1;
+            }
+            else if (props.pos_vel_sp_var == properties::KEPLERIAN_SP_COM2)
+            {
+                props.cart_sp_com2 = kep2cart({props.kep_sp_com2[0],
+                                               props.kep_sp_com2[1],
+                                               props.kep_sp_com2[2]*PI/180.0,
+                                               props.kep_sp_com2[3]*PI/180.0,
+                                               props.kep_sp_com2[4]*PI/180.0,
+                                               props.kep_sp_com2[5]*PI/180.0}, G*props.M2);
+                cart_sp_helio = props.cart_com_helio + m2*props.cart_mut + props.cart_sp_com2;
+            }
+        }
+        //Else the spacecraft remains in the center of the Heliocentric frame with zero velocity and doesn't participate anywhere.
 
         //Preparation : Evaluate Brillouin radii and inertial integrals, based on the user's choice of shape model (ellipsoids or obj files).
         if (props.ell_checkbox)
@@ -328,54 +345,11 @@ public:
 
         if (props.impactors_checkbox)
         {
-            props.tD1 *= 86400.0;
-            props.tD2 *= 86400.0;
+            props.tD1 *= 86400.0; //[sec]
+            props.tD2 *= 86400.0; //[sec]
         }
 
         maneuver1 = maneuver2 = false;
-
-        //Preparation : Spacecraft i.c. and SRP assumptions.
-        if (!props.spacecraft_checkbox)
-        {
-            for (int i = 0; i < 6; ++i)
-                props.cart_sp[i] = 0.0;
-        }
-        else
-        {
-            //First case is that the user set the i.c. in CARTESIAN_SP, so we do no check for that.
-            //In any other case, we must evaluate the position and velocity in Cartesian coords relative to the binary's COM.
-            if (props.pos_vel_sp_var == properties::CARTESIAN_SP1)
-                props.cart_sp = m1*props.cart_mut + props.cart_sp1;
-            else if (props.pos_vel_sp_var == properties::CARTESIAN_SP2)
-                props.cart_sp = m2*props.cart_mut + props.cart_sp2;
-            else if (props.pos_vel_sp_var == properties::KEPLERIAN_SP)
-                 props.cart_sp = kep2cart({props.kep_sp[0],
-                                           props.kep_sp[1],
-                                           props.kep_sp[2]*PI/180.0,
-                                           props.kep_sp[3]*PI/180.0,
-                                           props.kep_sp[4]*PI/180.0,
-                                           props.kep_sp[5]*PI/180.0}, G*(props.M1 + props.M2));
-            else if (props.pos_vel_sp_var == properties::KEPLERIAN_SP1)
-            {
-                props.cart_sp1 = kep2cart({props.kep_sp1[0],
-                                           props.kep_sp1[1],
-                                           props.kep_sp1[2]*PI/180.0,
-                                           props.kep_sp1[3]*PI/180.0,
-                                           props.kep_sp1[4]*PI/180.0,
-                                           props.kep_sp1[5]*PI/180.0}, G*props.M1);
-                props.cart_sp = m1*props.cart_mut + props.cart_sp1;
-            }
-            else if (props.pos_vel_sp_var == properties::KEPLERIAN_SP2)
-            {
-                props.cart_sp2 = kep2cart({props.kep_sp2[0],
-                                           props.kep_sp2[1],
-                                           props.kep_sp2[2]*PI/180.0,
-                                           props.kep_sp2[3]*PI/180.0,
-                                           props.kep_sp2[4]*PI/180.0,
-                                           props.kep_sp2[5]*PI/180.0}, G*props.M2);
-                props.cart_sp = m2*props.cart_mut + props.cart_sp2;
-            }
-        }
 
         collision_mut = collision_sp = false;
         
@@ -389,17 +363,18 @@ public:
         cons.print("[Integrator] : Propagating orbit... ");
         progress.store(0.0f);
 
-        //Initial conditions.
-        boost::array<double, N_ODES> state = {    props.cart_mut[0],     props.cart_mut[1],     props.cart_mut[2],
-                                                  props.cart_mut[3],     props.cart_mut[4],     props.cart_mut[5],
-                                                        props.q1[0],           props.q1[1],           props.q1[2], props.q1[3],
-                                                       props.w1b[0],          props.w1b[1],          props.w1b[2],
-                                                        props.q2[0],           props.q2[1],           props.q2[2], props.q2[3],
-                                                       props.w2b[0],          props.w2b[1],          props.w2b[2],
-                                                   props.cart_sp[0],      props.cart_sp[1],      props.cart_sp[2],
-                                                   props.cart_sp[3],      props.cart_sp[4],      props.cart_sp[5] };
-        
-        double t = t0; //Initialize time.
+        //Initial conditions : everything must be in the Heliocentric frame.
+        double t = t0;
+        boost::array<double, N_ODES> state = {       props.cart_mut[0],        props.cart_mut[1],        props.cart_mut[2],
+                                                     props.cart_mut[3],        props.cart_mut[4],        props.cart_mut[5],
+                                                           props.q1[0],              props.q1[1],              props.q1[2], props.q1[3],
+                                                          props.w1b[0],             props.w1b[1],             props.w1b[2],
+                                                           props.q2[0],              props.q2[1],              props.q2[2], props.q2[3],
+                                                          props.w2b[0],             props.w2b[1],             props.w2b[2],
+                                               props.cart_com_helio[0],  props.cart_com_helio[1],  props.cart_com_helio[2],
+                                               props.cart_com_helio[3],  props.cart_com_helio[4],  props.cart_com_helio[5],
+                                                      cart_sp_helio[0],         cart_sp_helio[1],         cart_sp_helio[2],
+                                                      cart_sp_helio[3],         cart_sp_helio[4],         cart_sp_helio[5] };
 
         boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, N_ODES>> rkf78_fixed;
         auto rkf78_adaptive = boost::numeric::odeint::make_controlled(props.target_error, props.target_error, boost::numeric::odeint::runge_kutta_fehlberg78<boost::array<double, N_ODES>>());
@@ -421,42 +396,40 @@ public:
                                     state[13], state[14], state[15], state[16],
                                     state[17], state[18], state[19],
                                     state[20], state[21], state[22],
-                                    state[23], state[24], state[25] });
+                                    state[23], state[24], state[25],
+                                    state[26], state[27], state[28],
+                                    state[29], state[30], state[31] });
             else
                 orbit.push_back({t, state[0],  state[1],  state[2],
                                     state[3],  state[4],  state[5],
                                     state[6],  state[7],  state[8],  state[9],
                                     state[10], state[11], state[12],
                                     state[13], state[14], state[15], state[16],
-                                    state[17], state[18], state[19] });
+                                    state[17], state[18], state[19],
+                                    state[20], state[21], state[22],
+                                    state[23], state[24], state[25] });
 
             //Kinetic impacts : apply corresponding maneuvers if impactors are chosen.
             if (props.impactors_checkbox)
             {
                 if (!maneuver1 && (t + 1e-15) >= props.tD1)
                 {
-                    state[3] -= props.beta1*props.mD1*props.vD1[0]/props.M1;
-                    state[4] -= props.beta1*props.mD1*props.vD1[1]/props.M1;
-                    state[5] -= props.beta1*props.mD1*props.vD1[2]/props.M1;
-                    if (props.spacecraft_checkbox)
-                    {
-                        state[23] -= props.beta1*props.mD1*props.vD1[0]/(props.M1 + props.M2);
-                        state[24] -= props.beta1*props.mD1*props.vD1[1]/(props.M1 + props.M2);
-                        state[25] -= props.beta1*props.mD1*props.vD1[2]/(props.M1 + props.M2);
-                    }
+                    state[3]  -= props.beta1*props.mD1*props.vD1[0]/props.M1;
+                    state[4]  -= props.beta1*props.mD1*props.vD1[1]/props.M1;
+                    state[5]  -= props.beta1*props.mD1*props.vD1[2]/props.M1;
+                    state[23] += props.beta1*props.mD1*props.vD1[0]/(props.M1 + props.M2);
+                    state[24] += props.beta1*props.mD1*props.vD1[1]/(props.M1 + props.M2);
+                    state[25] += props.beta1*props.mD1*props.vD1[2]/(props.M1 + props.M2);
                     maneuver1 = true;
                 }
                 if (!maneuver2 && (t + 1e-15) >= props.tD2)
                 {
-                    state[3] += props.beta2*props.mD2*props.vD2[0]/props.M2;
-                    state[4] += props.beta2*props.mD2*props.vD2[1]/props.M2;
-                    state[5] += props.beta2*props.mD2*props.vD2[2]/props.M2;
-                    if (props.spacecraft_checkbox)
-                    {
-                        state[23] -= props.beta2*props.mD2*props.vD2[0]/(props.M1 + props.M2);
-                        state[24] -= props.beta2*props.mD2*props.vD2[1]/(props.M1 + props.M2);
-                        state[25] -= props.beta2*props.mD2*props.vD2[2]/(props.M1 + props.M2);
-                    }
+                    state[3]  += props.beta2*props.mD2*props.vD2[0]/props.M2;
+                    state[4]  += props.beta2*props.mD2*props.vD2[1]/props.M2;
+                    state[5]  += props.beta2*props.mD2*props.vD2[2]/props.M2;
+                    state[23] += props.beta2*props.mD2*props.vD2[0]/(props.M1 + props.M2);
+                    state[24] += props.beta2*props.mD2*props.vD2[1]/(props.M1 + props.M2);
+                    state[25] += props.beta2*props.mD2*props.vD2[2]/(props.M1 + props.M2);
                     maneuver2 = true;
                 }
             }
@@ -476,18 +449,12 @@ public:
                 //Spacecraft-asteroid.
                 if (props.spacecraft_checkbox)
                 {
-                    const dvec3 r = {state[0],state[1],state[2]};
-                    const dvec3 r1 = m1*r;
-                    const dvec3 r2 = m2*r;
-                    const dvec3 rsp = {state[20],state[21],state[22]};
-                    if (sphere_point_collision(length(rsp - r1), brillouin1))
-                    {
-                        sprintf(buffer,"< Collision (asteroid - spacecraft) at t = %5.2lf [days]. >\n", t/86400.0);
-                        cons.print(buffer);
-                        collision_sp = true;
-                        break;
-                    }
-                    if (sphere_point_collision(length(rsp - r2), brillouin2))
+                    const dvec3 rmut = {state[0], state[1], state[2]};
+                    const dvec3 rcom_helio = {state[20], state[21], state[22]};
+                    const dvec3 r1_helio = rcom_helio + m1*rmut;
+                    const dvec3 r2_helio = rcom_helio + m2*rmut;
+                    const dvec3 rsp_helio = {state[26], state[27], state[28]};
+                    if (sphere_point_collision(length(rsp_helio - r1_helio), brillouin1) || sphere_point_collision(length(rsp_helio - r2_helio), brillouin2))
                     {
                         sprintf(buffer,"< Collision (asteroid - spacecraft) at t = %5.2lf [days]. >\n", t/86400.0);
                         cons.print(buffer);
@@ -498,15 +465,16 @@ public:
             }
             else if (props.collision_polyhedra)
             {
-                const dvec3 r = {state[0],state[1],state[2]};
-                const dvec3 r1 = m1*r;
-                const dvec3 r2 = m2*r;
+                const dvec3 rmut = {state[0], state[1], state[2]};
+                const dvec3 rcom_helio = {state[20], state[21], state[22]};
+                const dvec3 r1_helio = rcom_helio + m1*rmut;
+                const dvec3 r2_helio = rcom_helio + m2*rmut;
                 //We apply sphere-sphere gate first, because polyhedron-polyhedron collision requires first the Brillouin spheres to collide (which is a lot faster to test).
-                if (sphere_sphere_collision(length(r), brillouin1, brillouin2))
+                if (sphere_sphere_collision(length(rmut), brillouin1, brillouin2))
                 {
                     const dmat3 A1 = quat2mat({state[6],  state[7],  state[8],  state[9]});
                     const dmat3 A2 = quat2mat({state[13], state[14], state[15], state[16]});
-                    if (polyhedron_polyhedron_collision(props.poly1, A1, r1, props.poly2, A2, r2))
+                    if (polyhedron_polyhedron_collision(props.poly1, A1, r1_helio, props.poly2, A2, r2_helio))
                     {
                         sprintf(buffer,"< Collision (asteroid - asteroid) at t = %5.2lf [days]. >\n", t/86400.0);
                         cons.print(buffer);
@@ -518,11 +486,11 @@ public:
                 //Spacecraft-asteroid (again, sphere-point gate, then polyhedron-point).
                 if (props.spacecraft_checkbox)
                 {
-                    const dvec3 rsp = {state[20],state[21],state[22]};
-                    if (sphere_point_collision(length(rsp - r1), brillouin1))
+                    const dvec3 rsp_helio = {state[26], state[27], state[28]};
+                    if (sphere_point_collision(length(rsp_helio - r1_helio), brillouin1))
                     {
                         const dmat3 A1 = quat2mat({state[6],state[7],state[8],state[9]});
-                        if (polyhedron_point_collision(props.poly1, A1, r1, rsp))
+                        if (polyhedron_point_collision(props.poly1, A1, r1_helio, rsp_helio))
                         {
                             sprintf(buffer,"< Collision (spacecraft - asteroid) at t = %5.2lf [days]. >\n", t/86400.0);
                             cons.print(buffer);
@@ -530,10 +498,10 @@ public:
                             break;
                         }
                     }
-                    if (sphere_point_collision(length(rsp - r2), brillouin2))
+                    if (sphere_point_collision(length(rsp_helio - r2_helio), brillouin2))
                     {
                         const dmat3 A2 = quat2mat({state[13],state[14],state[15],state[16]});
-                        if (polyhedron_point_collision(props.poly2, A2, r2, rsp))
+                        if (polyhedron_point_collision(props.poly2, A2, r2_helio, rsp_helio))
                         {
                             sprintf(buffer,"< Collision (spacecraft - asteroid, polyhedron) at t = %5.2lf [days]. >\n", t/86400.0);
                             cons.print(buffer);
@@ -545,7 +513,7 @@ public:
             }
             
             //Sun-COM close approach :
-            if (length(get_analytic_rcom(props.cart_com, t)) < MIN_SUN_BODY_DIST*AU2KM)
+            if (length(dvec3{state[20], state[21], state[22]}) < MIN_SUN_BODY_DIST*AU2KM)
             {
                 sprintf(buffer,"< Binary COM too close to Sun at t = %5.2lf [days]. >\n", t/86400.0);
                 cons.print(buffer);
@@ -576,6 +544,17 @@ public:
                 t += dt;
             }
             //Note : Boost's do_step() does NOT update internally t, hence we have to do it ourselves. But try_step() DOES update internally t, hence we do not touch it in this case.
+
+            double norm = length(dvec4{state[6], state[7], state[8], state[9]}); //q1
+            state[6] /= norm;
+            state[7] /= norm;
+            state[8] /= norm;
+            state[9] /= norm;
+            norm = length(dvec4{state[13], state[14], state[15], state[16]}); //q2
+            state[13] /= norm;
+            state[14] /= norm;
+            state[15] /= norm;
+            state[16] /= norm;
 
             //Progressbar : set the progress value of the integrator in [0,1].
             progress.store((t-t0)/(tmax-t0));
