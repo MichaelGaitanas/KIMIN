@@ -83,9 +83,9 @@ public:
                    win_width(1),
                    win_height(1)
     {
-        xaxis.load_obj_file("../obj/axes/xaxis.obj"); xaxis.gen_norms(); xaxis.set_as_gl_mesh();
-        yaxis.load_obj_file("../obj/axes/yaxis.obj"); yaxis.gen_norms(); yaxis.set_as_gl_mesh();
-        zaxis.load_obj_file("../obj/axes/zaxis.obj"); zaxis.gen_norms(); zaxis.set_as_gl_mesh();
+        xaxis.load_obj_file("../obj/axes/xaxis.obj"); xaxis.gen_norms(); xaxis.set_gl_mesh();
+        yaxis.load_obj_file("../obj/axes/yaxis.obj"); yaxis.gen_norms(); yaxis.set_gl_mesh();
+        zaxis.load_obj_file("../obj/axes/zaxis.obj"); zaxis.gen_norms(); zaxis.set_gl_mesh();
     }
 
     ~renderer3D()
@@ -125,22 +125,21 @@ public:
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    //Reset all GPU resources that depend on a finished simulation. It is called from the render thread when reset_gpu_essential == true.
-    //This function is basically the continuation of the scene::setup(const solution &sol), but unfortunately they run on different threads. Hence the separation.
+    //This function resets all GPU-side resources that depend on a finished simulation.
     void reset_gpu_resources(solution &sol)
     {
         sol.integr.props.poly1.clear_gl_mesh();
         sol.integr.props.poly2.clear_gl_mesh();
-        orb1.clear();
-        orb2.clear();
-        orb_sp.clear();
+        orb1.clear_gl_mesh();
+        orb2.clear_gl_mesh();
+        orb_sp.clear_gl_mesh();
 
-        sol.integr.props.poly1.set_as_gl_mesh();
-        sol.integr.props.poly2.set_as_gl_mesh();
-        orb1.set_as_gl_mesh(sol.x, sol.y, sol.z, (float)sol.integr.m1);
-        orb2.set_as_gl_mesh(sol.x, sol.y, sol.z, (float)sol.integr.m2);
+        sol.integr.props.poly1.set_gl_mesh();
+        sol.integr.props.poly2.set_gl_mesh();
+        orb1.set_gl_mesh(sol.xmut, sol.ymut, sol.zmut, (float)sol.integr.m1);
+        orb2.set_gl_mesh(sol.xmut, sol.ymut, sol.zmut, (float)sol.integr.m2);
         if (sol.integr.props.spacecraft_checkbox)
-            orb_sp.set_as_gl_mesh(sol.xsp, sol.ysp, sol.zsp);
+            orb_sp.set_gl_mesh(sol.xsp_com, sol.ysp_com, sol.zsp_com); //Spacecraft's orbit mesh in the COM frame of the binary
         
         setup_depth_fbo();
 
@@ -151,42 +150,36 @@ public:
                                                  "../skybox/starfield2k/bottom.jpg",
                                                  "../skybox/starfield2k/front.jpg",
                                                  "../skybox/starfield2k/back.jpg");
-
-        //Wtf? Is this necessary to be here? Why not in the scene.h?
-        orb1.draw_count = orb2.draw_count = std::min<size_t>(1, sol.t.size());
-        if (sol.integr.props.spacecraft_checkbox)
-            orb_sp.draw_count = std::min<size_t>(1, sol.t.size());
     }
 
     //This function handles the rendering logic of the 3D content.
-    void render_3D_content(solution &sol, const size_t iframe, bool &reset_gpu_essential)
+    void render_3D_content(solution &sol, const size_t iframe, bool &reset_gpu_flag)
     {
-        //Prepare all the meshes for rendering, by running the appropriate CPU/GPU tasks.
-        if (reset_gpu_essential)
+        if (reset_gpu_flag)
         {
             reset_gpu_resources(sol);   
-            reset_gpu_essential = false;
+            reset_gpu_flag = false;
         }
 
-        const glm::vec3 rcom = get_analytic_rcom(sol, iframe);
-        const glm::vec3 r1 = (float)sol.integr.m1*glm::vec3(sol.x[iframe],sol.y[iframe],sol.z[iframe]);
-        const glm::vec3 r2 = (float)sol.integr.m2*glm::vec3(sol.x[iframe],sol.y[iframe],sol.z[iframe]);
-        const float sun_dist = glm::length(rcom);
-        const glm::vec3 sun_dir = -rcom/sun_dist;
+        const glm::vec3 rsun = -glm::vec3(sol.xcom_helio[iframe],sol.ycom_helio[iframe],sol.zcom_helio[iframe]);
+        const glm::vec3 r1 = (float)sol.integr.m1*glm::vec3(sol.xmut[iframe],sol.ymut[iframe],sol.zmut[iframe]);
+        const glm::vec3 r2 = (float)sol.integr.m2*glm::vec3(sol.xmut[iframe],sol.ymut[iframe],sol.zmut[iframe]);
+        const float sun_dist = glm::length(rsun);
+        const glm::vec3 sun_dir = rsun/sun_dist;
 
+        sunlight.set_geometry((float)(OBJ_AXES_LENGTH*std::max(sol.integr.brillouin1, sol.integr.brillouin2) + sol.dist_mut[iframe]), sun_dir);
         cam.set_geometry(win_width/(float)win_height);
-        sunlight.set_geometry((float)(OBJ_AXES_LENGTH*std::max(sol.integr.brillouin1, sol.integr.brillouin2) + sol.dist[iframe]), sun_dir);
 
         const glm::mat4 I = glm::mat4(1.0f);
         const glm::mat4 T1R1 = glm::translate(I, r1)*
-                         glm::rotate(I, glm::radians((float)sol.yaw1[iframe]),   glm::vec3(0.0f,0.0f,1.0f))*
-                         glm::rotate(I, glm::radians((float)sol.pitch1[iframe]), glm::vec3(0.0f,1.0f,0.0f))*
-                         glm::rotate(I, glm::radians((float)sol.roll1[iframe]),  glm::vec3(1.0f,0.0f,0.0f));
+                               glm::rotate(I, glm::radians((float)sol.yaw1[iframe]),   glm::vec3(0.0f,0.0f,1.0f))*
+                               glm::rotate(I, glm::radians((float)sol.pitch1[iframe]), glm::vec3(0.0f,1.0f,0.0f))*
+                               glm::rotate(I, glm::radians((float)sol.roll1[iframe]),  glm::vec3(1.0f,0.0f,0.0f));
         const glm::mat4 S1 = glm::scale(I, glm::vec3((float)sol.integr.brillouin1));
         const glm::mat4 T2R2 = glm::translate(I, r2)*
-                         glm::rotate(I, glm::radians((float)sol.yaw2[iframe]),   glm::vec3(0.0f,0.0f,1.0f))*
-                         glm::rotate(I, glm::radians((float)sol.pitch2[iframe]), glm::vec3(0.0f,1.0f,0.0f))*
-                         glm::rotate(I, glm::radians((float)sol.roll2[iframe]),  glm::vec3(1.0f,0.0f,0.0f));
+                               glm::rotate(I, glm::radians((float)sol.yaw2[iframe]),   glm::vec3(0.0f,0.0f,1.0f))*
+                               glm::rotate(I, glm::radians((float)sol.pitch2[iframe]), glm::vec3(0.0f,1.0f,0.0f))*
+                               glm::rotate(I, glm::radians((float)sol.roll2[iframe]),  glm::vec3(1.0f,0.0f,0.0f));
         const glm::mat4 S2 = glm::scale(I, glm::vec3((float)sol.integr.brillouin2));
         
         //Shadow rendering pass : render the meshes that account for shadow, but do so from the light's (orthographic) view. Shadow pass must always happen first.
@@ -244,13 +237,13 @@ public:
         }
 
         //Sun rendering pass :
-        float ang_deg = glm::degrees(asinf(RSUN/sun_dist));
+        const float sun_ang_deg = glm::degrees(asinf(RSUN/sun_dist));
         sh_sun.use();
         sh_sun.set_mat4_uniform("projection",      cam.projection);
         sh_sun.set_mat4_uniform("view",            cam.view);
         sh_sun.set_vec3_uniform("light_dir_world", sun_dir);
         sh_sun.set_vec3_uniform("sun_color",       sun_col);
-        sh_sun.set_float_uniform("sun_angular_radius_deg", ang_deg);
+        sh_sun.set_float_uniform("sun_angular_radius_deg", sun_ang_deg);
         sh_sun.set_float_uniform("sun_distance", 10.0f*cam.max_dist); //Put the Sun comfortably 'far'. The aim is to make occlude only the skybox but no other mesh.
         sh_sun.set_float_uniform("sun_scale", 1.0f);
         sh_sun.set_float_uniform("sun_disc_intensity", sunquad.disc_intensity);

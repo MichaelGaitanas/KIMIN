@@ -26,7 +26,7 @@ public:
               draw_count(0)
     { }
 
-    void clear()
+    void clear_gl_mesh()
     {
         if (vbo)
         {
@@ -42,7 +42,7 @@ public:
         gl_ready = false;
     }
 
-    void set_as_gl_mesh(const dvec &x, const dvec &y, const dvec &z, const float coeff = 1.0f)
+    void set_gl_mesh(const dvec &x, const dvec &y, const dvec &z, const float coeff = 1.0f)
     {
         if (gl_ready) return; //If the orbital data [x(t),y(t),z(t)] have already been uploaded to the GPU, just exit the function.
 

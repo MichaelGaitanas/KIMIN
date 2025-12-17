@@ -37,7 +37,7 @@ Initial state :
     Pitch 2 := 0
     Yaw 2   := 0
 
-    Angular velocities := "At inertial frame"
+    Angular velocities := "Heliocentric (inertial)"
     w1ix := 0
     w1iy := 0
     w1iz := 7.292115e-05

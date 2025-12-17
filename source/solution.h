@@ -40,8 +40,11 @@ public:
     //COM (in Heliocentric frame) :
     dvec xcom_helio, ycom_helio, zcom_helio;
 
-    //Spacecraft (in Heliocentric frame) :
+    //Spacecraft :
+    //In Heliocentric frame :
     dvec xsp_helio, ysp_helio, zsp_helio;
+    //In binary's COM frame :
+    dvec xsp_com, ysp_com, zsp_com;
 
     solution() { } //This is needed to instantiate solution in the scene class.
 
@@ -71,6 +74,7 @@ public:
         if (integr.props.spacecraft_checkbox)
         {
             xsp_helio.resize(N); ysp_helio.resize(N); zsp_helio.resize(N);
+            xsp_com.resize(N);   ysp_com.resize(N);   zsp_com.resize(N);
         }
 
         #ifdef _OPENMP
@@ -91,7 +95,7 @@ public:
             //Remember, integr.orbit[i][] contains either (t, rmut,vmut, q1,w1b, q2,w2b, rcom_helio,vcom_helio, rsp_helio,vsp_helio)
             //                                         or (t, rmut,vmut, q1,w1b, q2,w2b, rcom_helio,vcom_helio)
             dvec3 rmut       = {integr.orbit[i][1],  integr.orbit[i][2],  integr.orbit[i][3]};
-            dvec3 vmut       = {integr.orbit[i][4],  integr.orbit[i][5],  integr.orbit[i][6]};
+            //dvec3 vmut     = {integr.orbit[i][4],  integr.orbit[i][5],  integr.orbit[i][6]};
             dvec4 q1         = {integr.orbit[i][7],  integr.orbit[i][8],  integr.orbit[i][9],  integr.orbit[i][10]};
             dvec3 w1b        = {integr.orbit[i][11], integr.orbit[i][12], integr.orbit[i][13]};
             dvec4 q2         = {integr.orbit[i][14], integr.orbit[i][15], integr.orbit[i][16], integr.orbit[i][17]};
@@ -140,6 +144,11 @@ public:
                 xsp_helio[i] = rsp_helio[0];
                 ysp_helio[i] = rsp_helio[1];
                 zsp_helio[i] = rsp_helio[2];
+
+                //Again [km].
+                xsp_com[i] = xsp_helio[i] - xcom_helio[i];
+                ysp_com[i] = ysp_helio[i] - ycom_helio[i];
+                zsp_com[i] = zsp_helio[i] - zcom_helio[i];
             }
         }
         cons.print("Done.\n");

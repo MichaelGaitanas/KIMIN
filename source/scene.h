@@ -31,7 +31,7 @@ private:
     bvec plot_cart_sp_com1,  plot_kep_sp_com1;
     bvec plot_cart_sp_com2,  plot_kep_sp_com2;
     
-    bool render_scene, play_video, reset_gpu_essential, auto_replay, orb1_sync, orb2_sync, orb_sp_sync;
+    bool render_scene, play_video, reset_gpu_flag, auto_replay, orb1_sync, orb2_sync, orb_sp_sync;
 
     uint64_t iframe, frames;
     int framerate; //Frame updates per second.
@@ -64,7 +64,7 @@ public:
               plot_kep_sp_com2({false,false,false,false,false,false}),
               render_scene(false),
               play_video(false),
-              reset_gpu_essential(false),
+              reset_gpu_flag(false),
               auto_replay(false),
               orb1_sync(false),
               orb2_sync(false),
@@ -78,14 +78,11 @@ public:
               rend3D()
     { }
 
-    //Reset essential stuff upon a simulation termination.
-    //Note : apart from the following resets, we still have to reset OpenGL stuff. But the following setup() function is gonna run in
-    //the 'task_thread' thread defined in gui.h, not in the main thread, where OpenGL runs. So any gl* commands that handle
-    //gpu resets must not happen here. For that, we have the messenger variable 'reset_gpu_essential' (see function render_3D_content() in the renderer3D.h).
     void setup(solution &s)
     {
-        sol = &s; //Obtain a copy of the adress, not a full deep copy!
-        sol2D.construct(*sol); //Then create a downsampled solution for the 2D plots.
+        //Obtain a dense version copy (by reference) and then create a downsampled solution for the 2D plots.
+        sol = &s;
+        sol2D.construct(*sol);
         sol->integr.orbit.clear();
         sol->integr.orbit.shrink_to_fit();
 
@@ -93,13 +90,13 @@ public:
 
         iframe = 0;
         frames = static_cast<uint64_t>(sol->t.size());
-        play_video = false; //Set the video at paused state ('true' means play, 'false' means pause).
-        reset_gpu_essential = true; //This will inform the renderer3D::reset_gpu_resources() to run, but only once.
+        play_video = false; //Set the previous video state at pause after a new simulation finishes.
+        reset_gpu_flag = true; //This will inform the renderer3D::reset_gpu_resources() to run, but only once.
 
-        uint64_t init_orb_count = (frames > 0 ? 1 : 0);
-        rend3D.orb1.draw_count = rend3D.orb2.draw_count = init_orb_count;
+        uint64_t init_draw_count = (frames > 0 ? 1 : 0);
+        rend3D.orb1.draw_count = rend3D.orb2.draw_count = init_draw_count;
         
-        //At every new simulation, if the user hasn't assumed a spacecraft, then any previous plots regarding the spacecraft shall disappear.
+        //At every new simulation, if the user hasn't assumed a spacecraft, then any active plots regarding the spacecraft from the previous simulation shall disappear.
         if (!sol->integr.props.spacecraft_checkbox)
         {
             for (size_t i = 0; i < plot_cart_sp_helio.size(); ++i)
@@ -108,11 +105,10 @@ public:
                 plot_kep_sp_helio[i] = plot_kep_sp_com[i] = plot_kep_sp_com1[i] = plot_kep_sp_com2[i] = false;
 
             rend3D.orb_sp.draw_count = 0;
-            orb_sp_sync = false;
-            rend3D.render_orb_sp = false;
+            rend3D.render_orb_sp = orb_sp_sync = false;
         }
         else
-            rend3D.orb_sp.draw_count = init_orb_count;
+            rend3D.orb_sp.draw_count = init_draw_count;
     }
 
 private:
@@ -673,7 +669,7 @@ private:
         
         //Finally, render the 3D content.
         if (render_scene && sol && !sol->t.empty())
-            rend3D.render_3D_content(*sol, iframe, reset_gpu_essential);
+            rend3D.render_3D_content(*sol, iframe, reset_gpu_flag);
     }
 
 public:

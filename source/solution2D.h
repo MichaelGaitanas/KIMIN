@@ -372,6 +372,27 @@ public:
                 manom_sp_helio[i]  = kep_sp_helio[5]*180.0/PI;
 
                 ///////////////////////////////////////////////////////////
+                
+                //Those remain in [km].
+                xsp_com[i]     = rsp_com[0];
+                ysp_com[i]     = rsp_com[1];
+                zsp_com[i]     = rsp_com[2];
+                dist_sp_com[i] = length(rsp_com);
+
+                //[km/sec]
+                vxsp_com[i]   = vsp_com[0];
+                vysp_com[i]   = vsp_com[1];
+                vzsp_com[i]   = vsp_com[2];
+                vel_sp_com[i] = length(vsp_com);
+
+                sma_sp_com[i]    = kep_sp_com[0]; //[km]
+                ecc_sp_com[i]    = kep_sp_com[1];
+                inc_sp_com[i]    = kep_sp_com[2]*180.0/PI;
+                raan_sp_com[i]   = kep_sp_com[3]*180.0/PI;
+                argper_sp_com[i] = kep_sp_com[4]*180.0/PI;
+                manom_sp_com[i]  = kep_sp_com[5]*180.0/PI;
+
+                ///////////////////////////////////////////////////////////
 
                 //Those remain in [km].
                 xsp_com1[i]     = rsp_com1[0];
@@ -380,17 +401,17 @@ public:
                 dist_sp_com1[i] = length(rsp_com1);
 
                 //[km/sec]
-                vxsp1[i]   = vsp1[0];
-                vysp1[i]   = vsp1[1];
-                vzsp1[i]   = vsp1[2];
-                vel_sp1[i] = length(vsp_com1);
+                vxsp_com1[i]   = vsp_com1[0];
+                vysp_com1[i]   = vsp_com1[1];
+                vzsp_com1[i]   = vsp_com1[2];
+                vel_sp_com1[i] = length(vsp_com1);
 
-                sma_sp1[i]    = kep_sp1[0]; //[km]
-                ecc_sp1[i]    = kep_sp1[1];
-                inc_sp1[i]    = kep_sp1[2]*180.0/PI;
-                raan_sp1[i]   = kep_sp1[3]*180.0/PI;
-                argper_sp1[i] = kep_sp1[4]*180.0/PI;
-                manom_sp1[i]  = kep_sp1[5]*180.0/PI;
+                sma_sp_com1[i]    = kep_sp_com1[0]; //[km]
+                ecc_sp_com1[i]    = kep_sp_com1[1];
+                inc_sp_com1[i]    = kep_sp_com1[2]*180.0/PI;
+                raan_sp_com1[i]   = kep_sp_com1[3]*180.0/PI;
+                argper_sp_com1[i] = kep_sp_com1[4]*180.0/PI;
+                manom_sp_com1[i]  = kep_sp_com1[5]*180.0/PI;
 
                 ///////////////////////////////////////////////////////////
 

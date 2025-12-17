@@ -257,7 +257,7 @@ public:
     }
 
     //Build and upload to the GPU an interleaved (position + normal) buffer for flat shading (Lambert).
-    void set_as_gl_mesh()
+    void set_gl_mesh()
     {
         //If the polyhedron is already ready for rendering, exit the function.
         if (gl_ready) return;
@@ -265,7 +265,7 @@ public:
         //Safety check. You never know...
         if (faces.empty() || verts.empty() || norms.empty())
         {
-            fprintf(stderr, "[Warning] : In polyhedron::set_as_gl_mesh(), essential mesh data (vertices || faces || normals) are missing. Returning...\n");
+            fprintf(stderr, "[Warning] : In polyhedron::set_gl_mesh(), essential mesh data (vertices || faces || normals) are missing. Returning...\n");
             return;
         }
 
