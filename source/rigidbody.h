@@ -25,12 +25,12 @@ dvec4 quat_rhs(const dvec4 &q, const dvec3 &w)
 }
 
 //Euler odes rhs for a rigid body, assuming I[][] is diagonal (principal axes frame).
-//Angular velocity w, moment of inertia I and torque tau are in the body frame.
-dvec3 euler_rhs(const dvec3 &w, const dmat3 &I, const dvec3 &tau)
+//Angular velocity, moment of inertia and the torque are all in the body frame.
+dvec3 euler_rhs(const dvec3 &w, const dmat3 &I, const dvec3 &torque)
 {
-    const double dw0 = (tau[0] + w[1]*w[2]*(I[1][1] - I[2][2]))/I[0][0];
-    const double dw1 = (tau[1] + w[2]*w[0]*(I[2][2] - I[0][0]))/I[1][1];
-    const double dw2 = (tau[2] + w[0]*w[1]*(I[0][0] - I[1][1]))/I[2][2];
+    const double dw0 = (torque[0] + w[1]*w[2]*(I[1][1] - I[2][2]))/I[0][0];
+    const double dw1 = (torque[1] + w[2]*w[0]*(I[2][2] - I[0][0]))/I[1][1];
+    const double dw2 = (torque[2] + w[0]*w[1]*(I[0][0] - I[1][1]))/I[2][2];
     return {dw0, dw1, dw2};
 }
 
@@ -44,6 +44,32 @@ bool sphere_sphere_collision(const double distance, const double R1, const doubl
 bool sphere_point_collision(const double distance, const double R)
 {
     return (distance <= R) ? true : false;
+}
+
+//This function tells if an intersection point exists between a line segment (formed by the vectors r1,r2)
+//and a sphere with center at rsphere and radius R.
+bool line_sphere_intersection(const dvec3 &r1, const dvec3 &r2, const dvec3 &rsphere, const double R)
+{
+    dvec3 dr1 = r2 - r1;
+    dvec3 dr2 = r1 - rsphere;
+    double dr1len = length(dr1);
+    double dr2len = length(dr2);
+
+    double a = dr1len*dr1len;
+    double b = 2.0*dot(dr1,dr2);
+    double c = dr2len*dr2len - R*R;
+
+    double D = b*b - 4.0*a*c;
+
+    if (D < 0.0)
+        return false;
+
+    double root1 = (-b - sqrt(D))/(2.0*a);
+    double root2 = (-b + sqrt(D))/(2.0*a);
+    if ((root1 >= 0.0 && root1 <= 1.0) || (root2 >= 0.0 && root2 <= 1.0))
+        return true; //Found intersection.
+
+    return false;
 }
 
 //Polyhedron - point collision detection criterion.
@@ -199,32 +225,6 @@ bool polyhedron_polyhedron_collision(const polyhedron &poly1, const dmat3 &A1, c
                 return true;
         }
     }
-    return false;
-}
-
-//This function tells if an intersection point exists between a line segment (formed by the vectors r1,r2)
-//and a sphere with center at rsphere and radius R.
-bool line_sphere_intersection(const dvec3 &r1, const dvec3 &r2, const dvec3 &rsphere, const double R)
-{
-    dvec3 dr1 = r2 - r1;
-    dvec3 dr2 = r1 - rsphere;
-    double dr1len = length(dr1);
-    double dr2len = length(dr2);
-
-    double a = dr1len*dr1len;
-    double b = 2.0*dot(dr1,dr2);
-    double c = dr2len*dr2len - R*R;
-
-    double D = b*b - 4.0*a*c;
-
-    if (D < 0.0)
-        return false;
-
-    double root1 = (-b - sqrt(D))/(2.0*a);
-    double root2 = (-b + sqrt(D))/(2.0*a);
-    if ((root1 >= 0.0 && root1 <= 1.0) || (root2 >= 0.0 && root2 <= 1.0))
-        return true; //Found intersection.
-
     return false;
 }
 

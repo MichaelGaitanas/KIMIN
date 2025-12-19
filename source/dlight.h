@@ -17,10 +17,12 @@ public:
     //This function computes the light's projection and view matrix that are passed as uniforms to the shaders in the renderer3D.h.
     void set_geometry(const float ortho_extent, const glm::vec3 &light_dir)
     {
-        const float fc = 1.01f, fl = 1.02f; //Scale factors that are used to scale the size of the orthographic box of the directional light.
+        constexpr float fc = 1.01f, fl = 1.02f; //Scale factors that are used to scale the size of the orthographic box of the directional light.
         const float light_dist = fl*ortho_extent; //Directional light's 'dummy' distance. Note : this is NOT the real Sun's distance.
  
-        const glm::vec3 up = (glm::abs(light_dir.z) > 0.999f) ? glm::vec3(0.0f,1.0f,0.0f) : glm::vec3(0.0f,0.0f,1.0f);
+        glm::vec3 up = glm::vec3(0.0f,0.0f,1.0f);
+        if (glm::abs(light_dir.z) > 0.999f)
+            up = glm::vec3(0.0f,1.0f,0.0f);
 
         const glm::mat4 projection = glm::ortho(-fc*ortho_extent,fc*ortho_extent,
                                                 -fc*ortho_extent,fc*ortho_extent,

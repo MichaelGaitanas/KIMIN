@@ -89,12 +89,12 @@ public:
         rend3D.cam.reset(sol->integr.brillouin1 + sol->integr.brillouin2, *std::max_element(sol->dist_mut.begin(), sol->dist_mut.end()));
 
         iframe = 0;
-        frames = static_cast<uint64_t>(sol->t.size());
+        frames = uint64_t(sol->t.size());
         play_video = false; //Set the previous video state at pause after a new simulation finishes.
         reset_gpu_flag = true; //This will inform the renderer3D::reset_gpu_resources() to run, but only once.
 
         uint64_t init_draw_count = (frames > 0 ? 1 : 0);
-        rend3D.orb1.draw_count = rend3D.orb2.draw_count = init_draw_count;
+        rend3D.orb1.gl_draw_count = rend3D.orb2.gl_draw_count = init_draw_count;
         
         //At every new simulation, if the user hasn't assumed a spacecraft, then any active plots regarding the spacecraft from the previous simulation shall disappear.
         if (!sol->integr.props.spacecraft_checkbox)
@@ -104,11 +104,11 @@ public:
             for (size_t i = 0; i < plot_kep_sp_helio.size(); ++i)
                 plot_kep_sp_helio[i] = plot_kep_sp_com[i] = plot_kep_sp_com1[i] = plot_kep_sp_com2[i] = false;
 
-            rend3D.orb_sp.draw_count = 0;
+            rend3D.orb_sp.gl_draw_count = 0;
             rend3D.render_orb_sp = orb_sp_sync = false;
         }
         else
-            rend3D.orb_sp.draw_count = init_draw_count;
+            rend3D.orb_sp.gl_draw_count = init_draw_count;
     }
 
 private:
@@ -137,7 +137,7 @@ private:
             return 0;
         
         double step = (original_size - 1.0)/(reduced_size - 1.0);
-        size_t jframe = (size_t)std::floor(iframe/step + 0.5); //Round to nearest integer.
+        size_t jframe = size_t(std::floor(iframe/step + 0.5)); //Round to nearest integer.
         if (jframe >= reduced_size)
             jframe = reduced_size - 1; //Clamp to avoid wrong access.
     
@@ -147,8 +147,8 @@ private:
     //This function plots the data [t, f(t)].
     bool plot(const char *imgui_id, const char *implot_id, const char *yaxis_str, bool plot_status, dvec &data)
     {
-        float sx = ImGui::GetIO().DisplaySize.x;
-        float sy = ImGui::GetIO().DisplaySize.y;
+        const float sx = ImGui::GetIO().DisplaySize.x;
+        const float sy = ImGui::GetIO().DisplaySize.y;
 
         ImGui::SetNextWindowPos(ImVec2(0.6f*sx, 0.0f), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(0.25f*sx, 0.4f*sy), ImGuiCond_FirstUseEver);
@@ -161,19 +161,24 @@ private:
             
             //Current frame marker logic :
             size_t jframe = map_frame_to_reduced_sol(iframe, sol->t.size(), sol2D.t.size());
-            ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 6.0f*SCX, ImColor(0,255,0,255), 1.0f, ImColor(0,255,0,255));
+            ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 6.0f*SCX, ImColor(0,255,255,255), 1.0f, ImColor(0,255,255,255));
             ImPlot::PlotScatter("Current frame", &sol2D.t[jframe], &data[jframe], 1);
 
             //Collision frame marker logic :
-            if (sol->integr.collision_mut) //Asteroid-asteroid collision.
+            if (sol->integr.collision_mut) //Asteroid - asteroid collision.
             {
                 ImPlot::SetNextMarkerStyle(ImPlotMarker_Down, 6.0f*SCX, ImColor(255,0,0,255), 1.0f, ImColor(255,0,0,255));
                 ImPlot::PlotScatter("Collision frame", &sol2D.t.back(), &data.back(), 1);
             }
-            else if (sol->integr.collision_sp) //Asteroid-spacecraft collision.
+            else if (sol->integr.collision_sp1 || sol->integr.collision_sp2) //Spacecraft - asteroid 1 or 2 collision.
             {
-                ImPlot::SetNextMarkerStyle(ImPlotMarker_Down, 6.0f*SCX, ImColor(255,100,0,255), 1.0f, ImColor(255,100,0,255));
+                ImPlot::SetNextMarkerStyle(ImPlotMarker_Down, 6.0f*SCX, ImColor(255,110,0,255), 1.0f, ImColor(255,110,0,255));
                 ImPlot::PlotScatter("Collision frame", &sol2D.t.back(), &data.back(), 1);
+            }
+            else if (sol->integr.collision_sun) //COM - Sun close approach.
+            {
+                ImPlot::SetNextMarkerStyle(ImPlotMarker_Down, 6.0f*SCX, ImColor(255,255,0,255), 1.0f, ImColor(255,255,0,255));
+                ImPlot::PlotScatter("Close approach frame", &sol2D.t.back(), &data.back(), 1);
             }
 
             ImPlot::EndPlot();
@@ -220,7 +225,7 @@ private:
         }
 
         //Binary's COM plots.
-        if (ImGui::TreeNodeEx("COM (Heliocentric)"))
+        if (ImGui::TreeNodeEx("COM"))
         {
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
             ImGui::Text("Position and velocity");
@@ -439,183 +444,208 @@ private:
         if (!sol || sol->t.empty())
             ImGui::Text("Time : 0.00  [days]");
         else
-            ImGui::Text("Time : %.2f  [days]", static_cast<float>(sol->t[iframe]));
+            ImGui::Text("Time : %.2f  [days]", float(sol->t[iframe]));
         ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
 
         //Camera setup logic :
+        ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f); //Disable the indentation for what comes next.
+        if (ImGui::TreeNodeEx("Camera system"))
+        {
+            ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
 
-        ImGui::Text("Camera setup");
-        ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
+            ImGui::Text("Dist");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(40.0f*SCX);
+            ImGui::SliderFloat("[km]##rend3D.cam.dist", &rend3D.cam.dist, rend3D.cam.min_dist, rend3D.cam.max_dist, "%.3f", ImGuiSliderFlags_Logarithmic);
 
-        ImGui::Text("Dist");
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(40.0f*SCX);
-        ImGui::SliderFloat("[km]##rend3D.cam.dist", &rend3D.cam.dist, rend3D.cam.min_dist, rend3D.cam.max_dist, "%.3f", ImGuiSliderFlags_Logarithmic);
+            ImGui::Text("Lon");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(40.0f*SCX);
+            ImGui::SliderFloat("[deg]##rend3D.cam.lon", &rend3D.cam.lon, 0.0f, 360.0f, "%.1f");
 
-        ImGui::Text("Lon");
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(40.0f*SCX);
-        ImGui::SliderFloat("[deg]##rend3D.cam.lon", &rend3D.cam.lon, 0.0f, 360.0f, "%.1f");
+            ImGui::Text("Lat");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(40.0f*SCX);
+            ImGui::SliderFloat("[deg]##rend3D.cam.lat", &rend3D.cam.lat, 0.0f, 180.0f, "%.1f");
+            ImGui::Dummy(ImVec2(0.0f, 8.0f*SCY));
 
-        ImGui::Text("Lat");
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(40.0f*SCX);
-        ImGui::SliderFloat("[deg]##rend3D.cam.lat", &rend3D.cam.lat, 0.0f, 180.0f, "%.1f");
-        ImGui::Dummy(ImVec2(0.0f, 8.0f*SCY));
+            ImGui::Text("FoV");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(40.0f*SCX);
+            ImGui::SliderFloat("[deg]##rend3D.cam.fov", &rend3D.cam.fov, CAM_MIN_FOV, CAM_MAX_FOV, "%.0f");
 
-        ImGui::Text("FoV");
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(40.0f*SCX);
-        ImGui::SliderFloat("[deg]##rend3D.cam.fov", &rend3D.cam.fov, CAM_MIN_FOV, CAM_MAX_FOV, "%.0f");
+            ImGui::TreePop();
+        }
+        ImGui::PopStyleVar();
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
 
-        //Shadow setup logic :
+        //Lighting system logic :
+        ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f); //Disable the indentation for what comes next.
+        if (ImGui::TreeNodeEx("Lighting system"))
+        {
+            ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
 
-        ImGui::Text("Shadow map");
+            ImGui::Text("Shadow quality");
+            
+            ImGui::Text("Reso");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(40.0f*SCX);
+            if (ImGui::SliderInt("[pix]##rend3D.depth_reso", &rend3D.depth_reso, DEPTH_RESO_MIN, DEPTH_RESO_MAX))
+                rend3D.setup_depth_fbo();
 
-        ImGui::Text("Reso");
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(40.0f*SCX);
-        if (ImGui::SliderInt("[pix]##rend3D.depth_reso", &rend3D.depth_reso, DEPTH_RESO_MIN, DEPTH_RESO_MAX))
-            rend3D.setup_depth_fbo();
+            ImGui::TreePop();
+        }
+        ImGui::PopStyleVar();
 
         ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
 
         //Meshes to render logic :
-
-        ImGui::Text("Visible meshes");
-        ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
-
-        ImGui::Text("Bodies");
-        ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
-
-        ImGui::Text("Body 1");
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(60.0f*SCX);
-        ImGui::Checkbox("##rend3D.render_body1", &rend3D.render_body1);
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(100.0f*SCX);
-        ImGui::Text("Axes 1");
-        ImGui::SameLine();
-        ImGui::Checkbox("##rend3D.render_axes1", &rend3D.render_axes1);
-
-        ImGui::Text("Body 2");
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(60.0f*SCX);
-        ImGui::Checkbox("##rend3D.render_body2", &rend3D.render_body2);
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(100.0f*SCX);
-        ImGui::Text("Axes 2");
-        ImGui::SameLine();
-        ImGui::Checkbox("##rend3D.render_axes2", &rend3D.render_axes2);
-        ImGui::Dummy(ImVec2(0.0f,4.0f*SCY));
-
-        ImGui::Text("Orbits");
-        ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
-
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f,0.2f,0.2f,1.0f)); //Make all the plot buttons' off state gray.
-
-        ImGui::Text("Body 1");
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(60.0f*SCX);
-        ImGui::Checkbox("##rend3D.render_orb1", &rend3D.render_orb1);
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(90.0f*SCX);
-        ImGui::SetNextItemWidth(100.0f*SCX);
-        uint64_t visible_orb1_frame = (frames > 0) ? static_cast<uint64_t>(rend3D.orb1.draw_count) : 0;
-
-        if (!rend3D.render_orb1)
+        ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f); //Disable the indentation for what comes next.
+        if (ImGui::TreeNodeEx("Visible meshes"))
         {
-            ImGui::BeginDisabled();
+            ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
+
+            ImGui::Text("Bodies");
+            ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
+
+            ImGui::Text("Body 1");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(60.0f*SCX);
+            ImGui::Checkbox("##rend3D.render_body1", &rend3D.render_body1);
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(100.0f*SCX);
+            ImGui::Text("Axes 1");
+            ImGui::SameLine();
+            ImGui::Checkbox("##rend3D.render_axes1", &rend3D.render_axes1);
+
+            ImGui::Text("Body 2");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(60.0f*SCX);
+            ImGui::Checkbox("##rend3D.render_body2", &rend3D.render_body2);
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(100.0f*SCX);
+            ImGui::Text("Axes 2");
+            ImGui::SameLine();
+            ImGui::Checkbox("##rend3D.render_axes2", &rend3D.render_axes2);
+            ImGui::Dummy(ImVec2(0.0f,4.0f*SCY));
+
+            ImGui::Text("Orbits");
+            ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
+
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f,0.2f,0.2f,1.0f)); //Make all the plot buttons' off state gray.
+
+            ImGui::Text("Body 1");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(60.0f*SCX);
+            ImGui::Checkbox("##rend3D.render_orb1", &rend3D.render_orb1);
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(90.0f*SCX);
+            ImGui::SetNextItemWidth(100.0f*SCX);
+            uint64_t visible_orb1_frame = (frames > 0) ? uint64_t(rend3D.orb1.gl_draw_count) : 0;
+
+            if (!rend3D.render_orb1)
+            {
+                ImGui::BeginDisabled();
+                if (orb1_sync)
+                    orb1_sync = false;
+            }
+            
+            ImGui::SliderScalar("##visible_orb1_frame", ImGuiDataType_U64, &visible_orb1_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+            ImGui::SameLine();
+            rend3D.orb1.gl_draw_count = size_t(visible_orb1_frame);
+            orb1_sync = onoff_button("Sync##orb1_sync", ImVec2(50.0f*SCX, 18.0f*SCY), orb1_sync);
             if (orb1_sync)
-                orb1_sync = false;
-        }
-        
-        ImGui::SliderScalar("##visible_orb1_frame", ImGuiDataType_U64, &visible_orb1_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
-        ImGui::SameLine();
-        rend3D.orb1.draw_count = static_cast<size_t>(visible_orb1_frame);
-        orb1_sync = onoff_button("Sync##orb1_sync", ImVec2(50.0f*SCX, 18.0f*SCY), orb1_sync);
-        if (orb1_sync)
-            rend3D.orb1.draw_count = static_cast<size_t>(iframe + 1);
+                rend3D.orb1.gl_draw_count = size_t(iframe + 1);
 
-        if (!rend3D.render_orb1)
-            ImGui::EndDisabled();
+            if (!rend3D.render_orb1)
+                ImGui::EndDisabled();
 
-        ImGui::Text("Body 2");
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(60.0f*SCX);
-        ImGui::Checkbox("##rend3D.render_orb2", &rend3D.render_orb2);
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(90.0f*SCX);
-        ImGui::SetNextItemWidth(100.0f*SCX);
-        uint64_t visible_orb2_frame = (frames > 0) ? static_cast<uint64_t>(rend3D.orb2.draw_count) : 0;
+            ImGui::Text("Body 2");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(60.0f*SCX);
+            ImGui::Checkbox("##rend3D.render_orb2", &rend3D.render_orb2);
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(90.0f*SCX);
+            ImGui::SetNextItemWidth(100.0f*SCX);
+            uint64_t visible_orb2_frame = (frames > 0) ? uint64_t(rend3D.orb2.gl_draw_count) : 0;
 
-        if (!rend3D.render_orb2)
-        {
-            ImGui::BeginDisabled();
+            if (!rend3D.render_orb2)
+            {
+                ImGui::BeginDisabled();
+                if (orb2_sync)
+                    orb2_sync = false;
+            }
+
+            ImGui::SliderScalar("##visible_orb2_frame", ImGuiDataType_U64, &visible_orb2_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+            ImGui::SameLine();
+            orb2_sync = onoff_button("Sync##visible_orb2_frame", ImVec2(50.0f*SCX, 18.0f*SCY), orb2_sync);
+            rend3D.orb2.gl_draw_count = size_t(visible_orb2_frame);
             if (orb2_sync)
-                orb2_sync = false;
-        }
+                rend3D.orb2.gl_draw_count = size_t(iframe + 1);
 
-        ImGui::SliderScalar("##visible_orb2_frame", ImGuiDataType_U64, &visible_orb2_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
-        ImGui::SameLine();
-        orb2_sync = onoff_button("Sync##visible_orb2_frame", ImVec2(50.0f*SCX, 18.0f*SCY), orb2_sync);
-        rend3D.orb2.draw_count = static_cast<size_t>(visible_orb2_frame);
-        if (orb2_sync)
-            rend3D.orb2.draw_count = static_cast<size_t>(iframe + 1);
+            if (!rend3D.render_orb2)
+                ImGui::EndDisabled();
 
-        if (!rend3D.render_orb2)
-            ImGui::EndDisabled();
+            if (!sol || sol->t.empty() || !sol->integr.props.spacecraft_checkbox)
+                ImGui::BeginDisabled();
 
-        if (!sol || sol->t.empty() || !sol->integr.props.spacecraft_checkbox)
-            ImGui::BeginDisabled();
+            ImGui::Text("Orbiter");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(60.0f*SCX);
+            ImGui::Checkbox("##rend3D.render_orb_sp", &rend3D.render_orb_sp);
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(90.0f*SCX);
+            ImGui::SetNextItemWidth(100.0f*SCX);
+            uint64_t visible_orb_sp_frame = (frames > 0) ? uint64_t(rend3D.orb_sp.gl_draw_count) : 0;
 
-        ImGui::Text("Orbiter");
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(60.0f*SCX);
-        ImGui::Checkbox("##rend3D.render_orb_sp", &rend3D.render_orb_sp);
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(90.0f*SCX);
-        ImGui::SetNextItemWidth(100.0f*SCX);
-        uint64_t visible_orb_sp_frame = (frames > 0) ? static_cast<uint64_t>(rend3D.orb_sp.draw_count) : 0;
+            if (!rend3D.render_orb_sp)
+            {
+                ImGui::BeginDisabled();
+                if (orb_sp_sync)
+                    orb_sp_sync = false;
+            }
 
-        if (!rend3D.render_orb_sp)
-        {
-            ImGui::BeginDisabled();
+            ImGui::SliderScalar("##visible_orb_sp_frame", ImGuiDataType_U64, &visible_orb_sp_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+            ImGui::SameLine();
+            orb_sp_sync = onoff_button("Sync##orb_sp_sync", ImVec2(50.0f*SCX, 18.0f*SCY), orb_sp_sync);
+            rend3D.orb_sp.gl_draw_count = size_t(visible_orb_sp_frame);
             if (orb_sp_sync)
-                orb_sp_sync = false;
+                rend3D.orb_sp.gl_draw_count = size_t(iframe + 1);
+
+            if (!rend3D.render_orb_sp)
+                ImGui::EndDisabled();
+
+            if (!sol || sol->t.empty() || !sol->integr.props.spacecraft_checkbox)
+                ImGui::EndDisabled();
+
+            ImGui::PopStyleColor();
+
+            ImGui::Dummy(ImVec2(0.0f,4.0f*SCY));
+
+            ImGui::Text("Infinite grid");
+            ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
+            ImGui::Text("Grid");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(60.0f*SCX);
+            ImGui::Checkbox("##rend3D.render_grid", &rend3D.render_grid);
+
+            ImGui::Text("Skybox");
+            ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
+            ImGui::Text("Sb");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(60.0f*SCX);
+            ImGui::Checkbox("##rend3D.render_skybox", &rend3D.render_skybox);
+
+            ImGui::TreePop();
         }
-
-        ImGui::SliderScalar("##visible_orb_sp_frame", ImGuiDataType_U64, &visible_orb_sp_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
-        ImGui::SameLine();
-        orb_sp_sync = onoff_button("Sync##orb_sp_sync", ImVec2(50.0f*SCX, 18.0f*SCY), orb_sp_sync);
-        rend3D.orb_sp.draw_count = static_cast<size_t>(visible_orb_sp_frame);
-        if (orb_sp_sync)
-            rend3D.orb_sp.draw_count = static_cast<size_t>(iframe + 1);
-
-        if (!rend3D.render_orb_sp)
-            ImGui::EndDisabled();
-
-        if (!sol || sol->t.empty() || !sol->integr.props.spacecraft_checkbox)
-            ImGui::EndDisabled();
-
-        ImGui::PopStyleColor();
-
-        ImGui::Dummy(ImVec2(0.0f,4.0f*SCY));
-
-        ImGui::Text("Infinite grid");
-        ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
-        ImGui::Text("Grid");
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(60.0f*SCX);
-        ImGui::Checkbox("##rend3D.render_grid", &rend3D.render_grid);
+        ImGui::PopStyleVar();
 
         ImGui::Dummy(ImVec2(0.0f,700.0f*SCY)); //Some extra y-space in order to be able to scroll down along scene panel.        
 
@@ -629,15 +659,15 @@ private:
             if (io.MouseWheel != 0.0f)
             {
                 if (io.KeyCtrl)
-                    rend3D.cam.scroll_fov(io.MouseWheel);
+                    rend3D.cam.zoom(io.MouseWheel);
                 else
-                    rend3D.cam.scroll_dist(io.MouseWheel);
+                    rend3D.cam.translate(io.MouseWheel);
             }
             if (io.MouseDown[ImGuiMouseButton_Middle])
             {
                 const ImVec2 d = io.MouseDelta;
                 if (d.x != 0.0f || d.y != 0.0f)
-                    rend3D.cam.rotate_lon_lat(d.x, d.y);
+                    rend3D.cam.rotate(d.x, d.y);
             }
 
             //Toggle play/pause state via spacebar key, but only when the cursor is in the 3D viewport region.
@@ -681,15 +711,14 @@ public:
         rend3D.win_width  = win_width;
         rend3D.win_height = win_height;
 
-        float sx = ImGui::GetIO().DisplaySize.x;
-        float sy = ImGui::GetIO().DisplaySize.y;
+        const float sx = ImGui::GetIO().DisplaySize.x;
+        const float sy = ImGui::GetIO().DisplaySize.y;
 
         ImGui::SetNextWindowPos( ImVec2(0.85f*sx, ImGui::GetFrameHeight()), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(0.15f*sx, sy - ImGui::GetFrameHeight()), ImGuiCond_FirstUseEver);
         ImGui::Begin("Scene", nullptr);
 
-        ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
-        if (ImGui::CollapsingHeader("Plots 2D"))
+        if (ImGui::CollapsingHeader("Plots 2D", ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f,0.2f,0.2f,1.0f)); //Make all the plot buttons' off state gray.
             if (!sol || sol->t.empty())
@@ -833,8 +862,7 @@ public:
             ImGui::PopStyleColor();
         }
 
-        ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
-        if (ImGui::CollapsingHeader("Video 3D"))
+        if (ImGui::CollapsingHeader("Video 3D", ImGuiTreeNodeFlags_DefaultOpen))
         {
             if (!sol || sol->t.empty())
             {

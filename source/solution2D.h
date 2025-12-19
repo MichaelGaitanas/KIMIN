@@ -13,6 +13,7 @@
 #include"typedef.h"
 #include"linalg.h"
 #include"conversion.h"
+#include"dynamics.h"
 #include"properties.h"
 #include"integrator.h"
 #include"solution.h"
@@ -99,15 +100,15 @@ public:
 
     dvec2 get_energy_and_momentum_at_t0(const solution &sol)
     {
-        dvec3 r0   = {sol.integr.orbit[0][1],  sol.integr.orbit[0][2],  sol.integr.orbit[0][3]};
-        dvec3 v0   = {sol.integr.orbit[0][4],  sol.integr.orbit[0][5],  sol.integr.orbit[0][6]};
-        dvec4 q10  = {sol.integr.orbit[0][7],  sol.integr.orbit[0][8],  sol.integr.orbit[0][9],  sol.integr.orbit[0][10]};
-        dvec3 w1b0 = {sol.integr.orbit[0][11], sol.integr.orbit[0][12], sol.integr.orbit[0][13]};
-        dvec4 q20  = {sol.integr.orbit[0][14], sol.integr.orbit[0][15], sol.integr.orbit[0][16], sol.integr.orbit[0][17]};
-        dvec3 w2b0 = {sol.integr.orbit[0][18], sol.integr.orbit[0][19], sol.integr.orbit[0][20]};
+        const dvec3 r0   = {sol.integr.orbit[0][1],  sol.integr.orbit[0][2],  sol.integr.orbit[0][3]};
+        const dvec3 v0   = {sol.integr.orbit[0][4],  sol.integr.orbit[0][5],  sol.integr.orbit[0][6]};
+        const dvec4 q10  = {sol.integr.orbit[0][7],  sol.integr.orbit[0][8],  sol.integr.orbit[0][9],  sol.integr.orbit[0][10]};
+        const dvec3 w1b0 = {sol.integr.orbit[0][11], sol.integr.orbit[0][12], sol.integr.orbit[0][13]};
+        const dvec4 q20  = {sol.integr.orbit[0][14], sol.integr.orbit[0][15], sol.integr.orbit[0][16], sol.integr.orbit[0][17]};
+        const dvec3 w2b0 = {sol.integr.orbit[0][18], sol.integr.orbit[0][19], sol.integr.orbit[0][20]};
 
-        dmat3 A10 = quat2mat(q10);
-        dmat3 A20 = quat2mat(q20);
+        const dmat3 A10 = quat2mat(q10);
+        const dmat3 A20 = quat2mat(q20);
 
         double E0 = 0.5*sol.integr.m*dot(v0,v0) + 0.5*dot( dot(w1b0, sol.integr.I1), w1b0) + 0.5*dot( dot(w2b0, sol.integr.I2), w2b0);
         if (sol.integr.props.ord2_checkbox)
@@ -120,7 +121,7 @@ public:
             E0 += mut_pot_integrals_ord4(r0, sol.integr.props.M1, sol.integr.J1, A10,
                                              sol.integr.props.M2, sol.integr.J2, A20);
 
-        double L0 = length( sol.integr.m*cross(r0,v0) + dot(A10, dot(sol.integr.I1, w1b0)) + dot(A20, dot(sol.integr.I2, w2b0)) );
+        const double L0 = length( sol.integr.m*cross(r0,v0) + dot(A10, dot(sol.integr.I1, w1b0)) + dot(A20, dot(sol.integr.I2, w2b0)) );
 
         return {E0, L0};
     }
@@ -176,13 +177,13 @@ public:
             sma_sp_com2.resize(N2D);    ecc_sp_com2.resize(N2D);    inc_sp_com2.resize(N2D);    raan_sp_com2.resize(N2D); argper_sp_com2.resize(N2D); manom_sp_com2.resize(N2D);
         }
 
-        dvec2 ener_mom_at_t0 = get_energy_and_momentum_at_t0(sol);
-        double energy0 = ener_mom_at_t0[0];
-        double momentum0 = ener_mom_at_t0[1];
+        const dvec2 ener_mom_at_t0 = get_energy_and_momentum_at_t0(sol);
+        const double energy0 = ener_mom_at_t0[0];
+        const double momentum0 = ener_mom_at_t0[1];
 
         #ifdef _OPENMP
-            int total_threads = omp_get_max_threads();
-            int used_threads  = (total_threads > 1 ? total_threads/2 : 1);
+            const int total_threads = omp_get_max_threads();
+            const int used_threads  = (total_threads > 1 ? total_threads/2 : 1);
         #else
             constexpr int used_threads = 1;
         #endif
@@ -200,23 +201,23 @@ public:
             if (j >= N)
                 j = N-1;
 
-            dvec3 rmut       = {sol.integr.orbit[j][1],  sol.integr.orbit[j][2],  sol.integr.orbit[j][3]};
-            dvec3 vmut       = {sol.integr.orbit[j][4],  sol.integr.orbit[j][5],  sol.integr.orbit[j][6]};
-            dvec4 q1         = {sol.integr.orbit[j][7],  sol.integr.orbit[j][8],  sol.integr.orbit[j][9],  sol.integr.orbit[j][10]};
-            dvec3 w1b        = {sol.integr.orbit[j][11], sol.integr.orbit[j][12], sol.integr.orbit[j][13]};
-            dvec4 q2         = {sol.integr.orbit[j][14], sol.integr.orbit[j][15], sol.integr.orbit[j][16], sol.integr.orbit[j][17]};
-            dvec3 w2b        = {sol.integr.orbit[j][18], sol.integr.orbit[j][19], sol.integr.orbit[j][20]};
-            dvec3 rcom_helio = {sol.integr.orbit[j][21], sol.integr.orbit[j][22], sol.integr.orbit[j][23]};
-            dvec3 vcom_helio = {sol.integr.orbit[j][24], sol.integr.orbit[j][25], sol.integr.orbit[j][26]};
+            const dvec3 rmut       = {sol.integr.orbit[j][1],  sol.integr.orbit[j][2],  sol.integr.orbit[j][3]};
+            const dvec3 vmut       = {sol.integr.orbit[j][4],  sol.integr.orbit[j][5],  sol.integr.orbit[j][6]};
+            const dvec4 q1         = {sol.integr.orbit[j][7],  sol.integr.orbit[j][8],  sol.integr.orbit[j][9],  sol.integr.orbit[j][10]};
+            const dvec3 w1b        = {sol.integr.orbit[j][11], sol.integr.orbit[j][12], sol.integr.orbit[j][13]};
+            const dvec4 q2         = {sol.integr.orbit[j][14], sol.integr.orbit[j][15], sol.integr.orbit[j][16], sol.integr.orbit[j][17]};
+            const dvec3 w2b        = {sol.integr.orbit[j][18], sol.integr.orbit[j][19], sol.integr.orbit[j][20]};
+            const dvec3 rcom_helio = {sol.integr.orbit[j][21], sol.integr.orbit[j][22], sol.integr.orbit[j][23]};
+            const dvec3 vcom_helio = {sol.integr.orbit[j][24], sol.integr.orbit[j][25], sol.integr.orbit[j][26]};
 
-            dmat3 A1   = quat2mat(q1);
-            dmat3 A2   = quat2mat(q2);
-            dvec3 w1i  = body2iner(w1b,A1);
-            dvec3 w2i  = body2iner(w2b,A2);
-            dvec3 rpy1 = quat2ang(q1);
-            dvec3 rpy2 = quat2ang(q2);
+            const dmat3 A1   = quat2mat(q1);
+            const dmat3 A2   = quat2mat(q2);
+            const dvec3 w1i  = body2iner(w1b,A1);
+            const dvec3 w2i  = body2iner(w2b,A2);
+            const dvec3 rpy1 = quat2ang(q1);
+            const dvec3 rpy2 = quat2ang(q2);
 
-            dvec3 rcyl = cart2cyl(rmut);
+            const dvec3 rcyl = cart2cyl(rmut);
             
             //Calculate libration angle (relative yaw) of body 1 & 2 :
             double temp = rpy1[2] - rcyl[1]; //phi1 = thita1z - thita
@@ -224,16 +225,16 @@ public:
                 temp -= 2.0*PI;
             while (temp <= -PI)
                 temp += 2.0*PI;
-            double libration1 = temp;
+            const double libration1 = temp;
             temp = rpy2[2] - rcyl[1];  //phi2 = thita2z - thita
             while (temp > PI)
                 temp -= 2.0*PI;
             while (temp <= -PI)
                 temp += 2.0*PI;
-            double libration2 = temp;
+            const double libration2 = temp;
 
-            dvec6 kep_mut = cart2kep({rmut[0],rmut[1],rmut[2], vmut[0],vmut[1],vmut[2]}, G*(sol.integr.props.M1 + sol.integr.props.M2));
-            dvec6 kep_com_helio = cart2kep({rcom_helio[0],rcom_helio[1],rcom_helio[2], vcom_helio[0],vcom_helio[1],vcom_helio[2]}, G*MSUN);
+            const dvec6 kep_mut = cart2kep({rmut[0],rmut[1],rmut[2], vmut[0],vmut[1],vmut[2]}, G*(sol.integr.props.M1 + sol.integr.props.M2));
+            const dvec6 kep_com_helio = cart2kep({rcom_helio[0],rcom_helio[1],rcom_helio[2], vcom_helio[0],vcom_helio[1],vcom_helio[2]}, G*MSUN);
             
             //Kinetic energy part (evaluated in body frames - that's ok coz energy is scalar and scalars are preserved under rotations) :
             double energy = 0.5*sol.integr.m*dot(vmut,vmut) + 0.5*dot( dot(w1b, sol.integr.I1), w1b) + 0.5*dot( dot(w2b, sol.integr.I2), w2b);
@@ -248,7 +249,7 @@ public:
             
             //Momentum magnitude (now evaluated it in the inertial (Heliocentric) frame because it is a vector) :
             //Note : All 3 components of the momentum vector are conserved in time, but I just choose to store and plot the magnitude only.
-            double momentum = length( sol.integr.m*cross(rmut,vmut) + dot(A1, dot(sol.integr.I1, w1b)) + dot(A2, dot(sol.integr.I2, w2b)) );
+            const double momentum = length( sol.integr.m*cross(rmut,vmut) + dot(A1, dot(sol.integr.I1, w1b)) + dot(A2, dot(sol.integr.I2, w2b)) );
 
             t[i] = sol.integr.orbit[j][0]/86400.0; //Back in [days].
 
@@ -335,22 +336,22 @@ public:
             if (sol.integr.props.spacecraft_checkbox)
             {
                 //Spacecraft in Heliocentric frame.
-                dvec3 rsp_helio = {sol.integr.orbit[j][21], sol.integr.orbit[j][22], sol.integr.orbit[j][23]};
-                dvec3 vsp_helio = {sol.integr.orbit[j][24], sol.integr.orbit[j][25], sol.integr.orbit[j][26]};
-                dvec6 kep_sp_helio = cart2kep({rsp_helio[0],rsp_helio[1],rsp_helio[2], vsp_helio[0],vsp_helio[1],vsp_helio[2]}, G*MSUN);
+                const dvec3 rsp_helio = {sol.integr.orbit[j][27], sol.integr.orbit[j][28], sol.integr.orbit[j][29]};
+                const dvec3 vsp_helio = {sol.integr.orbit[j][30], sol.integr.orbit[j][31], sol.integr.orbit[j][32]};
+                const dvec6 kep_sp_helio = cart2kep({rsp_helio[0],rsp_helio[1],rsp_helio[2], vsp_helio[0],vsp_helio[1],vsp_helio[2]}, G*MSUN);
 
                 //Spacecraft in binary's COM frame.
-                dvec3 rsp_com = rsp_helio - rcom_helio;
-                dvec3 vsp_com = vsp_helio - vcom_helio;
-                dvec6 kep_sp_com = cart2kep({rsp_com[0],rsp_com[1],rsp_com[2], vsp_com[0],vsp_com[1],vsp_com[2]}, G*(sol.integr.props.M1 + sol.integr.props.M2));
+                const dvec3 rsp_com = rsp_helio - rcom_helio;
+                const dvec3 vsp_com = vsp_helio - vcom_helio;
+                const dvec6 kep_sp_com = cart2kep({rsp_com[0],rsp_com[1],rsp_com[2], vsp_com[0],vsp_com[1],vsp_com[2]}, G*(sol.integr.props.M1 + sol.integr.props.M2));
 
-                dvec3 rsp_com1 = rsp_helio - rcom_helio - sol.integr.m1*rmut;
-                dvec3 vsp_com1 = vsp_helio - vcom_helio - sol.integr.m1*vmut;
-                dvec6 kep_sp_com1 = cart2kep({rsp_com1[0],rsp_com1[1],rsp_com1[2], vsp_com1[0],vsp_com1[1],vsp_com1[2]}, G*sol.integr.props.M1);
+                const dvec3 rsp_com1 = rsp_helio - rcom_helio - sol.integr.m1*rmut;
+                const dvec3 vsp_com1 = vsp_helio - vcom_helio - sol.integr.m1*vmut;
+                const dvec6 kep_sp_com1 = cart2kep({rsp_com1[0],rsp_com1[1],rsp_com1[2], vsp_com1[0],vsp_com1[1],vsp_com1[2]}, G*sol.integr.props.M1);
                 
-                dvec3 rsp_com2 = rsp_helio - rcom_helio - sol.integr.m2*rmut;
-                dvec3 vsp_com2 = vsp_helio - vcom_helio - sol.integr.m2*vmut;
-                dvec6 kep_sp_com2 = cart2kep({rsp_com2[0],rsp_com2[1],rsp_com2[2], vsp_com2[0],vsp_com2[1],vsp_com2[2]}, G*sol.integr.props.M2);
+                const dvec3 rsp_com2 = rsp_helio - rcom_helio - sol.integr.m2*rmut;
+                const dvec3 vsp_com2 = vsp_helio - vcom_helio - sol.integr.m2*vmut;
+                const dvec6 kep_sp_com2 = cart2kep({rsp_com2[0],rsp_com2[1],rsp_com2[2], vsp_com2[0],vsp_com2[1],vsp_com2[2]}, G*sol.integr.props.M2);
 
                 //Heliocentric is position plotted in [AU].
                 xsp_helio[i]     = rsp_helio[0]/AU2KM;

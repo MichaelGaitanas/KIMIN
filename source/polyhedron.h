@@ -35,7 +35,7 @@ private:
     //OpenGL related members. They are used after the numerical integration ends, in order to render the 3D scene.
     bool gl_ready; //Whether or not the mesh data are uploaded to the gpu.
     unsigned vao, vbo; //Vertex array and vertex buffer objects.
-    size_t gl_vertex_count; //Triangle vertices in the interleaved buffer.
+    size_t gl_draw_count; //Triangle vertices in the interleaved buffer.
 
 public:
     polyhedron() : verts(),
@@ -49,7 +49,7 @@ public:
                    gl_ready(false),
                    vao(0),
                    vbo(0),
-                   gl_vertex_count(0)
+                   gl_draw_count(0)
     { }
 
     const dmatnx3 &get_verts() const
@@ -79,10 +79,9 @@ public:
         verts.clear(); faces.clear(); norms.clear(); edges.clear();
         vol = 0.0;
         norms_exist = edges_exist = vol_exists = false;
-        //*this = polyhedron{}; //Reset all members to their constructor defaults.
         clear_gl_mesh(); //Tear down any gl* state from the previous mesh (if any).
 
-        //Now proceed to loading.
+        //Proceed to loading.
 
         std::ifstream objfile(path);
         if (!objfile.is_open())
@@ -139,7 +138,7 @@ public:
             const dvec3 &p0 = verts[faces[i][0]];
             const dvec3 &p1 = verts[faces[i][1]];
             const dvec3 &p2 = verts[faces[i][2]];
-            dvec3 perp = cross(p1-p0, p2-p1);
+            const dvec3 perp = cross(p1-p0, p2-p1);
             double len = length(perp);
             if (len > 1e-15)
                 norms[i] = perp/len; //Unit normal.
@@ -165,9 +164,9 @@ public:
         size_t j = 0;
         for (size_t i = 0; i < faces.size(); ++i)
         {
-            unsigned f0 = faces[i][0];
-            unsigned f1 = faces[i][1];
-            unsigned f2 = faces[i][2];
+            const unsigned f0 = faces[i][0];
+            const unsigned f1 = faces[i][1];
+            const unsigned f2 = faces[i][2];
             //Store each edge as a sorted pair (smallest index first).
             edges[j++] = {std::min(f0,f1), std::max(f0,f1)};
             edges[j++] = {std::min(f1,f2), std::max(f1,f2)};
@@ -175,14 +174,12 @@ public:
         }
         edges.resize(j); //Remove any unused capacity if any...
         std::sort(edges.begin(), edges.end()); //Sort the edges to prepare for duplicate removal.
-        
         edges.erase(std::unique(edges.begin(), edges.end()), edges.end()); //Now remove duplicates.
-
         edges_exist = true;
     }
 
     //This member function decides whether or not the polyhedron is a closed manifold, i.e. closed surface (with no boundaries).
-    //E.g. Cuboid, asteroid, torus, etc...
+    //E.g. Cuboid, asteroid, torus, potato etc...
     bool is_closed_manifold()
     {   
         if (faces.empty())
@@ -196,9 +193,9 @@ public:
         size_t j = 0;
         for (size_t i = 0; i < faces.size(); ++i)
         {
-            unsigned f0 = faces[i][0];
-            unsigned f1 = faces[i][1];
-            unsigned f2 = faces[i][2];
+            const unsigned f0 = faces[i][0];
+            const unsigned f1 = faces[i][1];
+            const unsigned f2 = faces[i][2];
             //Store each edge as a sorted pair (smallest index first).
             local_edges[j++] = {std::min(f0,f1), std::max(f0,f1)};
             local_edges[j++] = {std::min(f1,f2), std::max(f1,f2)};
@@ -226,6 +223,7 @@ public:
         return true;
     }
 
+    //This function decides if the polyhedron chosen to load is valid according to KIMIN's standards.
     bool is_kimin_valid_obj(const char *path)
     {
         std::ifstream objfile(path);
@@ -279,16 +277,16 @@ public:
             {
                 const dvec3 &v = verts[faces[i][k]];
 
-                interleaved_buffer[j++] = static_cast<float>(v[0]);
-                interleaved_buffer[j++] = static_cast<float>(v[1]);
-                interleaved_buffer[j++] = static_cast<float>(v[2]);
+                interleaved_buffer[j++] = float(v[0]);
+                interleaved_buffer[j++] = float(v[1]);
+                interleaved_buffer[j++] = float(v[2]);
 
-                interleaved_buffer[j++] = static_cast<float>(n[0]);
-                interleaved_buffer[j++] = static_cast<float>(n[1]);
-                interleaved_buffer[j++] = static_cast<float>(n[2]);
+                interleaved_buffer[j++] = float(n[0]);
+                interleaved_buffer[j++] = float(n[1]);
+                interleaved_buffer[j++] = float(n[2]);
             }
         }
-        gl_vertex_count = interleaved_buffer.size()/6; //Because each vertex has 6 float attributes bound.
+        gl_draw_count = interleaved_buffer.size()/6; //Because each vertex has 6 float attributes bound.
 
         glGenVertexArrays(1, &vao);
         glBindVertexArray(vao);
@@ -316,7 +314,7 @@ public:
         if (!gl_ready) return; //Guard.
         
         glBindVertexArray(vao);
-        glDrawArrays(GL_TRIANGLES, 0, (GLsizei)gl_vertex_count);
+        glDrawArrays(GL_TRIANGLES, 0, (GLsizei)gl_draw_count);
         glBindVertexArray(0);
     }
 
@@ -333,7 +331,7 @@ public:
             glDeleteVertexArrays(1, &vao);
             vao = 0;
         }
-        gl_vertex_count = 0;
+        gl_draw_count = 0;
         gl_ready = false;
     }
 
@@ -400,7 +398,7 @@ public:
         gen_norms();
 
         //Ray's destination point. It is assumed to be very far away, aiming to be outside of the polyhedron. The irrational numbers help avoid degeneracies.
-        dvec3 pdest = 10000000.0*dvec3{PI, exp(1.0), sqrt(2.0)};
+        const dvec3 pdest = 10000000.0*dvec3{PI, exp(1.0), sqrt(2.0)};
         
         size_t intersections = 0;
 
@@ -412,18 +410,18 @@ public:
             const dvec3 &p1 = verts[faces[j][1]];
             const dvec3 &p2 = verts[faces[j][2]];
             //By solving the equation of a line and a plane, we find intersection point pj.
-            double lam = ( (p0[0] - r[0])*norms[j][0] + (p0[1] - r[1])*norms[j][1] + (p0[2] - r[2])*norms[j][2] )/( (pdest[0] - r[0])*norms[j][0] + (pdest[1] - r[1])*norms[j][1] + (pdest[2] - r[2])*norms[j][2] );
-            dvec3 pj = dvec3{ r[0] + lam*(pdest[0] - r[0]),
-                              r[1] + lam*(pdest[1] - r[1]),
-                              r[2] + lam*(pdest[2] - r[2]) };
+            const double lam = ( (p0[0] - r[0])*norms[j][0] + (p0[1] - r[1])*norms[j][1] + (p0[2] - r[2])*norms[j][2] )/( (pdest[0] - r[0])*norms[j][0] + (pdest[1] - r[1])*norms[j][1] + (pdest[2] - r[2])*norms[j][2] );
+            const dvec3 pj = { r[0] + lam*(pdest[0] - r[0]),
+                               r[1] + lam*(pdest[1] - r[1]),
+                               r[2] + lam*(pdest[2] - r[2]) };
 
             //We must check however if the ray intersects the triangle j and not the whole extended mathematical plane.
 
             //Form the following 3 triangles and calculate their area.
-            double Aj01 = 0.5*length(cross(p0-pj, p1-p0));
-            double Aj12 = 0.5*length(cross(p1-pj, p2-p1));
-            double Aj20 = 0.5*length(cross(p2-pj, p0-p2));
-            double A012 = 0.5*length(cross(p1-p0, p2-p1));
+            const double Aj01 = 0.5*length(cross(p0-pj, p1-p0));
+            const double Aj12 = 0.5*length(cross(p1-pj, p2-p1));
+            const double Aj20 = 0.5*length(cross(p2-pj, p0-p2));
+            const double A012 = 0.5*length(cross(p1-p0, p2-p1));
 
             //If the sum of the 3 areas is equal to the area of the surface triangle, then pj sits upon the surface of the triangle.
             if ( fabs(Aj01 + Aj12 + Aj20 - A012) <= 1e-12 && pj[0] > r[0] && pj[1] > r[1] && pj[2] > r[2] ) //I must to fix this...
@@ -458,8 +456,8 @@ public:
             const dvec3 &p0 = verts[faces[i][0]];
             const dvec3 &p1 = verts[faces[i][1]];
             const dvec3 &p2 = verts[faces[i][2]];
-            double d = p0[0]*norms[i][0] + p0[1]*norms[i][1] + p0[2]*norms[i][2]; //x*nx + y*ny + z*nz - d = 0 (plane equation).
-            double A = 0.5*length(cross(p1-p0, p2-p1));
+            const double d = p0[0]*norms[i][0] + p0[1]*norms[i][1] + p0[2]*norms[i][2]; //x*nx + y*ny + z*nz - d = 0 (plane equation).
+            const double A = 0.5*length(cross(p1-p0, p2-p1));
             vol += d*A/3.0;
         }
         vol_exists = true;
@@ -474,34 +472,34 @@ public:
         dvec3 com = {0.0,0.0,0.0};
         for (size_t i = 0; i < faces.size(); ++i)
         {
-            double x1 = verts[faces[i][0]][0];
-            double y1 = verts[faces[i][0]][1];
-            double z1 = verts[faces[i][0]][2];
+            const double x1 = verts[faces[i][0]][0];
+            const double y1 = verts[faces[i][0]][1];
+            const double z1 = verts[faces[i][0]][2];
             
-            double x2 = verts[faces[i][1]][0];
-            double y2 = verts[faces[i][1]][1];
-            double z2 = verts[faces[i][1]][2];
+            const double x2 = verts[faces[i][1]][0];
+            const double y2 = verts[faces[i][1]][1];
+            const double z2 = verts[faces[i][1]][2];
 
-            double x3 = verts[faces[i][2]][0];
-            double y3 = verts[faces[i][2]][1];
-            double z3 = verts[faces[i][2]][2];
+            const double x3 = verts[faces[i][2]][0];
+            const double y3 = verts[faces[i][2]][1];
+            const double z3 = verts[faces[i][2]][2];
 
-            double x21 = x2 - x1;
-            double x31 = x3 - x1;
-            double y21 = y2 - y1;
-            double y31 = y3 - y1;
-            double z21 = z2 - z1;
-            double z31 = z3 - z1;
+            const double x21 = x2 - x1;
+            const double x31 = x3 - x1;
+            const double y21 = y2 - y1;
+            const double y31 = y3 - y1;
+            const double z21 = z2 - z1;
+            const double z31 = z3 - z1;
 
-            double nx = norms[i][0];
-            double ny = norms[i][1];
-            double nz = norms[i][2];
-            double d = x1*nx + y1*ny + z1*nz; //x*nx + y*ny + z*nz - d = 0 (plane equation)
+            const double nx = norms[i][0];
+            const double ny = norms[i][1];
+            const double nz = norms[i][2];
+            const double d = x1*nx + y1*ny + z1*nz; //x*nx + y*ny + z*nz - d = 0 (plane equation)
 
             //Pick the index of the greatest absolute normal component, as this will be the most stable in the computation.
-            double absnx = fabs(nx);
-            double absny = fabs(ny);
-            double absnz = fabs(nz);
+            const double absnx = fabs(nx);
+            const double absny = fabs(ny);
+            const double absnz = fabs(nz);
 
             int best_axis = 2; //Assume 0 -> x, 1 -> y, 2 -> z
             double best_val = absnz; 
@@ -518,24 +516,24 @@ public:
 
             if (best_axis == 2) //Division by nz.
             {
-                double Jacxy = fabs(x21*y31 - x31*y21);
-                double coeffnz = d*Jacxy/fabs(nz);
+                const double Jacxy = fabs(x21*y31 - x31*y21);
+                const double coeffnz = d*Jacxy/fabs(nz);
                 com[0] += coeffnz*(3.0*x1 + x21 + x31)/6.0;
                 com[1] += coeffnz*(3.0*y1 + y21 + y31)/6.0;
                 com[2] += coeffnz*(3.0*d - nx*(3.0*x1 + x21 + x31) - ny*(3.0*y1 + y21 + y31))/(6.0*nz);
             }
             else if (best_axis == 1) //Division by ny.
             {
-                double Jacxz = fabs(x21*z31 - x31*z21);
-                double coeffny = d*Jacxz/fabs(ny);
+                const double Jacxz = fabs(x21*z31 - x31*z21);
+                const double coeffny = d*Jacxz/fabs(ny);
                 com[0] += coeffny*(3.0*x1 + x21 + x31)/6.0;
                 com[1] += coeffny*(3.0*d - nx*(3.0*x1 + x21 + x31) - nz*(3.0*z1 + z21 + z31))/(6.0*ny);
                 com[2] += coeffny*(3.0*z1 + z21 + z31)/6.0;
             }
             else //Division by nx.
             {
-                    double Jacyz = fabs(y21*z31 - y31*z21);
-                    double coeffnx = d*Jacyz/fabs(nx);
+                    const double Jacyz = fabs(y21*z31 - y31*z21);
+                    const double coeffnx = d*Jacyz/fabs(nx);
                     com[0] += coeffnx*(3.0*d - ny*(3.0*y1 + y21 + y31) - nz*(3.0*z1 + z21 + z31))/(6.0*nx);
                     com[1] += coeffnx*(3.0*y1 + y21 + y31)/6.0;
                     com[2] += coeffnx*(3.0*z1 + z21 + z31)/6.0;
@@ -545,8 +543,7 @@ public:
     }
 
     //This member function calculates all the inertial integrals of order 2 of the polyhedron, assuming homogeneous mass density.
-    //If only_inertial_integrals = false, then the function utilizes the inertial integrals to compute the inertia matrix. Else, only the
-    //DIAGONAL inertial integrals are returned.
+    //If only_inertial_integrals = false, then the function returns the inertia matrix. Else, it returns only the DIAGONAL inertial integrals of order 2 (i.e. Jxx, Jyy, Jzz).
     dmat3 get_inertia(const double M, bool only_inertial_integrals = false)
     {
         gen_norms();
@@ -554,34 +551,34 @@ public:
         double Jxx = 0.0, Jyy = 0.0, Jzz = 0.0, Jxy = 0.0, Jxz = 0.0, Jyz = 0.0;
         for (size_t i = 0; i < faces.size(); ++i)
         {
-            double x1 = verts[faces[i][0]][0];
-            double y1 = verts[faces[i][0]][1];
-            double z1 = verts[faces[i][0]][2];
+            const double x1 = verts[faces[i][0]][0];
+            const double y1 = verts[faces[i][0]][1];
+            const double z1 = verts[faces[i][0]][2];
             
-            double x2 = verts[faces[i][1]][0];
-            double y2 = verts[faces[i][1]][1];
-            double z2 = verts[faces[i][1]][2];
+            const double x2 = verts[faces[i][1]][0];
+            const double y2 = verts[faces[i][1]][1];
+            const double z2 = verts[faces[i][1]][2];
 
-            double x3 = verts[faces[i][2]][0];
-            double y3 = verts[faces[i][2]][1];
-            double z3 = verts[faces[i][2]][2];
+            const double x3 = verts[faces[i][2]][0];
+            const double y3 = verts[faces[i][2]][1];
+            const double z3 = verts[faces[i][2]][2];
 
-            double x21 = x2 - x1;
-            double x31 = x3 - x1;
-            double y21 = y2 - y1;
-            double y31 = y3 - y1;
-            double z21 = z2 - z1;
-            double z31 = z3 - z1;
+            const double x21 = x2 - x1;
+            const double x31 = x3 - x1;
+            const double y21 = y2 - y1;
+            const double y31 = y3 - y1;
+            const double z21 = z2 - z1;
+            const double z31 = z3 - z1;
 
-            double nx = norms[i][0];
-            double ny = norms[i][1];
-            double nz = norms[i][2];
-            double d = x1*nx + y1*ny + z1*nz; //x*nx + y*ny + z*nz - d = 0 (plane equation)
+            const double nx = norms[i][0];
+            const double ny = norms[i][1];
+            const double nz = norms[i][2];
+            const double d = x1*nx + y1*ny + z1*nz; //x*nx + y*ny + z*nz - d = 0 (plane equation)
             
             //Pick the index of the greatest absolute normal component, as this will be the most stable in the computation.
-            double absnx = fabs(nx);
-            double absny = fabs(ny);
-            double absnz = fabs(nz);
+            const double absnx = fabs(nx);
+            const double absny = fabs(ny);
+            const double absnz = fabs(nz);
 
             int best_axis = 2; //Assume 0 -> x, 1 -> y, 2 -> z
             double best_val = absnz; 
@@ -598,8 +595,8 @@ public:
 
             if (best_axis == 2) //Division by nz.
             {
-                double Jacxy = fabs(x21*y31 - x31*y21);
-                double coeffnz = d*Jacxy/fabs(nz);
+                const double Jacxy = fabs(x21*y31 - x31*y21);
+                const double coeffnz = d*Jacxy/fabs(nz);
                 Jxx +=  coeffnz*(6.0*x1*x1 + x21*x21 + x21*x31 + x31*x31 + 4.0*x1*(x21 + x31))/12.0;
                 Jyy +=  coeffnz*(6.0*y1*y1 + y21*y21 + y21*y31 + y31*y31 + 4.0*y1*(y21 + y31))/12.0;
                 Jzz +=  coeffnz*(6*pow(d,2) + pow(nx,2)*(6*pow(x1,2) + pow(x21,2) + x21*x31 + pow(x31,2) + 4*x1*(x21 + x31)) + pow(ny,2)*(6*pow(y1,2) + pow(y21,2) + y21*y31 + pow(y31,2) + 4*y1*(y21 + y31)) - 4*d*(nx*(3*x1 + x21 + x31) + ny*(3*y1 + y21 + y31)) + nx*ny*(4*x1*(3*y1 + y21 + y31) + x21*(4*y1 + 2*y21 + y31) + x31*(4*y1 + y21 + 2*y31)))/(12.*pow(nz,2));
@@ -609,8 +606,8 @@ public:
             }
             else if (best_axis == 1) //Division by ny.
             {
-                double Jacxz = fabs(x21*z31 - x31*z21);
-                double coeffny = d*Jacxz/fabs(ny);
+                const double Jacxz = fabs(x21*z31 - x31*z21);
+                const double coeffny = d*Jacxz/fabs(ny);
                 Jxx +=  coeffny*(6.0*x1*x1 + x21*x21 + x21*x31 + x31*x31 + 4.0*x1*(x21 + x31))/12.0;
                 Jyy +=  coeffny*(6*pow(d,2) + pow(nx,2)*(6*pow(x1,2) + pow(x21,2) + x21*x31 + pow(x31,2) + 4*x1*(x21 + x31)) + pow(nz,2)*(6*pow(z1,2) + pow(z21,2) + z21*z31 + pow(z31,2) + 4*z1*(z21 + z31)) - 4*d*(nx*(3*x1 + x21 + x31) + nz*(3*z1 + z21 + z31)) + nx*nz*(4*x1*(3*z1 + z21 + z31) + x21*(4*z1 + 2*z21 + z31) + x31*(4*z1 + z21 + 2*z31)))/(12.*pow(ny,2));
                 Jzz +=  coeffny*(6.0*z1*z1 + z21*z21 + z21*z31 + z31*z31 + 4.0*z1*(z21 + z31))/12.0;
@@ -620,8 +617,8 @@ public:
             }
             else //Division by nx.
             {
-                double Jacyz = fabs(y21*z31 - y31*z21);
-                double coeffnx = d*Jacyz/fabs(nx);
+                const double Jacyz = fabs(y21*z31 - y31*z21);
+                const double coeffnx = d*Jacyz/fabs(nx);
                 Jxx +=  coeffnx*(6*pow(d,2) + pow(ny,2)*(6*pow(y1,2) + pow(y21,2) + y21*y31 + pow(y31,2) + 4*y1*(y21 + y31)) + pow(nz,2)*(6*pow(z1,2) + pow(z21,2) + z21*z31 + pow(z31,2) + 4*z1*(z21 + z31)) - 4*d*(ny*(3*y1 + y21 + y31) + nz*(3*z1 + z21 + z31)) + ny*nz*(4*y1*(3*z1 + z21 + z31) + y21*(4*z1 + 2*z21 + z31) + y31*(4*z1 + z21 + 2*z31)))/(12.*pow(nx,2));
                 Jyy +=  coeffnx*(6.0*y1*y1 + y21*y21 + y21*y31 + y31*y31 + 4.0*y1*(y21 + y31))/12.0;
                 Jzz +=  coeffnx*(6.0*z1*z1 + z21*z21 + z21*z31 + z31*z31 + 4.0*z1*(z21 + z31))/12.0;
@@ -631,7 +628,7 @@ public:
             }
         }
 
-        double ord2_coeff = M/(5.0*get_vol());
+        const double ord2_coeff = M/(5.0*get_vol());
         Jxx *= ord2_coeff;
         Jyy *= ord2_coeff;
         Jzz *= ord2_coeff;
@@ -670,34 +667,34 @@ public:
         double Jxxx = 0.0, Jyyy = 0.0, Jzzz = 0.0, Jxxy = 0.0, Jxyy = 0.0, Jxxz = 0.0, Jxzz = 0.0, Jyyz = 0.0, Jyzz = 0.0, Jxyz = 0.0;
         for (size_t i = 0; i < faces.size(); ++i)
         {
-            double x1 = verts[faces[i][0]][0];
-            double y1 = verts[faces[i][0]][1];
-            double z1 = verts[faces[i][0]][2];
+            const double x1 = verts[faces[i][0]][0];
+            const double y1 = verts[faces[i][0]][1];
+            const double z1 = verts[faces[i][0]][2];
             
-            double x2 = verts[faces[i][1]][0];
-            double y2 = verts[faces[i][1]][1];
-            double z2 = verts[faces[i][1]][2];
+            const double x2 = verts[faces[i][1]][0];
+            const double y2 = verts[faces[i][1]][1];
+            const double z2 = verts[faces[i][1]][2];
 
-            double x3 = verts[faces[i][2]][0];
-            double y3 = verts[faces[i][2]][1];
-            double z3 = verts[faces[i][2]][2];
+            const double x3 = verts[faces[i][2]][0];
+            const double y3 = verts[faces[i][2]][1];
+            const double z3 = verts[faces[i][2]][2];
 
-            double x21 = x2 - x1;
-            double x31 = x3 - x1;
-            double y21 = y2 - y1;
-            double y31 = y3 - y1;
-            double z21 = z2 - z1;
-            double z31 = z3 - z1;
+            const double x21 = x2 - x1;
+            const double x31 = x3 - x1;
+            const double y21 = y2 - y1;
+            const double y31 = y3 - y1;
+            const double z21 = z2 - z1;
+            const double z31 = z3 - z1;
 
-            double nx = norms[i][0];
-            double ny = norms[i][1];
-            double nz = norms[i][2];
-            double d = x1*nx + y1*ny + z1*nz; //x*nx + y*ny + z*nz - d = 0 (plane equation)
+            const double nx = norms[i][0];
+            const double ny = norms[i][1];
+            const double nz = norms[i][2];
+            const double d = x1*nx + y1*ny + z1*nz; //x*nx + y*ny + z*nz - d = 0 (plane equation)
             
             //Pick the index of the greatest absolute normal component, as this will be the most stable in the computation.
-            double absnx = fabs(nx);
-            double absny = fabs(ny);
-            double absnz = fabs(nz);
+            const double absnx = fabs(nx);
+            const double absny = fabs(ny);
+            const double absnz = fabs(nz);
 
             int best_axis = 2; //Assume 0 -> x, 1 -> y, 2 -> z
             double best_val = absnz; 
@@ -714,8 +711,8 @@ public:
 
             if (best_axis == 2) //Division by nz.
             {
-                double Jacxy = fabs(x21*y31 - x31*y21);
-                double coeffnz = d*Jacxy/fabs(nz);
+                const double Jacxy = fabs(x21*y31 - x31*y21);
+                const double coeffnz = d*Jacxy/fabs(nz);
                 Jxx +=  coeffnz*(6.0*x1*x1 + x21*x21 + x21*x31 + x31*x31 + 4.0*x1*(x21 + x31))/12.0;
                 Jyy +=  coeffnz*(6.0*y1*y1 + y21*y21 + y21*y31 + y31*y31 + 4.0*y1*(y21 + y31))/12.0;
                 Jzz +=  coeffnz*(6*pow(d,2) + pow(nx,2)*(6*pow(x1,2) + pow(x21,2) + x21*x31 + pow(x31,2) + 4*x1*(x21 + x31)) + pow(ny,2)*(6*pow(y1,2) + pow(y21,2) + y21*y31 + pow(y31,2) + 4*y1*(y21 + y31)) - 4*d*(nx*(3*x1 + x21 + x31) + ny*(3*y1 + y21 + y31)) + nx*ny*(4*x1*(3*y1 + y21 + y31) + x21*(4*y1 + 2*y21 + y31) + x31*(4*y1 + y21 + 2*y31)))/(12.*pow(nz,2));
@@ -732,8 +729,8 @@ public:
             }
             else if (best_axis == 1) //Division by ny.
             {
-                double Jacxz = fabs(x21*z31 - x31*z21);
-                double coeffny = d*Jacxz/fabs(ny);
+                const double Jacxz = fabs(x21*z31 - x31*z21);
+                const double coeffny = d*Jacxz/fabs(ny);
                 Jxx +=  coeffny*(6.0*x1*x1 + x21*x21 + x21*x31 + x31*x31 + 4.0*x1*(x21 + x31))/12.0;
                 Jyy +=  coeffny*(6*pow(d,2) + pow(nx,2)*(6*pow(x1,2) + pow(x21,2) + x21*x31 + pow(x31,2) + 4*x1*(x21 + x31)) + pow(nz,2)*(6*pow(z1,2) + pow(z21,2) + z21*z31 + pow(z31,2) + 4*z1*(z21 + z31)) - 4*d*(nx*(3*x1 + x21 + x31) + nz*(3*z1 + z21 + z31)) + nx*nz*(4*x1*(3*z1 + z21 + z31) + x21*(4*z1 + 2*z21 + z31) + x31*(4*z1 + z21 + 2*z31)))/(12.*pow(ny,2));
                 Jzz +=  coeffny*(6.0*z1*z1 + z21*z21 + z21*z31 + z31*z31 + 4.0*z1*(z21 + z31))/12.0;
@@ -750,8 +747,8 @@ public:
             }
             else //Division by nx.
             {
-                double Jacyz = fabs(y21*z31 - y31*z21);
-                double coeffnx = d*Jacyz/fabs(nx);
+                const double Jacyz = fabs(y21*z31 - y31*z21);
+                const double coeffnx = d*Jacyz/fabs(nx);
                 Jxx +=  coeffnx*(6*pow(d,2) + pow(ny,2)*(6*pow(y1,2) + pow(y21,2) + y21*y31 + pow(y31,2) + 4*y1*(y21 + y31)) + pow(nz,2)*(6*pow(z1,2) + pow(z21,2) + z21*z31 + pow(z31,2) + 4*z1*(z21 + z31)) - 4*d*(ny*(3*y1 + y21 + y31) + nz*(3*z1 + z21 + z31)) + ny*nz*(4*y1*(3*z1 + z21 + z31) + y21*(4*z1 + 2*z21 + z31) + y31*(4*z1 + z21 + 2*z31)))/(12.*pow(nx,2));
                 Jyy +=  coeffnx*(6.0*y1*y1 + y21*y21 + y21*y31 + y31*y31 + 4.0*y1*(y21 + y31))/12.0;
                 Jzz +=  coeffnx*(6.0*z1*z1 + z21*z21 + z21*z31 + z31*z31 + 4.0*z1*(z21 + z31))/12.0;
@@ -771,12 +768,12 @@ public:
         const int ord = 3;
         dtens J(ord+1, dmat(ord+1, dvec(ord+1, 0.0) ) ); //Initialize the tensor with zeros.
         
-        double ord2_coeff = M/(5.0*get_vol());
+        const double ord2_coeff = M/(5.0*get_vol());
         J[2][0][0] = Jxx*ord2_coeff;
         J[0][2][0] = Jyy*ord2_coeff;
         J[0][0][2] = Jzz*ord2_coeff;
 
-        double ord3_coeff = M/(6.0*get_vol());
+        const double ord3_coeff = M/(6.0*get_vol());
         J[3][0][0] = Jxxx*ord3_coeff;
         J[0][3][0] = Jyyy*ord3_coeff;
         J[0][0][3] = Jzzz*ord3_coeff;
@@ -800,34 +797,34 @@ public:
         double Jxxxx = 0.0, Jyyyy = 0.0, Jzzzz = 0.0, Jxxxy = 0.0, Jxyyy = 0.0, Jxxxz = 0.0, Jxzzz = 0.0, Jyyyz = 0.0, Jyzzz = 0.0, Jxxyy = 0.0, Jxxzz = 0.0, Jyyzz = 0.0, Jxxyz = 0.0, Jxyyz = 0.0, Jxyzz = 0.0;
         for (size_t i = 0; i < faces.size(); ++i)
         {
-            double x1 = verts[faces[i][0]][0];
-            double y1 = verts[faces[i][0]][1];
-            double z1 = verts[faces[i][0]][2];
+            const double x1 = verts[faces[i][0]][0];
+            const double y1 = verts[faces[i][0]][1];
+            const double z1 = verts[faces[i][0]][2];
             
-            double x2 = verts[faces[i][1]][0];
-            double y2 = verts[faces[i][1]][1];
-            double z2 = verts[faces[i][1]][2];
+            const double x2 = verts[faces[i][1]][0];
+            const double y2 = verts[faces[i][1]][1];
+            const double z2 = verts[faces[i][1]][2];
 
-            double x3 = verts[faces[i][2]][0];
-            double y3 = verts[faces[i][2]][1];
-            double z3 = verts[faces[i][2]][2];
+            const double x3 = verts[faces[i][2]][0];
+            const double y3 = verts[faces[i][2]][1];
+            const double z3 = verts[faces[i][2]][2];
 
-            double x21 = x2 - x1;
-            double x31 = x3 - x1;
-            double y21 = y2 - y1;
-            double y31 = y3 - y1;
-            double z21 = z2 - z1;
-            double z31 = z3 - z1;
+            const double x21 = x2 - x1;
+            const double x31 = x3 - x1;
+            const double y21 = y2 - y1;
+            const double y31 = y3 - y1;
+            const double z21 = z2 - z1;
+            const double z31 = z3 - z1;
 
-            double nx = norms[i][0];
-            double ny = norms[i][1];
-            double nz = norms[i][2];
-            double d = x1*nx + y1*ny + z1*nz; //x*nx + y*ny + z*nz - d = 0 (plane equation)
+            const double nx = norms[i][0];
+            const double ny = norms[i][1];
+            const double nz = norms[i][2];
+            const double d = x1*nx + y1*ny + z1*nz; //x*nx + y*ny + z*nz - d = 0 (plane equation)
             
             //Pick the index of the greatest absolute normal component, as this will be the most stable in the computation.
-            double absnx = fabs(nx);
-            double absny = fabs(ny);
-            double absnz = fabs(nz);
+            const double absnx = fabs(nx);
+            const double absny = fabs(ny);
+            const double absnz = fabs(nz);
 
             int best_axis = 2; //Assume 0 -> x, 1 -> y, 2 -> z
             double best_val = absnz; 
@@ -844,8 +841,8 @@ public:
 
             if (best_axis == 2) //Division by nz.
             {
-                double Jacxy = fabs(x21*y31 - x31*y21);
-                double coeffnz = d*Jacxy/fabs(nz);
+                const double Jacxy = fabs(x21*y31 - x31*y21);
+                const double coeffnz = d*Jacxy/fabs(nz);
                 Jxx +=  coeffnz*(6.0*x1*x1 + x21*x21 + x21*x31 + x31*x31 + 4.0*x1*(x21 + x31))/12.0;
                 Jyy +=  coeffnz*(6.0*y1*y1 + y21*y21 + y21*y31 + y31*y31 + 4.0*y1*(y21 + y31))/12.0;
                 Jzz +=  coeffnz*(6*pow(d,2) + pow(nx,2)*(6*pow(x1,2) + pow(x21,2) + x21*x31 + pow(x31,2) + 4*x1*(x21 + x31)) + pow(ny,2)*(6*pow(y1,2) + pow(y21,2) + y21*y31 + pow(y31,2) + 4*y1*(y21 + y31)) - 4*d*(nx*(3*x1 + x21 + x31) + ny*(3*y1 + y21 + y31)) + nx*ny*(4*x1*(3*y1 + y21 + y31) + x21*(4*y1 + 2*y21 + y31) + x31*(4*y1 + y21 + 2*y31)))/(12.*pow(nz,2));
@@ -877,8 +874,8 @@ public:
             }
             else if (best_axis == 1) //Division by ny.
             {
-                double Jacxz = fabs(x21*z31 - x31*z21);
-                double coeffny = d*Jacxz/fabs(ny);
+                const double Jacxz = fabs(x21*z31 - x31*z21);
+                const double coeffny = d*Jacxz/fabs(ny);
                 Jxx +=  coeffny*(6.0*x1*x1 + x21*x21 + x21*x31 + x31*x31 + 4.0*x1*(x21 + x31))/12.0;
                 Jyy +=  coeffny*(6*pow(d,2) + pow(nx,2)*(6*pow(x1,2) + pow(x21,2) + x21*x31 + pow(x31,2) + 4*x1*(x21 + x31)) + pow(nz,2)*(6*pow(z1,2) + pow(z21,2) + z21*z31 + pow(z31,2) + 4*z1*(z21 + z31)) - 4*d*(nx*(3*x1 + x21 + x31) + nz*(3*z1 + z21 + z31)) + nx*nz*(4*x1*(3*z1 + z21 + z31) + x21*(4*z1 + 2*z21 + z31) + x31*(4*z1 + z21 + 2*z31)))/(12.*pow(ny,2));
                 Jzz +=  coeffny*(6.0*z1*z1 + z21*z21 + z21*z31 + z31*z31 + 4.0*z1*(z21 + z31))/12.0;
@@ -910,8 +907,8 @@ public:
             }
             else //Division by nx.
             {
-                double Jacyz = fabs(y21*z31 - y31*z21);
-                double coeffnx = d*Jacyz/fabs(nx);
+                const double Jacyz = fabs(y21*z31 - y31*z21);
+                const double coeffnx = d*Jacyz/fabs(nx);
                 Jxx +=  coeffnx*(6*pow(d,2) + pow(ny,2)*(6*pow(y1,2) + pow(y21,2) + y21*y31 + pow(y31,2) + 4*y1*(y21 + y31)) + pow(nz,2)*(6*pow(z1,2) + pow(z21,2) + z21*z31 + pow(z31,2) + 4*z1*(z21 + z31)) - 4*d*(ny*(3*y1 + y21 + y31) + nz*(3*z1 + z21 + z31)) + ny*nz*(4*y1*(3*z1 + z21 + z31) + y21*(4*z1 + 2*z21 + z31) + y31*(4*z1 + z21 + 2*z31)))/(12.*pow(nx,2));
                 Jyy +=  coeffnx*(6.0*y1*y1 + y21*y21 + y21*y31 + y31*y31 + 4.0*y1*(y21 + y31))/12.0;
                 Jzz +=  coeffnx*(6.0*z1*z1 + z21*z21 + z21*z31 + z31*z31 + 4.0*z1*(z21 + z31))/12.0;
@@ -946,12 +943,12 @@ public:
         const int ord = 4;
         dtens J(ord+1, dmat(ord+1, dvec(ord+1, 0.0) ) ); //Initialize the tensor with zeros.
         
-        double ord2_coeff = M/(5.0*get_vol());
+        const double ord2_coeff = M/(5.0*get_vol());
         J[2][0][0] = Jxx*ord2_coeff;
         J[0][2][0] = Jyy*ord2_coeff;
         J[0][0][2] = Jzz*ord2_coeff;
 
-        double ord3_coeff = M/(6.0*get_vol());
+        const double ord3_coeff = M/(6.0*get_vol());
         J[3][0][0] = Jxxx*ord3_coeff;
         J[0][3][0] = Jyyy*ord3_coeff;
         J[0][0][3] = Jzzz*ord3_coeff;
@@ -963,7 +960,7 @@ public:
         J[0][1][2] = Jyzz*ord3_coeff;
         J[1][1][1] = Jxyz*ord3_coeff;
 
-        double ord4_coeff = M/(7.0*get_vol());
+        const double ord4_coeff = M/(7.0*get_vol());
         J[4][0][0] = Jxxxx*ord4_coeff;
         J[0][4][0] = Jyyyy*ord4_coeff;
         J[0][0][4] = Jzzzz*ord4_coeff;
@@ -1094,14 +1091,11 @@ public:
     //Non-uniform scaling (overloaded).
     void set_scale(const dvec3 &scale_factor)
     {
-        const double sx = scale_factor[0];
-        const double sy = scale_factor[1];
-        const double sz = scale_factor[2];
         for (dvec3 &v : verts)
         {
-            v[0] *= sx;
-            v[1] *= sy;
-            v[2] *= sz;
+            v[0] *= scale_factor[0];
+            v[1] *= scale_factor[1];
+            v[2] *= scale_factor[2];
         }
     }
 };

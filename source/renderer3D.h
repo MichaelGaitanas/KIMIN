@@ -39,7 +39,7 @@ public:
     int depth_reso; //Actual depth image resolution in pixels (for the shadow map).
 
     glm::vec3 body1_col, body2_col, xaxis_col, yaxis_col, zaxis_col, orb1_col, orb2_col, orb_sp_col, sun_col;
-    bool render_body1, render_body2, render_axes1, render_axes2, render_orb1, render_orb2, render_orb_sp, render_grid; //These correspond to the GUI checkboxes state.
+    bool render_body1, render_body2, render_axes1, render_axes2, render_orb1, render_orb2, render_orb_sp, render_grid, render_skybox; //These correspond to the GUI checkboxes state.
 
     int win_width, win_height;
     
@@ -71,7 +71,7 @@ public:
                    orb1_col(glm::vec3(0.7f,0.0f,0.0f)),
                    orb2_col(glm::vec3(0.0f,0.7f,0.0f)),
                    orb_sp_col(glm::vec3(0.0f,0.75f,0.75f)),
-                   sun_col(glm::vec3(1.0f)),
+                   sun_col(glm::vec3(1.0f,0.65f,0.0f)),
                    render_body1(true),
                    render_body2(true),
                    render_axes1(false),
@@ -80,6 +80,7 @@ public:
                    render_orb2(false),
                    render_orb_sp(false),
                    render_grid(false),
+                   render_skybox(true),
                    win_width(1),
                    win_height(1)
     {
@@ -141,8 +142,6 @@ public:
         if (sol.integr.props.spacecraft_checkbox)
             orb_sp.set_gl_mesh(sol.xsp_com, sol.ysp_com, sol.zsp_com); //Spacecraft's orbit mesh in the COM frame of the binary
         
-        setup_depth_fbo();
-
         //This will run only once no matter how many times the reset_gpu_resources() is called.
         if (!sky) sky = std::make_unique<skybox>("../skybox/starfield2k/right.jpg",
                                                  "../skybox/starfield2k/left.jpg",
@@ -150,6 +149,7 @@ public:
                                                  "../skybox/starfield2k/bottom.jpg",
                                                  "../skybox/starfield2k/front.jpg",
                                                  "../skybox/starfield2k/back.jpg");
+        setup_depth_fbo();
     }
 
     //This function handles the rendering logic of the 3D content.
@@ -157,30 +157,30 @@ public:
     {
         if (reset_gpu_flag)
         {
-            reset_gpu_resources(sol);   
+            reset_gpu_resources(sol);
             reset_gpu_flag = false;
         }
 
         const glm::vec3 rsun = -glm::vec3(sol.xcom_helio[iframe],sol.ycom_helio[iframe],sol.zcom_helio[iframe]);
-        const glm::vec3 r1 = (float)sol.integr.m1*glm::vec3(sol.xmut[iframe],sol.ymut[iframe],sol.zmut[iframe]);
-        const glm::vec3 r2 = (float)sol.integr.m2*glm::vec3(sol.xmut[iframe],sol.ymut[iframe],sol.zmut[iframe]);
+        const glm::vec3 r1 = float(sol.integr.m1)*glm::vec3(sol.xmut[iframe],sol.ymut[iframe],sol.zmut[iframe]);
+        const glm::vec3 r2 = float(sol.integr.m2)*glm::vec3(sol.xmut[iframe],sol.ymut[iframe],sol.zmut[iframe]);
         const float sun_dist = glm::length(rsun);
         const glm::vec3 sun_dir = rsun/sun_dist;
 
-        sunlight.set_geometry((float)(OBJ_AXES_LENGTH*std::max(sol.integr.brillouin1, sol.integr.brillouin2) + sol.dist_mut[iframe]), sun_dir);
-        cam.set_geometry(win_width/(float)win_height);
+        sunlight.set_geometry(float(OBJ_AXES_LENGTH*std::max(sol.integr.brillouin1, sol.integr.brillouin2) + sol.dist_mut[iframe]), sun_dir);
+        cam.set_geometry(win_width/float(win_height));
 
         const glm::mat4 I = glm::mat4(1.0f);
         const glm::mat4 T1R1 = glm::translate(I, r1)*
-                               glm::rotate(I, glm::radians((float)sol.yaw1[iframe]),   glm::vec3(0.0f,0.0f,1.0f))*
-                               glm::rotate(I, glm::radians((float)sol.pitch1[iframe]), glm::vec3(0.0f,1.0f,0.0f))*
-                               glm::rotate(I, glm::radians((float)sol.roll1[iframe]),  glm::vec3(1.0f,0.0f,0.0f));
-        const glm::mat4 S1 = glm::scale(I, glm::vec3((float)sol.integr.brillouin1));
+                               glm::rotate(I, glm::radians(float(sol.yaw1[iframe])),   glm::vec3(0.0f,0.0f,1.0f))*
+                               glm::rotate(I, glm::radians(float(sol.pitch1[iframe])), glm::vec3(0.0f,1.0f,0.0f))*
+                               glm::rotate(I, glm::radians(float(sol.roll1[iframe])),  glm::vec3(1.0f,0.0f,0.0f));
+        const glm::mat4 S1 = glm::scale(I, glm::vec3(sol.integr.brillouin1));
         const glm::mat4 T2R2 = glm::translate(I, r2)*
-                               glm::rotate(I, glm::radians((float)sol.yaw2[iframe]),   glm::vec3(0.0f,0.0f,1.0f))*
-                               glm::rotate(I, glm::radians((float)sol.pitch2[iframe]), glm::vec3(0.0f,1.0f,0.0f))*
-                               glm::rotate(I, glm::radians((float)sol.roll2[iframe]),  glm::vec3(1.0f,0.0f,0.0f));
-        const glm::mat4 S2 = glm::scale(I, glm::vec3((float)sol.integr.brillouin2));
+                               glm::rotate(I, glm::radians(float(sol.yaw2[iframe])),   glm::vec3(0.0f,0.0f,1.0f))*
+                               glm::rotate(I, glm::radians(float(sol.pitch2[iframe])), glm::vec3(0.0f,1.0f,0.0f))*
+                               glm::rotate(I, glm::radians(float(sol.roll2[iframe])),  glm::vec3(1.0f,0.0f,0.0f));
+        const glm::mat4 S2 = glm::scale(I, glm::vec3(sol.integr.brillouin2));
         
         //Shadow rendering pass : render the meshes that account for shadow, but do so from the light's (orthographic) view. Shadow pass must always happen first.
         glBindFramebuffer(GL_FRAMEBUFFER, depth_fbo);
@@ -216,7 +216,7 @@ public:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         //Skybox rendering pass :
-        if (sky)
+        if (sky && render_skybox)
         {
             const glm::mat4 sky_view  = glm::mat4(glm::mat3(cam.view)); //View but no translation part.
             const glm::mat4 sky_model = glm::rotate(I, glm::radians(180.0f), glm::vec3(0.0f,0.0f,1.0f))*

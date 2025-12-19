@@ -15,10 +15,10 @@ Masses :
     M2 := 7.342e+22
 
 Numerical integration :
-    Method := "RKF78 (fixed)"
+    Method := "BStoer (adaptive)"
     Epoch := 0
-    Duration := 5000
-    Step := 0.06
+    Duration := 1000
+    Target error := 1e-14
 
 Initial state :
     Mutual position and velocity := "Keplerian"
@@ -31,32 +31,33 @@ Initial state :
 
     Orientations := "Euler angles (XYZ)"
     Roll 1  := 0
-    Pitch 1 := 0
+    Pitch 1 := 23.4393
     Yaw 1   := 0
     Roll 2  := 0
     Pitch 2 := 0
     Yaw 2   := 0
 
-    Angular velocities := "Heliocentric (inertial)"
-    w1ix := 0
-    w1iy := 0
-    w1iz := 7.292115e-05
-    w2ix := 0
-    w2iy := 0
-    w2iz := 2.6617e-06
+    Angular velocities := "Body frames"
+    w11 := 0
+    w12 := 0
+    w13 := 7.292115e-05
+    w21 := 0
+    w22 := 0
+    w23 := 2.6617e-06
 
-    Binary COM (Heliocentric) := "Cartesian"
-    x  := 0.0
-    y  := 0.0
-    z  := 0.0
-    vx := 0.0
-    vy := 0.0
-    vz := 0.0
+    Binary COM (Heliocentric) := "Keplerian"
+    a  := 1
+    e  := 0.0167
+    i  := 0
+    Om := 0
+    w  := 102.94
+    M  := 0
 
-Assume Sun's gravity := "No"
+Assume Sun's gravity := "Yes"
 
 Collision shapes := "Spheres"
 
 Assume kinetic impactors := "No"
 
 Assume spacecraft orbiter := "No"
+

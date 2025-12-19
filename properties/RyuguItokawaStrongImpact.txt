@@ -13,41 +13,41 @@ Masses :
 Numerical integration :
     Method := "RKF78 (fixed)"
     Epoch := 0
-    Duration := 50
+    Duration := 365
     Step := 0.005
 
 Initial state :
     Mutual position and velocity := "Keplerian"
     a  := 4
-    e  := 0
-    i  := 0
+    e  := 0.1
+    i  := 29
     Om := 0
     w  := 0
-    M  := 0
+    M  := 180
 
     Orientations := "Euler angles (XYZ)"
-    Roll 1  := 0
+    Roll 1  := 29
     Pitch 1 := 0
     Yaw 1   := 0
-    Roll 2  := 0
+    Roll 2  := 29
     Pitch 2 := 0
     Yaw 2   := 0
 
-    Angular velocities := "Heliocentric (inertial)"
-    w1ix := 0
-    w1iy := 0
-    w1iz := 0.00015
-    w2ix := 0
-    w2iy := 0
-    w2iz := 0
+    Angular velocities := "Body frames"
+    w11 := 0
+    w12 := 0
+    w13 := 0.00015
+    w21 := 0
+    w22 := 0
+    w23 := 1e-05
 
     Binary COM (Heliocentric) := "Cartesian"
-    x  := 0.0
-    y  := 0.0
-    z  := 0.0
-    vx := 0.0
-    vy := 0.0
-    vz := 0.0
+    x  := 0.02
+    y  := 0
+    z  := 0
+    vx := 0
+    vy := 0
+    vz := 0
 
 Assume Sun's gravity := "No"
 
@@ -69,12 +69,13 @@ Assume kinetic impactors := "Yes"
         Mass (dry + fuel) :
             m := 3000
         Velocity (relative to body) :
-            vx := 50
+            vx := -25
             vy := 0
-            vz := 50
+            vz := -20
         Momentum enhancement factor (ejecta) :
             beta := 5
         Impact epoch :
             t := 25
 
 Assume spacecraft orbiter := "No"
+

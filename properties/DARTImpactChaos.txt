@@ -13,8 +13,8 @@ Masses :
 Numerical integration :
     Method := "RKF78 (fixed)"
     Epoch := 0
-    Duration := 100
-    Step := 0.001
+    Duration := 770
+    Step := 0.0025
 
 Initial state :
     Mutual position and velocity := "Cartesian"
@@ -34,20 +34,20 @@ Initial state :
     Yaw 2   := 0
 
     Angular velocities := "Heliocentric (inertial)"
-    w1ix := 0
-    w1iy := 0
-    w1iz := 0.000772269580528464
-    w2ix := 0
-    w2iy := 0
-    w2iz := 0.000146402
+    w1x := 0
+    w1y := 0
+    w1z := 0.000772269580528464
+    w2x := 0
+    w2y := 0
+    w2z := 0.000146402
 
-    Binary COM (Heliocentric) := "Cartesian"
-    x  := 0.0
-    y  := 0.0
-    z  := 0.0
-    vx := 0.0
-    vy := 0.0
-    vz := 0.0
+    Binary COM (Heliocentric) := "Keplerian"
+    a  := 1.6442
+    e  := 0.38385
+    i  := 3.4079
+    Om := 73.196
+    w  := 319.32
+    M  := 0
 
 Assume Sun's gravity := "Yes"
 
@@ -75,6 +75,7 @@ Assume kinetic impactors := "Yes"
         Momentum enhancement factor (ejecta) :
             beta := 3.6
         Impact epoch :
-            t := 10.19
+            t := 100
 
 Assume spacecraft orbiter := "No"
+

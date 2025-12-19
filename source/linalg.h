@@ -251,7 +251,7 @@ double factorial(const int n)
 //Binomial coefficient via the gamma function.
 double binomial(const int n, const int k)
 {
-    double log_binom = std::lgamma(n + 1.0) - std::lgamma(n - k + 1.0) - std::lgamma(k + 1.0);
+    const double log_binom = std::lgamma(n + 1.0) - std::lgamma(n - k + 1.0) - std::lgamma(k + 1.0);
     return std::exp(log_binom);
 }
 

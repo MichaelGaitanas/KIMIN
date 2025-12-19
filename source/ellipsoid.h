@@ -1,4 +1,4 @@
-/* Here I have some functions regarding some dynamical characteristics of an ellipsoid. */
+/* Here I have some standalone functions regarding ellipsoid's dynamical characteristics. */
 
 #ifndef ELLIPSOID_H
 #define ELLIPSOID_H

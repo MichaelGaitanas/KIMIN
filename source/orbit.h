@@ -1,4 +1,4 @@
-/* This class handles the logic of the orbital meshes (3D curves) that are displayed. */
+/* This class handles the CPU logic of the orbital meshes (3D curves) that are displayed. */
 
 #ifndef ORBIT_H
 #define ORBIT_H
@@ -17,13 +17,13 @@ private:
     float thickness; //This is basically the rasterized line width of the trajectory.
 
 public:
-    size_t draw_count;
+    size_t gl_draw_count;
 
     orbit() : gl_ready(false),
               vao(0),
               vbo(0),
               thickness(0.5f),
-              draw_count(0)
+              gl_draw_count(0)
     { }
 
     void clear_gl_mesh()
@@ -38,7 +38,7 @@ public:
             glDeleteVertexArrays(1, &vao);
             vao = 0;
         }
-        draw_count = 0;
+        gl_draw_count = 0;
         gl_ready = false;
     }
 
@@ -46,7 +46,7 @@ public:
     {
         if (gl_ready) return; //If the orbital data [x(t),y(t),z(t)] have already been uploaded to the GPU, just exit the function.
 
-        //Construct the orbital mesh in the CPU.
+        //Construct the orbital mesh.
         std::vector<float> interleaved_buffer; //Meant to contain {(x1,y1,z1), (z2,y2,z2), ..., (xn,yn,zn)}, meant to be connected via GL_LINE_STRIP.
         const size_t N = x.size();
         interleaved_buffer.resize(3*N); //3 vertices per face, 6 floats each.
@@ -54,11 +54,11 @@ public:
         size_t j = 0;
         for (size_t i = 0; i < N; ++i)
         {
-            interleaved_buffer[j++] = coeff*static_cast<float>(x[i]);
-            interleaved_buffer[j++] = coeff*static_cast<float>(y[i]);
-            interleaved_buffer[j++] = coeff*static_cast<float>(z[i]);
+            interleaved_buffer[j++] = coeff*(float)x[i];
+            interleaved_buffer[j++] = coeff*(float)y[i];
+            interleaved_buffer[j++] = coeff*(float)z[i];
         }
-        draw_count = N;
+        gl_draw_count = N;
 
         //Now send it to the GPU :
 
@@ -86,7 +86,7 @@ public:
 
         glBindVertexArray(vao);
         glLineWidth(thickness);
-        glDrawArrays(GL_LINE_STRIP, 0, draw_count);
+        glDrawArrays(GL_LINE_STRIP, 0, gl_draw_count);
         glBindVertexArray(0);
     }
 };

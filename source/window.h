@@ -87,7 +87,7 @@ public:
         glfwMakeContextCurrent(wpointer);
         glfwGetFramebufferSize(wpointer, &width, &height);
         glViewport(0,0, width,height);
-        glfwSetWindowSizeLimits(wpointer, GLFW_MIN_WIDTH,GLFW_MIN_HEIGHT, GLFW_DONT_CARE,GLFW_DONT_CARE);
+        glfwSetWindowSizeLimits(wpointer, int(GLFW_MIN_WIDTH*SCX),int(GLFW_MIN_HEIGHT*SCY), GLFW_DONT_CARE,GLFW_DONT_CARE);
         glfwSwapInterval(1);
 
         glewExperimental = GL_TRUE;

@@ -1,4 +1,4 @@
-/* This is a single function header, meant to track my personal assignment operator ':=' inside an input file. */
+/* This is a single function header, meant to track the assignment operator ':=' inside a file. */
 
 #ifndef FILE_H
 #define FILE_H

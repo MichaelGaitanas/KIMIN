@@ -24,12 +24,7 @@ private:
     bool scroll_to_bottom = false;
     const int max_buffer_size = 60000; //In bytes (1 byte for each ASCII char and 1-4 bytes for each unicode char due to UTF-8 encoding).
 
-    void cls()
-    {
-        buffer.clear();
-    }
-
-    void auto_cls()
+    void auto_clear()
     {
         if (buffer.size() > max_buffer_size)
         {
@@ -50,7 +45,7 @@ private:
     */
 
 public:
-    //Add formatted text to the console.
+    //Print formatted text to the console.
     void print(const char *format, ...) IM_FMTARGS(2)
     {
         va_list args;
@@ -58,7 +53,7 @@ public:
             buffer.appendfv(format, args);
         va_end(args);
         scroll_to_bottom = true;
-        auto_cls();
+        auto_clear();
     }
 
     //Add formatted local time and then formatted text to the console.
@@ -73,15 +68,15 @@ public:
     //Render the console window.
     void render()
     {
-        float sx = ImGui::GetIO().DisplaySize.x;
-        float sy = ImGui::GetIO().DisplaySize.y;
+        const float sx = ImGui::GetIO().DisplaySize.x;
+        const float sy = ImGui::GetIO().DisplaySize.y;
         ImGui::SetNextWindowPos(ImVec2(0.15f*sx, 0.8f*sy), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(0.7f*sx, 0.2f*sy), ImGuiCond_FirstUseEver);
         ImGui::Begin("Console", nullptr);
 
         //Clear button.
         if (ImGui::Button("Clear", ImVec2(60.0f*SCX, 25.0f*SCY)))
-            cls();
+            buffer.clear();
         
         //Display FPS and GPU.
         ImGui::SameLine();
@@ -94,6 +89,7 @@ public:
             ImGui::SetScrollHereY(1.0f);
         scroll_to_bottom = false;    
         ImGui::EndChild();
+        
         ImGui::End();
     }
 };

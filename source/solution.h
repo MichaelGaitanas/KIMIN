@@ -78,8 +78,8 @@ public:
         }
 
         #ifdef _OPENMP
-            int total_threads = omp_get_max_threads();
-            int used_threads  = (total_threads > 1 ? total_threads/2 : 1);
+            const int total_threads = omp_get_max_threads();
+            const int used_threads  = (total_threads > 1 ? total_threads/2 : 1);
         #else
             constexpr int used_threads = 1;
         #endif
@@ -94,20 +94,20 @@ public:
         {
             //Remember, integr.orbit[i][] contains either (t, rmut,vmut, q1,w1b, q2,w2b, rcom_helio,vcom_helio, rsp_helio,vsp_helio)
             //                                         or (t, rmut,vmut, q1,w1b, q2,w2b, rcom_helio,vcom_helio)
-            dvec3 rmut       = {integr.orbit[i][1],  integr.orbit[i][2],  integr.orbit[i][3]};
-            //dvec3 vmut     = {integr.orbit[i][4],  integr.orbit[i][5],  integr.orbit[i][6]};
-            dvec4 q1         = {integr.orbit[i][7],  integr.orbit[i][8],  integr.orbit[i][9],  integr.orbit[i][10]};
-            dvec3 w1b        = {integr.orbit[i][11], integr.orbit[i][12], integr.orbit[i][13]};
-            dvec4 q2         = {integr.orbit[i][14], integr.orbit[i][15], integr.orbit[i][16], integr.orbit[i][17]};
-            dvec3 w2b        = {integr.orbit[i][18], integr.orbit[i][19], integr.orbit[i][20]};
-            dvec3 rcom_helio = {integr.orbit[i][21], integr.orbit[i][22], integr.orbit[i][23]};
+            const dvec3 rmut       = {integr.orbit[i][1],  integr.orbit[i][2],  integr.orbit[i][3]};
+            //const dvec3 vmut     = {integr.orbit[i][4],  integr.orbit[i][5],  integr.orbit[i][6]};
+            const dvec4 q1         = {integr.orbit[i][7],  integr.orbit[i][8],  integr.orbit[i][9],  integr.orbit[i][10]};
+            const dvec3 w1b        = {integr.orbit[i][11], integr.orbit[i][12], integr.orbit[i][13]};
+            const dvec4 q2         = {integr.orbit[i][14], integr.orbit[i][15], integr.orbit[i][16], integr.orbit[i][17]};
+            const dvec3 w2b        = {integr.orbit[i][18], integr.orbit[i][19], integr.orbit[i][20]};
+            const dvec3 rcom_helio = {integr.orbit[i][21], integr.orbit[i][22], integr.orbit[i][23]};
 
-            dmat3 A1   = quat2mat(q1);
-            dmat3 A2   = quat2mat(q2);
-            dvec3 w1i  = body2iner(w1b,A1);
-            dvec3 w2i  = body2iner(w2b,A2);
-            dvec3 rpy1 = quat2ang(q1);
-            dvec3 rpy2 = quat2ang(q2);
+            const dmat3 A1   = quat2mat(q1);
+            const dmat3 A2   = quat2mat(q2);
+            const dvec3 w1i  = body2iner(w1b,A1);
+            const dvec3 w2i  = body2iner(w2b,A2);
+            const dvec3 rpy1 = quat2ang(q1);
+            const dvec3 rpy2 = quat2ang(q2);
             
             t[i] = integr.orbit[i][0]/86400.0; //Back in [days].
 
@@ -139,7 +139,7 @@ public:
 
             if (integr.props.spacecraft_checkbox)
             {
-                dvec3 rsp_helio = {integr.orbit[i][27], integr.orbit[i][28], integr.orbit[i][29]};
+                const dvec3 rsp_helio = {integr.orbit[i][27], integr.orbit[i][28], integr.orbit[i][29]};
                 //Same here, all are in [km].
                 xsp_helio[i] = rsp_helio[0];
                 ysp_helio[i] = rsp_helio[1];
@@ -195,8 +195,17 @@ public:
         }
 
         //Export collision status :
+        const bool critical_event = (integr.collision_mut || integr.collision_sp1 || integr.collision_sp2 || integr.collision_sun);
         FILE *fp_collision = fopen((sim_dir + "/collision.txt").c_str(),"w");
-        fprintf(fp_collision,"Collision detected : %s", (integr.collision_mut || integr.collision_sp) ? "Yes" : "No");
+        fprintf(fp_collision,"Critical event : %s", critical_event ? "Yes  " : "No  ");
+        if (integr.collision_mut)
+            fprintf(fp_collision,"Collision (Asteroid - Asteroid)");
+        else if (integr.collision_sp1)
+            fprintf(fp_collision, "Collision (Spacecraft - Asteroid 1)");
+        else if (integr.collision_sp2)
+            fprintf(fp_collision, "Collision (Spacecraft - Asteroid 2)");
+        else if (integr.collision_sun)
+            fprintf(fp_collision, "Binary COM too close to Sun");
         fclose(fp_collision);
 
         //Export input properties :
@@ -351,9 +360,9 @@ public:
         }
 
         if (integr.props.sun_gravity)
-            fprintf(fp_props,"Assume Sun's gravity := \"Yes\"\n");
+            fprintf(fp_props,"Assume Sun's gravity := \"Yes\"\n\n");
         else
-            fprintf(fp_props,"Assume Sun's gravity := \"No\"\n");
+            fprintf(fp_props,"Assume Sun's gravity := \"No\"\n\n");
 
         if (integr.props.collision_no)
             fprintf(fp_props,"Collision shapes := \"No collision\"\n\n");

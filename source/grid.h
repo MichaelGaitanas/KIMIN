@@ -1,4 +1,4 @@
-/* This class handles the CPU logic (memory assignment) of the 'infinite' grid. The actual grid operations happen in the shader grid.vert and grid.frag. */
+/* Here lies the CPU logic of the 'infinite' grid. The actual grid operations happen in the shader grid.vert and grid.frag. */
 
 #ifndef GRID_H
 #define GRID_H
@@ -15,7 +15,7 @@ public:
     grid() : vao(0),
              vbo(0)
     {
-        //Fullscreen quad in clip space (xy in [-1,1])
+        //Basically a 2D quad.
         float verts[] = { -1.0f, -1.0f, 
                            1.0f, -1.0f,
                            1.0f,  1.0f,
@@ -41,14 +41,16 @@ public:
     
     ~grid()
     {
-        if (vbo) glDeleteBuffers(1, &vbo);
-        if (vao) glDeleteVertexArrays(1, &vao);
+        if (vbo)
+            glDeleteBuffers(1, &vbo);
+        if (vao)
+            glDeleteVertexArrays(1, &vao);
     }
 
     void render()
     {
         glBindVertexArray(vao);
-        glDrawArrays(GL_TRIANGLES, 0, 6); //Just a quad in reality.
+        glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);
     }
 };

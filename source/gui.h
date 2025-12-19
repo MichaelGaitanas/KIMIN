@@ -1,5 +1,5 @@
-/* This class acts as the kernel of the gui. It does not contain the commands that actually render the visible gui (e.g. ImGui::Button(), etc.), but rather handles
-   initializations, allocates/deallocates memory for some core stuff, handles threading, etc. */
+/* This class acts as the kernel of the gui. It does not contain the commands that actually render the visible gui widgets (e.g. ImGui::Button(), etc.).
+   Rather it handles initializations, allocates/deallocates memory for some core stuff, handles threading, etc. */
 
 #ifndef GUI_H
 #define GUI_H
@@ -58,7 +58,7 @@ public:
 
         ImGuiIO &io = ImGui::GetIO();
         io.IniFilename = nullptr;
-        io.ConfigWindowsMoveFromTitleBarOnly = true;
+        //io.ConfigWindowsMoveFromTitleBarOnly = true;
         io.Fonts->AddFontFromFileTTF(PATH_TO_FONTS, 15.0f*SCY, nullptr, io.Fonts->GetGlyphRangesGreek());
         (void)io;
 
@@ -75,7 +75,7 @@ public:
         imstyle.TabRounding        *= SCY;
         imstyle.ScrollbarSize      *= SCY;
         imstyle.GrabMinSize        *= SCY;
-        imstyle.IndentSpacing      *= SCX; //Horizontal indentation used by ImGui::Indent()/Unindent()
+        imstyle.IndentSpacing      *= SCX; //Permanent horizontal indentation used by ImGui::Indent()/Unindent()
         imstyle.ItemSpacing.x      *= SCX;
         imstyle.ItemSpacing.y      *= SCY;
         imstyle.ItemInnerSpacing.x *= SCX;
@@ -134,7 +134,7 @@ public:
         ImGui::DestroyContext();
     }
 
-    //Create an new imgui frame.
+    //Create a new imgui frame.
     void begin()
     {
         ImGui_ImplOpenGL3_NewFrame();
@@ -168,7 +168,7 @@ private:
     //'Run' and 'Abort' buttons logic in the properties panel.
     void poll_properties_events()
     {
-        //'Run' protocol.
+        //'Run' button protocol.
         if (props.run_pressed && !task_is_running.load())
         {
             //(Re)set the 2 flags.
@@ -177,11 +177,11 @@ private:
             
             std::thread task([this]()
             {
-                if (props.validate(cons)) //If no input errors are found, proceed with the simulation.
+                if (props.validate(cons)) //Only if no input errors are found, proceed with the simulation.
                 {
                     integrator integr(props);
                     integr.prepare(cons);
-                    task_is_running.store(true); //From this point on, we assume that the task is running because this affects the state of the 'Abort' button, which can be pressed only during the integration.
+                    task_is_running.store(true);
                     integr.run(task_was_aborted, task_progress, cons);
                     if (!task_was_aborted.load())
                     {
@@ -197,7 +197,7 @@ private:
             task.detach();
         }
 
-        //'Abort' protocol.
+        //'Abort' button protocol.
         if (props.abort_pressed && task_is_running.load())
         {
             props.abort_pressed = false; //Reset abort_pressed to prevent repeated triggering.
@@ -206,10 +206,6 @@ private:
         }
     }
 
-    //Export the solution when requested from the topbar panel. This happens with separate threads, just like
-    //the integr.prepare(), integr.run(), etc... However, note that currently, this is not thread safe because
-    //one might attempt to export a previous solution, while a new one is on the fly. I'll fix it, but for now,
-    //only export when solution is completed.
     void poll_topbar_events()
     {
         //Event : What happens after choosing to import a properties file :
@@ -219,7 +215,7 @@ private:
             tbar.import_properties_confirm = false;
         }
 
-        //Event : What happens after choosing a simulation solution :
+        //Event : What happens after choosing to export the active solution :
         if (!sol.t.empty())
         {
             tbar.export_solution_is_enabled = true;

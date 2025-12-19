@@ -49,8 +49,8 @@ public:
             ImGui::EndMainMenuBar();
         }
 
-        float sx = ImGui::GetIO().DisplaySize.x;
-        float sy = ImGui::GetIO().DisplaySize.y;
+        const float sx = ImGui::GetIO().DisplaySize.x;
+        const float sy = ImGui::GetIO().DisplaySize.y;
         if (import_properties_clicked)
         {
             ImGui::SetNextWindowSize(ImVec2(0.4f*sx, 0.4f*sy), ImGuiCond_Appearing);
@@ -93,10 +93,10 @@ public:
             ImGui::SetNextWindowSize(ImVec2(0.1f*sx, 0.1f*sy), ImGuiCond_Always);
             ImGui::Begin("Exit KIMIN ?", &confirm_exit, ImGuiWindowFlags_NoResize);
             
-            ImVec2 button_size(50.0f*SCX, 30.0f*SCY);
-            float total_width = 2.0f*button_size.x + ImGui::GetStyle().ItemSpacing.x;
-            float avail_width = ImGui::GetContentRegionAvail().x;
-            float xoffset = 0.5f*(avail_width - total_width);
+            const ImVec2 button_size(50.0f*SCX, 30.0f*SCY);
+            const float total_width = 2.0f*button_size.x + ImGui::GetStyle().ItemSpacing.x;
+            const float avail_width = ImGui::GetContentRegionAvail().x;
+            const float xoffset = 0.5f*(avail_width - total_width);
             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + xoffset);
             //Now draw the two buttons :
             if (ImGui::Button("No", button_size))

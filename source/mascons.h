@@ -1,3 +1,4 @@
+/*
 #ifndef MASCONS_H
 #define MASCONS_H
 
@@ -299,3 +300,4 @@ public:
 };
 
 #endif
+*/

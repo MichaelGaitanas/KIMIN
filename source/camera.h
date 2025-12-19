@@ -1,4 +1,4 @@
-/* This class contains the geometrical calculations of the camera used to render the simulation in 3D. */
+/* This class contains the geometrical calculations of the camera that are used to view the simulation in 3D. */
 
 #ifndef CAMERA_H
 #define CAMERA_H
@@ -28,7 +28,7 @@ public:
                view(glm::mat4(0.0f)),
                dist(0.0f),
                lon(270.0f),
-               lat(60.0f),
+               lat(45.0f),
                min_dist(0.0f),
                max_dist(0.0f),
                fov(60.0f)
@@ -45,7 +45,7 @@ public:
                              sin(lon_rad)*sin(lat_rad),
                              cos(lat_rad));
         aim = glm::vec3(0.0f);
-        //Unit θhat vector of spherical coordinates :
+        //Our up direction is the unit θhat vector of spherical coordinates :
         up = -glm::vec3(cos(lon_rad)*cos(lat_rad),
                         sin(lon_rad)*cos(lat_rad),
                        -sin(lat_rad));
@@ -54,7 +54,7 @@ public:
         projection = glm::infinitePerspective(glm::radians(fov), aspect, std::max(0.001f*dist, 0.1f));
     }
 
-    //This function runs once each time a simulation terminates. It resets current, min and max camera distance, depending on the scales of the simulation that just ran.
+    //This function runs once each time a simulation terminates. It resets min, max and current camera distance, depending on the scales of the simulation that just ran.
     void reset(const float brillouin_radii_sum, const float binary_max_dist)
     {
         min_dist = 1.1f*brillouin_radii_sum;
@@ -62,8 +62,8 @@ public:
         dist = min_dist + 0.1f*(max_dist - min_dist);
     }
 
-    //This function is basically a 'zoom in/out' protocol. It alters the 'fov' member, based on how much the user scrolled the mouse wheel (+ ctrl key) since the last frame.
-    void scroll_fov(const float mouse_delta_wheel)
+    //This function is basically a 'zoom in/out' protocol. It alters the camera's fov, based on how much the user scrolled the mouse wheel (+ ctrl key) since the last frame.
+    void zoom(const float mouse_delta_wheel)
     {
         fov -= mouse_delta_wheel;
         if (fov <= CAM_MIN_FOV)
@@ -72,7 +72,8 @@ public:
             fov = CAM_MAX_FOV;
     }
 
-    void scroll_dist(const float mouse_delta_wheel)
+    //This function changes the camera's distance from the origin, based on how much the user scrolled the mouse wheel since the last frame.
+    void translate(const float mouse_delta_wheel)
     {
         dist *= pow(0.9f, mouse_delta_wheel);
         if (dist < min_dist)
@@ -81,7 +82,8 @@ public:
             dist = max_dist;
     }
 
-    void rotate_lon_lat(const float dx, const float dy, const float mouse_sensitivity = 0.3f)
+    //This function changes the camera's angles (longitude & latitude), based on how much the user moved the mouse (+ middle button) since the last frame.
+    void rotate(const float dx, const float dy, const float mouse_sensitivity = 0.3f)
     {
         lon = fmodf(lon - dx*mouse_sensitivity, 360.0f);
         if (lon < 0.0f)

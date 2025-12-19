@@ -13,7 +13,7 @@ Masses :
 Numerical integration :
     Method := "ABM5 (fixed)"
     Epoch := 0
-    Duration := 35
+    Duration := 60
     Step := 0.001
 
 Initial state :
@@ -34,20 +34,20 @@ Initial state :
     Yaw 2   := 0
 
     Angular velocities := "Heliocentric (inertial)"
-    w1ix := 0
-    w1iy := 0
-    w1iz := 0.00015
-    w2ix := 0
-    w2iy := 0
-    w2iz := 0
+    w1x := 0
+    w1y := 0
+    w1z := 0.00015
+    w2x := 0
+    w2y := 0
+    w2z := 0
 
     Binary COM (Heliocentric) := "Cartesian"
-    x  := 0.0
-    y  := 0.0
-    z  := 0.0
-    vx := 0.0
-    vy := 0.0
-    vz := 0.0
+    x  := 0
+    y  := 0.1
+    z  := 0.1
+    vx := 0
+    vy := 0
+    vz := 0
 
 Assume Sun's gravity := "No"
 
@@ -56,3 +56,4 @@ Collision shapes := "Spheres"
 Assume kinetic impactors := "No"
 
 Assume spacecraft orbiter := "No"
+

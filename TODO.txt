@@ -1,7 +1,5 @@
 - Add global Cartesian frame of reference (plain RGB GL_LINES centered at the world origin).
-- Assume that the 3rd body (orbiter) can be a rigid body instead of a point mass (rotational dynamics).
-- Fix shadow algorithm (cascaded shadow).
+- Assume that the 3rd body (orbiter) can also be a rigid body apart of a point mass.
+- Implement cascaded shadow map algorithm.
 - Render the Sun better (glowing rays).
-- Add SRP to asteroids and 3rd body (cannonball & faceted model).
-- Add non-inertial terms for the barycentric frame.
-- Add binary's revolution around the Sun.
+- Add SRP to asteroids (cannonball & faceted model).

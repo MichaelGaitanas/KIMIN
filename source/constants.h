@@ -1,6 +1,8 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
+/* This header contains all constants used throughout KIMIN. */
+
 constexpr double PI = 3.1415926535897932384626433832795;
 constexpr double G = 6.67430e-20; //[km^3/(kg*sec^2)]
 constexpr double AU2KM = 149597870.7; //[km]
@@ -15,12 +17,12 @@ constexpr size_t N_ODES = 32;
 
 constexpr float CAM_MIN_FOV = 1.0f; //[deg]
 constexpr float CAM_MAX_FOV = 179.0f; //[deg]
-constexpr float CLEAR_COLOR_R = 0.06f;
-constexpr float CLEAR_COLOR_G = 0.06f;
-constexpr float CLEAR_COLOR_B = 0.06f;
+constexpr float CLEAR_COLOR_R = 0.0f;
+constexpr float CLEAR_COLOR_G = 0.0f;
+constexpr float CLEAR_COLOR_B = 0.0f;
 constexpr float OBJ_AXES_LENGTH = 2.98179f; //[km]
-//These are defined as variables because their values are hardware dependent, hence computed
-//as soon as the KIMIN launches (in window.h). They remain constant however throughout the runtime.
+//The following are defined as variables because their values are monitor dependent, hence computed
+//as soon as the KIMIN launches (in window.h). They remain constant however throughout all runtime.
 float SCX, SCY;
 
 constexpr int NR_MAX_ITERATIONS = 20;
