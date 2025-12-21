@@ -39,7 +39,7 @@ public:
     int depth_reso; //Actual depth image resolution in pixels (for the shadow map).
 
     glm::vec3 body1_col, body2_col, xaxis_col, yaxis_col, zaxis_col, orb1_col, orb2_col, orb_sp_col, sun_col;
-    bool render_body1, render_body2, render_axes1, render_axes2, render_orb1, render_orb2, render_orb_sp, render_grid, render_skybox; //These correspond to the GUI checkboxes state.
+    bool render_body1, render_body2, render_axes1, render_axes2, render_orb1, render_orb2, render_orb_sp, render_grid, render_skybox, render_sun; //These correspond to the GUI checkboxes state.
 
     int win_width, win_height;
     
@@ -81,6 +81,7 @@ public:
                    render_orb_sp(false),
                    render_grid(false),
                    render_skybox(true),
+                   render_sun(true),
                    win_width(1),
                    win_height(1)
     {
@@ -187,26 +188,26 @@ public:
         glViewport(0,0, depth_reso,depth_reso);
         glClear(GL_DEPTH_BUFFER_BIT);
         sh_dlight.use();
-        sh_dlight.set_mat4_uniform("projection", cam.projection);
-        sh_dlight.set_mat4_uniform("view", cam.view);
-        sh_dlight.set_mat4_uniform("light_pv", sunlight.pv);
-        sh_dlight.set_vec3_uniform("light_dir", sun_dir);
+        sh_dlight.set_uniform_mat4("projection", cam.projection);
+        sh_dlight.set_uniform_mat4("view", cam.view);
+        sh_dlight.set_uniform_mat4("light_pv", sunlight.pv);
+        sh_dlight.set_uniform_vec3("light_dir", sun_dir);
         sh_depth.use();
-        sh_depth.set_mat4_uniform("light_pv", sunlight.pv);
-        sh_depth.set_mat4_uniform("model", T1R1);
+        sh_depth.set_uniform_mat4("light_pv", sunlight.pv);
+        sh_depth.set_uniform_mat4("model", T1R1);
         if (render_body1)
             sol.integr.props.poly1.render();
         if (render_axes1)
         {
-            sh_depth.set_mat4_uniform("model", T1R1*S1);
+            sh_depth.set_uniform_mat4("model", T1R1*S1);
             xaxis.render(); yaxis.render(); zaxis.render();
         }
-        sh_depth.set_mat4_uniform("model", T2R2);
+        sh_depth.set_uniform_mat4("model", T2R2);
         if (render_body2)
             sol.integr.props.poly2.render();
         if (render_axes2)
         {
-            sh_depth.set_mat4_uniform("model", T2R2*S2);
+            sh_depth.set_uniform_mat4("model", T2R2*S2);
             xaxis.render(); yaxis.render(); zaxis.render();
         }
         
@@ -222,10 +223,10 @@ public:
             const glm::mat4 sky_model = glm::rotate(I, glm::radians(180.0f), glm::vec3(0.0f,0.0f,1.0f))*
                                         glm::rotate(I, glm::radians(90.0f),  glm::vec3(1.0f,0.0f,0.0f));
             sh_skybox.use();
-            sh_skybox.set_int_uniform("skybox", 0);
-            sh_skybox.set_mat4_uniform("projection", cam.projection);
-            sh_skybox.set_mat4_uniform("view",  sky_view);
-            sh_skybox.set_mat4_uniform("model", sky_model);
+            sh_skybox.set_uniform_int("skybox", 0);
+            sh_skybox.set_uniform_mat4("projection", cam.projection);
+            sh_skybox.set_uniform_mat4("view",  sky_view);
+            sh_skybox.set_uniform_mat4("model", sky_model);
             glActiveTexture(GL_TEXTURE0);
 		    glBindTexture(GL_TEXTURE_CUBE_MAP, sky->tex);
             glDepthFunc(GL_LEQUAL); //Look at the shader skybox.vert : I have forced all fragments' depth values to be 1.0. So for the depth test to pass, I change the test operation to '<=' instead of the default '<'.
@@ -237,51 +238,54 @@ public:
         }
 
         //Sun rendering pass :
-        const float sun_ang_deg = glm::degrees(asinf(RSUN/sun_dist));
-        sh_sun.use();
-        sh_sun.set_mat4_uniform("projection",      cam.projection);
-        sh_sun.set_mat4_uniform("view",            cam.view);
-        sh_sun.set_vec3_uniform("light_dir_world", sun_dir);
-        sh_sun.set_vec3_uniform("sun_color",       sun_col);
-        sh_sun.set_float_uniform("sun_angular_radius_deg", sun_ang_deg);
-        sh_sun.set_float_uniform("sun_distance", 10.0f*cam.max_dist); //Put the Sun comfortably 'far'. The aim is to make occlude only the skybox but no other mesh.
-        sh_sun.set_float_uniform("sun_scale", 1.0f);
-        sh_sun.set_float_uniform("sun_disc_intensity", sunquad.disc_intensity);
-        sh_sun.set_float_uniform("sun_disc_edge_soft", sunquad.disc_edge_soft);
-        sh_sun.set_float_uniform("sun_limb_strength",  sunquad.limb_strength);
-        sh_sun.set_float_uniform("sun_limb_power",     sunquad.limb_power);
-        glDepthFunc(GL_LEQUAL);
-        glDepthMask(GL_FALSE);
-        sunquad.render();
-        glDepthMask(GL_TRUE);
-        glDepthFunc(GL_LESS);
-
+        if (render_sun)
+        {
+            const float sun_ang_deg = glm::degrees(asinf(RSUN/sun_dist));
+            sh_sun.use();
+            sh_sun.set_uniform_mat4("projection",      cam.projection);
+            sh_sun.set_uniform_mat4("view",            cam.view);
+            sh_sun.set_uniform_vec3("light_dir_world", sun_dir);
+            sh_sun.set_uniform_vec3("sun_color",       sun_col);
+            sh_sun.set_uniform_float("sun_angular_radius_deg", sun_ang_deg);
+            sh_sun.set_uniform_float("sun_distance", 10.0f*cam.max_dist); //Put the Sun comfortably 'far'. The aim is to make occlude only the skybox but no other mesh.
+            sh_sun.set_uniform_float("sun_scale", 1.0f);
+            sh_sun.set_uniform_float("sun_disc_intensity", sunquad.disc_intensity);
+            sh_sun.set_uniform_float("sun_disc_edge_soft", sunquad.disc_edge_soft);
+            sh_sun.set_uniform_float("sun_limb_strength",  sunquad.limb_strength);
+            sh_sun.set_uniform_float("sun_limb_power",     sunquad.limb_power);
+            glDepthFunc(GL_LEQUAL);
+            glDepthMask(GL_FALSE);
+            sunquad.render();
+            glDepthMask(GL_TRUE);
+            glDepthFunc(GL_LESS);
+        }
+        
         //Polyhedra rendering pass :
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, depth_tex);
         sh_dlight.use();
-        sh_dlight.set_int_uniform("sample_shadow", 0);
-        sh_dlight.set_mat4_uniform("model", T1R1);
-        sh_dlight.set_vec3_uniform("mesh_col", body1_col);
+        sh_dlight.set_uniform_int("sample_shadow", 0);
+        sh_dlight.set_uniform_mat4("model", T1R1);
+        sh_dlight.set_uniform_vec3("mesh_col", body1_col);
         if (render_body1)
             sol.integr.props.poly1.render();
         if (render_axes1)
         {
-            sh_dlight.set_mat4_uniform("model", T1R1*S1);
-            sh_dlight.set_vec3_uniform("mesh_col", xaxis_col); xaxis.render();
-            sh_dlight.set_vec3_uniform("mesh_col", yaxis_col); yaxis.render();
-            sh_dlight.set_vec3_uniform("mesh_col", zaxis_col); zaxis.render();
+            sh_dlight.set_uniform_mat4("model", T1R1*S1);
+            sh_dlight.set_uniform_vec3("mesh_col", xaxis_col); xaxis.render();
+            sh_dlight.set_uniform_vec3("mesh_col", yaxis_col); yaxis.render();
+            sh_dlight.set_uniform_vec3("mesh_col", zaxis_col); zaxis.render();
         }
-        sh_dlight.set_mat4_uniform("model", T2R2);
-        sh_dlight.set_vec3_uniform("mesh_col", body2_col);
+        sh_dlight.set_uniform_mat4("model", T2R2);
+        sh_dlight.set_uniform_vec3("mesh_col", body2_col);
         if (render_body2)
             sol.integr.props.poly2.render();
         if (render_axes2)
         {
-            sh_dlight.set_mat4_uniform("model", T2R2*S2);
-            sh_dlight.set_vec3_uniform("mesh_col", xaxis_col); xaxis.render();
-            sh_dlight.set_vec3_uniform("mesh_col", yaxis_col); yaxis.render();
-            sh_dlight.set_vec3_uniform("mesh_col", zaxis_col); zaxis.render();
+            sh_dlight.set_uniform_mat4("model", T2R2*S2);
+            sh_dlight.set_uniform_vec3("mesh_col", xaxis_col); xaxis.render();
+            sh_dlight.set_uniform_vec3("mesh_col", yaxis_col); yaxis.render();
+            sh_dlight.set_uniform_vec3("mesh_col", zaxis_col); zaxis.render();
         }
         glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -289,22 +293,22 @@ public:
         if (render_orb1 || render_orb2 || render_orb_sp)
         {
             sh_orb.use();
-            sh_orb.set_mat4_uniform("projection", cam.projection);
-            sh_orb.set_mat4_uniform("view", cam.view);
-            sh_orb.set_mat4_uniform("model", I);
+            sh_orb.set_uniform_mat4("projection", cam.projection);
+            sh_orb.set_uniform_mat4("view", cam.view);
+            sh_orb.set_uniform_mat4("model", I);
             if (render_orb1)
             {
-                sh_orb.set_vec3_uniform("mesh_col", orb1_col);
+                sh_orb.set_uniform_vec3("mesh_col", orb1_col);
                 orb1.render();
             }
             if (render_orb2)
             {
-                sh_orb.set_vec3_uniform("mesh_col", orb2_col);
+                sh_orb.set_uniform_vec3("mesh_col", orb2_col);
                 orb2.render();
             }
             if (render_orb_sp)
             {
-                sh_orb.set_vec3_uniform("mesh_col", orb_sp_col);
+                sh_orb.set_uniform_vec3("mesh_col", orb_sp_col);
                 orb_sp.render();
             }
         }
@@ -313,9 +317,9 @@ public:
         if (render_grid)
         {
             sh_grid.use();
-            sh_grid.set_mat4_uniform("uProj", cam.projection);
-            sh_grid.set_mat4_uniform("uView", cam.view);
-            sh_grid.set_float_uniform("uFadeEnd", 2.0f*cam.dist);
+            sh_grid.set_uniform_mat4("uProj", cam.projection);
+            sh_grid.set_uniform_mat4("uView", cam.view);
+            sh_grid.set_uniform_float("uFadeEnd", 2.0f*cam.dist);
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             glDepthFunc(GL_LEQUAL);

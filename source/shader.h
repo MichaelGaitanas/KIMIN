@@ -99,53 +99,43 @@ public:
     }
     
     //Pass to the currently active shader 1 int.
-    void set_int_uniform(const std::string &name, int value)
+    void set_uniform_int(const char *name, int value)
     {
-        int location = glGetUniformLocation(ID, name.c_str());
+        int location = glGetUniformLocation(ID, name);
         if (location >= 0)
             glUniform1i(location, value);
         else
-            fprintf(stderr,"[Warning] : shader()::set_int_uniform() failed to pass uniform.\n");
+            fprintf(stderr,"[Warning] : shader()::set_uniform_int() failed to pass uniform.\n");
     }
 
     //Pass to the currently active shader 1 float.
-    void set_float_uniform(const std::string &name, float value)
+    void set_uniform_float(const char *name, float value)
     {
-        int location = glGetUniformLocation(ID, name.c_str());
+        int location = glGetUniformLocation(ID, name);
         if (location >= 0)
             glUniform1f(location, value);
         else
-            fprintf(stderr,"[Warning] : shader()::set_float_uniform() failed to pass uniform.\n");
-    }
-    
-    //Pass to the currently active shader 1 vector of 2 floats.
-    void set_vec2_uniform(const std::string &name, const glm::vec2 &v)
-    {
-        int location = glGetUniformLocation(ID, name.c_str());
-        if (location >= 0)
-            glUniform2fv(location, 1, &v[0]);
-        else
-            fprintf(stderr,"[Warning] : shader()::set_vec2_uniform() failed to pass uniform.\n");
+            fprintf(stderr,"[Warning] : shader()::set_uniform_float() failed to pass uniform.\n");
     }
 
     //Pass to the currently active shader 1 vector of 3 floats.
-    void set_vec3_uniform(const std::string &name, const glm::vec3 &v)
+    void set_uniform_vec3(const char *name, const glm::vec3 &v)
     {
-        int location = glGetUniformLocation(ID, name.c_str());
+        int location = glGetUniformLocation(ID, name);
         if (location >= 0)
             glUniform3fv(location, 1, &v[0]);
         else
-            fprintf(stderr,"[Warning] : shader()::set_vec3_uniform() failed to pass uniform.\n");
+            fprintf(stderr,"[Warning] : shader()::set_uniform_vec3() failed to pass uniform.\n");
     }
     
     //Pass to the currently active shader 1 4x4 float matrix.
-    void set_mat4_uniform(const std::string &name, const glm::mat4 &m)
+    void set_uniform_mat4(const char *name, const glm::mat4 &m)
     {
-        int location = glGetUniformLocation(ID, name.c_str());
+        int location = glGetUniformLocation(ID, name);
         if (location >= 0)
             glUniformMatrix4fv(location, 1, GL_FALSE, &m[0][0]);
         else
-            fprintf(stderr,"[Warning] : shader()::set_mat4_uniform() failed to pass uniform.\n");
+            fprintf(stderr,"[Warning] : shader()::set_uniform_mat4() failed to pass uniform.\n");
     }
 };
 

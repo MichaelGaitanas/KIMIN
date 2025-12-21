@@ -134,7 +134,7 @@ bool render_logo(const char *img_path, const float seconds)
     //Create the shader used to calculate each pixel's color for the quad mesh to render.
     shader sh_logo("../shaders/vertex/texture.vert","../shaders/fragment/texture.frag");
     sh_logo.use();
-    sh_logo.set_int_uniform("sample_tex", 0);
+    sh_logo.set_uniform_int("sample_tex", 0);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, tex);
     glBindVertexArray(vao);

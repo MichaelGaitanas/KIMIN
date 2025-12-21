@@ -72,6 +72,8 @@ private:
         //Mutual and COM acceleration due to binary's gravity.
         dvec3 amut = force/m;
         dvec3 acom_helio = {0.0,0.0,0.0};
+        dvec3 torque1b_sun = {0.0,0.0,0.0};
+        dvec3 torque2b_sun = {0.0,0.0,0.0};
         if (props.sun_gravity) //Add Sun's contribution to both the amut and acom_helio.
         {
             //Individual bodies' inertial (Heliocentric) positions, i.e. COM1 and COM2.
@@ -79,9 +81,13 @@ private:
             const dvec3 r2_helio = rcom_helio + m2*rmut;
             const double d1 = length(r1_helio);
             const double d2 = length(r2_helio);
+            const dvec3 r1b_unit = iner2body(r1_helio, A1)/d1;
+            const dvec3 r2b_unit = iner2body(r2_helio, A2)/d2;
             const double dcom = length(rcom_helio);
             amut = amut - G*MSUN*(r2_helio/(d2*d2*d2) - r1_helio/(d1*d1*d1));
             acom_helio = -G*MSUN*rcom_helio/(dcom*dcom*dcom);
+            torque1b_sun = 3.0*G*MSUN*cross(r1b_unit, dot(I1,r1b_unit))/(d1*d1*d1);
+            torque2b_sun = 3.0*G*MSUN*cross(r2b_unit, dot(I2,r2b_unit))/(d2*d2*d2);
         }
         //Else the mutual state is governed only by the binary's mutual gravity and the COM shall move at a straight line in space. Bye bye Solar system!
 
@@ -89,8 +95,8 @@ private:
         const dvec3 torque2i = -torque1i - cross(rmut, force);
 
         //Convert torques into the corresponding body frames because Euler's ODEs are written in the body frame.
-        const dvec3 torque1b = iner2body(torque1i,A1);
-        const dvec3 torque2b = iner2body(torque2i,A2);
+        const dvec3 torque1b = iner2body(torque1i,A1) + torque1b_sun;
+        const dvec3 torque2b = iner2body(torque2i,A2) + torque2b_sun;
 
         const dvec4 dq1 = quat_rhs(q1,w1b);
         const dvec3 dw1b = euler_rhs(w1b,I1,torque1b);

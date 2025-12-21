@@ -191,6 +191,7 @@ private:
     void render_plot_buttons()
     {
         ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f); //Disable the indentation for what comes next.
+        ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
 
         //Binary's mutual state plots.
         if (ImGui::TreeNodeEx("Mutual"))
@@ -219,16 +220,19 @@ private:
             ImGui::Text("Energy and momentum errors");
             plot_dener_dmom[0] = onoff_button("energy##plot_dener_dmom[0]",   ImVec2(80.0f*SCX, 25.0f*SCY), plot_dener_dmom[0]); ImGui::SameLine();
             plot_dener_dmom[1] = onoff_button("momentum##plot_dener_dmom[1]", ImVec2(80.0f*SCX, 25.0f*SCY), plot_dener_dmom[1]);
-            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
 
             ImGui::TreePop();
         }
+
+        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
 
         //Binary's COM plots.
         if (ImGui::TreeNodeEx("COM"))
         {
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
-            ImGui::Text("Position and velocity");
+            ImGui::Text("Position and velocity (Heliocentric)");
             plot_cart_com_helio[0] = onoff_button("x##plot_cart_com_helio[0]",    ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart_com_helio[0]); ImGui::SameLine();
             plot_cart_com_helio[1] = onoff_button("y##plot_cart_com_helio[1]",    ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart_com_helio[1]); ImGui::SameLine();
             plot_cart_com_helio[2] = onoff_button("z##plot_cart_com_helio[2]",    ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart_com_helio[2]); ImGui::SameLine();
@@ -239,17 +243,20 @@ private:
             plot_cart_com_helio[7] = onoff_button("υel##plot_cart_com_helio[7]",  ImVec2(50.0f*SCX, 20.0f*SCY), plot_cart_com_helio[7]);
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
 
-            ImGui::Text("Keplerian elements");
+            ImGui::Text("Keplerian elements (Heliocentric)");
             plot_kep_com_helio[0] = onoff_button("a##plot_kep_com_helio[0]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep_com_helio[0]); ImGui::SameLine();
             plot_kep_com_helio[1] = onoff_button("e##plot_kep_com_helio[1]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep_com_helio[1]); ImGui::SameLine();
             plot_kep_com_helio[2] = onoff_button("i##plot_kep_com_helio[2]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep_com_helio[2]); ImGui::SameLine();
             plot_kep_com_helio[3] = onoff_button("Ω##plot_kep_com_helio[3]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep_com_helio[3]); ImGui::SameLine();
             plot_kep_com_helio[4] = onoff_button("ω##plot_kep_com_helio[4]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep_com_helio[4]); ImGui::SameLine();
             plot_kep_com_helio[5] = onoff_button("M##plot_kep_com_helio[5]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep_com_helio[5]);
-            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
 
             ImGui::TreePop();
         }
+
+        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
 
         //Body 1 plots.
         if (ImGui::TreeNodeEx("Body 1"))
@@ -262,7 +269,7 @@ private:
             plot_rpy1[3] = onoff_button("rel. yaw##plot_rpy1[3]", ImVec2(60.0f*SCX, 20.0f*SCY), plot_rpy1[3]);
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
 
-            ImGui::Text("Angular velocity (inertial frame)");
+            ImGui::Text("Angular velocity (Heliocentric)");
             plot_w1i[0] = onoff_button("ωx##plot_w1i[0]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_w1i[0]); ImGui::SameLine();
             plot_w1i[1] = onoff_button("ωy##plot_w1i[1]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_w1i[1]); ImGui::SameLine();
             plot_w1i[2] = onoff_button("ωz##plot_w1i[2]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_w1i[2]);
@@ -272,10 +279,13 @@ private:
             plot_w1b[0] = onoff_button("ω1##plot_w1b[0]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_w1b[0]); ImGui::SameLine();
             plot_w1b[1] = onoff_button("ω2##plot_w1b[1]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_w1b[1]); ImGui::SameLine();
             plot_w1b[2] = onoff_button("ω3##plot_w1b[2]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_w1b[2]);
-            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
 
             ImGui::TreePop();
         }
+
+        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
 
         //Body 2 plots.
         if (ImGui::TreeNodeEx("Body 2"))
@@ -288,7 +298,7 @@ private:
             plot_rpy2[3] = onoff_button("rel. yaw##plot_rpy2[3]",  ImVec2(60.0f*SCX, 20.0f*SCY), plot_rpy2[3]);
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
 
-            ImGui::Text("Angular velocity (inertial frame)");
+            ImGui::Text("Angular velocity (Heliocentric)");
             plot_w2i[0] = onoff_button("ωx##plot_w2i[0]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_w2i[0]); ImGui::SameLine();
             plot_w2i[1] = onoff_button("ωy##plot_w2i[1]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_w2i[1]); ImGui::SameLine();
             plot_w2i[2] = onoff_button("ωz##plot_w2i[2]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_w2i[2]);
@@ -298,10 +308,13 @@ private:
             plot_w2b[0] = onoff_button("ω1##plot_w2b[0]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_w2b[0]); ImGui::SameLine();
             plot_w2b[1] = onoff_button("ω2##plot_w2b[1]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_w2b[1]); ImGui::SameLine();
             plot_w2b[2] = onoff_button("ω3##plot_w2b[2]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_w2b[2]);
-            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
 
             ImGui::TreePop();
         }
+
+        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
 
         //Spacecraft's plots.
         if (ImGui::TreeNodeEx("Spacecraft"))
@@ -396,6 +409,7 @@ private:
             ImGui::TreePop();
         }
         ImGui::PopStyleVar();
+        ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
     }
 
     //Render on the gui the buttons that correspond to the 3D scene.
@@ -451,7 +465,7 @@ private:
 
         //Camera setup logic :
         ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f); //Disable the indentation for what comes next.
-        if (ImGui::TreeNodeEx("Camera system"))
+        if (ImGui::TreeNodeEx("Camera"))
         {
             ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
 
@@ -486,7 +500,7 @@ private:
 
         //Lighting system logic :
         ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f); //Disable the indentation for what comes next.
-        if (ImGui::TreeNodeEx("Lighting system"))
+        if (ImGui::TreeNodeEx("Lighting"))
         {
             ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
 
@@ -508,7 +522,7 @@ private:
 
         //Meshes to render logic :
         ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f); //Disable the indentation for what comes next.
-        if (ImGui::TreeNodeEx("Visible meshes"))
+        if (ImGui::TreeNodeEx("Meshes"))
         {
             ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
 
@@ -642,6 +656,13 @@ private:
             ImGui::SameLine();
             ImGui::SetCursorPosX(60.0f*SCX);
             ImGui::Checkbox("##rend3D.render_skybox", &rend3D.render_skybox);
+
+            ImGui::Text("Sun");
+            ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
+            ImGui::Text("Sn");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(60.0f*SCX);
+            ImGui::Checkbox("##rend3D.render_sun", &rend3D.render_sun);
 
             ImGui::TreePop();
         }
