@@ -30,8 +30,8 @@ Initial state :
     M  := 0
 
     Orientations := "Euler angles (XYZ)"
-    Roll 1  := 0
-    Pitch 1 := 23.4393
+    Roll 1  := -23.4393
+    Pitch 1 := 0
     Yaw 1   := 0
     Roll 2  := 0
     Pitch 2 := 0

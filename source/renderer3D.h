@@ -28,7 +28,7 @@ private:
     std::unique_ptr<skybox> sky;
     sun sunquad;
 
-    unsigned depth_fbo, depth_tex; //IDs to hold the depth framebuffer and the depth texture for the shadow map algorithm.
+    unsigned depth_fbo_id, depth_tex_id; //IDs to hold the depth framebuffer and the depth texture for the shadow map algorithm.
 
 public:
     camera cam;
@@ -54,8 +54,8 @@ public:
                    zaxis(),
                    sky(nullptr),
                    sunquad(),
-                   depth_fbo(0),
-                   depth_tex(0),
+                   depth_fbo_id(0),
+                   depth_tex_id(0),
                    cam(),
                    sunlight(),
                    orb1(),
@@ -92,25 +92,25 @@ public:
 
     ~renderer3D()
     {
-        if (depth_tex)
-            glDeleteTextures(1, &depth_tex);
-        if (depth_fbo)
-            glDeleteFramebuffers(1, &depth_fbo);
+        if (depth_tex_id)
+            glDeleteTextures(1, &depth_tex_id);
+        if (depth_fbo_id)
+            glDeleteFramebuffers(1, &depth_fbo_id);
     }
 
     //(Re)set the depth framebuffer, used for shadowing. This is one of the resets that we can't run in scene::setup() due to the separate thread issue.
     //So this will run only once in the render_3D_content() after the simulation is terminated or it will run every time the user changes the 'depth_reso' from the gui exposed slider.
     void setup_depth_fbo()
     {
-        if (depth_fbo)
+        if (depth_fbo_id)
         {
-            glDeleteFramebuffers(1, &depth_fbo);
-            glDeleteTextures(1, &depth_tex);
+            glDeleteFramebuffers(1, &depth_fbo_id);
+            glDeleteTextures(1, &depth_tex_id);
         }
-        glGenFramebuffers(1, &depth_fbo);
-        glBindFramebuffer(GL_FRAMEBUFFER, depth_fbo);
-        glGenTextures(1, &depth_tex);
-        glBindTexture(GL_TEXTURE_2D, depth_tex);
+        glGenFramebuffers(1, &depth_fbo_id);
+        glBindFramebuffer(GL_FRAMEBUFFER, depth_fbo_id);
+        glGenTextures(1, &depth_tex_id);
+        glBindTexture(GL_TEXTURE_2D, depth_tex_id);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, depth_reso, depth_reso, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -118,7 +118,7 @@ public:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
         constexpr float border_col[] = {1.0f, 1.0f, 1.0f, 1.0f}; //Pure white that is, coz white corresponds to maximum depth.
         glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, &border_col[0]);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_tex, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_tex_id, 0);
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
             fprintf(stderr, "[Warning] : In renderer3D::setup_depth_fbo(), the depth framebuffer is not completed.\n");
         glDrawBuffer(GL_NONE);
@@ -144,12 +144,12 @@ public:
             orb_sp.set_gl_mesh(sol.xsp_com, sol.ysp_com, sol.zsp_com); //Spacecraft's orbit mesh in the COM frame of the binary
         
         //This will run only once no matter how many times the reset_gpu_resources() is called.
-        if (!sky) sky = std::make_unique<skybox>("../skybox/starfield2k/right.jpg",
-                                                 "../skybox/starfield2k/left.jpg",
-                                                 "../skybox/starfield2k/top.jpg",
-                                                 "../skybox/starfield2k/bottom.jpg",
-                                                 "../skybox/starfield2k/front.jpg",
-                                                 "../skybox/starfield2k/back.jpg");
+        if (!sky) sky = std::make_unique<skybox>("../skybox/stars2k/right.png",
+                                                 "../skybox/stars2k/left.png",
+                                                 "../skybox/stars2k/top.png",
+                                                 "../skybox/stars2k/bottom.png",
+                                                 "../skybox/stars2k/front.png",
+                                                 "../skybox/stars2k/back.png");
         setup_depth_fbo();
     }
 
@@ -184,7 +184,7 @@ public:
         const glm::mat4 S2 = glm::scale(I, glm::vec3(sol.integr.brillouin2));
         
         //Shadow rendering pass : render the meshes that account for shadow, but do so from the light's (orthographic) view. Shadow pass must always happen first.
-        glBindFramebuffer(GL_FRAMEBUFFER, depth_fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, depth_fbo_id);
         glViewport(0,0, depth_reso,depth_reso);
         glClear(GL_DEPTH_BUFFER_BIT);
         sh_dlight.use();
@@ -262,7 +262,7 @@ public:
         
         //Polyhedra rendering pass :
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, depth_tex);
+        glBindTexture(GL_TEXTURE_2D, depth_tex_id);
         sh_dlight.use();
         sh_dlight.set_uniform_int("sample_shadow", 0);
         sh_dlight.set_uniform_mat4("model", T1R1);

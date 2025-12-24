@@ -117,8 +117,8 @@ bool triangle_triangle_collision(const dvec3 &vtx0, const dvec3 &vtx1, const dve
     double a_u = a.x(), a_v = a.y(), a_s = a.z();
     double b_u = b.x(), b_v = b.y(), b_s = b.z();
 
-    std::vector<double> lowers{0.0};
-    std::vector<double> uppers;
+    dvec lowers{0.0};
+    dvec uppers;
 
     auto add_bound = [&](double ai, double bi) -> bool
     {
