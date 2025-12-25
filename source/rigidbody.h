@@ -14,9 +14,8 @@
 //Quaternion odes rhs for a rigid body. The angular velocity w is in the body frame.
 dvec4 quat_rhs(const dvec4 &q, const dvec3 &w)
 {
-    //This comment is useless, but I wanted you to know that right now, I am listening to this
+    //This comment is useless, but I wanted you to know that right now, I am listening to this song while writing the code.
     //https://www.youtube.com/watch?v=A_tA7G1Y8Ew&list=RDX2xpR5EoAGY&index=2&ab_channel=FrankKlepacki-Topic
-    //song while writing the code.
     const double dq0 = 0.5*(-q[1]*w[0] - q[2]*w[1] - q[3]*w[2]);
     const double dq1 = 0.5*( q[0]*w[0] - q[3]*w[1] + q[2]*w[2]);
     const double dq2 = 0.5*( q[3]*w[0] + q[0]*w[1] - q[1]*w[2]);

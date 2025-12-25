@@ -4,6 +4,7 @@
 #define RENDERER3D_H
 
 #include<memory>
+#include<cmath>
 
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
@@ -38,7 +39,7 @@ public:
 
     int depth_reso; //Actual depth image resolution in pixels (for the shadow map).
 
-    glm::vec3 body1_col, body2_col, xaxis_col, yaxis_col, zaxis_col, orb1_col, orb2_col, orb_sp_col, sun_col;
+    glm::vec3 body1_col, body2_col, xaxis_col, yaxis_col, zaxis_col, orb1_col, orb2_col, orb_sp_col;
     bool render_body1, render_body2, render_axes1, render_axes2, render_orb1, render_orb2, render_orb_sp, render_grid, render_skybox, render_sun; //These correspond to the GUI checkboxes state.
 
     int win_width, win_height;
@@ -71,7 +72,6 @@ public:
                    orb1_col(glm::vec3(0.7f,0.0f,0.0f)),
                    orb2_col(glm::vec3(0.0f,0.7f,0.0f)),
                    orb_sp_col(glm::vec3(0.0f,0.75f,0.75f)),
-                   sun_col(glm::vec3(1.0f,0.65f,0.0f)),
                    render_body1(true),
                    render_body2(true),
                    render_axes1(false),
@@ -138,18 +138,18 @@ public:
 
         sol.integr.props.poly1.set_gl_mesh();
         sol.integr.props.poly2.set_gl_mesh();
-        orb1.set_gl_mesh(sol.xmut, sol.ymut, sol.zmut, (float)sol.integr.m1);
-        orb2.set_gl_mesh(sol.xmut, sol.ymut, sol.zmut, (float)sol.integr.m2);
+        orb1.set_gl_mesh(sol.xmut, sol.ymut, sol.zmut, float(sol.integr.m1));
+        orb2.set_gl_mesh(sol.xmut, sol.ymut, sol.zmut, float(sol.integr.m2));
         if (sol.integr.props.spacecraft_checkbox)
             orb_sp.set_gl_mesh(sol.xsp_com, sol.ysp_com, sol.zsp_com); //Spacecraft's orbit mesh in the COM frame of the binary
         
         //This will run only once no matter how many times the reset_gpu_resources() is called.
-        if (!sky) sky = std::make_unique<skybox>("../skybox/stars2k/right.png",
-                                                 "../skybox/stars2k/left.png",
-                                                 "../skybox/stars2k/top.png",
-                                                 "../skybox/stars2k/bottom.png",
-                                                 "../skybox/stars2k/front.png",
-                                                 "../skybox/stars2k/back.png");
+        if (!sky) sky = std::make_unique<skybox>("../skybox/galaxy2k/right.png",
+                                                 "../skybox/galaxy2k/left.png",
+                                                 "../skybox/galaxy2k/top.png",
+                                                 "../skybox/galaxy2k/bottom.png",
+                                                 "../skybox/galaxy2k/front.png",
+                                                 "../skybox/galaxy2k/back.png");
         setup_depth_fbo();
     }
 
@@ -162,22 +162,16 @@ public:
             reset_gpu_flag = false;
         }
 
-        const glm::vec3 rsun = -glm::vec3(sol.xcom_helio[iframe],sol.ycom_helio[iframe],sol.zcom_helio[iframe]);
-        const glm::vec3 r1 = float(sol.integr.m1)*glm::vec3(sol.xmut[iframe],sol.ymut[iframe],sol.zmut[iframe]);
-        const glm::vec3 r2 = float(sol.integr.m2)*glm::vec3(sol.xmut[iframe],sol.ymut[iframe],sol.zmut[iframe]);
-        const float sun_dist = glm::length(rsun);
-        const glm::vec3 sun_dir = rsun/sun_dist;
-
-        sunlight.set_geometry(float(OBJ_AXES_LENGTH*std::max(sol.integr.brillouin1, sol.integr.brillouin2) + sol.dist_mut[iframe]), sun_dir);
+        sunlight.set_geometry(float(OBJ_AXES_LENGTH*std::max(sol.integr.brillouin1, sol.integr.brillouin2) + sol.dist_mut[iframe]), -glm::vec3(sol.xcom_helio[iframe],sol.ycom_helio[iframe],sol.zcom_helio[iframe]) );
         cam.set_geometry(win_width/float(win_height));
 
         const glm::mat4 I = glm::mat4(1.0f);
-        const glm::mat4 T1R1 = glm::translate(I, r1)*
+        const glm::mat4 T1R1 = glm::translate(I, float(sol.integr.m1)*glm::vec3(sol.xmut[iframe],sol.ymut[iframe],sol.zmut[iframe]))*
                                glm::rotate(I, glm::radians(float(sol.yaw1[iframe])),   glm::vec3(0.0f,0.0f,1.0f))*
                                glm::rotate(I, glm::radians(float(sol.pitch1[iframe])), glm::vec3(0.0f,1.0f,0.0f))*
                                glm::rotate(I, glm::radians(float(sol.roll1[iframe])),  glm::vec3(1.0f,0.0f,0.0f));
         const glm::mat4 S1 = glm::scale(I, glm::vec3(sol.integr.brillouin1));
-        const glm::mat4 T2R2 = glm::translate(I, r2)*
+        const glm::mat4 T2R2 = glm::translate(I, float(sol.integr.m2)*glm::vec3(sol.xmut[iframe],sol.ymut[iframe],sol.zmut[iframe]))*
                                glm::rotate(I, glm::radians(float(sol.yaw2[iframe])),   glm::vec3(0.0f,0.0f,1.0f))*
                                glm::rotate(I, glm::radians(float(sol.pitch2[iframe])), glm::vec3(0.0f,1.0f,0.0f))*
                                glm::rotate(I, glm::radians(float(sol.roll2[iframe])),  glm::vec3(1.0f,0.0f,0.0f));
@@ -191,7 +185,7 @@ public:
         sh_dlight.set_uniform_mat4("projection", cam.projection);
         sh_dlight.set_uniform_mat4("view", cam.view);
         sh_dlight.set_uniform_mat4("light_pv", sunlight.pv);
-        sh_dlight.set_uniform_vec3("light_dir", sun_dir);
+        sh_dlight.set_uniform_vec3("light_dir", sunlight.dir);
         sh_depth.use();
         sh_depth.set_uniform_mat4("light_pv", sunlight.pv);
         sh_depth.set_uniform_mat4("model", T1R1);
@@ -240,19 +234,15 @@ public:
         //Sun rendering pass :
         if (render_sun)
         {
-            const float sun_ang_deg = glm::degrees(asinf(RSUN/sun_dist));
             sh_sun.use();
-            sh_sun.set_uniform_mat4("projection",      cam.projection);
-            sh_sun.set_uniform_mat4("view",            cam.view);
-            sh_sun.set_uniform_vec3("light_dir_world", sun_dir);
-            sh_sun.set_uniform_vec3("sun_color",       sun_col);
-            sh_sun.set_uniform_float("sun_angular_radius_deg", sun_ang_deg);
-            sh_sun.set_uniform_float("sun_distance", 10.0f*cam.max_dist); //Put the Sun comfortably 'far'. The aim is to make occlude only the skybox but no other mesh.
-            sh_sun.set_uniform_float("sun_scale", 1.0f);
-            sh_sun.set_uniform_float("sun_disc_intensity", sunquad.disc_intensity);
-            sh_sun.set_uniform_float("sun_disc_edge_soft", sunquad.disc_edge_soft);
-            sh_sun.set_uniform_float("sun_limb_strength",  sunquad.limb_strength);
-            sh_sun.set_uniform_float("sun_limb_power",     sunquad.limb_power);
+            sh_sun.set_uniform_mat4("projection", cam.projection);
+            sh_sun.set_uniform_mat4("view", cam.view);
+            sh_sun.set_uniform_vec3("light_dir", sunlight.dir);
+            sh_sun.set_uniform_float("apparent_angular_radius", asinf(RSUN/sunlight.dist));
+            sh_sun.set_uniform_float("quad_distance", CAM_MAX_DIST_SCALE*cam.max_dist); //The quad must be 'comfortably' far, such that it occludes only the skybox but no other mesh, which is guarded by the camera's max distance.
+            
+            sh_sun.set_uniform_vec3("sun_color", sunquad.color);
+
             glDepthFunc(GL_LEQUAL);
             glDepthMask(GL_FALSE);
             sunquad.render();

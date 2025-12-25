@@ -21,6 +21,7 @@ constexpr float CLEAR_COLOR_R = 0.0f;
 constexpr float CLEAR_COLOR_G = 0.0f;
 constexpr float CLEAR_COLOR_B = 0.0f;
 constexpr float OBJ_AXES_LENGTH = 2.98179f; //[km]
+constexpr float CAM_MAX_DIST_SCALE = 10.0f;
 //The following are defined as variables because their values are monitor dependent, hence computed
 //as soon as the KIMIN launches (in window.h). They remain constant however throughout all runtime.
 float SCX, SCY;

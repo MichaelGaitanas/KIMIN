@@ -9,15 +9,11 @@ private:
     unsigned vao, vbo;
 
 public:
-    float ang_deg, disc_intensity, disc_edge_soft, limb_strength, limb_power;
+    glm::vec3 color;
 
     sun() : vao(0),
             vbo(0),
-            ang_deg(6.0f),
-            disc_intensity(10.0f),
-            disc_edge_soft(3.0f),
-            limb_strength(0.0f),
-            limb_power(0.0f)
+            color(glm::vec3(1.0f,0.65f,0.0f))
     {
         float verts[] = { -1.0f, -1.0f,
                            1.0f, -1.0f,
@@ -53,7 +49,7 @@ public:
     void render()
     {
         glBindVertexArray(vao);
-        glDrawArrays(GL_TRIANGLES, 0, 6); //Just a quad. But with appropriate fragment shader manipulation, it will look like an emissive disk.
+        glDrawArrays(GL_TRIANGLES, 0, 6); //Just a quad. But with appropriate fragment shader manipulation, it will look like an emissive spherical source.
         glBindVertexArray(0);
     }
 };
