@@ -31,7 +31,7 @@ public:
                lat(45.0f),
                min_dist(0.0f),
                max_dist(0.0f),
-               fov(60.0f)
+               fov(75.0f)
     { }
 
 public:

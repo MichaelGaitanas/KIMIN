@@ -9,11 +9,8 @@ private:
     unsigned vao, vbo;
 
 public:
-    glm::vec3 color;
-
     sun() : vao(0),
-            vbo(0),
-            color(glm::vec3(1.0f,0.65f,0.0f))
+            vbo(0)
     {
         float verts[] = { -1.0f, -1.0f,
                            1.0f, -1.0f,

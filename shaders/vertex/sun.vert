@@ -4,8 +4,8 @@ layout(location = 0) in vec2 pos; //Quad coords in [-1,1]^2.
 
 uniform mat4 projection;
 uniform mat4 view;
-uniform vec3 light_dir; //Points from origin towards the Sun.
-uniform float apparent_angular_radius;  //Apparent half angle [rad].
+uniform vec3 light_dir; //Points from world origin towards the Sun.
+uniform float apparent_angular_radius; //Apparent half angle [rad].
 uniform float quad_distance; //Quad's distance in view units.
 
 out vec2 coord;
@@ -14,18 +14,25 @@ void main()
 {
     //Rotate-only view (ignore translation).
     mat3 R = mat3(view);
-    vec3 d = normalize(R*light_dir); //Sun direction in view space.
+    // Sun direction in world space (given)
+    vec3 dW = normalize(light_dir);
 
-    //Orthonormal basis for billboard plane
-    vec3 up_ref = (abs(d.z) > 0.99) ? vec3(0.0, 1.0, 0.0) : vec3(0.0, 0.0, 1.0);
-    vec3 right  = normalize(cross(d, up_ref));
-    vec3 upv    = normalize(cross(right, d));
+    // Choose a fixed world reference "north"
+    vec3 refW = vec3(0.0, 0.0, 1.0);
+    if (abs(dot(dW, refW)) > 0.99) refW = vec3(0.0, 1.0, 0.0);
 
-    float s = tan(apparent_angular_radius)*quad_distance;
+    // Build a stable orthonormal basis in WORLD space
+    vec3 rightW = normalize(cross(refW, dW));
+    vec3 upW    = normalize(cross(dW, rightW));
 
-    //Place the quad center at distance along d, offset in its plane.
-    vec3 pos_view = d*quad_distance + right*(pos.x*s) + upv*(pos.y*s);
-    gl_Position = projection*vec4(pos_view, 1.0);
+    // Move basis into VIEW space
+    vec3 d  = normalize(R * dW);
+    vec3 right = R * rightW;
+    vec3 upv   = R * upW;
 
-    coord = pos; //Pass to fragment for radial masks.
+    float s = tan(apparent_angular_radius) * quad_distance;
+    vec3 pos_view = d * quad_distance + right * (pos.x * s) + upv * (pos.y * s);
+    gl_Position = projection * vec4(pos_view, 1.0);
+
+    coord = pos;
 }

@@ -27,12 +27,12 @@ private:
     shader sh_depth, sh_dlight, sh_orb, sh_skybox, sh_sun, sh_grid;
     polyhedron xaxis, yaxis, zaxis;
     std::unique_ptr<skybox> sky;
-    sun sunquad;
 
     unsigned depth_fbo_id, depth_tex_id; //IDs to hold the depth framebuffer and the depth texture for the shadow map algorithm.
 
 public:
     camera cam;
+    sun sunquad;
     dlight sunlight;
     orbit orb1, orb2, orb_sp;
     grid infgrid;
@@ -54,10 +54,10 @@ public:
                    yaxis(),
                    zaxis(),
                    sky(nullptr),
-                   sunquad(),
                    depth_fbo_id(0),
                    depth_tex_id(0),
                    cam(),
+                   sunquad(),
                    sunlight(),
                    orb1(),
                    orb2(),
@@ -144,12 +144,12 @@ public:
             orb_sp.set_gl_mesh(sol.xsp_com, sol.ysp_com, sol.zsp_com); //Spacecraft's orbit mesh in the COM frame of the binary
         
         //This will run only once no matter how many times the reset_gpu_resources() is called.
-        if (!sky) sky = std::make_unique<skybox>("../skybox/galaxy2k/right.png",
-                                                 "../skybox/galaxy2k/left.png",
-                                                 "../skybox/galaxy2k/top.png",
-                                                 "../skybox/galaxy2k/bottom.png",
-                                                 "../skybox/galaxy2k/front.png",
-                                                 "../skybox/galaxy2k/back.png");
+        if (!sky) sky = std::make_unique<skybox>("../skybox/stars2k/right.png",
+                                                 "../skybox/stars2k/left.png",
+                                                 "../skybox/stars2k/top.png",
+                                                 "../skybox/stars2k/bottom.png",
+                                                 "../skybox/stars2k/front.png",
+                                                 "../skybox/stars2k/back.png");
         setup_depth_fbo();
     }
 
@@ -231,23 +231,23 @@ public:
             glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
         }
 
-        //Sun rendering pass :
+        // Sun rendering pass :
         if (render_sun)
         {
             sh_sun.use();
             sh_sun.set_uniform_mat4("projection", cam.projection);
             sh_sun.set_uniform_mat4("view", cam.view);
             sh_sun.set_uniform_vec3("light_dir", sunlight.dir);
-            sh_sun.set_uniform_float("apparent_angular_radius", asinf(RSUN/sunlight.dist));
-            sh_sun.set_uniform_float("quad_distance", CAM_MAX_DIST_SCALE*cam.max_dist); //The quad must be 'comfortably' far, such that it occludes only the skybox but no other mesh, which is guarded by the camera's max distance.
-            
-            sh_sun.set_uniform_vec3("sun_color", sunquad.color);
-
+            sh_sun.set_uniform_float("apparent_angular_radius", asinf(RSUN / sunlight.dist));
+            sh_sun.set_uniform_float("quad_distance", CAM_MAX_DIST_SCALE*cam.max_dist);
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_ONE, GL_ONE);
             glDepthFunc(GL_LEQUAL);
             glDepthMask(GL_FALSE);
             sunquad.render();
             glDepthMask(GL_TRUE);
             glDepthFunc(GL_LESS);
+            glDisable(GL_BLEND);
         }
         
         //Polyhedra rendering pass :
