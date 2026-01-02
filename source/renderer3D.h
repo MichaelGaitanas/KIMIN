@@ -238,7 +238,7 @@ public:
             sh_sun.set_uniform_mat4("projection", cam.projection);
             sh_sun.set_uniform_mat4("view", cam.view);
             sh_sun.set_uniform_vec3("light_dir", sunlight.dir);
-            sh_sun.set_uniform_float("apparent_angular_radius", asinf(RSUN / sunlight.dist));
+            sh_sun.set_uniform_float("apparent_angular_radius", asinf(RSUN/sunlight.dist));
             sh_sun.set_uniform_float("quad_distance", CAM_MAX_DIST_SCALE*cam.max_dist);
             glEnable(GL_BLEND);
             glBlendFunc(GL_ONE, GL_ONE);

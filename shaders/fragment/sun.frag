@@ -4,95 +4,114 @@ layout(location = 0) out vec4 frag_col;
 
 in vec2 coord;
 
-//Noise functions (procedural turbulence for surface).
-float random(in vec3 st)
+const int n_octaves = 6;
+const float qscale = 500.0;
+
+//Pseudo RNG in [0,1).
+float random(vec3 st)
 {
-    return fract(sin(dot(st, vec3(12.9898, 78.233, 23.112))) * 12943.145);
+    return fract(12943.145*sin(dot(st, vec3(12.9898, 78.233, 23.112))));
 }
 
-float noise(in vec3 _pos)
+//Noise function for procedural turbulence on the Sun's surface.
+float noise(vec3 pos)
 {
-    vec3 i_pos = floor(_pos);
-    vec3 f_pos = fract(_pos);
+    vec3 ipos = floor(pos);
+    vec3 fpos = fract(pos);
 
-    float aa = random(i_pos);
-    float ab = random(i_pos + vec3(1., 0., 0.));
-    float ac = random(i_pos + vec3(0., 1., 0.));
-    float ad = random(i_pos + vec3(1., 1., 0.));
-    float ae = random(i_pos + vec3(0., 0., 1.));
-    float af = random(i_pos + vec3(1., 0., 1.));
-    float ag = random(i_pos + vec3(0., 1., 1.));
-    float ah = random(i_pos + vec3(1., 1., 1.));
+    float aa = random(ipos);
+    float ab = random(ipos + vec3(1.0,0.0,0.0));
+    float ac = random(ipos + vec3(0.0,1.0,0.0));
+    float ad = random(ipos + vec3(1.0,1.0,0.0));
+    float ae = random(ipos + vec3(0.0,0.0,1.0));
+    float af = random(ipos + vec3(1.0,0.0,1.0));
+    float ag = random(ipos + vec3(0.0,1.0,1.0));
+    float ah = random(ipos + vec3(1.0,1.0,1.0));
 
-    float ba = random(i_pos + 1.);
-    float bb = random(i_pos + 1. + vec3(1., 0., 0.));
-    float bc = random(i_pos + 1. + vec3(0., 1., 0.));
-    float bd = random(i_pos + 1. + vec3(1., 1., 0.));
-    float be = random(i_pos + 1. + vec3(0., 0., 1.));
-    float bf = random(i_pos + 1. + vec3(1., 0., 1.));
-    float bg = random(i_pos + 1. + vec3(0., 1., 1.));
-    float bh = random(i_pos + 1. + vec3(1., 1., 1.));
+    float ba = random(ipos + 1.0);
+    float bb = random(ipos + 1.0 + vec3(1.0, 0.0, 0.0));
+    float bc = random(ipos + 1.0 + vec3(0.0, 1.0, 0.0));
+    float bd = random(ipos + 1.0 + vec3(1.0, 1.0, 0.0));
+    float be = random(ipos + 1.0 + vec3(0.0, 0.0, 1.0));
+    float bf = random(ipos + 1.0 + vec3(1.0, 0.0, 1.0));
+    float bg = random(ipos + 1.0 + vec3(0.0, 1.0, 1.0));
+    float bh = random(ipos + 1.0 + vec3(1.0, 1.0, 1.0));
 
-    vec3 t = smoothstep(0., 1., f_pos);
-    float t_time = smoothstep(0., 1., 0.2);
+    vec3 t = smoothstep(0.0, 1.0, fpos);
 
     return mix(
-        mix(
-            mix(mix(aa, ab, t.x), mix(ac, ad, t.x), t.y),
+        mix(mix(mix(aa, ab, t.x), mix(ac, ad, t.x), t.y),
             mix(mix(ae, af, t.x), mix(ag, ah, t.x), t.y),
-            t.z
-        ),
-        mix(
-            mix(mix(ba, bb, t.x), mix(bc, bd, t.x), t.y),
+            t.z),
+        mix(mix(mix(ba, bb, t.x), mix(bc, bd, t.x), t.y),
             mix(mix(be, bf, t.x), mix(bg, bh, t.x), t.y),
-            t.z
-        ),
-        t_time
+            t.z),
+        smoothstep(0.0, 1.0, 0.2)
     );
+    //I made a mixer. VSOOUUUUUNNNNN!
 }
 
-#define NUM_OCTAVES 6
-float fBm(in vec3 _pos, in float sz) {
-    float v = 0.0;
-    float a = 0.2;
-    _pos *= sz;
+float fractional_brownian(vec3 pos, float sz)
+{
     vec3 angle = vec3(0.001, 0.0001, 0.0004);
     
-    mat3 rotx = mat3(1, 0, 0, 0, cos(angle.x), -sin(angle.x), 0, sin(angle.x), cos(angle.x));
-    mat3 roty = mat3(cos(angle.y), 0, sin(angle.y), 0, 1, 0, -sin(angle.y), 0, cos(angle.y));
-    mat3 rotz = mat3(cos(angle.z), -sin(angle.z), 0, sin(angle.z), cos(angle.z), 0, 0, 0, 1);
-    
-    for (int i = 0; i < NUM_OCTAVES; ++i) {
-        v += a * noise(_pos);
-        _pos = rotx * roty * rotz * _pos * 2.0;
+    mat3 rotx = mat3(1.0,     0.0,           0.0, 
+                     0.0, cos(angle.x), -sin(angle.x),
+                     0.0, sin(angle.x),  cos(angle.x));
+
+    mat3 roty = mat3(cos(angle.y), 0.0, sin(angle.y),
+                         0.0,      1.0,     0.0,
+                    -sin(angle.y), 0.0, cos(angle.y));
+
+    mat3 rotz = mat3(cos(angle.z), -sin(angle.z), 0.0,
+                     sin(angle.z),  cos(angle.z), 0.0,
+                         0.0,           0.0,      1.0);
+
+    float v = 0.0;
+    float a = 0.2;
+    pos *= sz;
+    for (int i = 0; i < n_octaves; ++i)
+    {
+        v += a*noise(pos);
+        pos = rotx*roty*rotz*pos*2.0;
         a *= 0.8;
     }
+
     return v;
 }
 
 void main()
 {
     float r = length(coord);
-    
-    if (r > 1.0)
+
+    //1 : Outside Sun's corona :
+    if (r > qscale)
         discard;
 
-    // Project to virtual sphere for 3D noise.
+    //2 : Sun's corona region :
+    if (r > 1.0)
+    {
+        float a = 1.1, b = 0.4, c = 2.0; //See mathematica notebook for these.
+        float intensity = pow(a, -pow((pow(r,b) - 1.0), c) );
+        frag_col = vec4(intensity*vec3(1.0,0.6,0.0), 1.0);
+        return;
+    }
+
+    //3 : Sun's physical disk region :
+
+    //Project to virtual sphere for 3D noise :
     float theta = atan(coord.y, coord.x);
     float sin_phi = r;
-    float cos_phi = sqrt(1.0 - sin_phi * sin_phi);
-    vec3 st = vec3(sin_phi * cos(theta), sin_phi * sin(theta), cos_phi);
+    float cos_phi = sqrt(max(0.0, 1.0 - sin_phi*sin_phi));
+    vec3 st = vec3(sin_phi*cos(theta), sin_phi*sin(theta), cos_phi);
 
-    // Procedural surface noise.
-    vec3 q = vec3(0.);
-    q.x = fBm(st, 5.);
-    q.y = fBm(st + vec3(1.2, 3.2, 1.52), 5.);
-    q.z = fBm(st + vec3(0.02, 0.12, 0.152), 5.);
-    float n = fBm(st + q + vec3(1.82, 1.32, 1.09), 5.);
+    //Procedural surface noise :
+    vec3 q = vec3(0.0);
+    q.x = fractional_brownian(st, 5.0);
+    q.y = fractional_brownian(st + vec3(1.2, 3.2, 1.52), 5.0);
+    q.z = fractional_brownian(st + vec3(0.02, 0.12, 0.152), 5.0);
+    float n = fractional_brownian(st + q + vec3(1.82, 1.32, 1.09), 5.0);
+    vec3 color = 1.5*mix(vec3(1.0, 0.4, 0.0), vec3(1.0, 1.0, 1.0), n);
 
-    vec3 color = mix(vec3(1., 0.4, 0.), vec3(1., 1., 1.), n);
-
-    color *= 1.6; // Boost for brightness.
-
-    frag_col = vec4(color, 1.0); // Opaque disk.
+    frag_col = vec4(color, 1.0);
 }
