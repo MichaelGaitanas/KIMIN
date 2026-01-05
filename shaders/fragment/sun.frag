@@ -1,6 +1,6 @@
 #version 450 core
 
-layout(location = 0) out vec4 frag_col;
+out vec4 frag_col;
 
 in vec2 coord;
 
@@ -91,27 +91,26 @@ void main()
     //2 : Sun's corona region :
     if (r > 1.0)
     {
-        float a = 1.1, b = 0.4, c = 2.0; //See mathematica notebook for these.
+        float a = 1.1, b = 0.33, c = 2.0; //See mathematica notebook for these. Maybe I will add rays in the future.
         float intensity = pow(a, -pow((pow(r,b) - 1.0), c) );
-        frag_col = vec4(intensity*vec3(1.0,0.6,0.0), 1.0);
+        frag_col = vec4(intensity*vec3(1.0,0.65,0.1), intensity);
         return;
     }
 
     //3 : Sun's physical disk region :
 
-    //Project to virtual sphere for 3D noise :
+    //Project 2D coordinates to virtual 3D sphere. Here is where we "transform" the 2D quad to a sphere.
     float theta = atan(coord.y, coord.x);
     float sin_phi = r;
     float cos_phi = sqrt(max(0.0, 1.0 - sin_phi*sin_phi));
     vec3 st = vec3(sin_phi*cos(theta), sin_phi*sin(theta), cos_phi);
-
-    //Procedural surface noise :
+    //Now apply actual procedural surface texture.
     vec3 q = vec3(0.0);
     q.x = fractional_brownian(st, 5.0);
     q.y = fractional_brownian(st + vec3(1.2, 3.2, 1.52), 5.0);
     q.z = fractional_brownian(st + vec3(0.02, 0.12, 0.152), 5.0);
     float n = fractional_brownian(st + q + vec3(1.82, 1.32, 1.09), 5.0);
-    vec3 color = 1.5*mix(vec3(1.0, 0.4, 0.0), vec3(1.0, 1.0, 1.0), n);
+    vec3 color = 1.5*mix(vec3(1.0, 0.3, 0.0), vec3(1.0, 1.0, 1.0), n);
 
     frag_col = vec4(color, 1.0);
 }

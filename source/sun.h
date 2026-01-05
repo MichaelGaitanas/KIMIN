@@ -1,3 +1,6 @@
+/* This class is responsible for the Sun rendering logic. Our Sun is gonna be a 2D quad and we will manipulate it via the shader
+   to make it look like a Sun sphere. See sun.vert and sun.frag shaders. */
+
 #ifndef SUN_H
 #define SUN_H
 
@@ -46,7 +49,7 @@ public:
     void render()
     {
         glBindVertexArray(vao);
-        glDrawArrays(GL_TRIANGLES, 0, 6); //Just a quad. But with appropriate fragment shader manipulation, it will look like an emissive spherical source.
+        glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);
     }
 };

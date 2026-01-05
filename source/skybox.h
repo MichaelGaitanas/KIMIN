@@ -11,7 +11,7 @@ private:
     unsigned vao, vbo, ebo ; //Vertex array object, vertex buffer object and element (index) buffer object.
 
 public:
-    unsigned tex;  //Texture ID.
+    unsigned tex_id;
 
     //Construct the mesh procedurally (i.e. no geometry data like vertices or UVs are read from a file), setup the mesh in the gpu memory, load the 6 images and tell how to wrap them.
     //Note : Make sure that all 6 images have the same size in pixels (e.g. 2048x2048, 500x500, etc...) AND the same type of extensions (e.g. jpg, png, bmp, ...).
@@ -19,7 +19,7 @@ public:
           vao(0),
           vbo(0),
           ebo(0),
-          tex(0)
+          tex_id(0)
     {   
         //Cube vertices.
         float verts[] = { -1.0f, -1.0f,  1.0f,
@@ -69,8 +69,8 @@ public:
         glBindVertexArray(0);
 
         //Tell OpenGL how to store the skybox's texture.
-        glGenTextures(1, &tex);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, tex);
+        glGenTextures(1, &tex_id);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, tex_id);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -133,7 +133,7 @@ public:
         glDeleteVertexArrays(1, &vao);
         glDeleteBuffers(1, &ebo);
         glDeleteBuffers(1, &vbo);
-        glDeleteTextures(1, &tex);
+        glDeleteTextures(1, &tex_id);
     }
 
     //Draw the skybox.

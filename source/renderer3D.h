@@ -26,7 +26,7 @@ class renderer3D
 private:
     shader sh_depth, sh_dlight, sh_orb, sh_skybox, sh_sun, sh_grid;
     polyhedron xaxis, yaxis, zaxis;
-    std::unique_ptr<skybox> sky;
+    std::unique_ptr<skybox> skybox_stars, skybox_starmap, skybox_galaxy;
 
     unsigned depth_fbo_id, depth_tex_id; //IDs to hold the depth framebuffer and the depth texture for the shadow map algorithm.
 
@@ -40,7 +40,7 @@ public:
     int depth_reso; //Actual depth image resolution in pixels (for the shadow map).
 
     glm::vec3 body1_col, body2_col, xaxis_col, yaxis_col, zaxis_col, orb1_col, orb2_col, orb_sp_col;
-    bool render_body1, render_body2, render_axes1, render_axes2, render_orb1, render_orb2, render_orb_sp, render_grid, render_skybox, render_sun; //These correspond to the GUI checkboxes state.
+    bool render_body1, render_body2, render_axes1, render_axes2, render_orb1, render_orb2, render_orb_sp, render_grid, render_ecliptic, render_stars, render_starmap, render_galaxy, render_sun; //These correspond to the GUI checkboxes state.
 
     int win_width, win_height;
     
@@ -53,7 +53,9 @@ public:
                    xaxis(),
                    yaxis(),
                    zaxis(),
-                   sky(nullptr),
+                   skybox_stars(nullptr),
+                   skybox_starmap(nullptr),
+                   skybox_galaxy(nullptr),
                    depth_fbo_id(0),
                    depth_tex_id(0),
                    cam(),
@@ -80,7 +82,10 @@ public:
                    render_orb2(false),
                    render_orb_sp(false),
                    render_grid(false),
-                   render_skybox(true),
+                   render_ecliptic(false),
+                   render_stars(true),
+                   render_starmap(false),
+                   render_galaxy(false),
                    render_sun(true),
                    win_width(1),
                    win_height(1)
@@ -142,15 +147,31 @@ public:
         orb2.set_gl_mesh(sol.xmut, sol.ymut, sol.zmut, float(sol.integr.m2));
         if (sol.integr.props.spacecraft_checkbox)
             orb_sp.set_gl_mesh(sol.xsp_com, sol.ysp_com, sol.zsp_com); //Spacecraft's orbit mesh in the COM frame of the binary
+
+        setup_depth_fbo();
         
         //This will run only once no matter how many times the reset_gpu_resources() is called.
-        if (!sky) sky = std::make_unique<skybox>("../skybox/stars2k/right.png",
-                                                 "../skybox/stars2k/left.png",
-                                                 "../skybox/stars2k/top.png",
-                                                 "../skybox/stars2k/bottom.png",
-                                                 "../skybox/stars2k/front.png",
-                                                 "../skybox/stars2k/back.png");
-        setup_depth_fbo();
+        if (!skybox_stars)
+             skybox_stars   = std::make_unique<skybox>("../skybox/stars2k/right.png",
+                                                       "../skybox/stars2k/left.png",
+                                                       "../skybox/stars2k/top.png",
+                                                       "../skybox/stars2k/bottom.png",
+                                                       "../skybox/stars2k/front.png",
+                                                       "../skybox/stars2k/back.png");
+        if (!skybox_starmap)
+             skybox_starmap = std::make_unique<skybox>("../skybox/starmap2k/right.png",
+                                                       "../skybox/starmap2k/left.png",
+                                                       "../skybox/starmap2k/top.png",
+                                                       "../skybox/starmap2k/bottom.png",
+                                                       "../skybox/starmap2k/front.png",
+                                                       "../skybox/starmap2k/back.png");
+        if (!skybox_galaxy)
+             skybox_galaxy  = std::make_unique<skybox>("../skybox/galaxy2k/right.png",
+                                                       "../skybox/galaxy2k/left.png",
+                                                       "../skybox/galaxy2k/top.png",
+                                                       "../skybox/galaxy2k/bottom.png",
+                                                       "../skybox/galaxy2k/front.png",
+                                                       "../skybox/galaxy2k/back.png");
     }
 
     //This function handles the rendering logic of the 3D content.
@@ -210,28 +231,42 @@ public:
         glViewport(0,0, win_width,win_height);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        //Skybox rendering pass :
-        if (sky && render_skybox)
+        //Skybox(es) rendering pass :
+        if ((skybox_stars && skybox_starmap && skybox_galaxy) && (render_stars || render_starmap || render_galaxy))
         {
             const glm::mat4 sky_view  = glm::mat4(glm::mat3(cam.view)); //View but no translation part.
             const glm::mat4 sky_model = glm::rotate(I, glm::radians(180.0f), glm::vec3(0.0f,0.0f,1.0f))*
                                         glm::rotate(I, glm::radians(90.0f),  glm::vec3(1.0f,0.0f,0.0f));
             sh_skybox.use();
-            sh_skybox.set_uniform_int("skybox", 0);
             sh_skybox.set_uniform_mat4("projection", cam.projection);
             sh_skybox.set_uniform_mat4("view",  sky_view);
             sh_skybox.set_uniform_mat4("model", sky_model);
+            sh_skybox.set_uniform_int("skybox_stars", 0);
+            sh_skybox.set_uniform_int("skybox_starmap", 1);
+            sh_skybox.set_uniform_int("skybox_galaxy", 2);
+            sh_skybox.set_uniform_int("render_stars",   render_stars   ? 1 : 0);
+            sh_skybox.set_uniform_int("render_starmap", render_starmap ? 1 : 0);
+            sh_skybox.set_uniform_int("render_galaxy",  render_galaxy  ? 1 : 0);
             glActiveTexture(GL_TEXTURE0);
-		    glBindTexture(GL_TEXTURE_CUBE_MAP, sky->tex);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_stars->tex_id);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_starmap->tex_id);
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_galaxy->tex_id);
             glDepthFunc(GL_LEQUAL); //Look at the shader skybox.vert : I have forced all fragments' depth values to be 1.0. So for the depth test to pass, I change the test operation to '<=' instead of the default '<'.
             glDepthMask(GL_FALSE); //This ain't needed for the particular order of rendering, but let it be some sort of guard for any future update...
-            sky->render();
+            skybox_stars->render();
             glDepthMask(GL_TRUE);
             glDepthFunc(GL_LESS); //Restore to the default depth operation to '<'.
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+            glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
         }
 
-        // Sun rendering pass :
+        //Sun rendering pass :
         if (render_sun)
         {
             sh_sun.use();
@@ -241,7 +276,7 @@ public:
             sh_sun.set_uniform_float("apparent_angular_radius", asinf(RSUN/sunlight.dist));
             sh_sun.set_uniform_float("quad_distance", CAM_MAX_DIST_SCALE*cam.max_dist);
             glEnable(GL_BLEND);
-            glBlendFunc(GL_ONE, GL_ONE);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             glDepthFunc(GL_LEQUAL);
             glDepthMask(GL_FALSE);
             sunquad.render();
@@ -309,7 +344,7 @@ public:
             sh_grid.use();
             sh_grid.set_uniform_mat4("uProj", cam.projection);
             sh_grid.set_uniform_mat4("uView", cam.view);
-            sh_grid.set_uniform_float("uFadeEnd", 2.0f*cam.dist);
+            sh_grid.set_uniform_float("uFadeEnd", 4.0f*cam.dist);
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             glDepthFunc(GL_LEQUAL);

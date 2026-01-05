@@ -448,17 +448,24 @@ private:
         ImGui::SetCursorPosX(50.0f*SCX);
         uint64_t visible_min_frame = (frames > 0) ? 1 : 0;
         uint64_t visible_iframe = (frames > 0) ? (iframe + 1) : 0; //Display in the gui 1-based frame (instead of 0-based, which is used in the arrays as index).
+        ImGui::PushStyleColor(ImGuiCol_FrameBg,          ImVec4(0.35f, 0.05f, 0.05f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_FrameBgHovered,   ImVec4(0.55f, 0.10f, 0.10f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_FrameBgActive,    ImVec4(0.60f, 0.12f, 0.12f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_SliderGrab,       ImVec4(0.85f, 0.20f, 0.20f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.95f, 0.25f, 0.25f, 1.0f));
         ImGui::SliderScalar("##visible_iframe", ImGuiDataType_U64, &visible_iframe, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        ImGui::PopStyleColor(5);
         //Rule is : the above slider controls the frames and then the 'iframe' is updated accordingly, but into 0-based frame, because it is an index.
         iframe = (visible_iframe > 0) ? (visible_iframe - 1) : 0;
         ImGui::Text("Rate");
         ImGui::SameLine();
         ImGui::SetCursorPosX(50.0f*SCX);
-        ImGui::SliderInt("[Hz]##framerate", &framerate, 0, 60, "%d");
+        ImGui::SliderInt("[Hz]##framerate", &framerate, 0, 60, "%d", ImGuiSliderFlags_AlwaysClamp);
+        ImGui::Dummy(ImVec2(0.0f, 5.0f*SCY));
         if (!sol || sol->t.empty())
-            ImGui::Text("Time : 0.00  [days]");
+            ImGui::TextColored(ImVec4(0.9f,0.0f,0.0f,1.0f), "Time : 0.00  [days]");
         else
-            ImGui::Text("Time : %.2f  [days]", float(sol->t[iframe]));
+            ImGui::TextColored(ImVec4(0.9f,0.0f,0.0f,1.0f), "Time : %.2f  [days]", float(sol->t[iframe]));
         ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
@@ -526,7 +533,7 @@ private:
         {
             ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
 
-            ImGui::Text("Bodies");
+            ImGui::Text("Binary system");
             ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
 
             ImGui::Text("Body 1");
@@ -537,6 +544,7 @@ private:
             ImGui::SetCursorPosX(100.0f*SCX);
             ImGui::Text("Axes 1");
             ImGui::SameLine();
+            ImGui::SetCursorPosX(150.0f*SCX);
             ImGui::Checkbox("##rend3D.render_axes1", &rend3D.render_axes1);
 
             ImGui::Text("Body 2");
@@ -547,10 +555,11 @@ private:
             ImGui::SetCursorPosX(100.0f*SCX);
             ImGui::Text("Axes 2");
             ImGui::SameLine();
+            ImGui::SetCursorPosX(150.0f*SCX);
             ImGui::Checkbox("##rend3D.render_axes2", &rend3D.render_axes2);
             ImGui::Dummy(ImVec2(0.0f,4.0f*SCY));
 
-            ImGui::Text("Orbits");
+            ImGui::Text("Trajectories");
             ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
 
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f,0.2f,0.2f,1.0f)); //Make all the plot buttons' off state gray.
@@ -610,7 +619,7 @@ private:
             if (!sol || sol->t.empty() || !sol->integr.props.spacecraft_checkbox)
                 ImGui::BeginDisabled();
 
-            ImGui::Text("Orbiter");
+            ImGui::Text("Sp/craft");
             ImGui::SameLine();
             ImGui::SetCursorPosX(60.0f*SCX);
             ImGui::Checkbox("##rend3D.render_orb_sp", &rend3D.render_orb_sp);
@@ -641,28 +650,47 @@ private:
 
             ImGui::PopStyleColor();
 
-            ImGui::Dummy(ImVec2(0.0f,4.0f*SCY));
-
-            ImGui::Text("Infinite grid");
-            ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
-            ImGui::Text("Grid");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(60.0f*SCX);
-            ImGui::Checkbox("##rend3D.render_grid", &rend3D.render_grid);
-
-            ImGui::Text("Skybox");
-            ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
-            ImGui::Text("Sb");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(60.0f*SCX);
-            ImGui::Checkbox("##rend3D.render_skybox", &rend3D.render_skybox);
-
+            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
             ImGui::Text("Sun");
-            ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
-            ImGui::Text("Sn");
             ImGui::SameLine();
             ImGui::SetCursorPosX(60.0f*SCX);
             ImGui::Checkbox("##rend3D.render_sun", &rend3D.render_sun);
+            
+            ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
+
+            ImGui::Text("Grids");
+            ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
+            ImGui::Text("Local xy");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(60.0f*SCX);
+            ImGui::Checkbox("##rend3D.render_grid", &rend3D.render_grid);
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(100.0f*SCX);
+            ImGui::Text("Ecliptic");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(155.0f*SCX);
+            ImGui::Checkbox("##rend3D.render_ecliptic", &rend3D.render_ecliptic);
+
+            ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
+
+            ImGui::Text("Background");
+            ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
+
+            ImGui::Text("Stars");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(60.0f*SCX);
+            ImGui::Checkbox("##rend3D.render_stars", &rend3D.render_stars);
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(100.0f*SCX);
+            ImGui::Text("Starmap");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(155.0f*SCX);
+            ImGui::Checkbox("##rend3D.render_starmap", &rend3D.render_starmap);
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(195.0f*SCX);
+            ImGui::Text("Galaxy");
+            ImGui::SameLine();
+            ImGui::Checkbox("##rend3D.render_galaxy", &rend3D.render_galaxy);
 
             ImGui::TreePop();
         }
@@ -728,7 +756,6 @@ public:
     void render(const int win_width, const int win_height)
     {
         //Copy the window's dimensions to the renderer3D's members. We need them at each frame to compute the camera's projection matrix (see renderer3D.h).
-        //NOTE : Do not forget to check if this is the right numbers vs the ImGui::GetIO().DisplaySize.
         rend3D.win_width  = win_width;
         rend3D.win_height = win_height;
 
