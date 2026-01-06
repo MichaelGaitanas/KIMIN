@@ -657,19 +657,10 @@ private:
             ImGui::Checkbox("##rend3D.render_sun", &rend3D.render_sun);
             
             ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
-
-            ImGui::Text("Grids");
-            ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
-            ImGui::Text("Local xy");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(60.0f*SCX);
-            ImGui::Checkbox("##rend3D.render_grid", &rend3D.render_grid);
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(100.0f*SCX);
             ImGui::Text("Ecliptic");
             ImGui::SameLine();
-            ImGui::SetCursorPosX(155.0f*SCX);
-            ImGui::Checkbox("##rend3D.render_ecliptic", &rend3D.render_ecliptic);
+            ImGui::SetCursorPosX(60.0f*SCX);
+            ImGui::Checkbox("##rend3D.render_ecliptic_grid", &rend3D.render_ecliptic_grid);
 
             ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
 

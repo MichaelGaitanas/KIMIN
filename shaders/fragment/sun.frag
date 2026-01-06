@@ -110,7 +110,7 @@ void main()
     q.y = fractional_brownian(st + vec3(1.2, 3.2, 1.52), 5.0);
     q.z = fractional_brownian(st + vec3(0.02, 0.12, 0.152), 5.0);
     float n = fractional_brownian(st + q + vec3(1.82, 1.32, 1.09), 5.0);
-    vec3 color = 1.5*mix(vec3(1.0, 0.3, 0.0), vec3(1.0, 1.0, 1.0), n);
+    vec3 color = 1.5*mix(vec3(1.0, 0.4, 0.0), vec3(1.0, 1.0, 1.0), n);
 
     frag_col = vec4(color, 1.0);
 }

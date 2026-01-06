@@ -1,114 +1,98 @@
 #version 450 core
+
 in vec2 v_ndc;
-layout(location=0) out vec4 frag_col;
 
-uniform mat4 uProj;         // projection
-uniform mat4 uView;         // view
-uniform float uFadeEnd;     // fade-out radius on plane (e.g., 2*cam.dist)
+out vec4 frag_col;
 
-// look
-const float LINE_PX    = 1.0;       // exact pixel thickness (tune 1.5–2.0)
-const float TARGET_PX  = 224.0;      // bigger => fewer lines (try 224/256)
+uniform mat4 projection;
+uniform mat4 view;
+uniform float fade_end_dist;
 
-// ===== helpers (no inverse()) =====
-vec3 cameraWorldPos() {
-    mat3 R = mat3(uView);
-    vec3 t = vec3(uView[3]);
-    return -transpose(R) * t;
-}
-vec3 viewToWorld(vec3 v) { return transpose(mat3(uView)) * v; }
-vec3 ndcToViewDir(vec2 ndc) {
-    float invFx = 1.0 / uProj[0][0];
-    float invFy = 1.0 / uProj[1][1];
-    return normalize(vec3(ndc.x * invFx, ndc.y * invFy, -1.0));
-}
-float nice12(float x){
-    float lx=log(max(x,1e-12)), e=floor(lx/log(10.0));
-    float m=x/pow(10.0,e);
-    float n=(m<1.5)?1.0: (m<6.0)?2.0: 10.0;
-    return n*pow(10.0,e);
-}
-float next12(float a){
-    float lx=log(max(a,1e-12)), e=floor(lx/log(10.0));
-    float m=a/pow(10.0,e);
-    float n=(m<1.5)?2.0:10.0;
-    if(n>=10.0-1e-6){ e+=1.0; n=1.0; }
-    return n*pow(10.0,e);
+const float TARGET_PIX = 700.0;
+
+vec3 view2world(vec3 v)
+{
+    return transpose(mat3(view))*v;
 }
 
-void main() {
-    // ---- world-space hit on z=0 plane
-    vec3 camPos = cameraWorldPos();
-    vec3 dirWS  = normalize(viewToWorld(ndcToViewDir(v_ndc)));
-    float dz    = dirWS.z;
-    if (abs(dz) < 1e-6) discard;
-    float t = -camPos.z / dz;
-    if (t <= 0.0) discard;
-    vec3 P = camPos + t * dirWS;
+vec3 ndc2view(vec2 ndc)
+{
+    float invFx = 1.0/projection[0][0];
+    float invFy = 1.0/projection[1][1];
+    return normalize(vec3(ndc.x*invFx, ndc.y*invFy, -1.0));
+}
 
-    // correct depth
-    vec4 clip = uProj * uView * vec4(P, 1.0);
-    gl_FragDepth = (clip.z / clip.w) * 0.5 + 0.5;
+float cov_for_cell(float cell, vec3 P, float half_size, float aaX, float aaY)
+{
+    float dX = abs(fract(P.x/cell) - 0.5)*cell;
+    float dY = abs(fract(P.y/cell) - 0.5)*cell;
 
-    // ---- view-angle aware LOD (constant per draw) using center ray
-    vec3 dirC   = normalize(viewToWorld(ndcToViewDir(vec2(0.0))));
-    float tC    = abs(camPos.z) / max(abs(dirC.z), 1e-6);
+    float covX = 1.0 - smoothstep(half_size, half_size + aaX, dX);
+    float covY = 1.0 - smoothstep(half_size, half_size + aaY, dY);
 
-    // NDC pixel size is constant for full-screen quad
+    return covX + covY - covX*covY;
+}
+
+void main()
+{
+    vec3 cam_pos_world = -transpose(mat3(view))*vec3(view[3]);
+    vec3 ray_dir_world = normalize(view2world(ndc2view(v_ndc))); //Read it from right-to-left.
+
+    //Intersect plane z = 0.
+    if (abs(ray_dir_world.z) < 1e-6)
+        discard;
+
+    float t = -cam_pos_world.z/ray_dir_world.z;
+    if (t <= 0.0)
+        discard;
+
+    vec3 P = cam_pos_world + t*ray_dir_world;
+
+    //Depth :
+    vec4 clip = projection*view*vec4(P, 1.0);
+    gl_FragDepth = (clip.z/clip.w)*0.5 + 0.5;
+
+    //World units per pixel (stable, from center ray)
+    vec3 dirC = normalize(view2world(ndc2view(vec2(0.0))));
+    float tC  = abs(cam_pos_world.z)/max(abs(dirC.z), 1e-6);
+
     float ndcPxX = fwidth(v_ndc.x);
     float ndcPxY = fwidth(v_ndc.y);
 
-    // world-units per pixel at center
-    float invFx = 1.0 / uProj[0][0];
-    float invFy = 1.0 / uProj[1][1];
-    float wpp_center = max(tC * invFx * ndcPxX, tC * invFy * ndcPxY);
+    float invFx = 1.0/projection[0][0];
+    float invFy = 1.0/projection[1][1];
 
-    // two adjacent pleasant spacings and smooth crossfade
-    float raw    = wpp_center * TARGET_PX;
-    float cellA  = nice12(raw);
-    float cellB  = next12(cellA);
-    float logRaw = log(raw), logA = log(cellA), logB = log(cellB);
-    float k      = clamp((logRaw - logA) / max(logB - logA, 1e-12), 0.0, 1.0);
-    k            = smoothstep(0.75, 1.0, k);
+    float wpp_center = max(tC*invFx*ndcPxX, tC*invFy*ndcPxY);
 
-    // ===== per-axis coverage with per-axis gradients (keeps px thickness) =====
-    // For a vertical line family (x = const):
-    // distance field dX = distance to nearest vertical line in world units.
-    // ∂dX/∂P.x ≈ ±1 piecewise -> |∇dX| in screen space ≈ |∇P.x|.
-    float dXA = abs(fract(P.x / cellA) - 0.5) * cellA;
-    float dYA = abs(fract(P.y / cellA) - 0.5) * cellA;
-    float dXB = abs(fract(P.x / cellB) - 0.5) * cellB;
-    float dYB = abs(fract(P.y / cellB) - 0.5) * cellB;
+    float gradX = length(vec2(dFdx(P.x), dFdy(P.x)));
+    float gradY = length(vec2(dFdx(P.y), dFdy(P.y)));
 
-    // screen-space gradient magnitudes per axis
-    float gradPx = length(vec2(dFdx(P.x), dFdy(P.x))) + 1e-12;
-    float gradPy = length(vec2(dFdx(P.y), dFdy(P.y))) + 1e-12;
+    float aaX = max(gradX, 1e-6);
+    float aaY = max(gradY, 1e-6);
 
-    // exact pixel widths
-    float halfX = 0.5 * LINE_PX * gradPx;
-    float halfY = 0.5 * LINE_PX * gradPy;
-    float aaX   = gradPx;   // ~1 px AA
-    float aaY   = gradPy;
+    // Continuous L in log2 cell-size space :
+    float cell_ref = wpp_center*TARGET_PIX;
+    float L = log2(max(cell_ref, 1e-12));
 
-    // coverage for spacing A (vertical and horizontal families)
-    float covXA = 1.0 - smoothstep(halfX, halfX + aaX, dXA);
-    float covYA = 1.0 - smoothstep(halfY, halfY + aaY, dYA);
-    // combine families without over-brightening
-    float covA  = covXA + covYA - covXA * covYA; // “or” in coverage space
+    int i0 = int(floor(L)) - 2;
 
-    // coverage for spacing B
-    float covXB = 1.0 - smoothstep(halfX, halfX + aaX, dXB);
-    float covYB = 1.0 - smoothstep(halfY, halfY + aaY, dYB);
-    float covB  = covXB + covYB - covXB * covYB;
+    float cov_sum = 0.0, wsum = 0.0;
+    for (int j = 0; j < 5; ++j)
+    {
+        int i = i0 + j;
+        float cell = exp2(float(i));
+        float d = L - float(i);
+        float wj = exp(-0.5*d*d);
+        float covj = cov_for_cell(cell, P, 0.5*wpp_center, aaX, aaY);
+        cov_sum += wj*covj;
+        wsum += wj;
+    }
 
-    // crossfade between LODs
-    float cov = mix(covA, covB, k);
+    float cov = cov_sum/max(wsum, 1e-12);
+    float fade = 1.0 - smoothstep(0.0, max(fade_end_dist, 1e-6), length(P.xy));
+    float alpha = cov*fade;
+    if (alpha <= 0.001) 
+        discard;
 
-    // radial fade 0 → uFadeEnd
-    float fade = 1.0 - smoothstep(0.0, max(uFadeEnd, 1e-6), length(P.xy));
-
-    float alpha = cov * fade;
-    if (alpha <= 0.001) discard;
-
-    frag_col = vec4(vec3(0.30), alpha);
+    frag_col = vec4(vec3(0.5), alpha);
 }

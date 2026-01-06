@@ -51,7 +51,7 @@ float get_shadow(float diffuse)
     //shadow or not. This algorithm calculates the shadow but has 2 problems : 1) Shadow acne (see below), 2) Sharp shadow edges (see below).
     //We try to fix the acne via depth bias and the sharp edges via a smoothing algorithm.
 
-    //Shadow acne fix : Balance between shadow acne (self-shadowing) and Peter-shitty-Panning.
+    //Shadow acne fix : Balance between shadow acne (self-shadowing) and Peter-shitty-Panning!
     float min_bias = 0.0003, amplifier = 0.003;
     float bias = max(amplifier*(1.0 - diffuse), min_bias);
 

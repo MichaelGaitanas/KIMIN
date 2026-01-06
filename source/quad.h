@@ -1,21 +1,21 @@
-/* This class is responsible for the Sun rendering logic. Our Sun is gonna be a 2D quad and we will manipulate it via the shader
-   to make it look like a Sun sphere. See sun.vert and sun.frag shaders. */
+/* Here lies the CPU logic of a simple 2D quad mesh prototype. But with appropriate shader manipulation, a 2D quad can become
+   an 'infinite' reference grid or a virtual 3D Sun. See (grid.vert, grid.frag), (sun.vert, sun.frag) for the core operations. */
 
-#ifndef SUN_H
-#define SUN_H
+#ifndef QUAD_H
+#define QUAD_H
 
 #include<GL/glew.h>
 
-class sun
+class quad
 {
 private:
     unsigned vao, vbo;
 
 public:
-    sun() : vao(0),
-            vbo(0)
+    quad() : vao(0),
+             vbo(0)
     {
-        float verts[] = { -1.0f, -1.0f,
+        float verts[] = { -1.0f, -1.0f, 
                            1.0f, -1.0f,
                            1.0f,  1.0f,
 
@@ -37,8 +37,8 @@ public:
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
     }
-
-    ~sun()
+    
+    ~quad()
     {
         if (vbo)
             glDeleteBuffers(1, &vbo);

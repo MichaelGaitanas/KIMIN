@@ -3,6 +3,8 @@
 
 /* This header contains all constants used throughout KIMIN. */
 
+#include<glm/glm.hpp>
+
 constexpr double PI = 3.1415926535897932384626433832795;
 constexpr double G = 6.67430e-20; //[km^3/(kg*sec^2)]
 constexpr double AU2KM = 149597870.7; //[km]
@@ -21,10 +23,20 @@ constexpr float CLEAR_COLOR_R = 0.0f;
 constexpr float CLEAR_COLOR_G = 0.0f;
 constexpr float CLEAR_COLOR_B = 0.0f;
 constexpr float OBJ_AXES_LENGTH = 2.98179f; //[km]
-constexpr float CAM_MAX_DIST_SCALE = 10.0f;
+constexpr float CAM_SUN_MAX_DIST_SCALE = 10.0f;
+constexpr float CAM_GRID_DIST_SCALE = 4.0f;
 //The following are defined as variables because their values are monitor dependent, hence computed
 //as soon as the KIMIN launches (in window.h). They remain constant however throughout all runtime.
 float SCX, SCY;
+
+const glm::vec3 BODY1_COL  = glm::vec3(0.8f);
+const glm::vec3 BODY2_COL  = glm::vec3(0.8f);
+const glm::vec3 XAXIS_COL  = glm::vec3(1.0f,0.0f,0.0f);
+const glm::vec3 YAXIS_COL  = glm::vec3(0.0f,1.0f,0.0f);
+const glm::vec3 ZAXIS_COL  = glm::vec3(0.0f,0.0f,1.0f);
+const glm::vec3 ORB1_COL   = glm::vec3(0.7f,0.0f,0.0f);
+const glm::vec3 ORB2_COL   = glm::vec3(0.0f,0.7f,0.0f);
+const glm::vec3 ORB_SP_COL = glm::vec3(0.0f,0.75f,0.75f);
 
 constexpr int NR_MAX_ITERATIONS = 20;
 constexpr int DEPTH_RESO_MIN = 1024; //[pix]
