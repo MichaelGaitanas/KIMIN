@@ -20,7 +20,7 @@
 class scene
 {
 private:
-    bvec plot_cart_mut,       plot_kep_mut,   plot_dener_dmom;
+    bvec plot_cart_mut, plot_kep_mut, plot_dener_dmom;
     bvec plot_cart_com_helio, plot_kep_com_helio;
     bvec plot_rpy1, plot_rpy2;
     bvec plot_w1i, plot_w1b;
@@ -71,7 +71,7 @@ public:
               orb_sp_sync(false),
               iframe(0),
               frames(0),
-              framerate(60),
+              framerate(MONITOR_HZ),
               frame_accumulator(0.0f),
               sol(nullptr),
               sol2D(),
@@ -112,6 +112,57 @@ public:
     }
 
 private:
+    //This function triggers the events that concern the ONLY in 3D part of the viewport, based on hardware user input.
+    void process_hardware_inputs()
+    {
+        ImGuiIO &io = ImGui::GetIO();
+        if (render_scene && !io.WantCaptureMouse)
+        {
+            if (io.MouseWheel != 0.0f)
+            {
+                if (io.KeyCtrl)
+                    rend3D.cam.zoom(io.MouseWheel);
+                else
+                    rend3D.cam.translate(io.MouseWheel);
+            }
+            if (io.MouseDown[ImGuiMouseButton_Middle])
+            {
+                const ImVec2 d = io.MouseDelta;
+                if (d.x != 0.0f || d.y != 0.0f)
+                    rend3D.cam.rotate(d.x, d.y);
+            }
+
+            //Toggle play/pause state via spacebar key
+            if (ImGui::IsKeyReleased(ImGuiKey_Space))
+                play_video = !play_video;
+        }
+    }
+
+    //This function decides if and how the simulation frames increment.
+    void process_frame_increment_logic()
+    {
+        if (play_video && render_scene && iframe < frames - 1)
+        {
+            if (framerate == 0) //The slider is set to 0 => paused. Do not increment iframe.
+            {
+                //Pass.
+            }
+            else if (framerate < MONITOR_HZ) //We do a time-based step to achieve the chosen framerate.
+            {
+                frame_accumulator += ImGui::GetIO().DeltaTime;
+                float step = 1.0f/framerate;
+                //In case DeltaTime is large (e.g. if the user drags the window), use a while() so we don't 'miss' increments.
+                while (frame_accumulator >= step && iframe < frames - 1)
+                {
+                    iframe++;
+                    frame_accumulator -= step;
+                }
+            }
+            else //framerate == MONITOR_HZ => let it play as fast as the machine can handle, i.e. increment every time we render.
+                iframe++;
+        }
+    }
+
     //This function controls the on/off logic of a clickable labeled button in the gui.
     bool onoff_button(const char *label, const ImVec2 &dimensions, bool state)
     {
@@ -460,7 +511,7 @@ private:
         ImGui::Text("Rate");
         ImGui::SameLine();
         ImGui::SetCursorPosX(50.0f*SCX);
-        ImGui::SliderInt("[Hz]##framerate", &framerate, 0, 60, "%d", ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SliderInt("[Hz]##framerate", &framerate, 0, MONITOR_HZ, "%d", ImGuiSliderFlags_AlwaysClamp);
         ImGui::Dummy(ImVec2(0.0f, 5.0f*SCY));
         if (!sol || sol->t.empty())
             ImGui::TextColored(ImVec4(0.9f,0.0f,0.0f,1.0f), "Time : 0.00  [days]");
@@ -475,6 +526,15 @@ private:
         if (ImGui::TreeNodeEx("Camera"))
         {
             ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
+
+            //Camera mode :
+            ImGui::Text("Ref");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(40.0f*SCX);
+            ImGui::PushItemWidth(225.0f*SCX);
+                static const char *cam_modes[3] = {"COM", "Body 1", "Body 2"};
+                ImGui::Combo("##rend3D.cam.mode", (int*)(&rend3D.cam.mode), cam_modes, IM_ARRAYSIZE(cam_modes));
+            ImGui::PopItemWidth();
 
             ImGui::Text("Dist");
             ImGui::SameLine();
@@ -692,52 +752,10 @@ private:
         if (!render_scene)
             ImGui::EndDisabled();
 
-        //Hardware logic :
-        ImGuiIO &io = ImGui::GetIO();
-        if (render_scene && !io.WantCaptureMouse)
-        {
-            if (io.MouseWheel != 0.0f)
-            {
-                if (io.KeyCtrl)
-                    rend3D.cam.zoom(io.MouseWheel);
-                else
-                    rend3D.cam.translate(io.MouseWheel);
-            }
-            if (io.MouseDown[ImGuiMouseButton_Middle])
-            {
-                const ImVec2 d = io.MouseDelta;
-                if (d.x != 0.0f || d.y != 0.0f)
-                    rend3D.cam.rotate(d.x, d.y);
-            }
-
-            //Toggle play/pause state via spacebar key, but only when the cursor is in the 3D viewport region.
-            if (ImGui::IsKeyReleased(ImGuiKey_Space))
-                play_video = !play_video;
-        }
-
-        //Frame increment logic :
-        if (play_video && render_scene && iframe < frames - 1)
-        {
-            if (framerate == 0) //The slider is set to 0 => paused. Do not increment iframe.
-            {
-                //Pass.
-            }
-            else if (framerate < 60) //We do a time-based step to achieve the chosen framerate.
-            {
-                frame_accumulator += ImGui::GetIO().DeltaTime;
-                float step = 1.0f/framerate;
-                //In case DeltaTime is large (e.g. if the user drags the window), use a while() so we don't 'miss' increments.
-                while (frame_accumulator >= step && iframe < frames - 1)
-                {
-                    iframe++;
-                    frame_accumulator -= step;
-                }
-            }
-            else //framerate == 60 => let it play as fast as the machine can handle, i.e. increment every time we render.
-                iframe++;
-        }
+        process_hardware_inputs();
+        process_frame_increment_logic();
         
-        //Finally, render the 3D content.
+        //Finally, render the 3D content based on all the above :
         if (render_scene && sol && !sol->t.empty())
             rend3D.render_3D_content(*sol, iframe, reset_gpu_flag);
     }

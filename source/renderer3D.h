@@ -171,16 +171,26 @@ public:
             reset_gpu_flag = false;
         }
 
+        const glm::vec3 r1com = float(sol.integr.m1)*glm::vec3(sol.xmut[iframe],sol.ymut[iframe],sol.zmut[iframe]);
+        const glm::vec3 r2com = float(sol.integr.m2)*glm::vec3(sol.xmut[iframe],sol.ymut[iframe],sol.zmut[iframe]);
+        glm::vec3 pivot;
+        if (cam.mode == camera::MODE_COM)
+            pivot = glm::vec3(0.0f);
+        else if (cam.mode == camera::MODE_BODY1)
+            pivot = r1com;
+        else
+            pivot = r2com;
+
         sunlight.set_geometry(float(OBJ_AXES_LENGTH*std::max(sol.integr.brillouin1, sol.integr.brillouin2) + sol.dist_mut[iframe]), -glm::vec3(sol.xcom_helio[iframe],sol.ycom_helio[iframe],sol.zcom_helio[iframe]) );
-        cam.set_geometry(win_width/float(win_height));
+        cam.set_geometry(win_width/float(win_height), pivot);
 
         const glm::mat4 I = glm::mat4(1.0f);
-        const glm::mat4 T1R1 = glm::translate(I, float(sol.integr.m1)*glm::vec3(sol.xmut[iframe],sol.ymut[iframe],sol.zmut[iframe]))*
+        const glm::mat4 T1R1 = glm::translate(I, r1com)*
                                glm::rotate(I, glm::radians(float(sol.yaw1[iframe])),   glm::vec3(0.0f,0.0f,1.0f))*
                                glm::rotate(I, glm::radians(float(sol.pitch1[iframe])), glm::vec3(0.0f,1.0f,0.0f))*
                                glm::rotate(I, glm::radians(float(sol.roll1[iframe])),  glm::vec3(1.0f,0.0f,0.0f));
         const glm::mat4 S1 = glm::scale(I, glm::vec3(sol.integr.brillouin1));
-        const glm::mat4 T2R2 = glm::translate(I, float(sol.integr.m2)*glm::vec3(sol.xmut[iframe],sol.ymut[iframe],sol.zmut[iframe]))*
+        const glm::mat4 T2R2 = glm::translate(I, r2com)*
                                glm::rotate(I, glm::radians(float(sol.yaw2[iframe])),   glm::vec3(0.0f,0.0f,1.0f))*
                                glm::rotate(I, glm::radians(float(sol.pitch2[iframe])), glm::vec3(0.0f,1.0f,0.0f))*
                                glm::rotate(I, glm::radians(float(sol.roll2[iframe])),  glm::vec3(1.0f,0.0f,0.0f));
@@ -334,6 +344,7 @@ public:
             sh_grid.set_uniform_mat4("projection", cam.projection);
             sh_grid.set_uniform_mat4("view", cam.view);
             sh_grid.set_uniform_float("fade_end_dist", CAM_GRID_DIST_SCALE*cam.dist);
+            sh_grid.set_uniform_vec3("grid_origin", pivot);
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             glDepthFunc(GL_LEQUAL);

@@ -7,6 +7,7 @@ out vec4 frag_col;
 uniform mat4 projection;
 uniform mat4 view;
 uniform float fade_end_dist;
+uniform vec3 grid_origin;
 
 const float TARGET_PIX = 700.0;
 
@@ -42,11 +43,12 @@ void main()
     if (abs(ray_dir_world.z) < 1e-6)
         discard;
 
-    float t = -cam_pos_world.z/ray_dir_world.z;
+    float t = (grid_origin.z - cam_pos_world.z)/ray_dir_world.z;
     if (t <= 0.0)
         discard;
 
     vec3 P = cam_pos_world + t*ray_dir_world;
+    vec3 Plocal = P - grid_origin;
 
     //Depth :
     vec4 clip = projection*view*vec4(P, 1.0);
@@ -54,7 +56,7 @@ void main()
 
     //World units per pixel (stable, from center ray)
     vec3 dirC = normalize(view2world(ndc2view(vec2(0.0))));
-    float tC  = abs(cam_pos_world.z)/max(abs(dirC.z), 1e-6);
+    float tC = abs(grid_origin.z - cam_pos_world.z)/max(abs(dirC.z), 1e-6);
 
     float ndcPxX = fwidth(v_ndc.x);
     float ndcPxY = fwidth(v_ndc.y);
@@ -64,8 +66,8 @@ void main()
 
     float wpp_center = max(tC*invFx*ndcPxX, tC*invFy*ndcPxY);
 
-    float gradX = length(vec2(dFdx(P.x), dFdy(P.x)));
-    float gradY = length(vec2(dFdx(P.y), dFdy(P.y)));
+    float gradX = length(vec2(dFdx(Plocal.x), dFdy(Plocal.x)));
+    float gradY = length(vec2(dFdx(Plocal.y), dFdy(Plocal.y)));
 
     float aaX = max(gradX, 1e-6);
     float aaY = max(gradY, 1e-6);
@@ -83,13 +85,13 @@ void main()
         float cell = exp2(float(i));
         float d = L - float(i);
         float wj = exp(-0.5*d*d);
-        float covj = cov_for_cell(cell, P, 0.5*wpp_center, aaX, aaY);
+        float covj = cov_for_cell(cell, Plocal, 0.5*wpp_center, aaX, aaY);
         cov_sum += wj*covj;
         wsum += wj;
     }
 
     float cov = cov_sum/max(wsum, 1e-12);
-    float fade = 1.0 - smoothstep(0.0, max(fade_end_dist, 1e-6), length(P.xy));
+    float fade = 1.0 - smoothstep(0.0, max(fade_end_dist, 1e-6), length(Plocal.xy));
     float alpha = cov*fade;
     if (alpha <= 0.001) 
         discard;

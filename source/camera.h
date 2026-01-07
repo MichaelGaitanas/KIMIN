@@ -21,6 +21,13 @@ public:
     float dist, lon, lat, min_dist, max_dist;
     float fov;
 
+    enum
+    {
+        MODE_COM,
+        MODE_BODY1,
+        MODE_BODY2
+    } mode;
+
     camera() : pos(glm::vec3(0.0f)),
                aim(glm::vec3(0.0f)),
                up(glm::vec3(0.0f)),
@@ -31,20 +38,21 @@ public:
                lat(45.0f),
                min_dist(0.0f),
                max_dist(0.0f),
-               fov(75.0f)
+               fov(75.0f),
+               mode(MODE_COM)
     { }
 
 public:
     //This function computes the camera's projection and view matrix that are passed as uniforms to the shaders in the renderer3D.h.
-    void set_geometry(const float aspect)
+    void set_geometry(const float aspect, const glm::vec3 &pivot)
     {
         const float lon_rad = glm::radians(lon);
         const float lat_rad = glm::radians(lat);
         //Spherical to Cartesian :
-        pos = dist*glm::vec3(cos(lon_rad)*sin(lat_rad),
-                             sin(lon_rad)*sin(lat_rad),
-                             cos(lat_rad));
-        aim = glm::vec3(0.0f);
+        pos = pivot + dist*glm::vec3(cos(lon_rad)*sin(lat_rad),
+                                     sin(lon_rad)*sin(lat_rad),
+                                     cos(lat_rad));
+        aim = pivot;
         //Our up direction is the unit θhat vector of spherical coordinates :
         up = -glm::vec3(cos(lon_rad)*cos(lat_rad),
                         sin(lon_rad)*cos(lat_rad),

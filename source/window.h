@@ -75,6 +75,7 @@ public:
         SCX = (mode->width)/1920.0f;
         SCY = (mode->height)/1080.0f;
         //Now the computer knows how much to scale things based on your monitor's resolution.
+        MONITOR_HZ = mode->refreshRate;
 
         wpointer = glfwCreateWindow(width, height, "KIMIN - Kinetic Impact Mission to NEO", nullptr, nullptr);
         if (wpointer == nullptr)

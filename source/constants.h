@@ -25,9 +25,6 @@ constexpr float CLEAR_COLOR_B = 0.0f;
 constexpr float OBJ_AXES_LENGTH = 2.98179f; //[km]
 constexpr float CAM_SUN_MAX_DIST_SCALE = 10.0f;
 constexpr float CAM_GRID_DIST_SCALE = 4.0f;
-//The following are defined as variables because their values are monitor dependent, hence computed
-//as soon as the KIMIN launches (in window.h). They remain constant however throughout all runtime.
-float SCX, SCY;
 
 const glm::vec3 BODY1_COL  = glm::vec3(0.8f);
 const glm::vec3 BODY2_COL  = glm::vec3(0.8f);
@@ -52,5 +49,10 @@ constexpr char PROPERTIES_DIR[] = "../properties/";
 constexpr char PATH_TO_FONTS[] = "../fonts/RobotoRegular.ttf";
 constexpr char PATH_TO_ICONS[] = "../fonts/Icons.otf";
 constexpr char PATH_TO_LOGO_IMAGE[] = "../logo/logo.jpg";
+
+//The following are defined as variables because their values are monitor dependent, hence computed as soon as KIMIN launches (in window.h).
+//They remain constant however throughout all runtime unless the monitor settings change dynamically from the OS.
+float SCX, SCY;
+int MONITOR_HZ;
 
 #endif
