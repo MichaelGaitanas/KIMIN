@@ -32,12 +32,12 @@ private:
 public:
     dlight sunlight;
     camera cam;
-    quad sun, ecliptic_grid;
+    quad sun, gridxy;
     orbit orb1, orb2, orb_sp;
 
     int depth_reso; //Actual depth image resolution in pixels (for the shadow map).
 
-    bool render_body1, render_body2, render_axes1, render_axes2, render_orb1, render_orb2, render_orb_sp, render_ecliptic_grid, render_stars, render_starmap, render_galaxy, render_sun; //These correspond to the GUI checkboxes state.
+    bool render_body1, render_body2, render_axes1, render_axes2, render_orb1, render_orb2, render_orb_sp, render_gridxy, render_stars, render_starmap, render_galaxy, render_sun; //These correspond to the GUI checkboxes state.
 
     int win_width, win_height;
     
@@ -58,7 +58,7 @@ public:
                    sunlight(),
                    cam(),
                    sun(),
-                   ecliptic_grid(),
+                   gridxy(),
                    orb1(),
                    orb2(),
                    orb_sp(),
@@ -70,7 +70,7 @@ public:
                    render_orb1(false),
                    render_orb2(false),
                    render_orb_sp(false),
-                   render_ecliptic_grid(false),
+                   render_gridxy(false),
                    render_stars(true),
                    render_starmap(false),
                    render_galaxy(false),
@@ -273,7 +273,7 @@ public:
             sh_sun.set_uniform_mat4("view", cam.view);
             sh_sun.set_uniform_vec3("light_dir", sunlight.dir);
             sh_sun.set_uniform_float("apparent_angular_radius", asinf(RSUN/sunlight.dist));
-            sh_sun.set_uniform_float("quad_distance", CAM_SUN_MAX_DIST_SCALE*cam.max_dist);
+            sh_sun.set_uniform_float("quad_distance", CAM_SUN_MAX_DIST_SCALE*cam.max_dist_com);
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             glDepthFunc(GL_LEQUAL);
@@ -337,19 +337,19 @@ public:
             }
         }
         
-        //Ecliptic 'infinite' grid rendering pass :
-        if (render_ecliptic_grid)
+        //'Infinite' xy grid rendering pass :
+        if (render_gridxy)
         {
             sh_grid.use();
             sh_grid.set_uniform_mat4("projection", cam.projection);
             sh_grid.set_uniform_mat4("view", cam.view);
-            sh_grid.set_uniform_float("fade_end_dist", CAM_GRID_DIST_SCALE*cam.dist);
+            sh_grid.set_uniform_float("fade_end_dist", CAM_GRID_DIST_SCALE*cam.dist_com);
             sh_grid.set_uniform_vec3("grid_origin", pivot);
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             glDepthFunc(GL_LEQUAL);
             glDepthMask(GL_FALSE);
-            ecliptic_grid.render();
+            gridxy.render();
             glDepthMask(GL_TRUE);
             glDepthFunc(GL_LESS);
             glDisable(GL_BLEND);

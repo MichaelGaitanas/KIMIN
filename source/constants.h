@@ -37,7 +37,7 @@ const glm::vec3 ORB_SP_COL = glm::vec3(0.0f,0.75f,0.75f);
 
 constexpr int NR_MAX_ITERATIONS = 20;
 constexpr int DEPTH_RESO_MIN = 1024; //[pix]
-constexpr int DEPTH_RESO_MAX = 8192; //[pix]
+constexpr int DEPTH_RESO_MAX = 16384; //[pix]
 constexpr int DEPTH_RESO_INIT = 4096; //[pix]
 constexpr int GLFW_MIN_WIDTH = 400; //[pix]
 constexpr int GLFW_MIN_HEIGHT = 400; //[pix]

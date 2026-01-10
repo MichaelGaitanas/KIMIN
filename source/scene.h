@@ -86,7 +86,7 @@ public:
         sol->integr.orbit.clear();
         sol->integr.orbit.shrink_to_fit();
 
-        rend3D.cam.reset(sol->integr.brillouin1 + sol->integr.brillouin2, *std::max_element(sol->dist_mut.begin(), sol->dist_mut.end()));
+        rend3D.cam.reset(sol->integr.brillouin1, sol->integr.brillouin2, *std::max_element(sol->dist_mut.begin(), sol->dist_mut.end()));
 
         iframe = 0;
         frames = uint64_t(sol->t.size());
@@ -539,17 +539,17 @@ private:
             ImGui::Text("Dist");
             ImGui::SameLine();
             ImGui::SetCursorPosX(40.0f*SCX);
-            ImGui::SliderFloat("[km]##rend3D.cam.dist", &rend3D.cam.dist, rend3D.cam.min_dist, rend3D.cam.max_dist, "%.3f", ImGuiSliderFlags_Logarithmic);
+            ImGui::SliderFloat("[km]##rend3D.cam.dist", &rend3D.cam.get_active_dist(), rend3D.cam.get_active_min_dist(), rend3D.cam.get_active_max_dist(), "%.3f", ImGuiSliderFlags_Logarithmic);
 
             ImGui::Text("Lon");
             ImGui::SameLine();
             ImGui::SetCursorPosX(40.0f*SCX);
-            ImGui::SliderFloat("[deg]##rend3D.cam.lon", &rend3D.cam.lon, 0.0f, 360.0f, "%.1f");
+            ImGui::SliderFloat("[deg]##rend3D.cam.lon", &rend3D.cam.get_active_lon(), 0.0f, 360.0f, "%.1f");
 
             ImGui::Text("Lat");
             ImGui::SameLine();
             ImGui::SetCursorPosX(40.0f*SCX);
-            ImGui::SliderFloat("[deg]##rend3D.cam.lat", &rend3D.cam.lat, 0.0f, 180.0f, "%.1f");
+            ImGui::SliderFloat("[deg]##rend3D.cam.lat", &rend3D.cam.get_active_lat(), 0.0f, 180.0f, "%.1f");
             ImGui::Dummy(ImVec2(0.0f, 8.0f*SCY));
 
             ImGui::Text("FoV");
@@ -717,10 +717,10 @@ private:
             ImGui::Checkbox("##rend3D.render_sun", &rend3D.render_sun);
             
             ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
-            ImGui::Text("Ecliptic");
+            ImGui::Text("Grid xy");
             ImGui::SameLine();
             ImGui::SetCursorPosX(60.0f*SCX);
-            ImGui::Checkbox("##rend3D.render_ecliptic_grid", &rend3D.render_ecliptic_grid);
+            ImGui::Checkbox("##rend3D.render_gridxy", &rend3D.render_gridxy);
 
             ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
 
