@@ -37,7 +37,7 @@ public:
 
     int depth_reso; //Actual depth image resolution in pixels (for the shadow map).
 
-    bool render_body1, render_body2, render_axes1, render_axes2, render_orb1, render_orb2, render_orb_sp, render_gridxy, render_stars, render_starmap, render_galaxy, render_sun; //These correspond to the GUI checkboxes state.
+    bool render_body1, render_body2, render_axes1, render_axes2, render_orb1, render_orb2, render_orb_sp, render_gridxy, render_gridxy_expanded, render_stars, render_starmap, render_galaxy, render_sun; //These correspond to the GUI checkboxes state.
 
     int win_width, win_height;
     
@@ -71,6 +71,7 @@ public:
                    render_orb2(false),
                    render_orb_sp(false),
                    render_gridxy(false),
+                   render_gridxy_expanded(false),
                    render_stars(true),
                    render_starmap(false),
                    render_galaxy(false),
@@ -343,8 +344,9 @@ public:
             sh_grid.use();
             sh_grid.set_uniform_mat4("projection", cam.projection);
             sh_grid.set_uniform_mat4("view", cam.view);
-            sh_grid.set_uniform_float("fade_end_dist", CAM_GRID_DIST_SCALE*cam.dist_com);
             sh_grid.set_uniform_vec3("grid_origin", pivot);
+            sh_grid.set_uniform_int("expanded_flag", render_gridxy_expanded);
+            sh_grid.set_uniform_float("fade_end_dist", CAM_GRID_DIST_SCALE*cam.get_active_dist());
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             glDepthFunc(GL_LEQUAL);

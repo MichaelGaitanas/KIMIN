@@ -4,7 +4,7 @@ layout(location = 0) in vec2 pos; //Quad coords in [-1,1]^2.
 
 out vec2 coord;
 
-const float qscale = 500.0;
+const float qscale = 600.0;
 
 uniform mat4 projection;
 uniform mat4 view;

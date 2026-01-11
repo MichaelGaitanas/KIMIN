@@ -144,11 +144,11 @@ public:
         dist_com = min_dist_com + 0.1f*(max_dist_com - min_dist_com);
 
         min_dist_b1 = 1.1f*brillouin1;
-        max_dist_b1 = 40.0f*brillouin1;
+        max_dist_b1 = 100.0f*brillouin1;
         dist_b1 = min_dist_b1 + 0.1f*(max_dist_b1 - min_dist_b1);
 
         min_dist_b2 = 1.1f*brillouin2;
-        max_dist_b2 = 40.0f*brillouin2;
+        max_dist_b2 = 100.0f*brillouin2;
         dist_b2 = min_dist_b2 + 0.1f*(max_dist_b2 - min_dist_b2);
     }
 

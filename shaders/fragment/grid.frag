@@ -6,8 +6,9 @@ out vec4 frag_col;
 
 uniform mat4 projection;
 uniform mat4 view;
-uniform float fade_end_dist;
 uniform vec3 grid_origin;
+uniform int expanded_flag;
+uniform float fade_end_dist;
 
 const float TARGET_PIX = 700.0;
 
@@ -72,7 +73,7 @@ void main()
     float aaX = max(gradX, 1e-6);
     float aaY = max(gradY, 1e-6);
 
-    // Continuous L in log2 cell-size space :
+    //Continuous L in log2 cell-size space :
     float cell_ref = wpp_center*TARGET_PIX;
     float L = log2(max(cell_ref, 1e-12));
 
@@ -89,10 +90,14 @@ void main()
         cov_sum += wj*covj;
         wsum += wj;
     }
-
     float cov = cov_sum/max(wsum, 1e-12);
-    float fade = 1.0 - smoothstep(0.0, max(fade_end_dist, 1e-6), length(Plocal.xy));
-    float alpha = cov*fade;
+
+    //Now regarding the fading effect :
+    float fade_factor = 1.0; //Grid is assumed to be expanded.
+    if (expanded_flag == 0) //then fading efeect comes into the game.
+        fade_factor -= smoothstep(0.0, max(fade_end_dist, 1e-6), length(Plocal.xy));
+    
+    float alpha = cov*fade_factor;
     if (alpha <= 0.001) 
         discard;
 

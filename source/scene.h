@@ -539,7 +539,7 @@ private:
             ImGui::Text("Dist");
             ImGui::SameLine();
             ImGui::SetCursorPosX(40.0f*SCX);
-            ImGui::SliderFloat("[km]##rend3D.cam.dist", &rend3D.cam.get_active_dist(), rend3D.cam.get_active_min_dist(), rend3D.cam.get_active_max_dist(), "%.3f", ImGuiSliderFlags_Logarithmic);
+            ImGui::SliderFloat("[km]##rend3D.cam.dist", &rend3D.cam.get_active_dist(), rend3D.cam.get_active_min_dist(), rend3D.cam.get_active_max_dist(), "%.2f", ImGuiSliderFlags_Logarithmic);
 
             ImGui::Text("Lon");
             ImGui::SameLine();
@@ -711,20 +711,24 @@ private:
             ImGui::PopStyleColor();
 
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
-            ImGui::Text("Sun");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(60.0f*SCX);
-            ImGui::Checkbox("##rend3D.render_sun", &rend3D.render_sun);
             
+            ImGui::Text("Reference grid");
             ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
+
             ImGui::Text("Grid xy");
             ImGui::SameLine();
             ImGui::SetCursorPosX(60.0f*SCX);
             ImGui::Checkbox("##rend3D.render_gridxy", &rend3D.render_gridxy);
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(100.0f*SCX);
+            ImGui::Text("Expand");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(155.0f*SCX);
+            ImGui::Checkbox("##rend3D.render_gridxy_expanded", &rend3D.render_gridxy_expanded);
 
             ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
 
-            ImGui::Text("Background");
+            ImGui::Text("Background objects");
             ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
 
             ImGui::Text("Stars");
@@ -742,6 +746,13 @@ private:
             ImGui::Text("Galaxy");
             ImGui::SameLine();
             ImGui::Checkbox("##rend3D.render_galaxy", &rend3D.render_galaxy);
+
+            ImGui::Dummy(ImVec2(0.0f, 7.0f*SCY));
+
+            ImGui::Text("Sun");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(60.0f*SCX);
+            ImGui::Checkbox("##rend3D.render_sun", &rend3D.render_sun);
 
             ImGui::TreePop();
         }

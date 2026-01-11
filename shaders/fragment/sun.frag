@@ -4,6 +4,8 @@ out vec4 frag_col;
 
 in vec2 coord;
 
+//uniform float base, nx, ny, n;
+
 const int n_octaves = 6;
 const float qscale = 500.0;
 
@@ -88,11 +90,12 @@ void main()
     if (r > qscale)
         discard;
 
-    //2 : Sun's corona region :
+    //2 : Sun's corona region (See mathematica notebook suncorona.nb ) :
     if (r > 1.0)
     {
-        float a = 1.1, b = 0.33, c = 2.0; //See mathematica notebook for these. Maybe I will add rays in the future.
+        float a = 1.1, b = 0.33, c = 2.0;
         float intensity = pow(a, -pow((pow(r,b) - 1.0), c) );
+        //intensity += pow(base, - pow((pow(abs(coord.x), nx) + pow(abs(coord.y), ny)), n) );
         frag_col = vec4(intensity*vec3(1.0,0.65,0.1), intensity);
         return;
     }
