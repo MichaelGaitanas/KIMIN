@@ -4,10 +4,8 @@ out vec4 frag_col;
 
 in vec2 coord;
 
-//uniform float base, nx, ny, n;
-
 const int n_octaves = 6;
-const float qscale = 500.0;
+const float qscale = 600.0;
 
 //Pseudo RNG in [0,1).
 float random(vec3 st)
@@ -95,7 +93,6 @@ void main()
     {
         float a = 1.1, b = 0.33, c = 2.0;
         float intensity = pow(a, -pow((pow(r,b) - 1.0), c) );
-        //intensity += pow(base, - pow((pow(abs(coord.x), nx) + pow(abs(coord.y), ny)), n) );
         frag_col = vec4(intensity*vec3(1.0,0.65,0.1), intensity);
         return;
     }

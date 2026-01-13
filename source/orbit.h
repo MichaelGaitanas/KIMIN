@@ -15,14 +15,16 @@ private:
     bool gl_ready;
     unsigned vao, vbo;
     float thickness; //This is basically the rasterized line width of the trajectory.
+    size_t gl_vertex_count; //Total vertices uploaded in the gpu.
 
 public:
-    size_t gl_draw_count;
+    size_t gl_draw_count; //GUI-controlled slider regarding how many vertices to draw (see scene.h).
 
     orbit() : gl_ready(false),
               vao(0),
               vbo(0),
               thickness(0.5f),
+              gl_vertex_count(0),
               gl_draw_count(0)
     { }
 
@@ -38,7 +40,7 @@ public:
             glDeleteVertexArrays(1, &vao);
             vao = 0;
         }
-        gl_draw_count = 0;
+        gl_vertex_count = 0;
         gl_ready = false;
     }
 
@@ -46,9 +48,12 @@ public:
     {
         if (gl_ready) return; //If the orbital data [x(t),y(t),z(t)] have already been uploaded to the GPU, just exit the function.
 
-        //Construct the orbital mesh.
-        std::vector<float> interleaved_buffer; //Meant to contain {(x1,y1,z1), (z2,y2,z2), ..., (xn,yn,zn)}, meant to be connected via GL_LINE_STRIP.
         const size_t N = x.size();
+        gl_vertex_count = N;
+        if (gl_draw_count > N)
+            gl_draw_count = N;
+
+        std::vector<float> interleaved_buffer; //Meant to contain {(x1,y1,z1), (z2,y2,z2), ..., (xn,yn,zn)}, meant to be connected via GL_LINE_STRIP.
         interleaved_buffer.resize(3*N); //3 vertices per face, 6 floats each.
 
         size_t j = 0;
@@ -58,7 +63,6 @@ public:
             interleaved_buffer[j++] = coeff*(float)y[i];
             interleaved_buffer[j++] = coeff*(float)z[i];
         }
-        gl_draw_count = N;
 
         //Now send it to the GPU :
 
@@ -84,9 +88,12 @@ public:
     {
         if (!gl_ready) return; //Guard.
 
+        //Extra safety: clamp at render time too
+        const size_t count = (gl_draw_count > gl_vertex_count) ? gl_vertex_count : gl_draw_count;
+
         glBindVertexArray(vao);
         glLineWidth(thickness);
-        glDrawArrays(GL_LINE_STRIP, 0, gl_draw_count);
+        glDrawArrays(GL_LINE_STRIP, 0, count);
         glBindVertexArray(0);
     }
 };

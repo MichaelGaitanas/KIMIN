@@ -31,9 +31,9 @@ private:
     bvec plot_cart_sp_com1,  plot_kep_sp_com1;
     bvec plot_cart_sp_com2,  plot_kep_sp_com2;
     
-    bool render_scene, play_video, reset_gpu_flag, auto_replay, orb1_sync, orb2_sync, orb_sp_sync;
+    bool render_scene, play_video, reset_gpu_flag, auto_replay, sync_orb1, sync_orb2, sync_orb_sp;
 
-    uint64_t iframe, frames;
+    uint64_t iframe, frames, visible_min_frame;
     int framerate; //Frame updates per second.
     float frame_accumulator; //Accumulates fractional frames between updates.
 
@@ -66,11 +66,12 @@ public:
               play_video(false),
               reset_gpu_flag(false),
               auto_replay(false),
-              orb1_sync(false),
-              orb2_sync(false),
-              orb_sp_sync(false),
+              sync_orb1(false),
+              sync_orb2(false),
+              sync_orb_sp(false),
               iframe(0),
               frames(0),
+              visible_min_frame(0),
               framerate(MONITOR_HZ),
               frame_accumulator(0.0f),
               sol(nullptr),
@@ -92,9 +93,9 @@ public:
         frames = uint64_t(sol->t.size());
         play_video = false; //Set the previous video state at pause after a new simulation finishes.
         reset_gpu_flag = true; //This will inform the renderer3D::reset_gpu_resources() to run, but only once.
-
-        uint64_t init_draw_count = (frames > 0 ? 1 : 0);
-        rend3D.orb1.gl_draw_count = rend3D.orb2.gl_draw_count = init_draw_count;
+        if (frames > 0)
+            visible_min_frame = 1;
+        rend3D.orb1.gl_draw_count = rend3D.orb2.gl_draw_count = rend3D.orb_sp.gl_draw_count = visible_min_frame;
         
         //At every new simulation, if the user hasn't assumed a spacecraft, then any active plots regarding the spacecraft from the previous simulation shall disappear.
         if (!sol->integr.props.spacecraft_checkbox)
@@ -105,13 +106,138 @@ public:
                 plot_kep_sp_helio[i] = plot_kep_sp_com[i] = plot_kep_sp_com1[i] = plot_kep_sp_com2[i] = false;
 
             rend3D.orb_sp.gl_draw_count = 0;
-            rend3D.render_orb_sp = orb_sp_sync = false;
+            rend3D.render_orb_sp = sync_orb_sp = false;
         }
-        else
-            rend3D.orb_sp.gl_draw_count = init_draw_count;
+        //else
+        //    rend3D.orb_sp.gl_draw_count = visible_min_frame;
     }
 
 private:
+    void render_content_state_menu()
+    {
+        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
+        ImGui::Text("Content state");
+        render_scene = onoff_button("Render##render_scene", ImVec2(80.0f*SCX, 25.0f*SCY), render_scene);
+        ImGui::SameLine();
+
+        if (!render_scene)
+        {
+            ImGui::BeginDisabled();
+            play_video = onoff_button("Play/Pause##play_video", ImVec2(80.0f*SCX, 25.0f*SCY), play_video);
+            ImGui::SameLine();
+            auto_replay = onoff_button(ICON_FA_REDO" Auto##auto_replay", ImVec2(55.0f*SCX, 25.0f*SCY), auto_replay);
+            ImGui::EndDisabled();
+        }
+        else
+        {
+            play_video = onoff_button("Play/Pause##play_video", ImVec2(80.0f*SCX, 25.0f*SCY), play_video);
+            ImGui::SameLine();
+            auto_replay = onoff_button(ICON_FA_REDO" Auto##auto_replay", ImVec2(55.0f*SCX, 25.0f*SCY), auto_replay);
+            if (auto_replay && play_video && iframe >= frames - 1)
+                iframe = 0;
+        }
+
+        if (!render_scene)
+            ImGui::BeginDisabled();
+
+        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
+        ImGui::Text("Frame");
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(50.0f*SCX);
+        uint64_t visible_iframe = (frames > 0) ? (iframe + 1) : 0; //Display in the gui 1-based frame (instead of 0-based, which is used in the arrays as index).
+        ImGui::PushStyleColor(ImGuiCol_FrameBg,          ImVec4(0.35f,0.05f,0.05f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_FrameBgHovered,   ImVec4(0.55f,0.10f,0.10f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_FrameBgActive,    ImVec4(0.60f,0.12f,0.12f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_SliderGrab,       ImVec4(0.85f,0.20f,0.20f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.95f,0.25f,0.25f, 1.0f));
+        ImGui::SliderScalar("##visible_iframe", ImGuiDataType_U64, &visible_iframe, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+        ImGui::PopStyleColor(5);
+        //Rule is : the above slider controls the frames and then the 'iframe' is updated accordingly, but into 0-based frame, because it is an index.
+        iframe = (visible_iframe > 0) ? (visible_iframe - 1) : 0;
+        ImGui::Text("Rate");
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(50.0f*SCX);
+        ImGui::SliderInt("[Hz]##framerate", &framerate, 0, MONITOR_HZ, "%d", ImGuiSliderFlags_AlwaysClamp);
+        ImGui::Dummy(ImVec2(0.0f, 5.0f*SCY));
+        if (!sol || sol->t.empty())
+            ImGui::TextColored(ImVec4(0.9f,0.0f,0.0f,1.0f), "Time : 0.00  [days]");
+        else
+            ImGui::TextColored(ImVec4(0.9f,0.0f,0.0f,1.0f), "Time : %.2f  [days]", float(sol->t[iframe]));
+        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
+    }
+
+    //Thos function applies the camera setup menu logic.
+    void render_camera_menu()
+    {
+        ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f); //Disable the indentation for what comes next.
+        if (ImGui::TreeNodeEx("Camera"))
+        {
+            ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
+
+            //Camera mode :
+            ImGui::Text("Ref");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(40.0f*SCX);
+            ImGui::PushItemWidth(225.0f*SCX);
+                static const char *cam_modes[3] = {"COM", "Body 1", "Body 2"};
+                ImGui::Combo("##rend3D.cam.mode", (int*)(&rend3D.cam.mode), cam_modes, IM_ARRAYSIZE(cam_modes));
+            ImGui::PopItemWidth();
+
+            ImGui::Text("Dist");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(40.0f*SCX);
+            ImGui::SliderFloat("[km]##rend3D.cam.dist", &rend3D.cam.get_active_dist(), rend3D.cam.get_active_min_dist(), rend3D.cam.get_active_max_dist(), "%.2f", ImGuiSliderFlags_Logarithmic);
+
+            ImGui::Text("Lon");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(40.0f*SCX);
+            ImGui::SliderFloat("[deg]##rend3D.cam.lon", &rend3D.cam.get_active_lon(), 0.0f, 360.0f, "%.1f");
+
+            ImGui::Text("Lat");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(40.0f*SCX);
+            ImGui::SliderFloat("[deg]##rend3D.cam.lat", &rend3D.cam.get_active_lat(), 0.0f, 180.0f, "%.1f");
+            ImGui::Dummy(ImVec2(0.0f, 8.0f*SCY));
+
+            ImGui::Text("FoV");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(40.0f*SCX);
+            ImGui::SliderFloat("[deg]##rend3D.cam.fov", &rend3D.cam.fov, CAM_MIN_FOV, CAM_MAX_FOV, "%.0f");
+
+            ImGui::TreePop();
+        }
+        ImGui::PopStyleVar();
+
+        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
+    }
+
+    //This function applies the lighting system menu logic.
+    void render_lighting_menu()
+    {
+        ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f); //Disable the indentation for what comes next.
+        if (ImGui::TreeNodeEx("Lighting"))
+        {
+            ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
+            ImGui::Text("Shadow quality");
+            ImGui::Text("Reso");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(40.0f*SCX);
+            if (ImGui::SliderInt("[pix]##rend3D.depth_reso", &rend3D.depth_reso, DEPTH_RESO_MIN, DEPTH_RESO_MAX))
+                rend3D.setup_depth_fbo();
+
+            ImGui::TreePop();
+        }
+        ImGui::PopStyleVar();
+
+        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
+    }
+
     //This function triggers the events that concern the ONLY in 3D part of the viewport, based on hardware user input.
     void process_hardware_inputs()
     {
@@ -143,7 +269,7 @@ private:
     {
         if (play_video && render_scene && iframe < frames - 1)
         {
-            if (framerate == 0) //The slider is set to 0 => paused. Do not increment iframe.
+            if (framerate == 0) //The slider is set to 0 => freeze.
             {
                 //Pass.
             }
@@ -195,12 +321,11 @@ private:
         return jframe;
     }
 
-    //This function plots the data [t, f(t)].
+    //This function plots the data [t,f(t)].
     bool plot(const char *imgui_id, const char *implot_id, const char *yaxis_str, bool plot_status, dvec &data)
     {
         const float sx = ImGui::GetIO().DisplaySize.x;
         const float sy = ImGui::GetIO().DisplaySize.y;
-
         ImGui::SetNextWindowPos(ImVec2(0.6f*sx, 0.0f), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(0.25f*sx, 0.4f*sy), ImGuiCond_FirstUseEver);
         ImGui::Begin(imgui_id, &plot_status);
@@ -208,28 +333,28 @@ private:
         {
             //Line logic :
             ImPlot::SetupAxes("time [days]", yaxis_str);
-            ImPlot::PlotLine("", &sol2D.t[0], &data[0], sol2D.t.size());
+            ImPlot::PlotLine("", &sol2D.t[0], &data[0], sol2D.t.size()); //Default blue.
             
             //Current frame marker logic :
             size_t jframe = map_frame_to_reduced_sol(iframe, sol->t.size(), sol2D.t.size());
-            ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 6.0f*SCX, ImColor(0,255,255,255), 1.0f, ImColor(0,255,255,255));
+            ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 6.0f*SCX, ImColor(0,255,255,255), 1.0f, ImColor(0,255,255,255)); //Light blue.
             ImPlot::PlotScatter("Current frame", &sol2D.t[jframe], &data[jframe], 1);
 
             //Collision frame marker logic :
             if (sol->integr.collision_mut) //Asteroid - asteroid collision.
             {
-                ImPlot::SetNextMarkerStyle(ImPlotMarker_Down, 6.0f*SCX, ImColor(255,0,0,255), 1.0f, ImColor(255,0,0,255));
+                ImPlot::SetNextMarkerStyle(ImPlotMarker_Down, 6.0f*SCX, ImColor(255,0,0,255), 1.0f, ImColor(255,0,0,255)); //Red.
                 ImPlot::PlotScatter("Collision frame", &sol2D.t.back(), &data.back(), 1);
             }
             else if (sol->integr.collision_sp1 || sol->integr.collision_sp2) //Spacecraft - asteroid 1 or 2 collision.
             {
-                ImPlot::SetNextMarkerStyle(ImPlotMarker_Down, 6.0f*SCX, ImColor(255,110,0,255), 1.0f, ImColor(255,110,0,255));
+                ImPlot::SetNextMarkerStyle(ImPlotMarker_Down, 6.0f*SCX, ImColor(255,110,0,255), 1.0f, ImColor(255,110,0,255)); //Orange.
                 ImPlot::PlotScatter("Collision frame", &sol2D.t.back(), &data.back(), 1);
             }
             else if (sol->integr.collision_sun) //COM - Sun close approach.
             {
-                ImPlot::SetNextMarkerStyle(ImPlotMarker_Down, 6.0f*SCX, ImColor(255,255,0,255), 1.0f, ImColor(255,255,0,255));
-                ImPlot::PlotScatter("Close approach frame", &sol2D.t.back(), &data.back(), 1);
+                ImPlot::SetNextMarkerStyle(ImPlotMarker_Down, 6.0f*SCX, ImColor(255,255,0,255), 1.0f, ImColor(255,255,0,255)); //Yellow.
+                ImPlot::PlotScatter("Closest approach frame", &sol2D.t.back(), &data.back(), 1);
             }
 
             ImPlot::EndPlot();
@@ -274,7 +399,6 @@ private:
 
             ImGui::TreePop();
         }
-
         ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
@@ -304,7 +428,6 @@ private:
 
             ImGui::TreePop();
         }
-
         ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
@@ -333,7 +456,6 @@ private:
 
             ImGui::TreePop();
         }
-
         ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
@@ -343,10 +465,10 @@ private:
         {
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
             ImGui::Text("Euler angles (XYZ)");
-            plot_rpy2[0] = onoff_button("roll##plot_rpy2[0]",      ImVec2(50.0f*SCX, 20.0f*SCY), plot_rpy2[0]); ImGui::SameLine();
-            plot_rpy2[1] = onoff_button("pitch##plot_rpy2[1]",     ImVec2(50.0f*SCX, 20.0f*SCY), plot_rpy2[1]); ImGui::SameLine();
-            plot_rpy2[2] = onoff_button("yaw##plot_rpy2[2]",       ImVec2(50.0f*SCX, 20.0f*SCY), plot_rpy2[2]); ImGui::SameLine();
-            plot_rpy2[3] = onoff_button("rel. yaw##plot_rpy2[3]",  ImVec2(60.0f*SCX, 20.0f*SCY), plot_rpy2[3]);
+            plot_rpy2[0] = onoff_button("roll##plot_rpy2[0]",     ImVec2(50.0f*SCX, 20.0f*SCY), plot_rpy2[0]); ImGui::SameLine();
+            plot_rpy2[1] = onoff_button("pitch##plot_rpy2[1]",    ImVec2(50.0f*SCX, 20.0f*SCY), plot_rpy2[1]); ImGui::SameLine();
+            plot_rpy2[2] = onoff_button("yaw##plot_rpy2[2]",      ImVec2(50.0f*SCX, 20.0f*SCY), plot_rpy2[2]); ImGui::SameLine();
+            plot_rpy2[3] = onoff_button("rel. yaw##plot_rpy2[3]", ImVec2(60.0f*SCX, 20.0f*SCY), plot_rpy2[3]);
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
 
             ImGui::Text("Angular velocity (Heliocentric)");
@@ -362,7 +484,6 @@ private:
 
             ImGui::TreePop();
         }
-
         ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
@@ -464,128 +585,11 @@ private:
     }
 
     //Render on the gui the buttons that correspond to the 3D scene.
-    void render_scene_buttons()
+    void render_3D_buttons()
     {
-        //Content state logic :
-
-        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
-        ImGui::Text("Content state");
-        render_scene = onoff_button("Render##render_scene", ImVec2(80.0f*SCX, 25.0f*SCY), render_scene);
-        ImGui::SameLine();
-
-        if (!render_scene)
-        {
-            ImGui::BeginDisabled();
-            play_video = onoff_button("Play/Pause##play_video", ImVec2(80.0f*SCX, 25.0f*SCY), play_video);
-            ImGui::SameLine();
-            auto_replay = onoff_button(ICON_FA_REDO" Auto##auto_replay", ImVec2(55.0f*SCX, 25.0f*SCY), auto_replay);
-            ImGui::EndDisabled();
-        }
-        else
-        {
-            play_video = onoff_button("Play/Pause##play_video", ImVec2(80.0f*SCX, 25.0f*SCY), play_video);
-            ImGui::SameLine();
-            auto_replay = onoff_button(ICON_FA_REDO" Auto##auto_replay", ImVec2(55.0f*SCX, 25.0f*SCY), auto_replay);
-            if (auto_replay && play_video && iframe >= frames - 1)
-                iframe = 0;
-        }
-
-        if (!render_scene)
-            ImGui::BeginDisabled();
-
-        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
-        ImGui::Text("Frame");
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(50.0f*SCX);
-        uint64_t visible_min_frame = (frames > 0) ? 1 : 0;
-        uint64_t visible_iframe = (frames > 0) ? (iframe + 1) : 0; //Display in the gui 1-based frame (instead of 0-based, which is used in the arrays as index).
-        ImGui::PushStyleColor(ImGuiCol_FrameBg,          ImVec4(0.35f, 0.05f, 0.05f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_FrameBgHovered,   ImVec4(0.55f, 0.10f, 0.10f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_FrameBgActive,    ImVec4(0.60f, 0.12f, 0.12f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_SliderGrab,       ImVec4(0.85f, 0.20f, 0.20f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.95f, 0.25f, 0.25f, 1.0f));
-        ImGui::SliderScalar("##visible_iframe", ImGuiDataType_U64, &visible_iframe, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
-        ImGui::PopStyleColor(5);
-        //Rule is : the above slider controls the frames and then the 'iframe' is updated accordingly, but into 0-based frame, because it is an index.
-        iframe = (visible_iframe > 0) ? (visible_iframe - 1) : 0;
-        ImGui::Text("Rate");
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(50.0f*SCX);
-        ImGui::SliderInt("[Hz]##framerate", &framerate, 0, MONITOR_HZ, "%d", ImGuiSliderFlags_AlwaysClamp);
-        ImGui::Dummy(ImVec2(0.0f, 5.0f*SCY));
-        if (!sol || sol->t.empty())
-            ImGui::TextColored(ImVec4(0.9f,0.0f,0.0f,1.0f), "Time : 0.00  [days]");
-        else
-            ImGui::TextColored(ImVec4(0.9f,0.0f,0.0f,1.0f), "Time : %.2f  [days]", float(sol->t[iframe]));
-        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
-
-        //Camera setup logic :
-        ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f); //Disable the indentation for what comes next.
-        if (ImGui::TreeNodeEx("Camera"))
-        {
-            ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
-
-            //Camera mode :
-            ImGui::Text("Ref");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(40.0f*SCX);
-            ImGui::PushItemWidth(225.0f*SCX);
-                static const char *cam_modes[3] = {"COM", "Body 1", "Body 2"};
-                ImGui::Combo("##rend3D.cam.mode", (int*)(&rend3D.cam.mode), cam_modes, IM_ARRAYSIZE(cam_modes));
-            ImGui::PopItemWidth();
-
-            ImGui::Text("Dist");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(40.0f*SCX);
-            ImGui::SliderFloat("[km]##rend3D.cam.dist", &rend3D.cam.get_active_dist(), rend3D.cam.get_active_min_dist(), rend3D.cam.get_active_max_dist(), "%.2f", ImGuiSliderFlags_Logarithmic);
-
-            ImGui::Text("Lon");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(40.0f*SCX);
-            ImGui::SliderFloat("[deg]##rend3D.cam.lon", &rend3D.cam.get_active_lon(), 0.0f, 360.0f, "%.1f");
-
-            ImGui::Text("Lat");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(40.0f*SCX);
-            ImGui::SliderFloat("[deg]##rend3D.cam.lat", &rend3D.cam.get_active_lat(), 0.0f, 180.0f, "%.1f");
-            ImGui::Dummy(ImVec2(0.0f, 8.0f*SCY));
-
-            ImGui::Text("FoV");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(40.0f*SCX);
-            ImGui::SliderFloat("[deg]##rend3D.cam.fov", &rend3D.cam.fov, CAM_MIN_FOV, CAM_MAX_FOV, "%.0f");
-
-            ImGui::TreePop();
-        }
-        ImGui::PopStyleVar();
-
-        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
-
-        //Lighting system logic :
-        ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f); //Disable the indentation for what comes next.
-        if (ImGui::TreeNodeEx("Lighting"))
-        {
-            ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
-
-            ImGui::Text("Shadow quality");
-            
-            ImGui::Text("Reso");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(40.0f*SCX);
-            if (ImGui::SliderInt("[pix]##rend3D.depth_reso", &rend3D.depth_reso, DEPTH_RESO_MIN, DEPTH_RESO_MAX))
-                rend3D.setup_depth_fbo();
-
-            ImGui::TreePop();
-        }
-        ImGui::PopStyleVar();
-
-        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
+        render_content_state_menu();
+        render_camera_menu();
+        render_lighting_menu();
 
         //Meshes to render logic :
         ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f); //Disable the indentation for what comes next.
@@ -636,15 +640,26 @@ private:
             if (!rend3D.render_orb1)
             {
                 ImGui::BeginDisabled();
-                if (orb1_sync)
-                    orb1_sync = false;
+                if (sync_orb1)
+                    sync_orb1 = false;
             }
             
-            ImGui::SliderScalar("##visible_orb1_frame", ImGuiDataType_U64, &visible_orb1_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+            if (sync_orb1)
+            {
+                ImGui::PushStyleColor(ImGuiCol_FrameBg,          ImVec4(0.35f,0.05f,0.05f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_FrameBgHovered,   ImVec4(0.55f,0.10f,0.10f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_FrameBgActive,    ImVec4(0.60f,0.12f,0.12f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_SliderGrab,       ImVec4(0.85f,0.20f,0.20f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.95f,0.25f,0.25f, 1.0f));
+                ImGui::SliderScalar("##visible_orb1_frame", ImGuiDataType_U64, &visible_orb1_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+                ImGui::PopStyleColor(5);
+            }
+            else
+                ImGui::SliderScalar("##visible_orb1_frame", ImGuiDataType_U64, &visible_orb1_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
             ImGui::SameLine();
             rend3D.orb1.gl_draw_count = size_t(visible_orb1_frame);
-            orb1_sync = onoff_button("Sync##orb1_sync", ImVec2(50.0f*SCX, 18.0f*SCY), orb1_sync);
-            if (orb1_sync)
+            sync_orb1 = onoff_button("Sync##sync_orb1", ImVec2(50.0f*SCX, 18.0f*SCY), sync_orb1);
+            if (sync_orb1)
                 rend3D.orb1.gl_draw_count = size_t(iframe + 1);
 
             if (!rend3D.render_orb1)
@@ -662,15 +677,26 @@ private:
             if (!rend3D.render_orb2)
             {
                 ImGui::BeginDisabled();
-                if (orb2_sync)
-                    orb2_sync = false;
+                if (sync_orb2)
+                    sync_orb2 = false;
             }
 
-            ImGui::SliderScalar("##visible_orb2_frame", ImGuiDataType_U64, &visible_orb2_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+            if (sync_orb2)
+            {
+                ImGui::PushStyleColor(ImGuiCol_FrameBg,          ImVec4(0.35f,0.05f,0.05f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_FrameBgHovered,   ImVec4(0.55f,0.10f,0.10f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_FrameBgActive,    ImVec4(0.60f,0.12f,0.12f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_SliderGrab,       ImVec4(0.85f,0.20f,0.20f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.95f,0.25f,0.25f, 1.0f));
+                ImGui::SliderScalar("##visible_orb2_frame", ImGuiDataType_U64, &visible_orb2_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+                ImGui::PopStyleColor(5);
+            }
+            else
+                ImGui::SliderScalar("##visible_orb2_frame", ImGuiDataType_U64, &visible_orb2_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
             ImGui::SameLine();
-            orb2_sync = onoff_button("Sync##visible_orb2_frame", ImVec2(50.0f*SCX, 18.0f*SCY), orb2_sync);
+            sync_orb2 = onoff_button("Sync##sync_orb2", ImVec2(50.0f*SCX, 18.0f*SCY), sync_orb2);
             rend3D.orb2.gl_draw_count = size_t(visible_orb2_frame);
-            if (orb2_sync)
+            if (sync_orb2)
                 rend3D.orb2.gl_draw_count = size_t(iframe + 1);
 
             if (!rend3D.render_orb2)
@@ -691,15 +717,26 @@ private:
             if (!rend3D.render_orb_sp)
             {
                 ImGui::BeginDisabled();
-                if (orb_sp_sync)
-                    orb_sp_sync = false;
+                if (sync_orb_sp)
+                    sync_orb_sp = false;
             }
 
-            ImGui::SliderScalar("##visible_orb_sp_frame", ImGuiDataType_U64, &visible_orb_sp_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+            if (sync_orb_sp)
+            {
+                ImGui::PushStyleColor(ImGuiCol_FrameBg,          ImVec4(0.35f,0.05f,0.05f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_FrameBgHovered,   ImVec4(0.55f,0.10f,0.10f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_FrameBgActive,    ImVec4(0.60f,0.12f,0.12f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_SliderGrab,       ImVec4(0.85f,0.20f,0.20f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.95f,0.25f,0.25f, 1.0f));
+                ImGui::SliderScalar("##visible_orb_sp_frame", ImGuiDataType_U64, &visible_orb_sp_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+                ImGui::PopStyleColor(5);
+            }
+            else
+                ImGui::SliderScalar("##visible_orb_sp_frame", ImGuiDataType_U64, &visible_orb_sp_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
             ImGui::SameLine();
-            orb_sp_sync = onoff_button("Sync##orb_sp_sync", ImVec2(50.0f*SCX, 18.0f*SCY), orb_sp_sync);
+            sync_orb_sp = onoff_button("Sync##sync_orb_sp", ImVec2(50.0f*SCX, 18.0f*SCY), sync_orb_sp);
             rend3D.orb_sp.gl_draw_count = size_t(visible_orb_sp_frame);
-            if (orb_sp_sync)
+            if (sync_orb_sp)
                 rend3D.orb_sp.gl_draw_count = size_t(iframe + 1);
 
             if (!rend3D.render_orb_sp)
@@ -935,11 +972,11 @@ public:
             if (!sol || sol->t.empty())
             {
                 ImGui::BeginDisabled();
-                render_scene_buttons();
+                render_3D_buttons();
                 ImGui::EndDisabled();   
             }
             else
-                render_scene_buttons();
+                render_3D_buttons();
         }
         ImGui::End();
     }
