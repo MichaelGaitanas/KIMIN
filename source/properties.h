@@ -566,7 +566,7 @@ public:
 
             //Rule : 'OK' button in the Impactors' parameters window (it must be clicked so that the parameters are taken into account).
             if (!impactors_clicked_ok)
-                {cons.print("[Error] : 'OK' button must be pressed in the 'Impactors' parameters' window.\n"); return false;}
+                {cons.print("[Error] : 'OK' button must be pressed in the 'Impactor parameters' window.\n"); return false;}
         }
 
         //Rules regarding the spacecraft orbiter :
@@ -684,16 +684,14 @@ public:
         ImGui::Begin("Properties", nullptr);
 
         //Simulation name text field.
-        ImGui::Text("Simulation name");
+        ImGui::SeparatorText("Simulation name");
         ImGui::PushItemWidth(200.0f*SCX);
             ImGui::InputText(" ", sim_name, IM_ARRAYSIZE(sim_name));
         ImGui::PopItemWidth();
-        ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
+        ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
 
         //Ellipsoid and .obj shape logic.
-        ImGui::Text("Shape models");
+        ImGui::SeparatorText("Shape models");
 
         //Ellipsoid shape logic.
         if (ImGui::Checkbox("Ellipsoids", &ell_checkbox) && ell_checkbox)
@@ -783,32 +781,26 @@ public:
 
             ImGui::End();
         }
-        ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
+        ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
 
         //Potential expansion desired order.
-        ImGui::Text("Potential expansion");
+        ImGui::SeparatorText("Potential expansion");
         if (ImGui::Checkbox("Order 2", &ord2_checkbox))
             ord3_checkbox = ord4_checkbox = false;
         if (ImGui::Checkbox("Order 3", &ord3_checkbox))
             ord2_checkbox = ord4_checkbox = false;
         if (ImGui::Checkbox("Order 4", &ord4_checkbox))
             ord2_checkbox = ord3_checkbox = false;
-        ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
+        ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
 
         //Masses.
-        ImGui::Text("Masses");
+        ImGui::SeparatorText("Masses");
         double_field("M1 ", 150.0f*SCX, 40.0f*SCX, id, "[kg]", M1);
         double_field("M2 ", 150.0f*SCX, 40.0f*SCX, id, "[kg]", M2);
-        ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
+        ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
 
         //Integration method and time parameters.
-        ImGui::Text("Numerical integration");
+        ImGui::SeparatorText("Numerical integration");
         ImGui::Indent();
 
         ImGui::Text("Method");
@@ -830,12 +822,10 @@ public:
             double_field("Step ",  100.0f*SCX, 105.0f*SCX, id, "[days]", step);
         else //integration_method is adaptive, thus render the 'Target error' input field.
             double_field("Target error ", 100.0f*SCX, 105.0f*SCX, id, "[    ]", target_error);
-        ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
+        ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
         ImGui::Unindent();
 
-        ImGui::Text("Binary's initial state");
+        ImGui::SeparatorText("Binary's initial state");
         ImGui::Indent();
 
         ImGui::Text("Mutual position and velocity");
@@ -964,12 +954,10 @@ public:
         //Sun's gravity checkbox.
         ImGui::Checkbox("Assume Sun's gravity", &sun_gravity);
 
-        ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
+        ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
 
         //Collision choice logic.
-        ImGui::Text("Collision shapes");
+        ImGui::SeparatorText("Collision shapes");
         if (ImGui::Checkbox("No collision  (1/r singularity risk)", &collision_no))
             collision_spheres = collision_polyhedra = false;
         if (ImGui::Checkbox("Spheres", &collision_spheres))
@@ -977,12 +965,10 @@ public:
         if (ImGui::Checkbox("Polyhedra  (slow for high-res meshes)", &collision_polyhedra)) //Also the potential expansion does not converge when inside the body's Brillouin sphere.
             collision_no = collision_spheres = false;
 
-        ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
+        ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
 
         //Kinetic impactors logic.
-        ImGui::Text("Kinetic impactors");
+        ImGui::SeparatorText("Kinetic impactors");
         if (ImGui::Checkbox("Assume impactors at bodies", &impactors_checkbox) && impactors_checkbox)
             impactors_clicked_ok = false;
         if (impactors_checkbox && !impactors_clicked_ok)
@@ -1041,12 +1027,10 @@ public:
 
             ImGui::End();
         }
-        ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
+        ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
 
         //Spacecraft orbiter logic.
-        ImGui::Text("Spacecraft orbiter");
+        ImGui::SeparatorText("Spacecraft orbiter");
         if (ImGui::Checkbox("Assume spacecraft orbiter", &spacecraft_checkbox) && spacecraft_checkbox)
             spacecraft_clicked_ok = false;
         if (spacecraft_checkbox && !spacecraft_clicked_ok)
@@ -1124,9 +1108,7 @@ public:
                 double_field("M ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com2[5]);
             }
 
-            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
-            ImGui::Separator();
-            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
+            ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
 
             ImGui::Checkbox("Account for SRP", &srp_checkbox);
             if (srp_checkbox)
@@ -1148,12 +1130,10 @@ public:
             ImGui::End();
         }
 
-        ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
+        ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
 
         //Run/Abort buttons rendering logic.
-        ImGui::Text("Simulation controls");
+        ImGui::SeparatorText("Simulation controls");
 
         if (!task_is_running.load()) //In this case a task is NOT currently running, hence "Run" can be pressed, but "Abort", cannot be pressed (nothing to abort).
         {

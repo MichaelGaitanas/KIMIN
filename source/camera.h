@@ -39,9 +39,9 @@ public:
                projection(glm::mat4(0.0f)),
                view(glm::mat4(0.0f)),
                mode(MODE_COM),
-               dist_com(0.0f), lon_com(270.0f), lat_com(45.0f), min_dist_com(0.0f), max_dist_com(0.0f),
-               dist_b1(0.0f),  lon_b1(270.0f),  lat_b1(45.0f),  min_dist_b1(0.0f),  max_dist_b1(0.0f),
-               dist_b2(0.0f),  lon_b2(270.0f),  lat_b2(45.0f),  min_dist_b2(0.0f),  max_dist_b2(0.0f),
+               dist_com(0.0f), lon_com(270.0f), lat_com(60.0f), min_dist_com(0.0f), max_dist_com(0.0f),
+               dist_b1(0.0f),  lon_b1(270.0f),  lat_b1(60.0f),  min_dist_b1(0.0f),  max_dist_b1(0.0f),
+               dist_b2(0.0f),  lon_b2(270.0f),  lat_b2(60.0f),  min_dist_b2(0.0f),  max_dist_b2(0.0f),
                fov(75.0f)
     { }
 
@@ -144,11 +144,11 @@ public:
         dist_com = min_dist_com + 0.1f*(max_dist_com - min_dist_com);
 
         min_dist_b1 = 1.1f*brillouin1;
-        max_dist_b1 = 100.0f*brillouin1;
+        max_dist_b1 = 150.0f*brillouin1;
         dist_b1 = min_dist_b1 + 0.1f*(max_dist_b1 - min_dist_b1);
 
         min_dist_b2 = 1.1f*brillouin2;
-        max_dist_b2 = 100.0f*brillouin2;
+        max_dist_b2 = 150.0f*brillouin2;
         dist_b2 = min_dist_b2 + 0.1f*(max_dist_b2 - min_dist_b2);
     }
 

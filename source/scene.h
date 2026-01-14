@@ -113,6 +113,7 @@ public:
     }
 
 private:
+    //This function applies the video menu logic.
     void render_content_state_menu()
     {
         ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
@@ -166,11 +167,17 @@ private:
         ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
+
+        if (!render_scene)
+            ImGui::EndDisabled();
     }
 
-    //Thos function applies the camera setup menu logic.
+    //This function applies the camera setup menu logic.
     void render_camera_menu()
     {
+        if (!render_scene)
+            ImGui::BeginDisabled();
+
         ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f); //Disable the indentation for what comes next.
         if (ImGui::TreeNodeEx("Camera"))
         {
@@ -213,11 +220,17 @@ private:
         ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
+
+        if (!render_scene)
+            ImGui::EndDisabled();
     }
 
     //This function applies the lighting system menu logic.
     void render_lighting_menu()
     {
+        if (!render_scene)
+            ImGui::BeginDisabled();
+
         ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f); //Disable the indentation for what comes next.
         if (ImGui::TreeNodeEx("Lighting"))
         {
@@ -236,6 +249,224 @@ private:
         ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
+
+        if (!render_scene)
+            ImGui::EndDisabled();
+    }
+
+    //This function renders the mesh menu.
+    void render_mesh_menu()
+    {   
+        if (!render_scene)
+            ImGui::BeginDisabled();
+
+        ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f); //Disable the indentation for what comes next.
+        if (ImGui::TreeNodeEx("Meshes"))
+        {
+            ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
+
+            ImGui::Text("Binary system");
+            ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
+
+            ImGui::Text("Body 1");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(60.0f*SCX);
+            ImGui::Checkbox("##rend3D.render_body1", &rend3D.render_body1);
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(100.0f*SCX);
+            ImGui::Text("Axes 1");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(150.0f*SCX);
+            ImGui::Checkbox("##rend3D.render_axes1", &rend3D.render_axes1);
+
+            ImGui::Text("Body 2");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(60.0f*SCX);
+            ImGui::Checkbox("##rend3D.render_body2", &rend3D.render_body2);
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(100.0f*SCX);
+            ImGui::Text("Axes 2");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(150.0f*SCX);
+            ImGui::Checkbox("##rend3D.render_axes2", &rend3D.render_axes2);
+            ImGui::Dummy(ImVec2(0.0f,4.0f*SCY));
+
+            ImGui::Text("Trajectories");
+            ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
+
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f,0.2f,0.2f,1.0f)); //Make all the plot buttons' off state gray.
+
+            ImGui::Text("Body 1");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(60.0f*SCX);
+            ImGui::Checkbox("##rend3D.render_orb1", &rend3D.render_orb1);
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(90.0f*SCX);
+            ImGui::SetNextItemWidth(100.0f*SCX);
+            uint64_t visible_orb1_frame = (frames > 0) ? uint64_t(rend3D.orb1.gl_draw_count) : 0;
+
+            if (!rend3D.render_orb1)
+            {
+                ImGui::BeginDisabled();
+                if (sync_orb1)
+                    sync_orb1 = false;
+            }
+            
+            if (sync_orb1)
+            {
+                ImGui::PushStyleColor(ImGuiCol_FrameBg,          ImVec4(0.35f,0.05f,0.05f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_FrameBgHovered,   ImVec4(0.55f,0.10f,0.10f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_FrameBgActive,    ImVec4(0.60f,0.12f,0.12f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_SliderGrab,       ImVec4(0.85f,0.20f,0.20f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.95f,0.25f,0.25f, 1.0f));
+                ImGui::SliderScalar("##visible_orb1_frame", ImGuiDataType_U64, &visible_orb1_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+                ImGui::PopStyleColor(5);
+            }
+            else
+                ImGui::SliderScalar("##visible_orb1_frame", ImGuiDataType_U64, &visible_orb1_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+            ImGui::SameLine();
+            rend3D.orb1.gl_draw_count = size_t(visible_orb1_frame);
+            sync_orb1 = onoff_button("Sync##sync_orb1", ImVec2(50.0f*SCX, 18.0f*SCY), sync_orb1);
+            if (sync_orb1)
+                rend3D.orb1.gl_draw_count = size_t(iframe + 1);
+
+            if (!rend3D.render_orb1)
+                ImGui::EndDisabled();
+
+            ImGui::Text("Body 2");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(60.0f*SCX);
+            ImGui::Checkbox("##rend3D.render_orb2", &rend3D.render_orb2);
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(90.0f*SCX);
+            ImGui::SetNextItemWidth(100.0f*SCX);
+            uint64_t visible_orb2_frame = (frames > 0) ? uint64_t(rend3D.orb2.gl_draw_count) : 0;
+
+            if (!rend3D.render_orb2)
+            {
+                ImGui::BeginDisabled();
+                if (sync_orb2)
+                    sync_orb2 = false;
+            }
+
+            if (sync_orb2)
+            {
+                ImGui::PushStyleColor(ImGuiCol_FrameBg,          ImVec4(0.35f,0.05f,0.05f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_FrameBgHovered,   ImVec4(0.55f,0.10f,0.10f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_FrameBgActive,    ImVec4(0.60f,0.12f,0.12f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_SliderGrab,       ImVec4(0.85f,0.20f,0.20f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.95f,0.25f,0.25f, 1.0f));
+                ImGui::SliderScalar("##visible_orb2_frame", ImGuiDataType_U64, &visible_orb2_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+                ImGui::PopStyleColor(5);
+            }
+            else
+                ImGui::SliderScalar("##visible_orb2_frame", ImGuiDataType_U64, &visible_orb2_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+            ImGui::SameLine();
+            sync_orb2 = onoff_button("Sync##sync_orb2", ImVec2(50.0f*SCX, 18.0f*SCY), sync_orb2);
+            rend3D.orb2.gl_draw_count = size_t(visible_orb2_frame);
+            if (sync_orb2)
+                rend3D.orb2.gl_draw_count = size_t(iframe + 1);
+
+            if (!rend3D.render_orb2)
+                ImGui::EndDisabled();
+
+            if (!sol || sol->t.empty() || !sol->integr.props.spacecraft_checkbox)
+                ImGui::BeginDisabled();
+
+            ImGui::Text("Sp/craft");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(60.0f*SCX);
+            ImGui::Checkbox("##rend3D.render_orb_sp", &rend3D.render_orb_sp);
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(90.0f*SCX);
+            ImGui::SetNextItemWidth(100.0f*SCX);
+            uint64_t visible_orb_sp_frame = (frames > 0) ? uint64_t(rend3D.orb_sp.gl_draw_count) : 0;
+
+            if (!rend3D.render_orb_sp)
+            {
+                ImGui::BeginDisabled();
+                if (sync_orb_sp)
+                    sync_orb_sp = false;
+            }
+
+            if (sync_orb_sp)
+            {
+                ImGui::PushStyleColor(ImGuiCol_FrameBg,          ImVec4(0.35f,0.05f,0.05f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_FrameBgHovered,   ImVec4(0.55f,0.10f,0.10f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_FrameBgActive,    ImVec4(0.60f,0.12f,0.12f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_SliderGrab,       ImVec4(0.85f,0.20f,0.20f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.95f,0.25f,0.25f, 1.0f));
+                ImGui::SliderScalar("##visible_orb_sp_frame", ImGuiDataType_U64, &visible_orb_sp_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+                ImGui::PopStyleColor(5);
+            }
+            else
+                ImGui::SliderScalar("##visible_orb_sp_frame", ImGuiDataType_U64, &visible_orb_sp_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
+            ImGui::SameLine();
+            sync_orb_sp = onoff_button("Sync##sync_orb_sp", ImVec2(50.0f*SCX, 18.0f*SCY), sync_orb_sp);
+            rend3D.orb_sp.gl_draw_count = size_t(visible_orb_sp_frame);
+            if (sync_orb_sp)
+                rend3D.orb_sp.gl_draw_count = size_t(iframe + 1);
+
+            if (!rend3D.render_orb_sp)
+                ImGui::EndDisabled();
+
+            if (!sol || sol->t.empty() || !sol->integr.props.spacecraft_checkbox)
+                ImGui::EndDisabled();
+
+            ImGui::PopStyleColor();
+
+            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
+            
+            ImGui::Text("Reference grid");
+            ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
+
+            ImGui::Text("Grid xy");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(60.0f*SCX);
+            ImGui::Checkbox("##rend3D.render_gridxy", &rend3D.render_gridxy);
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(100.0f*SCX);
+            ImGui::Text("Expand");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(155.0f*SCX);
+            ImGui::Checkbox("##rend3D.render_gridxy_expanded", &rend3D.render_gridxy_expanded);
+
+            ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
+
+            ImGui::Text("Background objects");
+            ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
+
+            ImGui::Text("Stars");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(60.0f*SCX);
+            ImGui::Checkbox("##rend3D.render_stars", &rend3D.render_stars);
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(100.0f*SCX);
+            ImGui::Text("Starmap");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(155.0f*SCX);
+            ImGui::Checkbox("##rend3D.render_starmap", &rend3D.render_starmap);
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(195.0f*SCX);
+            ImGui::Text("Galaxy");
+            ImGui::SameLine();
+            ImGui::Checkbox("##rend3D.render_galaxy", &rend3D.render_galaxy);
+
+            ImGui::Dummy(ImVec2(0.0f, 7.0f*SCY));
+
+            ImGui::Text("Sun");
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(60.0f*SCX);
+            ImGui::Checkbox("##rend3D.render_sun", &rend3D.render_sun);
+
+            ImGui::TreePop();
+        }
+        ImGui::PopStyleVar();
+
+        ImGui::Dummy(ImVec2(0.0f,700.0f*SCY)); //Some extra y-space in order to be able to scroll down along scene panel.
+
+        if (!render_scene)
+            ImGui::EndDisabled();
     }
 
     //This function triggers the events that concern the ONLY in 3D part of the viewport, based on hardware user input.
@@ -590,215 +821,7 @@ private:
         render_content_state_menu();
         render_camera_menu();
         render_lighting_menu();
-
-        //Meshes to render logic :
-        ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f); //Disable the indentation for what comes next.
-        if (ImGui::TreeNodeEx("Meshes"))
-        {
-            ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
-
-            ImGui::Text("Binary system");
-            ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
-
-            ImGui::Text("Body 1");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(60.0f*SCX);
-            ImGui::Checkbox("##rend3D.render_body1", &rend3D.render_body1);
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(100.0f*SCX);
-            ImGui::Text("Axes 1");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(150.0f*SCX);
-            ImGui::Checkbox("##rend3D.render_axes1", &rend3D.render_axes1);
-
-            ImGui::Text("Body 2");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(60.0f*SCX);
-            ImGui::Checkbox("##rend3D.render_body2", &rend3D.render_body2);
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(100.0f*SCX);
-            ImGui::Text("Axes 2");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(150.0f*SCX);
-            ImGui::Checkbox("##rend3D.render_axes2", &rend3D.render_axes2);
-            ImGui::Dummy(ImVec2(0.0f,4.0f*SCY));
-
-            ImGui::Text("Trajectories");
-            ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
-
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f,0.2f,0.2f,1.0f)); //Make all the plot buttons' off state gray.
-
-            ImGui::Text("Body 1");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(60.0f*SCX);
-            ImGui::Checkbox("##rend3D.render_orb1", &rend3D.render_orb1);
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(90.0f*SCX);
-            ImGui::SetNextItemWidth(100.0f*SCX);
-            uint64_t visible_orb1_frame = (frames > 0) ? uint64_t(rend3D.orb1.gl_draw_count) : 0;
-
-            if (!rend3D.render_orb1)
-            {
-                ImGui::BeginDisabled();
-                if (sync_orb1)
-                    sync_orb1 = false;
-            }
-            
-            if (sync_orb1)
-            {
-                ImGui::PushStyleColor(ImGuiCol_FrameBg,          ImVec4(0.35f,0.05f,0.05f, 1.0f));
-                ImGui::PushStyleColor(ImGuiCol_FrameBgHovered,   ImVec4(0.55f,0.10f,0.10f, 1.0f));
-                ImGui::PushStyleColor(ImGuiCol_FrameBgActive,    ImVec4(0.60f,0.12f,0.12f, 1.0f));
-                ImGui::PushStyleColor(ImGuiCol_SliderGrab,       ImVec4(0.85f,0.20f,0.20f, 1.0f));
-                ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.95f,0.25f,0.25f, 1.0f));
-                ImGui::SliderScalar("##visible_orb1_frame", ImGuiDataType_U64, &visible_orb1_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
-                ImGui::PopStyleColor(5);
-            }
-            else
-                ImGui::SliderScalar("##visible_orb1_frame", ImGuiDataType_U64, &visible_orb1_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
-            ImGui::SameLine();
-            rend3D.orb1.gl_draw_count = size_t(visible_orb1_frame);
-            sync_orb1 = onoff_button("Sync##sync_orb1", ImVec2(50.0f*SCX, 18.0f*SCY), sync_orb1);
-            if (sync_orb1)
-                rend3D.orb1.gl_draw_count = size_t(iframe + 1);
-
-            if (!rend3D.render_orb1)
-                ImGui::EndDisabled();
-
-            ImGui::Text("Body 2");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(60.0f*SCX);
-            ImGui::Checkbox("##rend3D.render_orb2", &rend3D.render_orb2);
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(90.0f*SCX);
-            ImGui::SetNextItemWidth(100.0f*SCX);
-            uint64_t visible_orb2_frame = (frames > 0) ? uint64_t(rend3D.orb2.gl_draw_count) : 0;
-
-            if (!rend3D.render_orb2)
-            {
-                ImGui::BeginDisabled();
-                if (sync_orb2)
-                    sync_orb2 = false;
-            }
-
-            if (sync_orb2)
-            {
-                ImGui::PushStyleColor(ImGuiCol_FrameBg,          ImVec4(0.35f,0.05f,0.05f, 1.0f));
-                ImGui::PushStyleColor(ImGuiCol_FrameBgHovered,   ImVec4(0.55f,0.10f,0.10f, 1.0f));
-                ImGui::PushStyleColor(ImGuiCol_FrameBgActive,    ImVec4(0.60f,0.12f,0.12f, 1.0f));
-                ImGui::PushStyleColor(ImGuiCol_SliderGrab,       ImVec4(0.85f,0.20f,0.20f, 1.0f));
-                ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.95f,0.25f,0.25f, 1.0f));
-                ImGui::SliderScalar("##visible_orb2_frame", ImGuiDataType_U64, &visible_orb2_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
-                ImGui::PopStyleColor(5);
-            }
-            else
-                ImGui::SliderScalar("##visible_orb2_frame", ImGuiDataType_U64, &visible_orb2_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
-            ImGui::SameLine();
-            sync_orb2 = onoff_button("Sync##sync_orb2", ImVec2(50.0f*SCX, 18.0f*SCY), sync_orb2);
-            rend3D.orb2.gl_draw_count = size_t(visible_orb2_frame);
-            if (sync_orb2)
-                rend3D.orb2.gl_draw_count = size_t(iframe + 1);
-
-            if (!rend3D.render_orb2)
-                ImGui::EndDisabled();
-
-            if (!sol || sol->t.empty() || !sol->integr.props.spacecraft_checkbox)
-                ImGui::BeginDisabled();
-
-            ImGui::Text("Sp/craft");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(60.0f*SCX);
-            ImGui::Checkbox("##rend3D.render_orb_sp", &rend3D.render_orb_sp);
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(90.0f*SCX);
-            ImGui::SetNextItemWidth(100.0f*SCX);
-            uint64_t visible_orb_sp_frame = (frames > 0) ? uint64_t(rend3D.orb_sp.gl_draw_count) : 0;
-
-            if (!rend3D.render_orb_sp)
-            {
-                ImGui::BeginDisabled();
-                if (sync_orb_sp)
-                    sync_orb_sp = false;
-            }
-
-            if (sync_orb_sp)
-            {
-                ImGui::PushStyleColor(ImGuiCol_FrameBg,          ImVec4(0.35f,0.05f,0.05f, 1.0f));
-                ImGui::PushStyleColor(ImGuiCol_FrameBgHovered,   ImVec4(0.55f,0.10f,0.10f, 1.0f));
-                ImGui::PushStyleColor(ImGuiCol_FrameBgActive,    ImVec4(0.60f,0.12f,0.12f, 1.0f));
-                ImGui::PushStyleColor(ImGuiCol_SliderGrab,       ImVec4(0.85f,0.20f,0.20f, 1.0f));
-                ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.95f,0.25f,0.25f, 1.0f));
-                ImGui::SliderScalar("##visible_orb_sp_frame", ImGuiDataType_U64, &visible_orb_sp_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
-                ImGui::PopStyleColor(5);
-            }
-            else
-                ImGui::SliderScalar("##visible_orb_sp_frame", ImGuiDataType_U64, &visible_orb_sp_frame, &visible_min_frame, &frames, "%" PRIu64, ImGuiSliderFlags_AlwaysClamp);
-            ImGui::SameLine();
-            sync_orb_sp = onoff_button("Sync##sync_orb_sp", ImVec2(50.0f*SCX, 18.0f*SCY), sync_orb_sp);
-            rend3D.orb_sp.gl_draw_count = size_t(visible_orb_sp_frame);
-            if (sync_orb_sp)
-                rend3D.orb_sp.gl_draw_count = size_t(iframe + 1);
-
-            if (!rend3D.render_orb_sp)
-                ImGui::EndDisabled();
-
-            if (!sol || sol->t.empty() || !sol->integr.props.spacecraft_checkbox)
-                ImGui::EndDisabled();
-
-            ImGui::PopStyleColor();
-
-            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
-            
-            ImGui::Text("Reference grid");
-            ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
-
-            ImGui::Text("Grid xy");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(60.0f*SCX);
-            ImGui::Checkbox("##rend3D.render_gridxy", &rend3D.render_gridxy);
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(100.0f*SCX);
-            ImGui::Text("Expand");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(155.0f*SCX);
-            ImGui::Checkbox("##rend3D.render_gridxy_expanded", &rend3D.render_gridxy_expanded);
-
-            ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
-
-            ImGui::Text("Background objects");
-            ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
-
-            ImGui::Text("Stars");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(60.0f*SCX);
-            ImGui::Checkbox("##rend3D.render_stars", &rend3D.render_stars);
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(100.0f*SCX);
-            ImGui::Text("Starmap");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(155.0f*SCX);
-            ImGui::Checkbox("##rend3D.render_starmap", &rend3D.render_starmap);
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(195.0f*SCX);
-            ImGui::Text("Galaxy");
-            ImGui::SameLine();
-            ImGui::Checkbox("##rend3D.render_galaxy", &rend3D.render_galaxy);
-
-            ImGui::Dummy(ImVec2(0.0f, 7.0f*SCY));
-
-            ImGui::Text("Sun");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(60.0f*SCX);
-            ImGui::Checkbox("##rend3D.render_sun", &rend3D.render_sun);
-
-            ImGui::TreePop();
-        }
-        ImGui::PopStyleVar();
-
-        ImGui::Dummy(ImVec2(0.0f,700.0f*SCY)); //Some extra y-space in order to be able to scroll down along scene panel.        
-
-        if (!render_scene)
-            ImGui::EndDisabled();
+        render_mesh_menu();
 
         process_hardware_inputs();
         process_frame_increment_logic();
@@ -852,8 +875,8 @@ public:
                 if (plot_kep_mut[4]) plot_kep_mut[4] = plot("##plot_kep_mut[4]", "Mutual argument of periapsis",       "ω [deg]", plot_kep_mut[4], sol2D.argper_mut);
                 if (plot_kep_mut[5]) plot_kep_mut[5] = plot("##plot_kep_mut[5]", "Mutual mean anomaly",                "M [deg]", plot_kep_mut[5], sol2D.manom_mut);
 
-                if (plot_dener_dmom[0]) plot_dener_dmom[0] = plot("##plot_dener_dmom[0]", "Energy relative error",             "| (E[i+1] - E[0])/E[0] |", plot_dener_dmom[0], sol2D.denergy);
-                if (plot_dener_dmom[1]) plot_dener_dmom[1] = plot("##plot_dener_dmom[1]", "Momentum magnitude relative error", "| (L[i+1] - L[0])/L[0] |", plot_dener_dmom[1], sol2D.dmomentum);
+                if (plot_dener_dmom[0]) plot_dener_dmom[0] = plot("##plot_dener_dmom[0]", "BINARY'S energy relative error",             "| (E[i+1] - E[0])/E[0] |", plot_dener_dmom[0], sol2D.denergy);
+                if (plot_dener_dmom[1]) plot_dener_dmom[1] = plot("##plot_dener_dmom[1]", "BINARY'S momentum magnitude relative error", "| (L[i+1] - L[0])/L[0] |", plot_dener_dmom[1], sol2D.dmomentum);
 
                 if (plot_cart_com_helio[0]) plot_cart_com_helio[0] = plot("##plot_cart_com_helio[0]", "Heliocentric COM x",             "x [AU]",      plot_cart_com_helio[0], sol2D.xcom_helio);
                 if (plot_cart_com_helio[1]) plot_cart_com_helio[1] = plot("##plot_cart_com_helio[1]", "Heliocentric COM y",             "y [AU]",      plot_cart_com_helio[1], sol2D.ycom_helio);

@@ -86,11 +86,14 @@ public:
         imstyle.WindowPadding.y    *= SCY;
         imstyle.FramePadding.x     *= SCX;
         imstyle.FramePadding.y     *= SCY;
+        imstyle.SeparatorTextBorderSize = 2.0f*SCY;
         imstyle.Colors[ImGuiCol_WindowBg]      = ImVec4(0.1f,0.1f,0.1f, 1.0f);
         imstyle.Colors[ImGuiCol_FrameBg]       = ImVec4(0.2f,0.2f,0.2f, 1.0f);
         imstyle.Colors[ImGuiCol_Header]        = ImVec4(0.2f,0.2f,0.2f, 1.0f);
         imstyle.Colors[ImGuiCol_Border]        = ImVec4(0.15f,0.15f,0.15f, 1.0f);
         imstyle.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.2f,0.2f,0.2f, 1.0f);
+        imstyle.Colors[ImGuiCol_Button]        = ImVec4(0.2f,0.2f,0.2f, 1.0f);
+        imstyle.DisabledAlpha = 0.43f;
 
         ImPlotStyle& plstyle = ImPlot::GetStyle();
         plstyle.PlotBorderSize       *= SCX;
@@ -118,11 +121,11 @@ public:
         plstyle.MinorTickSize.x      *= SCX;
         plstyle.MinorTickSize.y      *= SCY;
 
-        ImFontConfig cfg;
-        cfg.MergeMode  = true;
-        cfg.PixelSnapH = true;
+        ImFontConfig imconfig;
+        imconfig.MergeMode  = true;
+        imconfig.PixelSnapH = true;
         static const ImWchar icon_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
-        io.Fonts->AddFontFromFileTTF(PATH_TO_ICONS, 15.0f*SCY, &cfg, icon_ranges);
+        io.Fonts->AddFontFromFileTTF(PATH_TO_ICONS, 15.0f*SCY, &imconfig, icon_ranges);
     }
 
     //Free gui resources.

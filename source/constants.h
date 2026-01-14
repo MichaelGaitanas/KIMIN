@@ -43,6 +43,7 @@ constexpr int GLFW_MIN_WIDTH = 400; //[pix]
 constexpr int GLFW_MIN_HEIGHT = 400; //[pix]
 constexpr int GLFW_SSAS_SAMPLES = 4;
 constexpr int GLFW_REQUESTED_DEPTH_BITS = 32;
+constexpr int CONSOLE_BUFFER_MAX_SIZE = 60000; //[bytes] -> 1 byte for each ASCII char and 1-4 bytes for each unicode char due to UTF-8 encoding.
 
 constexpr char SIM_ROOT_DIR[] = "../simulations/";
 constexpr char PROPERTIES_DIR[] = "../properties/";

@@ -7,7 +7,6 @@
 #include<sstream>
 #include<string>
 
-//#include<boost/date_time.hpp>
 #include<GL/glew.h>
 #include<GLFW/glfw3.h>
 
@@ -22,27 +21,16 @@ class console
 private:
     ImGuiTextBuffer buffer{};
     bool scroll_to_bottom = false;
-    const int max_buffer_size = 60000; //In bytes (1 byte for each ASCII char and 1-4 bytes for each unicode char due to UTF-8 encoding).
 
     void auto_clear()
     {
-        if (buffer.size() > max_buffer_size)
+        if (buffer.size() > CONSOLE_BUFFER_MAX_SIZE)
         {
             buffer.clear();
             buffer.append("[Console] : Automatic clearance of the console.");
             scroll_to_bottom = true;
         }
     }
-
-    /*
-    std::string get_local_time()
-    {
-        boost::posix_time::ptime timeloc = boost::posix_time::second_clock::local_time();
-        std::ostringstream datetime;
-        datetime << "[" << timeloc << "]  ";
-        return datetime.str();
-    }
-    */
 
 public:
     //Print formatted text to the console.
@@ -55,15 +43,6 @@ public:
         scroll_to_bottom = true;
         auto_clear();
     }
-
-    //Add formatted local time and then formatted text to the console.
-    /*
-    void add_timed_text(const char *text)
-    {
-        add_text(get_local_time().c_str());
-        add_text(text);
-    }
-    */
 
     //Render the console window.
     void render()
@@ -80,11 +59,13 @@ public:
         
         //Display FPS and GPU.
         ImGui::SameLine();
-        ImGui::Text("FPS [ %.0f ]     GPU [ %s ]", ImGui::GetIO().Framerate, glGetString(GL_RENDERER));
+        ImGui::Text("FPS [ %.0f ]   -   GPU [ %s ]   -   OpenGL [ %s ]", ImGui::GetIO().Framerate, glGetString(GL_RENDERER), glGetString(GL_VERSION));
         ImGui::Separator();
         
         ImGui::BeginChild("Scroll", ImVec2(0.0f,0.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.1f,0.8f,0.1f, 1.0f));
         ImGui::TextUnformatted(buffer.begin());
+        ImGui::PopStyleColor();
         if (scroll_to_bottom)
             ImGui::SetScrollHereY(1.0f);
         scroll_to_bottom = false;    
