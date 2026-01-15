@@ -685,7 +685,7 @@ public:
 
         //Simulation name text field.
         ImGui::SeparatorText("Simulation name");
-        ImGui::PushItemWidth(200.0f*SCX);
+        ImGui::PushItemWidth(220.0f*SCX);
             ImGui::InputText(" ", sim_name, IM_ARRAYSIZE(sim_name));
         ImGui::PopItemWidth();
         ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
@@ -806,7 +806,7 @@ public:
         ImGui::Text("Method");
 
         //Integration method (RKF78 constant, RKF78 adaptive, Bulirsch–Stoer adaptive).
-        ImGui::PushItemWidth(200.0f*SCX);
+        ImGui::PushItemWidth(220.0f*SCX);
             ImGui::PushID(id++);
                 static const char *ode_methods[4] = {"RKF78 (fixed)",
                                                      "RKF78 (adaptive)",
@@ -831,7 +831,7 @@ public:
         ImGui::Text("Mutual position and velocity");
 
         //Initial position/velocity variables, either in the form of Cartesian coords, or Keplerian elements.
-        ImGui::PushItemWidth(200.0f*SCX);
+        ImGui::PushItemWidth(220.0f*SCX);
             ImGui::PushID(id++);
                 static const char *cart_kep_mut_var[2] = {"Cartesian", "Keplerian"};
                 ImGui::Combo("  ", (int*)(&pos_vel_mut_var), cart_kep_mut_var, IM_ARRAYSIZE(cart_kep_mut_var));
@@ -860,7 +860,7 @@ public:
         ImGui::Text("Orientations");
 
         //Orientation variables (Euler angles (roll, pitch, yaw) or quaternions).
-        ImGui::PushItemWidth(200.0f*SCX);
+        ImGui::PushItemWidth(220.0f*SCX);
             ImGui::PushID(id++);
                 static const char *rpy_quat_var[2] = {"Euler angles (XYZ)", "Quaternions (WXYZ)"};
                 ImGui::Combo("  ", (int*)(&orient_var), rpy_quat_var, IM_ARRAYSIZE(rpy_quat_var));
@@ -893,7 +893,7 @@ public:
         ImGui::Text("Angular velocities");
 
         //Angular velocities reference frames (inertial or corresponding body frame).
-        ImGui::PushItemWidth(200.0f*SCX);
+        ImGui::PushItemWidth(220.0f*SCX);
             ImGui::PushID(id++);
                 static const char *omega_frame[2] = {"Heliocentric (inertial)", "Body frames"}; //Which frame for the angular velocities.
                 ImGui::Combo("  ", (int*)(&angvel_frame), omega_frame, IM_ARRAYSIZE(omega_frame));
@@ -923,7 +923,7 @@ public:
 
         //COM initial position and velocity.
         ImGui::Text("Binary COM (Heliocentric)");
-        ImGui::PushItemWidth(200.0f*SCX);
+        ImGui::PushItemWidth(220.0f*SCX);
             ImGui::PushID(id++);
                 static const char *cart_kep_com_var[2] = {"Cartesian", "Keplerian"};
                 ImGui::Combo("  ", (int*)(&pos_vel_com_var), cart_kep_com_var, IM_ARRAYSIZE(cart_kep_com_var));
@@ -1042,7 +1042,7 @@ public:
             ImGui::Text("Position and velocity");
 
             //Initial position/velocity variables, either in the form of Cartesian coords, or Keplerian elements.
-            ImGui::PushItemWidth(200.0f*SCX);
+            ImGui::PushItemWidth(220.0f*SCX);
                 ImGui::PushID(id++);
                     static const char *cart_kep_sp_var[6] = {"Cartesian (binary COM)",
                                                              "Cartesian (body 1)",

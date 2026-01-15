@@ -108,16 +108,105 @@ public:
             rend3D.orb_sp.gl_draw_count = 0;
             rend3D.render_orb_sp = sync_orb_sp = false;
         }
-        //else
-        //    rend3D.orb_sp.gl_draw_count = visible_min_frame;
     }
 
 private:
+    void TreeTriangle(ImDrawList* dl, ImVec2 center, float r, bool down, ImU32 col)
+    {
+        dl->PathClear();
+        if (down) {
+            dl->PathLineTo(ImVec2(center.x - r, center.y - r * 0.6f));
+            dl->PathLineTo(ImVec2(center.x + r, center.y - r * 0.6f));
+            dl->PathLineTo(ImVec2(center.x,     center.y + r));
+        } else {
+            dl->PathLineTo(ImVec2(center.x - r * 0.6f, center.y - r));
+            dl->PathLineTo(ImVec2(center.x - r * 0.6f, center.y + r));
+            dl->PathLineTo(ImVec2(center.x + r,        center.y));
+        }
+        dl->PathFillConvex(col);
+    }
+
+    bool TreeSeparatorText(const char* label, bool default_open = false)
+    {
+        // Build an ID from label (caller: ensure uniqueness like "Lighting")
+        const ImGuiID id = ImGui::GetID(label);
+
+        // Persistent state storage (public)
+        ImGuiStorage* st = ImGui::GetStateStorage();
+        bool open = st->GetBool(id, default_open);
+
+        // Full-width row sizing
+        const float w = ImGui::GetContentRegionAvail().x;
+        const float h = ImGui::GetFrameHeight();
+        const ImVec2 start = ImGui::GetCursorScreenPos();
+
+        // Create an item spanning the full row (clickable)
+        ImGui::InvisibleButton(label, ImVec2(w, h)); // label used only for ID, not drawn
+        const bool hovered = ImGui::IsItemHovered();
+        if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+            open = !open;
+            st->SetBool(id, open);
+        }
+
+        ImDrawList* dl = ImGui::GetWindowDrawList();
+        ImGuiStyle& style = ImGui::GetStyle();
+
+        // Optional hover background (similar to header hover)
+        if (hovered) {
+            dl->AddRectFilled(
+                start,
+                ImVec2(start.x + w, start.y + h),
+                ImGui::GetColorU32(ImGuiCol_HeaderHovered),
+                style.FrameRounding
+            );
+        }
+
+        // Layout: arrow + text + lines
+        const float pad_x   = style.FramePadding.x;
+        const float pad_y   = style.FramePadding.y;
+        const float arrow_r = h * 0.22f;
+
+        const ImVec2 text_size = ImGui::CalcTextSize(label);
+        const float inner = style.ItemInnerSpacing.x;
+
+        // "Group" = triangle (width = 2*arrow_r) + inner spacing + text
+        const float group_w = (2.0f * arrow_r) + inner + text_size.x;
+
+        // Choose where the group starts (left aligned, with your inset)
+        const float left_inset = 20.0f * SCX;              // your current shift; tweak as desired
+        const float group_x0   = start.x + left_inset + pad_x;
+
+        const ImVec2 arrow_center(group_x0 + arrow_r, start.y + h * 0.5f);
+        const float  text_x   = group_x0 + (2.0f * arrow_r) + inner;
+        const ImVec2 text_pos(text_x, start.y + pad_y);
+
+        const float mid_y = start.y + h * 0.5f;
+
+        const float line_thickness =
+            (style.SeparatorTextBorderSize > 0.0f) ? style.SeparatorTextBorderSize : 1.0f;
+
+        const float gap = 10.0f*SCX;
+        const ImU32 sep_col = ImGui::GetColorU32(ImGuiCol_Separator);
+
+        // Lines with equal void space around the WHOLE group
+        const float left_line_x1  = group_x0 - gap;
+        const float right_line_x0 = group_x0 + group_w + gap;
+
+        dl->AddLine(ImVec2(start.x,     mid_y), ImVec2(left_line_x1,  mid_y), sep_col, line_thickness);
+        dl->AddLine(ImVec2(right_line_x0, mid_y), ImVec2(start.x + w, mid_y), sep_col, line_thickness);
+
+        // Arrow + visible text
+        TreeTriangle(dl, arrow_center, arrow_r, open, ImGui::GetColorU32(ImGuiCol_Text));
+        dl->AddText(text_pos, ImGui::GetColorU32(ImGuiCol_Text), label);
+
+        return open;
+    }
+
     //This function applies the video menu logic.
     void render_content_state_menu()
     {
         ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
-        ImGui::Text("Content state");
+        ImGui::SeparatorText("Content state");
         render_scene = onoff_button("Render##render_scene", ImVec2(80.0f*SCX, 25.0f*SCY), render_scene);
         ImGui::SameLine();
 
@@ -164,9 +253,7 @@ private:
             ImGui::TextColored(ImVec4(0.9f,0.0f,0.0f,1.0f), "Time : 0.00  [days]");
         else
             ImGui::TextColored(ImVec4(0.9f,0.0f,0.0f,1.0f), "Time : %.2f  [days]", float(sol->t[iframe]));
-        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
+        ImGui::Dummy(ImVec2(0.0f, 15.0f*SCY));
 
         if (!render_scene)
             ImGui::EndDisabled();
@@ -179,15 +266,14 @@ private:
             ImGui::BeginDisabled();
 
         ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f); //Disable the indentation for what comes next.
-        if (ImGui::TreeNodeEx("Camera"))
+        if (TreeSeparatorText("Camera"))
         {
             ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
 
             //Camera mode :
-            ImGui::Text("Ref");
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(40.0f*SCX);
-            ImGui::PushItemWidth(225.0f*SCX);
+            ImGui::Text("Frame");
+
+            ImGui::PushItemWidth(250.0f*SCX);
                 static const char *cam_modes[3] = {"COM", "Body 1", "Body 2"};
                 ImGui::Combo("##rend3D.cam.mode", (int*)(&rend3D.cam.mode), cam_modes, IM_ARRAYSIZE(cam_modes));
             ImGui::PopItemWidth();
@@ -212,14 +298,9 @@ private:
             ImGui::SameLine();
             ImGui::SetCursorPosX(40.0f*SCX);
             ImGui::SliderFloat("[deg]##rend3D.cam.fov", &rend3D.cam.fov, CAM_MIN_FOV, CAM_MAX_FOV, "%.0f");
-
-            ImGui::TreePop();
         }
         ImGui::PopStyleVar();
-
-        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
+        ImGui::Dummy(ImVec2(0.0f, 15.0f*SCY));
 
         if (!render_scene)
             ImGui::EndDisabled();
@@ -232,7 +313,7 @@ private:
             ImGui::BeginDisabled();
 
         ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f); //Disable the indentation for what comes next.
-        if (ImGui::TreeNodeEx("Lighting"))
+        if (TreeSeparatorText("Lighting"))
         {
             ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
             ImGui::Text("Shadow quality");
@@ -241,14 +322,9 @@ private:
             ImGui::SetCursorPosX(40.0f*SCX);
             if (ImGui::SliderInt("[pix]##rend3D.depth_reso", &rend3D.depth_reso, DEPTH_RESO_MIN, DEPTH_RESO_MAX))
                 rend3D.setup_depth_fbo();
-
-            ImGui::TreePop();
         }
         ImGui::PopStyleVar();
-
-        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
+        ImGui::Dummy(ImVec2(0.0f, 15.0f*SCY));
 
         if (!render_scene)
             ImGui::EndDisabled();
@@ -261,7 +337,7 @@ private:
             ImGui::BeginDisabled();
 
         ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f); //Disable the indentation for what comes next.
-        if (ImGui::TreeNodeEx("Meshes"))
+        if (TreeSeparatorText("Meshes"))
         {
             ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
 
@@ -458,8 +534,6 @@ private:
             ImGui::SameLine();
             ImGui::SetCursorPosX(60.0f*SCX);
             ImGui::Checkbox("##rend3D.render_sun", &rend3D.render_sun);
-
-            ImGui::TreePop();
         }
         ImGui::PopStyleVar();
 
@@ -601,7 +675,7 @@ private:
         ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
 
         //Binary's mutual state plots.
-        if (ImGui::TreeNodeEx("Mutual"))
+        if (TreeSeparatorText("Mutual"))
         {
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
             ImGui::Text("Position and velocity");
@@ -627,15 +701,11 @@ private:
             ImGui::Text("Energy and momentum errors");
             plot_dener_dmom[0] = onoff_button("energy##plot_dener_dmom[0]",   ImVec2(80.0f*SCX, 25.0f*SCY), plot_dener_dmom[0]); ImGui::SameLine();
             plot_dener_dmom[1] = onoff_button("momentum##plot_dener_dmom[1]", ImVec2(80.0f*SCX, 25.0f*SCY), plot_dener_dmom[1]);
-
-            ImGui::TreePop();
         }
-        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
+        ImGui::Dummy(ImVec2(0.0f, 15.0f*SCY));
 
         //Binary's COM plots.
-        if (ImGui::TreeNodeEx("COM"))
+        if (TreeSeparatorText("COM"))
         {
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
             ImGui::Text("Position and velocity (Heliocentric)");
@@ -656,15 +726,11 @@ private:
             plot_kep_com_helio[3] = onoff_button("Ω##plot_kep_com_helio[3]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep_com_helio[3]); ImGui::SameLine();
             plot_kep_com_helio[4] = onoff_button("ω##plot_kep_com_helio[4]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep_com_helio[4]); ImGui::SameLine();
             plot_kep_com_helio[5] = onoff_button("M##plot_kep_com_helio[5]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep_com_helio[5]);
-
-            ImGui::TreePop();
         }
-        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
+        ImGui::Dummy(ImVec2(0.0f, 15.0f*SCY));
 
         //Body 1 plots.
-        if (ImGui::TreeNodeEx("Body 1"))
+        if (TreeSeparatorText("Body 1"))
         {
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
             ImGui::Text("Euler angles (XYZ)");
@@ -684,15 +750,11 @@ private:
             plot_w1b[0] = onoff_button("ω1##plot_w1b[0]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_w1b[0]); ImGui::SameLine();
             plot_w1b[1] = onoff_button("ω2##plot_w1b[1]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_w1b[1]); ImGui::SameLine();
             plot_w1b[2] = onoff_button("ω3##plot_w1b[2]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_w1b[2]);
-
-            ImGui::TreePop();
         }
-        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
+        ImGui::Dummy(ImVec2(0.0f, 15.0f*SCY));
 
         //Body 2 plots.
-        if (ImGui::TreeNodeEx("Body 2"))
+        if (TreeSeparatorText("Body 2"))
         {
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
             ImGui::Text("Euler angles (XYZ)");
@@ -712,15 +774,11 @@ private:
             plot_w2b[0] = onoff_button("ω1##plot_w2b[0]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_w2b[0]); ImGui::SameLine();
             plot_w2b[1] = onoff_button("ω2##plot_w2b[1]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_w2b[1]); ImGui::SameLine();
             plot_w2b[2] = onoff_button("ω3##plot_w2b[2]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_w2b[2]);
-
-            ImGui::TreePop();
         }
-        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f, 7.5f*SCY));
+        ImGui::Dummy(ImVec2(0.0f, 15.0f*SCY));
 
         //Spacecraft's plots.
-        if (ImGui::TreeNodeEx("Spacecraft"))
+        if (TreeSeparatorText("Spacecraft"))
         {
             if (!sol || sol->t.empty() || !sol->integr.props.spacecraft_checkbox)
                 ImGui::BeginDisabled();
@@ -808,8 +866,6 @@ private:
 
             if (!sol || sol->t.empty() || !sol->integr.props.spacecraft_checkbox)
                 ImGui::EndDisabled();
-
-            ImGui::TreePop();
         }
         ImGui::PopStyleVar();
         ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));

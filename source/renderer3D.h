@@ -347,6 +347,7 @@ public:
             sh_grid.set_uniform_vec3("grid_origin", pivot);
             sh_grid.set_uniform_int("expanded_flag", render_gridxy_expanded);
             sh_grid.set_uniform_float("fade_end_dist", CAM_GRID_DIST_SCALE*cam.get_active_dist());
+            sh_grid.set_uniform_float("grid_cell_pix", GRID_CELL_PIX*SCY);
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             glDepthFunc(GL_LEQUAL);

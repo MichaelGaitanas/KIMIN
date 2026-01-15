@@ -87,6 +87,7 @@ public:
         imstyle.FramePadding.x     *= SCX;
         imstyle.FramePadding.y     *= SCY;
         imstyle.SeparatorTextBorderSize = 2.0f*SCY;
+        imstyle.SeparatorTextPadding.x *= SCX;
         imstyle.Colors[ImGuiCol_WindowBg]      = ImVec4(0.1f,0.1f,0.1f, 1.0f);
         imstyle.Colors[ImGuiCol_FrameBg]       = ImVec4(0.2f,0.2f,0.2f, 1.0f);
         imstyle.Colors[ImGuiCol_Header]        = ImVec4(0.2f,0.2f,0.2f, 1.0f);

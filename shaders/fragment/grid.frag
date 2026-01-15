@@ -9,8 +9,7 @@ uniform mat4 view;
 uniform vec3 grid_origin;
 uniform int expanded_flag;
 uniform float fade_end_dist;
-
-const float TARGET_PIX = 700.0;
+uniform float grid_cell_pix;
 
 vec3 view2world(vec3 v)
 {
@@ -74,7 +73,7 @@ void main()
     float aaY = max(gradY, 1e-6);
 
     //Continuous L in log2 cell-size space :
-    float cell_ref = wpp_center*TARGET_PIX;
+    float cell_ref = wpp_center*grid_cell_pix;
     float L = log2(max(cell_ref, 1e-12));
 
     int i0 = int(floor(L)) - 2;
