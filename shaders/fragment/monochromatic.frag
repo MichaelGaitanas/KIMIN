@@ -2,8 +2,6 @@
 
 out vec4 frag_col;
 
-
-
 uniform vec3 mesh_col; //Mesh color.
 
 void main()

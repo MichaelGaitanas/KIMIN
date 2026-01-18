@@ -11,6 +11,7 @@ constexpr double AU2KM = 149597870.7; //[km]
 constexpr double MSUN = 1.989e30; //[kg]
 constexpr double RSUN = 696342.0; //[km]
 constexpr double PSRP = 4.56e-6; //[N/m^2]
+constexpr double JD_J2000 = 2451545.0; //[day]
 constexpr double MIN_SUN_BODY_DIST = 0.01; //[AU]
 constexpr double ODES_INIT_GUESS_TIME_STEP = 1.0; //[sec]
 

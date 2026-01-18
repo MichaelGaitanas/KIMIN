@@ -9,6 +9,7 @@
 #include"constants.h"
 #include"typedef.h"
 #include"linalg.h"
+#include"geometry.h"
 #include"conversion.h"
 #include"ellipsoid.h"
 #include"polyhedron.h"
@@ -339,7 +340,7 @@ public:
         }
         
         //Preparation : Set time parameters in [sec] for integration.
-        t0 = props.epoch*86400.0; //[sec]
+        t0 = (props.epoch_jd - JD_J2000)*86400.0; //[sec]
         tmax = t0 + props.dur*86400.0; //[sec]
         if (props.integration_method == properties::RKF78_FIXED || props.integration_method == properties::ABM5_FIXED)
             dt = props.step*86400.0; //[sec]
@@ -348,8 +349,8 @@ public:
 
         if (props.impactors_checkbox)
         {
-            props.tD1 *= 86400.0; //[sec]
-            props.tD2 *= 86400.0; //[sec]
+            props.tD1 = t0 + props.tD1*86400.0; //[sec]
+            props.tD2 = t0 + props.tD2*86400.0; //[sec]
         }
 
         maneuver1 = maneuver2 = false;
@@ -443,7 +444,7 @@ public:
                 //Asteroid-asteroid :
                 if (sphere_sphere_collision(length(dvec3{state[0],state[1],state[2]}), brillouin1, brillouin2))
                 {
-                    sprintf(buffer,"< Collision (asteroid - asteroid) detected at t = %5.2lf [days]. >\n", t/86400.0);
+                    sprintf(buffer,"< Collision (asteroid - asteroid) detected after t = %5.2lf [days]. >\n", (t-t0)/86400.0);
                     cons.print(buffer);
                     collision_mut = true;
                     break;
@@ -458,72 +459,25 @@ public:
                     const dvec3 rsp_helio = {state[26], state[27], state[28]};
                     if (sphere_point_collision(length(rsp_helio - r1_helio), brillouin1))
                     {
-                        sprintf(buffer,"< Collision (spacecraft - asteroid 1) at t = %5.2lf [days]. >\n", t/86400.0);
+                        sprintf(buffer,"< Collision (spacecraft - asteroid 1) after t = %5.2lf [days]. >\n", (t-t0)/86400.0);
                         cons.print(buffer);
                         collision_sp1 = true;
                         break;
                     }
                     if (sphere_point_collision(length(rsp_helio - r2_helio), brillouin2))
                     {
-                        sprintf(buffer,"< Collision (spacecraft - asteroid 2) at t = %5.2lf [days]. >\n", t/86400.0);
+                        sprintf(buffer,"< Collision (spacecraft - asteroid 2) after t = %5.2lf [days]. >\n", (t-t0)/86400.0);
                         cons.print(buffer);
                         collision_sp2 = true;
                         break;
                     }
                 }
             }
-            else if (props.collision_polyhedra)
-            {
-                const dvec3 rmut = {state[0], state[1], state[2]};
-                const dvec3 rcom_helio = {state[20], state[21], state[22]};
-                const dvec3 r1_helio = rcom_helio + m1*rmut;
-                const dvec3 r2_helio = rcom_helio + m2*rmut;
-
-                //We apply sphere-sphere gate first, because polyhedron-polyhedron collision requires first the Brillouin spheres to collide (which is a lot faster to test).
-                if (sphere_sphere_collision(length(rmut), brillouin1, brillouin2))
-                {
-                    const dmat3 A1 = quat2mat({state[6],  state[7],  state[8],  state[9]});
-                    const dmat3 A2 = quat2mat({state[13], state[14], state[15], state[16]});
-                    if (polyhedron_polyhedron_collision(props.poly1, A1, r1_helio, props.poly2, A2, r2_helio))
-                    {
-                        sprintf(buffer,"< Collision (asteroid - asteroid) at t = %5.2lf [days]. >\n", t/86400.0);
-                        cons.print(buffer);
-                        collision_mut = true;
-                        break;
-                    }
-                }
-                //Spacecraft-asteroid (again, sphere-point gate, then polyhedron-point).
-                if (props.spacecraft_checkbox)
-                {
-                    const dvec3 rsp_helio = {state[26], state[27], state[28]};
-                    if (sphere_point_collision(length(rsp_helio - r1_helio), brillouin1))
-                    {
-                        const dmat3 A1 = quat2mat({state[6],state[7],state[8],state[9]});
-                        if (polyhedron_point_collision(props.poly1, A1, r1_helio, rsp_helio))
-                        {
-                            sprintf(buffer,"< Collision (spacecraft - asteroid 1) at t = %5.2lf [days]. >\n", t/86400.0);
-                            cons.print(buffer);
-                            collision_sp1 = true;
-                            break;
-                        }
-                    }
-                    if (sphere_point_collision(length(rsp_helio - r2_helio), brillouin2))
-                    {
-                        const dmat3 A2 = quat2mat({state[13],state[14],state[15],state[16]});
-                        if (polyhedron_point_collision(props.poly2, A2, r2_helio, rsp_helio))
-                        {
-                            sprintf(buffer,"< Collision (spacecraft - asteroid 2) at t = %5.2lf [days]. >\n", t/86400.0);
-                            cons.print(buffer);
-                            collision_sp2 = true;
-                            break;
-                        }
-                    }
-                }
-            }
+            
             //Sun-COM close approach :
             if (length(dvec3{state[20], state[21], state[22]}) < MIN_SUN_BODY_DIST*AU2KM)
             {
-                sprintf(buffer,"< Binary COM too close to Sun at t = %5.2lf [days]. >\n", t/86400.0);
+                sprintf(buffer,"< Binary COM too close to Sun after t = %5.2lf [days]. >\n", (t-t0)/86400.0);
                 cons.print(buffer);
                 collision_sun = true;
                 break;
@@ -532,7 +486,7 @@ public:
             //Abort flag : if the user presses the 'Abort' button in the gui, break the loop.
             if (abort_flag.load())
             {
-                sprintf(buffer, "< Aborted at t = %5.2lf [days]. > \n", t/86400.0);
+                sprintf(buffer, "< Aborted after t = %5.2lf [days]. > \n", (t-t0)/86400.0);
                 cons.print(buffer);
                 break;
             }
@@ -556,16 +510,12 @@ public:
 
             //Quaternion normalization :
             double norm = length(dvec4{state[6], state[7], state[8], state[9]}); //q1
-            state[6] /= norm;
-            state[7] /= norm;
-            state[8] /= norm;
-            state[9] /= norm;
+            for (int i = 6; i <= 9; ++i)
+                state[i] /= norm;
             norm = length(dvec4{state[13], state[14], state[15], state[16]}); //q2
-            state[13] /= norm;
-            state[14] /= norm;
-            state[15] /= norm;
-            state[16] /= norm;
-
+            for (int i = 13; i <= 16; ++i)
+                state[i] /= norm;
+                
             //Progressbar : set the progress value of the integrator in [0,1]. The properties then convert it to [0,100]
             progress.store((t-t0)/(tmax-t0));
         }

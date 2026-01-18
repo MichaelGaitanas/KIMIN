@@ -251,7 +251,7 @@ public:
             //Note : All 3 components of the momentum vector are conserved in time, but I just choose to store and plot the magnitude only.
             const double momentum = length( sol.integr.m*cross(rmut,vmut) + dot(A1, dot(sol.integr.I1, w1b)) + dot(A2, dot(sol.integr.I2, w2b)) );
 
-            t[i] = sol.integr.orbit[j][0]/86400.0; //Back in [days].
+            t[i] = (sol.integr.orbit[j][0] - sol.integr.t0)/86400.0; //Back in [days].
 
             xmut[i]     = rmut[0];
             ymut[i]     = rmut[1];

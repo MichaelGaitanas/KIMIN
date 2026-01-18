@@ -3,15 +3,15 @@
 #ifndef PROPERTIES_H
 #define PROPERTIES_H
 
+#include<cstdio>
+#include<cmath>
+#include<cstring>
 #include<vector>
 #include<filesystem>
 #include<atomic>
-#include<cstring>
 #include<string>
 
 #include"../imgui/imgui.h"
-#include"../imgui/imgui_impl_glfw.h"
-#include"../imgui/imgui_impl_opengl3.h"
 
 #include"constants.h"
 #include"linalg.h"
@@ -46,7 +46,9 @@ public:
         BSTOER_ADAPTIVE,
         ABM5_FIXED
     } integration_method;
-    double epoch, dur; //'Epoch', 'Duration' double fields.
+    char epoch[64]; //"Epoch" text field (calendar).
+    double epoch_jd; //Julian day corresponding to the calendar epoch. Think of it like a hash.
+    double dur; //'Duration' double field.
     double step; //'Step' double field (if a fixed-step method is chosen).
     double target_error; //'Target error' double field (if an adaptive-step method is chosen).
 
@@ -84,7 +86,7 @@ public:
 
     bool sun_gravity; //Assume Sun's gravity choice.
 
-    bool collision_no, collision_spheres, collision_polyhedra; //Which type of collision criterion to apply in the simulation.
+    bool collision_no, collision_spheres; //Collision criterion to apply in the simulation.
 
     bool impactors_checkbox; //'Kinetic impactors' checkbox state.
     double mD1, mD2; //Impactor's 'm' double field.
@@ -130,7 +132,8 @@ public:
                    M1(0.0),
                    M2(0.0),
                    integration_method(RKF78_FIXED),
-                   epoch(0.0),
+                   epoch("2000-01-01T12:00:00"),
+                   epoch_jd(JD_J2000),
                    dur(0.0),
                    step(0.0),
                    target_error(1e-12),
@@ -153,7 +156,6 @@ public:
                    sun_gravity(false),
                    collision_no(false),
                    collision_spheres(false),
-                   collision_polyhedra(false),
                    impactors_checkbox(false),
                    mD1(0.0),
                    mD2(0.0),
@@ -243,28 +245,28 @@ public:
         if (strcmp(buffer, "RKF78 (fixed)") == 0)
         {
             integration_method = RKF78_FIXED;
-            if (find_assignment_operator(fp)) fscanf(fp, "%lf", &epoch);
+            if (find_assignment_operator(fp)) fscanf(fp, " \"%63[^\"]\"", epoch);
             if (find_assignment_operator(fp)) fscanf(fp, "%lf", &dur);
             if (find_assignment_operator(fp)) fscanf(fp, "%lf", &step);
         }
         else if (strcmp(buffer, "RKF78 (adaptive)") == 0)
         {
             integration_method = RKF78_ADAPTIVE;
-            if (find_assignment_operator(fp)) fscanf(fp, "%lf", &epoch);
+            if (find_assignment_operator(fp)) fscanf(fp, " \"%63[^\"]\"", epoch);
             if (find_assignment_operator(fp)) fscanf(fp, "%lf", &dur);
             if (find_assignment_operator(fp)) fscanf(fp, "%lf", &target_error);
         }
         else if (strcmp(buffer, "BStoer (adaptive)") == 0)
         {
             integration_method = BSTOER_ADAPTIVE;
-            if (find_assignment_operator(fp)) fscanf(fp, "%lf", &epoch);
+            if (find_assignment_operator(fp)) fscanf(fp, " \"%63[^\"]\"", epoch);
             if (find_assignment_operator(fp)) fscanf(fp, "%lf", &dur);
             if (find_assignment_operator(fp)) fscanf(fp, "%lf", &target_error);
         }
         else
         {
             integration_method = ABM5_FIXED;
-            if (find_assignment_operator(fp)) fscanf(fp, "%lf", &epoch);
+            if (find_assignment_operator(fp)) fscanf(fp, " \"%63[^\"]\"", epoch);
             if (find_assignment_operator(fp)) fscanf(fp, "%lf", &dur);
             if (find_assignment_operator(fp)) fscanf(fp, "%lf", &step);
         }
@@ -334,11 +336,9 @@ public:
         if (find_assignment_operator(fp)) fscanf(fp, " \"%127[^\"]\"", buffer);
         if (strcmp(buffer, "No collision") == 0)
             collision_no = true;
-        else if (strcmp(buffer, "Spheres") == 0)
-            collision_spheres = true;
         else
-            collision_polyhedra = true;
-        
+            collision_spheres = true;
+
         //Parse the kinetic impactors.
         if (find_assignment_operator(fp))
         {
@@ -437,12 +437,59 @@ private:
                 paths.push_back(entry.path().filename());
         return paths;
     }
+    
+    bool parse_epoch(const char *str)
+    {
+        auto is_digit = [](char x) { return x >= '0' && x <= '9'; };
+
+        if (!str) return false;
+
+        // Require exact length 19: "YYYY-MM-DDTHH:MM:SS"
+        if (std::strlen(str) != 19) return false;
+
+        // Check separators
+        if (str[4] != '-' || str[7] != '-' || str[10] != 'T' || str[13] != ':' || str[16] != ':')
+            return false;
+
+        // Check digits in all other positions
+        for (int i : {0,1,2,3,5,6,8,9,11,12,14,15,17,18})
+            if (!is_digit(str[i])) return false;
+
+        auto to2 = [&](int i) { return (str[i]-'0')*10 + (str[i+1]-'0'); };
+
+        int year   = (str[0]-'0')*1000 + (str[1]-'0')*100 + (str[2]-'0')*10 + (str[3]-'0');
+        int month  = to2(5);
+        int day    = to2(8);
+        int hour   = to2(11);
+        int minute = to2(14);
+        int second = to2(17);
+
+        if (month < 1 || month > 12) return false;
+        if (hour < 0 || hour > 23) return false;
+        if (minute < 0 || minute > 59) return false;
+
+        // UTC without leap seconds
+        if (second < 0 || second > 59) return false;
+
+        auto is_leap = [](int y)
+        {
+            return (y%4 == 0 && y%100 != 0) || (y%400 == 0);
+        };
+
+        auto dim = [&](int y, int mo)
+        {
+            static const int d[12] = {31,28,31,30,31,30,31,31,30,31,30,31};
+            return (mo == 2) ? d[1] + (is_leap(y) ? 1 : 0) : d[mo - 1];
+        };
+
+        if (day < 1 || day > dim(year, month)) return false;
+
+        epoch_jd = calendar2jd(year, month, day, hour, minute, second);
+        return true;
+    }
 
 public:
-    //This function automates common double inputs via the keyboard. It creates a rectangle, inside of which the user may enter a double.
-    //'label' is a string written on the left of the rectangle. 'item_width' is the horizontal legth (space) of the rectangle. 'id' is a unique
-    //int via which the computer identifies which variable to affect. 'unit' is a string written on the right of the rectangle (acting as unit of measurement).
-    //'variable' is the variable itself (passed by reference to InputDouble()).
+    //This function automates common double inputs via the keyboard.
     void double_field(const char *label, const float item_width, const float align_width, int &id, const char *unit, double &variable)
     {
         ImGui::Text(label);
@@ -484,16 +531,20 @@ public:
         if (M1 <= 0.0 || M2 <= 0.0)
             {cons.print("[Error] : 'M1', 'M2' must be positive.\n"); return false;}
 
-        //Rule : Time parameters ('Epoch' and 'Duration' must be >= 0, 'Step' must be <= 'Duration' and 'Target error' must be > 0).
+        //Rule : 'Epoch' must be in a meaningful calendar format.
+        if (!parse_epoch(epoch))
+            {cons.print("[Error] : Invalid 'Epoch' format.\n"); return false;}
+
+        //Rule : Time parameters ('Duration' must be >= 0, 'Step' must be <= 'Duration' and 'Target error' must be > 0).
         if (integration_method == RKF78_FIXED || integration_method == ABM5_FIXED)
         {
-            if (!(epoch >= 0.0 && dur > 0.0 && step > 0.0 && step <= dur))
-                {cons.print("[Error] : Invalid set of 'Epoch', 'Duration', 'Step'.\n"); return false;}
+            if (!(dur > 0.0 && step > 0.0 && step <= dur))
+                {cons.print("[Error] : Invalid set of 'Duration', 'Step'.\n"); return false;}
         }
         else
         {
-            if (!(epoch >= 0.0 && dur > 0.0 && target_error > 0.0))
-                {cons.print("[Error] : Invalid set of 'Epoch', 'Duration', 'Target error'.\n"); return false;}
+            if (!(dur > 0.0 && target_error > 0.0))
+                {cons.print("[Error] : Invalid set of 'Duration', 'Target error'.\n"); return false;}
         }
 
         //Rule : Binary's mutual position/velocity.
@@ -543,14 +594,14 @@ public:
             
             //So if no return; statement is called, it means that Heliocentric Keplerian elements were chosen and they are valid according to the above rules.
             //Therefore do the following :
-            dvec6 temp_kep_com_helio = {kep_com_helio[0]*AU2KM, kep_com_helio[1], kep_com_helio[2]*PI/180.0, kep_com_helio[3]*PI/180.0, kep_com_helio[4]*PI/180.0, kep_com_helio[5]*PI/180.0};
+            dvec6 temp_kep_com_helio  = {kep_com_helio[0]*AU2KM, kep_com_helio[1], kep_com_helio[2]*PI/180.0, kep_com_helio[3]*PI/180.0, kep_com_helio[4]*PI/180.0, kep_com_helio[5]*PI/180.0};
             dvec6 temp_cart_com_helio = kep2cart(temp_kep_com_helio, G*MSUN);
             if (length(dvec3{temp_cart_com_helio[0], temp_cart_com_helio[1], temp_cart_com_helio[2]}) < MIN_SUN_BODY_DIST*AU2KM)
                 {cons.print("[Error] : Binary COM is too close to the Sun. Increase heliocentric distance.\n"); return false;}   
         }
 
-        //Rule : Collision shapes (at least one must be checked).
-        if (!collision_no && !collision_spheres && !collision_polyhedra)
+        //Rule : Collision criterion (at least one must be checked).
+        if (!collision_no && !collision_spheres)
             {cons.print("[Error] : At least one collision criterion must be selected.\n"); return false;}
 
         //Rules regarding the kinetic impactors :
@@ -560,9 +611,9 @@ public:
             if (mD1 < 0.0 || mD2 < 0.0)
                 {cons.print("[Error] : Both impactors' masses, 'm1' and 'm2' must be non negative.\n"); return false;}
 
-            //Rule : Times of impacts must range in the simulated time range, i.e. in [Epoch, Epoch + Duration].
-            if (tD1 < epoch || tD1 > epoch + dur || tD2 < epoch || tD2 > epoch + dur)
-                {cons.print("[Error] : Impact times must range in [Epoch,  Epoch + Duration].\n"); return false;}
+            //Rule : Times of impacts must range in the simulated time range.
+            if (tD1 < 0.0 || tD1 > dur || tD2 < 0.0 || tD2 > dur)
+                {cons.print("[Error] : Impact times must range in [0, Duration].\n"); return false;}
 
             //Rule : 'OK' button in the Impactors' parameters window (it must be clicked so that the parameters are taken into account).
             if (!impactors_clicked_ok)
@@ -673,8 +724,8 @@ public:
     //This is the function that draws the properties panel and processes the corresponding logic.
     void render(std::atomic<bool> task_is_running, std::atomic<bool> task_was_aborted, std::atomic<float> task_progress)
     {
-        float sx = ImGui::GetIO().DisplaySize.x;
-        float sy = ImGui::GetIO().DisplaySize.y;
+        const float sx = ImGui::GetIO().DisplaySize.x;
+        const float sy = ImGui::GetIO().DisplaySize.y;
 
         int id = 0;
 
@@ -815,13 +866,20 @@ public:
                 ImGui::Combo("  ", (int*)(&integration_method), ode_methods, IM_ARRAYSIZE(ode_methods));
             ImGui::PopID();
         ImGui::PopItemWidth();
-
-        double_field("Epoch ",     100.0f*SCX, 105.0f*SCX, id, "[days]", epoch);
-        double_field("Duration ",  100.0f*SCX, 105.0f*SCX, id, "[days]", dur);
+        
+        ImGui::Text("Epoch");
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(100.0f*SCX);
+        ImGui::PushItemWidth(130.0f*SCX);
+            ImGui::InputText("##epoch", epoch, IM_ARRAYSIZE(epoch));
+        ImGui::PopItemWidth();
+        ImGui::SameLine();
+        ImGui::Text("[cal]");
+        double_field("Duration ",  130.0f*SCX, 100.0f*SCX, id, "[days]", dur);
         if (integration_method == RKF78_FIXED || integration_method == ABM5_FIXED)
-            double_field("Step ",  100.0f*SCX, 105.0f*SCX, id, "[days]", step);
+            double_field("Step ",  130.0f*SCX, 100.0f*SCX, id, "[days]", step);
         else //integration_method is adaptive, thus render the 'Target error' input field.
-            double_field("Target error ", 100.0f*SCX, 105.0f*SCX, id, "[    ]", target_error);
+            double_field("Target error ", 130.0f*SCX, 100.0f*SCX, id, "[    ]", target_error);
         ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
         ImGui::Unindent();
 
@@ -959,11 +1017,9 @@ public:
         //Collision choice logic.
         ImGui::SeparatorText("Collision shapes");
         if (ImGui::Checkbox("No collision  (1/r singularity risk)", &collision_no))
-            collision_spheres = collision_polyhedra = false;
+            collision_spheres = false;
         if (ImGui::Checkbox("Spheres", &collision_spheres))
-            collision_no = collision_polyhedra = false;
-        if (ImGui::Checkbox("Polyhedra  (slow for high-res meshes)", &collision_polyhedra)) //Also the potential expansion does not converge when inside the body's Brillouin sphere.
-            collision_no = collision_spheres = false;
+            collision_no = false;
 
         ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
 
@@ -1000,7 +1056,7 @@ public:
                 ImGui::Text("Momentum enhancement factor (ejecta)");
                 double_field("β ", 100.0f*SCX, 40.0f*SCX, id, "[  ]", beta1);
                 ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
-                ImGui::Text("Impact epoch");
+                ImGui::Text("Relative day of impact (post-epoch)");
                 double_field("t ", 100.0f*SCX, 40.0f*SCX, id, "[days]", tD1);
             }
             else
@@ -1016,7 +1072,7 @@ public:
                 ImGui::Text("Momentum enhancement factor (ejecta)");
                 double_field("β ", 100.0f*SCX, 40.0f*SCX, id, "[  ]", beta2);
                 ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
-                ImGui::Text("Impact epoch");
+                ImGui::Text("Relative day of impact (post-epoch)");
                 double_field("t ", 100.0f*SCX, 40.0f*SCX, id, "[days]", tD2);
             }
             ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
@@ -1129,7 +1185,6 @@ public:
 
             ImGui::End();
         }
-
         ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
 
         //Run/Abort buttons rendering logic.

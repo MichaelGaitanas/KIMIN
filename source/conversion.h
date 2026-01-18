@@ -434,9 +434,31 @@ dvec3 cart2spher(const dvec3 &cart, bool latitude_origin_is_the_north_pole = tru
     return {r,lon,lat};
 }
 
-//Calculate the Stokes coefficient C[n][m], provided the NORMALIZED inertial integral tensor N[i][j][k]. Then the term C[n][m] will be stage 1 normalized.
-//This function is only meant to be called from integrals2stokes() (see below).
-double Cnm_step(const int n, const int m, const dtens &N)
+//Convert calendar formatted date to Julian day (UTC without leap second).
+double calendar2jd(int year, int month, const int day, const int hour, const int minute, const int second)
+{
+    const double frac_day = (hour + minute/60.0 + second/3600.0)/24.0;
+
+    if (month <= 2)
+    {
+        year -= 1;
+        month += 12;
+    }
+    const int A = year/100;
+    const int B = 2 - A + A/4;
+    const long long C = (long long)std::floor(365.25*(year + 4716));
+    const long long E = (long long)std::floor(30.6001*(month + 1));
+    return double(C + E + day + B) - 1524.5 + frac_day;
+}
+
+//Convert Julian day to seconds (since J2000 epoch).
+double jd2sec(const double jd)
+{
+    return (jd - JD_J2000)*86400.0;
+}
+
+//Calculate the Stokes coefficient C[n][m], provided the NORMALIZED inertial integral tensor N. Then the term C[n][m] will be stage 1 normalized.
+double integral2Cnm(const int n, const int m, const dtens &N)
 {
     double Cnm = 0.0;
     for (int p = 0; p < int(n/2) + 1; ++p)
@@ -457,9 +479,8 @@ double Cnm_step(const int n, const int m, const dtens &N)
     return pow(2.0, -n)*Cnm;
 }
 
-//Calculate the Stokes coefficient S[n][m], provided the NORMALIZED inertial integral tensor N[i][j][k]. Then the term S[n][m] will be stage 1 normalized.
-//This function is only meant to be called from integrals2stokes() (see below).
-double Snm_step(const int n, const int m, const dtens &N)
+//Calculate the Stokes coefficient S[n][m], provided the NORMALIZED inertial integral tensor N. Then the term S[n][m] will be stage 1 normalized.
+double integral2Snm(const int n, const int m, const dtens &N)
 {
     double Snm = 0.0;
     for (int p = 0; p < int(n/2) + 1; ++p)
@@ -506,8 +527,8 @@ void integrals2stokes(const dtens &J, dmat &C, dmat &S, const double R0, bool su
             if (supernormalized)
                 supernormcoeff = sqrt( factorial(n+m)/((2.0 - kronecker(0,m))*(2.0*n + 1.0)*factorial(n-m)) );
             double auxcoeff = (2.0 - kronecker(0,m))*factorial(n-m)/factorial(n+m);
-            C[n].push_back(supernormcoeff*auxcoeff*Cnm_step(n,m,N)); //C[n][m] = supernormcoeff*auxcoeff*Cnm_step(n,m,N)
-            S[n].push_back(supernormcoeff*auxcoeff*Snm_step(n,m,N)); //S[n][m] = supernormcoeff*auxcoeff*Snm_step(n,m,N)
+            C[n].push_back(supernormcoeff*auxcoeff*integral2Cnm(n,m,N));
+            S[n].push_back(supernormcoeff*auxcoeff*integral2Snm(n,m,N));
         }
     }
 }

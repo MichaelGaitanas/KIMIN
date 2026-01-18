@@ -6,8 +6,6 @@
 #include<algorithm>
 
 #include"../imgui/imgui.h"
-#include"../imgui/imgui_impl_glfw.h"
-#include"../imgui/imgui_impl_opengl3.h"
 #include"../imgui/implot.h"
 
 #include"constants.h"
@@ -16,6 +14,7 @@
 #include"solution2D.h"
 #include"renderer3D.h"
 #include"icons.h"
+#include"imguiext.h"
 
 class scene
 {
@@ -111,97 +110,6 @@ public:
     }
 
 private:
-    void TreeTriangle(ImDrawList* dl, ImVec2 center, float r, bool down, ImU32 col)
-    {
-        dl->PathClear();
-        if (down) {
-            dl->PathLineTo(ImVec2(center.x - r, center.y - r * 0.6f));
-            dl->PathLineTo(ImVec2(center.x + r, center.y - r * 0.6f));
-            dl->PathLineTo(ImVec2(center.x,     center.y + r));
-        } else {
-            dl->PathLineTo(ImVec2(center.x - r * 0.6f, center.y - r));
-            dl->PathLineTo(ImVec2(center.x - r * 0.6f, center.y + r));
-            dl->PathLineTo(ImVec2(center.x + r,        center.y));
-        }
-        dl->PathFillConvex(col);
-    }
-
-    bool TreeSeparatorText(const char* label, bool default_open = false)
-    {
-        // Build an ID from label (caller: ensure uniqueness like "Lighting")
-        const ImGuiID id = ImGui::GetID(label);
-
-        // Persistent state storage (public)
-        ImGuiStorage* st = ImGui::GetStateStorage();
-        bool open = st->GetBool(id, default_open);
-
-        // Full-width row sizing
-        const float w = ImGui::GetContentRegionAvail().x;
-        const float h = ImGui::GetFrameHeight();
-        const ImVec2 start = ImGui::GetCursorScreenPos();
-
-        // Create an item spanning the full row (clickable)
-        ImGui::InvisibleButton(label, ImVec2(w, h)); // label used only for ID, not drawn
-        const bool hovered = ImGui::IsItemHovered();
-        if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
-            open = !open;
-            st->SetBool(id, open);
-        }
-
-        ImDrawList* dl = ImGui::GetWindowDrawList();
-        ImGuiStyle& style = ImGui::GetStyle();
-
-        // Optional hover background (similar to header hover)
-        if (hovered) {
-            dl->AddRectFilled(
-                start,
-                ImVec2(start.x + w, start.y + h),
-                ImGui::GetColorU32(ImGuiCol_HeaderHovered),
-                style.FrameRounding
-            );
-        }
-
-        // Layout: arrow + text + lines
-        const float pad_x   = style.FramePadding.x;
-        const float pad_y   = style.FramePadding.y;
-        const float arrow_r = h * 0.22f;
-
-        const ImVec2 text_size = ImGui::CalcTextSize(label);
-        const float inner = style.ItemInnerSpacing.x;
-
-        // "Group" = triangle (width = 2*arrow_r) + inner spacing + text
-        const float group_w = (2.0f * arrow_r) + inner + text_size.x;
-
-        // Choose where the group starts (left aligned, with your inset)
-        const float left_inset = 20.0f * SCX;              // your current shift; tweak as desired
-        const float group_x0   = start.x + left_inset + pad_x;
-
-        const ImVec2 arrow_center(group_x0 + arrow_r, start.y + h * 0.5f);
-        const float  text_x   = group_x0 + (2.0f * arrow_r) + inner;
-        const ImVec2 text_pos(text_x, start.y + pad_y);
-
-        const float mid_y = start.y + h * 0.5f;
-
-        const float line_thickness =
-            (style.SeparatorTextBorderSize > 0.0f) ? style.SeparatorTextBorderSize : 1.0f;
-
-        const float gap = 10.0f*SCX;
-        const ImU32 sep_col = ImGui::GetColorU32(ImGuiCol_Separator);
-
-        // Lines with equal void space around the WHOLE group
-        const float left_line_x1  = group_x0 - gap;
-        const float right_line_x0 = group_x0 + group_w + gap;
-
-        dl->AddLine(ImVec2(start.x,     mid_y), ImVec2(left_line_x1,  mid_y), sep_col, line_thickness);
-        dl->AddLine(ImVec2(right_line_x0, mid_y), ImVec2(start.x + w, mid_y), sep_col, line_thickness);
-
-        // Arrow + visible text
-        TreeTriangle(dl, arrow_center, arrow_r, open, ImGui::GetColorU32(ImGuiCol_Text));
-        dl->AddText(text_pos, ImGui::GetColorU32(ImGuiCol_Text), label);
-
-        return open;
-    }
-
     //This function applies the video menu logic.
     void render_content_state_menu()
     {
@@ -266,7 +174,7 @@ private:
             ImGui::BeginDisabled();
 
         ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f); //Disable the indentation for what comes next.
-        if (TreeSeparatorText("Camera"))
+        if (ImGuiExt::TreeNodeSeparatorText("Camera"))
         {
             ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
 
@@ -313,7 +221,7 @@ private:
             ImGui::BeginDisabled();
 
         ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f); //Disable the indentation for what comes next.
-        if (TreeSeparatorText("Lighting"))
+        if (ImGuiExt::TreeNodeSeparatorText("Lighting"))
         {
             ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
             ImGui::Text("Shadow quality");
@@ -337,7 +245,7 @@ private:
             ImGui::BeginDisabled();
 
         ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f); //Disable the indentation for what comes next.
-        if (TreeSeparatorText("Meshes"))
+        if (ImGuiExt::TreeNodeSeparatorText("Meshes"))
         {
             ImGui::Dummy(ImVec2(0.0f, 4.0f*SCY));
 
@@ -675,7 +583,7 @@ private:
         ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
 
         //Binary's mutual state plots.
-        if (TreeSeparatorText("Mutual"))
+        if (ImGuiExt::TreeNodeSeparatorText("Mutual"))
         {
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
             ImGui::Text("Position and velocity");
@@ -705,7 +613,7 @@ private:
         ImGui::Dummy(ImVec2(0.0f, 15.0f*SCY));
 
         //Binary's COM plots.
-        if (TreeSeparatorText("COM"))
+        if (ImGuiExt::TreeNodeSeparatorText("COM"))
         {
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
             ImGui::Text("Position and velocity (Heliocentric)");
@@ -730,7 +638,7 @@ private:
         ImGui::Dummy(ImVec2(0.0f, 15.0f*SCY));
 
         //Body 1 plots.
-        if (TreeSeparatorText("Body 1"))
+        if (ImGuiExt::TreeNodeSeparatorText("Body 1"))
         {
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
             ImGui::Text("Euler angles (XYZ)");
@@ -754,7 +662,7 @@ private:
         ImGui::Dummy(ImVec2(0.0f, 15.0f*SCY));
 
         //Body 2 plots.
-        if (TreeSeparatorText("Body 2"))
+        if (ImGuiExt::TreeNodeSeparatorText("Body 2"))
         {
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
             ImGui::Text("Euler angles (XYZ)");
@@ -778,7 +686,7 @@ private:
         ImGui::Dummy(ImVec2(0.0f, 15.0f*SCY));
 
         //Spacecraft's plots.
-        if (TreeSeparatorText("Spacecraft"))
+        if (ImGuiExt::TreeNodeSeparatorText("Spacecraft"))
         {
             if (!sol || sol->t.empty() || !sol->integr.props.spacecraft_checkbox)
                 ImGui::BeginDisabled();

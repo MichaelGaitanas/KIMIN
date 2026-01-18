@@ -109,7 +109,7 @@ public:
             const dvec3 rpy1 = quat2ang(q1);
             const dvec3 rpy2 = quat2ang(q2);
             
-            t[i] = integr.orbit[i][0]/86400.0; //Back in [days].
+            t[i] = (integr.orbit[i][0] - integr.t0)/86400.0; //Back in [days].
 
             xmut[i]     = rmut[0];
             ymut[i]     = rmut[1];
@@ -244,28 +244,28 @@ public:
         if (integr.props.integration_method == properties::RKF78_FIXED)
         {
             fprintf(fp_props,"    Method := \"RKF78 (fixed)\"\n");
-            fprintf(fp_props,"    Epoch := %.15g\n",integr.props.epoch);
+            fprintf(fp_props,"    Epoch := \"%s\"\n",integr.props.epoch);
             fprintf(fp_props,"    Duration := %.15g\n",integr.props.dur);
             fprintf(fp_props,"    Step := %.15g\n\n",integr.props.step);
         }
         else if (integr.props.integration_method == properties::RKF78_ADAPTIVE)
         {
             fprintf(fp_props,"    Method := \"RKF78 (adaptive)\"\n");
-            fprintf(fp_props,"    Epoch := %.15g\n",integr.props.epoch);
+            fprintf(fp_props,"    Epoch := \"%s\"\n",integr.props.epoch);
             fprintf(fp_props,"    Duration := %.15g\n",integr.props.dur);
             fprintf(fp_props,"    Target error := %.15g\n\n",integr.props.target_error);
         }
         else if (integr.props.integration_method == properties::BSTOER_ADAPTIVE)
         {
             fprintf(fp_props,"    Method := \"BStoer (adaptive)\"\n");
-            fprintf(fp_props,"    Epoch := %.15g\n",integr.props.epoch);
+            fprintf(fp_props,"    Epoch := \"%s\"\n",integr.props.epoch);
             fprintf(fp_props,"    Duration := %.15g\n",integr.props.dur);
             fprintf(fp_props,"    Target error := %.15g\n\n",integr.props.target_error);
         }
         else //properties::ABM5_FIXED
         {
             fprintf(fp_props,"    Method := \"ABM5 (fixed)\"\n");
-            fprintf(fp_props,"    Epoch := %.15g\n",integr.props.epoch);
+            fprintf(fp_props,"    Epoch := \"%s\"\n",integr.props.epoch);
             fprintf(fp_props,"    Duration := %.15g\n",integr.props.dur);
             fprintf(fp_props,"    Step := %.15g\n\n",integr.props.step);
         }
@@ -366,10 +366,8 @@ public:
 
         if (integr.props.collision_no)
             fprintf(fp_props,"Collision shapes := \"No collision\"\n\n");
-        else if (integr.props.collision_spheres)
-            fprintf(fp_props,"Collision shapes := \"Spheres\"\n\n");
         else
-            fprintf(fp_props,"Collision shapes := \"Polyhedra\"\n\n");
+            fprintf(fp_props,"Collision shapes := \"Spheres\"\n\n");
 
         if (integr.props.impactors_checkbox)
         {
@@ -383,7 +381,7 @@ public:
             fprintf(fp_props,"            vz := %.15g\n", integr.props.vD1[2]);
             fprintf(fp_props,"        Momentum enhancement factor (ejecta) :\n");
             fprintf(fp_props,"            beta := %.15g\n", integr.props.beta1);
-            fprintf(fp_props,"        Impact epoch :\n");
+            fprintf(fp_props,"        Relative day of impact (post-epoch) :\n");
             fprintf(fp_props,"            t := %.15g\n", integr.props.tD1/86400.0);
             fprintf(fp_props,"    Body 2 :\n");
             fprintf(fp_props,"        Mass (dry + fuel) :\n");
@@ -394,7 +392,7 @@ public:
             fprintf(fp_props,"            vz := %.15g\n", integr.props.vD2[2]);
             fprintf(fp_props,"        Momentum enhancement factor (ejecta) :\n");
             fprintf(fp_props,"            beta := %.15g\n", integr.props.beta2);
-            fprintf(fp_props,"        Impact epoch :\n");
+            fprintf(fp_props,"        Relative day of impact (post-epoch) :\n");
             fprintf(fp_props,"            t := %.15g\n\n", integr.props.tD2/86400.0);
         }
         else
