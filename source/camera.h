@@ -177,16 +177,16 @@ public:
     }
 
     //This function changes the camera's angles (longitude & latitude), based on how much the user moved the mouse (+ middle button) since the last frame.
-    void rotate(const float dx, const float dy, const float mouse_sensitivity = 0.3f)
+    void rotate(const float mouse_dx, const float mouse_dy, const float mouse_sensitivity = 0.3f)
     {
         float &lon_act = get_active_lon(); //[deg]
         float &lat_act = get_active_lat(); //[deg]
 
-        lon_act = fmodf(lon_act - dx*mouse_sensitivity, 360.0f);
+        lon_act = fmodf(lon_act - mouse_dx*mouse_sensitivity, 360.0f);
         if (lon_act < 0.0f)
             lon_act += 360.0f;
 
-        lat_act -= dy*mouse_sensitivity;
+        lat_act -= mouse_dy*mouse_sensitivity;
         if (lat_act < 0.04f)
             lat_act = 0.04f;
         else if (lat_act > 179.96f)

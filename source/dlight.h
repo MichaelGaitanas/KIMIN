@@ -26,7 +26,7 @@ public:
         dist = glm::length(pos);
         dir = pos/dist;
 
-        constexpr float fc = 1.01f, fl = 1.02f; //Scale factors that are used to scale the size of the orthographic box of the directional light.
+        const float fc = 1.01f, fl = 1.02f; //Scale factors that are used to scale the size of the orthographic box of the directional light.
         const float dummy_dist = fl*ortho_size; //Directional light's 'dummy' distance. Note : this is NOT the real Sun's distance!
  
         glm::vec3 up = glm::vec3(0.0f,0.0f,1.0f);

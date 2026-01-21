@@ -92,8 +92,8 @@ public:
             glDeleteFramebuffers(1, &depth_fbo_id);
     }
 
-    //(Re)set the depth framebuffer, used for shadowing. This is one of the resets that we can't run in scene::setup() due to the separate thread issue.
-    //So this will run only once in the render_3D_content() after the simulation is terminated or it will run every time the user changes the 'depth_reso' from the gui exposed slider.
+    //This functiom (re)sets the depth framebuffer, used for shadowing. It shall run only once in the render_3D_content() after the simulation is terminated
+    //and from that point on, it will run each time the user changes the 'depth_reso' from the gui exposed slider (see render_lighting_menu() in scene.h).
     void setup_depth_fbo()
     {
         if (depth_fbo_id)

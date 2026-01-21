@@ -438,38 +438,20 @@ private:
         return paths;
     }
     
+    //This function checks whether or not the user input calendar date follows the expected ISO rules.
+    //If so, it returns true and updates the member 'epoch_jd' accordingly.
     bool parse_epoch(const char *str)
     {
-        auto is_digit = [](char x) { return x >= '0' && x <= '9'; };
+        ///////////////////////////////////////////////////////////////////////////
+        auto is_digit = [](char x)
+        {
+            return x >= '0' && x <= '9';
+        };
 
-        if (!str) return false;
-
-        // Require exact length 19: "YYYY-MM-DDTHH:MM:SS"
-        if (std::strlen(str) != 19) return false;
-
-        // Check separators
-        if (str[4] != '-' || str[7] != '-' || str[10] != 'T' || str[13] != ':' || str[16] != ':')
-            return false;
-
-        // Check digits in all other positions
-        for (int i : {0,1,2,3,5,6,8,9,11,12,14,15,17,18})
-            if (!is_digit(str[i])) return false;
-
-        auto to2 = [&](int i) { return (str[i]-'0')*10 + (str[i+1]-'0'); };
-
-        int year   = (str[0]-'0')*1000 + (str[1]-'0')*100 + (str[2]-'0')*10 + (str[3]-'0');
-        int month  = to2(5);
-        int day    = to2(8);
-        int hour   = to2(11);
-        int minute = to2(14);
-        int second = to2(17);
-
-        if (month < 1 || month > 12) return false;
-        if (hour < 0 || hour > 23) return false;
-        if (minute < 0 || minute > 59) return false;
-
-        // UTC without leap seconds
-        if (second < 0 || second > 59) return false;
+        auto to2 = [&](int i)
+        {
+            return (str[i]-'0')*10 + (str[i+1]-'0');
+        };
 
         auto is_leap = [](int y)
         {
@@ -481,8 +463,43 @@ private:
             static const int d[12] = {31,28,31,30,31,30,31,31,30,31,30,31};
             return (mo == 2) ? d[1] + (is_leap(y) ? 1 : 0) : d[mo - 1];
         };
+        ///////////////////////////////////////////////////////////////////////////
 
-        if (day < 1 || day > dim(year, month)) return false;
+        //Rule 1 : verify that the date is not empty.
+        if (!str)
+            return false;
+
+        //Rule 2 : measure exactly 19 characters ("YYYY-MM-DDTHH:MM:SS").
+        if (std::strlen(str) != 19)
+            return false;
+
+        //Rule 3 : enforce the use of the following separators.
+        if (str[4] != '-' || str[7] != '-' || str[10] != 'T' || str[13] != ':' || str[16] != ':')
+            return false;
+
+        //Rule 4 : ensure that digits sit in the correct position of the string.
+        for (int i : {0,1,2,3,5,6,8,9,11,12,14,15,17,18})
+            if (!is_digit(str[i]))
+                return false;
+
+        int year   = (str[0]-'0')*1000 + (str[1]-'0')*100 + (str[2]-'0')*10 + (str[3]-'0');
+        int month  = to2(5);
+        int day    = to2(8);
+        int hour   = to2(11);
+        int minute = to2(14);
+        int second = to2(17);
+
+        //Rule 5 : do not allow limits to be exeeded.
+        if (month < 1 || month > 12)
+            return false;
+        if (hour < 0 || hour > 23)
+            return false;
+        if (minute < 0 || minute > 59)
+            return false;
+        if (second < 0 || second > 59)
+            return false;
+        if (day < 1 || day > dim(year, month))
+            return false;
 
         epoch_jd = calendar2jd(year, month, day, hour, minute, second);
         return true;

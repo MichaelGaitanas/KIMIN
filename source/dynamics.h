@@ -477,7 +477,7 @@ double pot_masc(const dvec3 &r, const double M, const dmatnx3 &masc, const dmat3
 
 //Mutual force of 2 rigid bodies AND the torque felt by the primary, assuming inertial integral expansion of order 2 approximation.
 dvec6 mut_force_torque1_integrals_ord2(const dvec3 &r, const double M1, const dtens &J1, const dmat3 &A1,
-                                                        const double M2, const dtens &J2, const dmat3 &A2)
+                                                       const double M2, const dtens &J2, const dmat3 &A2)
 {   
     const double I1x = J1[0][2][0] + J1[0][0][2];
     const double I1y = J1[2][0][0] + J1[0][0][2];
@@ -546,7 +546,7 @@ dvec6 mut_force_torque1_integrals_ord2(const dvec3 &r, const double M1, const dt
 
 //Mutual force of 2 rigid bodies AND the torque felt by the primary, assuming inertial integral expansion of order 3 approximation.
 dvec6 mut_force_torque1_integrals_ord3(const dvec3 &r, const double M1, const dtens &J1, const dmat3 &A1,
-                                                        const double M2, const dtens &J2, const dmat3 &A2)
+                                                       const double M2, const dtens &J2, const dmat3 &A2)
 {
     const double J1xxx = J1[3][0][0];
     const double J1yyy = J1[0][3][0];
@@ -647,7 +647,7 @@ dvec6 mut_force_torque1_integrals_ord3(const dvec3 &r, const double M1, const dt
 
 //Mutual force of 2 rigid bodies AND the torque felt by the primary, assuming inertial integral expansion of order 4 approximation.
 dvec6 mut_force_torque1_integrals_ord4(const dvec3 &r, const double M1, const dtens &J1, const dmat3 &A1,
-                                                        const double M2, const dtens &J2, const dmat3 &A2)
+                                                       const double M2, const dtens &J2, const dmat3 &A2)
 {
     const double J1xx = J1[2][0][0];
     const double J1yy = J1[0][2][0];
