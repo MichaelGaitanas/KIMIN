@@ -114,6 +114,20 @@ public:
     bool sp_obj_checkbox;
     std::string sp_obj_path;
     bool sp_obj_clicked_ok;
+    //double sp_mass1;
+    enum
+    {
+        EULER_XYZ_SP,
+        QUATERNION_SP
+    } sp_orient_var;
+    dvec3 rpy_sp;
+    dvec4 qsp;
+    enum
+    {
+        ANGVEL_SP_HELIO,
+        ANGVEL_SP_BODY
+    } sp_angvel_frame;
+    dvec3 wi_sp, wb_sp;
     bool srp_checkbox; //'Account for SRP' checkbox state.
     double sp_refl, sp_area, sp_mass; //Spacecraft's 'ρ', 'A', 'm' double fields.
     bool srp_shadow_checkbox; //'Account for shadow' checkbox state.
@@ -181,6 +195,19 @@ public:
                    kep_sp_com({0.0,0.0,0.0,0.0,0.0,0.0}),
                    kep_sp_com1({0.0,0.0,0.0,0.0,0.0,0.0}),
                    kep_sp_com2({0.0,0.0,0.0,0.0,0.0,0.0}),
+                   sp_is_rigidbody_checkbox(false),
+                   sp_ell_checkbox(false),
+                   sp_semiaxes({0.0,0.0,0.0}),
+                   sp_ell_clicked_ok(false),
+                   sp_obj_checkbox(false),
+                   sp_obj_path(""),
+                   sp_obj_clicked_ok(false),
+                   sp_orient_var(EULER_XYZ_SP),
+                   rpy_sp({0.0,0.0,0.0}),
+                   qsp({0.0,0.0,0.0,0.0}),
+                   sp_angvel_frame(ANGVEL_SP_HELIO),
+                   wi_sp({0.0,0.0,0.0}),
+                   wb_sp({0.0,0.0,0.0}),
                    srp_checkbox(false),
                    sp_refl(0.0),
                    sp_area(0.0),
@@ -199,7 +226,7 @@ public:
         *this = properties{}; //Reset the inputs. This command basically re-runs the constructor.
 
         FILE *fp = fopen(path,"r");
-        if (!fp) //Safety check, though this should never happen. It is already verified by topbar that the file exists, otherwise it would not appear in the gui.
+        if (!fp) //This should never happen. It is already verified by topbar that the file exists, otherwise it would not appear in the gui.
         {
             cons.print("[Error] : The selected properties file could not be opened.\n");
             return;
@@ -513,7 +540,7 @@ private:
     }
 
     //This function automates common double inputs via the keyboard.
-    void double_field(const char *left_str, const float item_width, const float x_start, int &id, const char *right_str, double &variable)
+    void input_double(const char *left_str, const float item_width, const float x_start, int &id, const char *right_str, double &variable)
     {
         ImGui::Text(left_str);
         ImGui::SameLine();
@@ -528,18 +555,18 @@ private:
     void render_impactor_menu(double mD, dvec3 &vD, double beta, double tD, int id)
     {
         ImGui::Text("Mass (dry + fuel)");
-        double_field("m ", 100.0f*SCX, 40.0f*SCX, id, "[kg]", mD);
+        input_double("m ", 100.0f*SCX, 40.0f*SCX, id, "[kg]", mD);
         ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
         ImGui::Text("Velocity (relative to body)");
-        double_field("υx ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", vD[0]);
-        double_field("υy ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", vD[1]);
-        double_field("υz ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", vD[2]);
+        input_double("υx ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", vD[0]);
+        input_double("υy ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", vD[1]);
+        input_double("υz ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", vD[2]);
         ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
         ImGui::Text("Momentum enhancement factor (ejecta)");
-        double_field("β ", 100.0f*SCX, 40.0f*SCX, id, "[  ]", beta);
+        input_double("β ", 100.0f*SCX, 40.0f*SCX, id, "[  ]", beta);
         ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
         ImGui::Text("Relative day of impact (post-epoch)");
-        double_field("t ", 100.0f*SCX, 40.0f*SCX, id, "[days]", tD);
+        input_double("t ", 100.0f*SCX, 40.0f*SCX, id, "[days]", tD);
     }
 
 public:
@@ -768,7 +795,7 @@ public:
         const float sx = ImGui::GetIO().DisplaySize.x;
         const float sy = ImGui::GetIO().DisplaySize.y;
 
-        int id = 0; //Hash for widgets of similar type.
+        int id = 0; //Hash for imgui widgets of similar type.
 
         ImGui::SetNextWindowPos(ImVec2(0.0f, ImGui::GetFrameHeight()), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(0.15f*sx, sy - ImGui::GetFrameHeight()), ImGuiCond_FirstUseEver);
@@ -778,7 +805,7 @@ public:
         //Simulation name text field :
         ImGui::SeparatorText("Simulation name");
         ImGui::PushItemWidth(220.0f*SCX);
-        ImGui::InputText("##sim_name", sim_name, IM_ARRAYSIZE(sim_name));
+            ImGui::InputText("##sim_name", sim_name, IM_ARRAYSIZE(sim_name));
         ImGui::PopItemWidth();
         ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
 
@@ -786,7 +813,7 @@ public:
         //Shape model logic :
         ImGui::SeparatorText("Shape models");
         //Ellipsoid shape logic :
-        if (ImGui::Checkbox("Ellipsoids", &ell_checkbox) && ell_checkbox)
+        if (ImGui::Checkbox("Ellipsoids##ell_checkbox", &ell_checkbox) && ell_checkbox)
             ell_clicked_ok = false;
         if (ell_checkbox && !ell_clicked_ok)
         {
@@ -794,17 +821,17 @@ public:
 
             ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, 0.0f), ImGuiCond_FirstUseEver); 
             ImGui::SetNextWindowSize(ImVec2(0.15f*sx, 0.4f*sy), ImGuiCond_FirstUseEver); 
-            ImGui::Begin("Ellipsoid parameters", &ell_checkbox);
+            ImGui::Begin("Ellipsoid parameters##binary", &ell_checkbox);
             
             ImGui::Text("Body 1 semi - axes");
-            double_field("a1 ", 100.0f*SCX, 30.0f*SCX, id, "[km]", semiaxes1[0]);
-            double_field("b1 ", 100.0f*SCX, 30.0f*SCX, id, "[km]", semiaxes1[1]);
-            double_field("c1 ", 100.0f*SCX, 30.0f*SCX, id, "[km]", semiaxes1[2]);
+            input_double("a1 ", 100.0f*SCX, 30.0f*SCX, id, "[km]", semiaxes1[0]);
+            input_double("b1 ", 100.0f*SCX, 30.0f*SCX, id, "[km]", semiaxes1[1]);
+            input_double("c1 ", 100.0f*SCX, 30.0f*SCX, id, "[km]", semiaxes1[2]);
             ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
             ImGui::Text("Body 2 semi - axes");
-            double_field("a2 ", 100.0f*SCX, 30.0f*SCX, id, "[km]", semiaxes2[0]);
-            double_field("b2 ", 100.0f*SCX, 30.0f*SCX, id, "[km]", semiaxes2[1]);
-            double_field("c2 ", 100.0f*SCX, 30.0f*SCX, id, "[km]", semiaxes2[2]);
+            input_double("a2 ", 100.0f*SCX, 30.0f*SCX, id, "[km]", semiaxes2[0]);
+            input_double("b2 ", 100.0f*SCX, 30.0f*SCX, id, "[km]", semiaxes2[1]);
+            input_double("c2 ", 100.0f*SCX, 30.0f*SCX, id, "[km]", semiaxes2[2]);
             ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
             if (ImGui::Button("OK", ImVec2(50.0f*SCX,30.0f*SCY)))
                 ell_clicked_ok = true;
@@ -812,7 +839,7 @@ public:
             ImGui::End();
         }
         //.obj shape logic :
-        if (ImGui::Checkbox(".obj files", &obj_checkbox) && obj_checkbox)
+        if (ImGui::Checkbox(".obj files##obj_checkbox", &obj_checkbox) && obj_checkbox)
             obj_clicked_ok = false;
         if (obj_checkbox && !obj_clicked_ok)
         {
@@ -820,7 +847,7 @@ public:
 
             ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, 0.0f), ImGuiCond_FirstUseEver);
             ImGui::SetNextWindowSize(ImVec2(0.15f*sx, 0.4f*sy), ImGuiCond_FirstUseEver); 
-            ImGui::Begin(".obj files", &obj_checkbox);
+            ImGui::Begin(".obj files##binary", &obj_checkbox);
 
             //Radiobuttons logic : At least one will always be active and to this, (the active one) the loaded obj file will correspond.
             static int obj_refers_to_body = 1; //To which body ('Body 1' or 'Body 2') does the obj file listing refer to (via radiobutton). 'Body 1' is the default choice.
@@ -883,8 +910,8 @@ public:
 
         //Masses :
         ImGui::SeparatorText("Masses");
-        double_field("M1 ", 150.0f*SCX, 40.0f*SCX, id, "[kg]", M1);
-        double_field("M2 ", 150.0f*SCX, 40.0f*SCX, id, "[kg]", M2);
+        input_double("M1 ", 150.0f*SCX, 40.0f*SCX, id, "[kg]", M1);
+        input_double("M2 ", 150.0f*SCX, 40.0f*SCX, id, "[kg]", M2);
         ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
 
 
@@ -898,25 +925,25 @@ public:
                                              "BStoer (adaptive)",
                                              "ABM5 (fixed)"};
         ImGui::PushItemWidth(220.0f*SCX);
-        ImGui::PushID(id++);
-        ImGui::Combo("  ", (int*)(&integration_method), ode_methods, IM_ARRAYSIZE(ode_methods));
-        ImGui::PopID();
+            ImGui::PushID(id++);
+                ImGui::Combo("  ", (int*)(&integration_method), ode_methods, IM_ARRAYSIZE(ode_methods));
+            ImGui::PopID();
         ImGui::PopItemWidth();
         //Calendar logic :
         ImGui::Text("Epoch");
         ImGui::SameLine();
         ImGui::SetCursorPosX(100.0f*SCX);
         ImGui::PushItemWidth(130.0f*SCX);
-        ImGui::InputText("##epoch", epoch, IM_ARRAYSIZE(epoch));
+            ImGui::InputText("##epoch", epoch, IM_ARRAYSIZE(epoch));
         ImGui::PopItemWidth();
         ImGui::SameLine();
         ImGui::Text("[cal]");
         //Duration and step :
-        double_field("Duration ", 130.0f*SCX, 100.0f*SCX, id, "[days]", dur);
+        input_double("Duration ", 130.0f*SCX, 100.0f*SCX, id, "[days]", dur);
         if (integration_method == RKF78_FIXED || integration_method == ABM5_FIXED)
-            double_field("Step ", 130.0f*SCX, 100.0f*SCX, id, "[days]", step);
+            input_double("Step ", 130.0f*SCX, 100.0f*SCX, id, "[days]", step);
         else
-            double_field("Target error ", 130.0f*SCX, 100.0f*SCX, id, "[    ]", target_error);
+            input_double("Target error ", 130.0f*SCX, 100.0f*SCX, id, "[    ]", target_error);
         ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
         ImGui::Unindent();
 
@@ -928,27 +955,27 @@ public:
         static const char *cart_kep_mut_var[2] = {"Cartesian",
                                                   "Keplerian"};
         ImGui::PushItemWidth(220.0f*SCX);
-        ImGui::PushID(id++);
-        ImGui::Combo("  ", (int*)(&pos_vel_mut_var), cart_kep_mut_var, IM_ARRAYSIZE(cart_kep_mut_var));
-        ImGui::PopID();
+            ImGui::PushID(id++);
+                ImGui::Combo("  ", (int*)(&pos_vel_mut_var), cart_kep_mut_var, IM_ARRAYSIZE(cart_kep_mut_var));
+            ImGui::PopID();
         ImGui::PopItemWidth();
         if (pos_vel_mut_var == CARTESIAN_MUT)
         {
-            double_field("x ",  100.0f*SCX, 55.0f*SCX, id, "[km]",     cart_mut[0]);
-            double_field("y ",  100.0f*SCX, 55.0f*SCX, id, "[km]",     cart_mut[1]);
-            double_field("z ",  100.0f*SCX, 55.0f*SCX, id, "[km]",     cart_mut[2]);
-            double_field("υx ", 100.0f*SCX, 55.0f*SCX, id, "[km/sec]", cart_mut[3]);
-            double_field("υy ", 100.0f*SCX, 55.0f*SCX, id, "[km/sec]", cart_mut[4]);
-            double_field("υz ", 100.0f*SCX, 55.0f*SCX, id, "[km/sec]", cart_mut[5]);
+            input_double("x ",  100.0f*SCX, 55.0f*SCX, id, "[km]",     cart_mut[0]);
+            input_double("y ",  100.0f*SCX, 55.0f*SCX, id, "[km]",     cart_mut[1]);
+            input_double("z ",  100.0f*SCX, 55.0f*SCX, id, "[km]",     cart_mut[2]);
+            input_double("υx ", 100.0f*SCX, 55.0f*SCX, id, "[km/sec]", cart_mut[3]);
+            input_double("υy ", 100.0f*SCX, 55.0f*SCX, id, "[km/sec]", cart_mut[4]);
+            input_double("υz ", 100.0f*SCX, 55.0f*SCX, id, "[km/sec]", cart_mut[5]);
         }
         else //pos_vel_mut_var == KEPLERIAN_MUT
         {
-            double_field("a ", 100.0f*SCX, 55.0f*SCX, id, "[km]",   kep_mut[0]);
-            double_field("e ", 100.0f*SCX, 55.0f*SCX, id, "[    ]", kep_mut[1]);
-            double_field("i ", 100.0f*SCX, 55.0f*SCX, id, "[deg]",  kep_mut[2]);
-            double_field("Ω ", 100.0f*SCX, 55.0f*SCX, id, "[deg]",  kep_mut[3]);
-            double_field("ω ", 100.0f*SCX, 55.0f*SCX, id, "[deg]",  kep_mut[4]);
-            double_field("M ", 100.0f*SCX, 55.0f*SCX, id, "[deg]",  kep_mut[5]);
+            input_double("a ", 100.0f*SCX, 55.0f*SCX, id, "[km]",   kep_mut[0]);
+            input_double("e ", 100.0f*SCX, 55.0f*SCX, id, "[    ]", kep_mut[1]);
+            input_double("i ", 100.0f*SCX, 55.0f*SCX, id, "[deg]",  kep_mut[2]);
+            input_double("Ω ", 100.0f*SCX, 55.0f*SCX, id, "[deg]",  kep_mut[3]);
+            input_double("ω ", 100.0f*SCX, 55.0f*SCX, id, "[deg]",  kep_mut[4]);
+            input_double("M ", 100.0f*SCX, 55.0f*SCX, id, "[deg]",  kep_mut[5]);
         }
         ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
 
@@ -957,31 +984,31 @@ public:
         static const char *rpy_quat_var[2] = {"Euler angles (XYZ)",
                                               "Quaternions (WXYZ)"};
         ImGui::PushItemWidth(220.0f*SCX);
-        ImGui::PushID(id++);
-        ImGui::Combo("  ", (int*)(&orient_var), rpy_quat_var, IM_ARRAYSIZE(rpy_quat_var));
-        ImGui::PopID();
+            ImGui::PushID(id++);
+                ImGui::Combo("  ", (int*)(&orient_var), rpy_quat_var, IM_ARRAYSIZE(rpy_quat_var));
+            ImGui::PopID();
         ImGui::PopItemWidth();
         if (orient_var == EULER_XYZ)
         {
-            double_field("Roll 1 " , 100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy1[0]);
-            double_field("Pitch 1 ", 100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy1[1]);
-            double_field("Yaw 1 ",   100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy1[2]);
+            input_double("Roll 1 " , 100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy1[0]);
+            input_double("Pitch 1 ", 100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy1[1]);
+            input_double("Yaw 1 ",   100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy1[2]);
             ImGui::Dummy(ImVec2(0.0f,5.0f));
-            double_field("Roll 2 ",  100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy2[0]);
-            double_field("Pitch 2 ", 100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy2[1]);
-            double_field("Yaw 2 ",   100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy2[2]);
+            input_double("Roll 2 ",  100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy2[0]);
+            input_double("Pitch 2 ", 100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy2[1]);
+            input_double("Yaw 2 ",   100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy2[2]);
         }
         else //orient_var == QUATERNION
         {
-            double_field("q10 ", 100.0f*SCX, 70.0f*SCX, id, "[    ]", q1[0]);
-            double_field("q11 ", 100.0f*SCX, 70.0f*SCX, id, "[    ]", q1[1]);
-            double_field("q12 ", 100.0f*SCX, 70.0f*SCX, id, "[    ]", q1[2]);
-            double_field("q13 ", 100.0f*SCX, 70.0f*SCX, id, "[    ]", q1[3]);
+            input_double("q10 ", 100.0f*SCX, 70.0f*SCX, id, "[    ]", q1[0]);
+            input_double("q11 ", 100.0f*SCX, 70.0f*SCX, id, "[    ]", q1[1]);
+            input_double("q12 ", 100.0f*SCX, 70.0f*SCX, id, "[    ]", q1[2]);
+            input_double("q13 ", 100.0f*SCX, 70.0f*SCX, id, "[    ]", q1[3]);
             ImGui::Dummy(ImVec2(0.0f,5.0f*SCY));
-            double_field("q20 ", 100.0f*SCX, 70.0f*SCX, id, "[    ]", q2[0]);
-            double_field("q21 ", 100.0f*SCX, 70.0f*SCX, id, "[    ]", q2[1]);
-            double_field("q22 ", 100.0f*SCX, 70.0f*SCX, id, "[    ]", q2[2]);
-            double_field("q23 ", 100.0f*SCX, 70.0f*SCX, id, "[    ]", q2[3]);
+            input_double("q20 ", 100.0f*SCX, 70.0f*SCX, id, "[    ]", q2[0]);
+            input_double("q21 ", 100.0f*SCX, 70.0f*SCX, id, "[    ]", q2[1]);
+            input_double("q22 ", 100.0f*SCX, 70.0f*SCX, id, "[    ]", q2[2]);
+            input_double("q23 ", 100.0f*SCX, 70.0f*SCX, id, "[    ]", q2[3]);
         }
         ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
 
@@ -990,58 +1017,58 @@ public:
         static const char *omega_frame[2] = {"Heliocentric (inertial)",
                                              "Body frames"};
         ImGui::PushItemWidth(220.0f*SCX);
-        ImGui::PushID(id++);
-        ImGui::Combo("  ", (int*)(&angvel_frame), omega_frame, IM_ARRAYSIZE(omega_frame));
-        ImGui::PopID();
+            ImGui::PushID(id++);
+                ImGui::Combo("  ", (int*)(&angvel_frame), omega_frame, IM_ARRAYSIZE(omega_frame));
+            ImGui::PopID();
         ImGui::PopItemWidth();
         if (angvel_frame == ANGVEL_HELIO)
         {
-            double_field("ω1x ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w1i[0]);
-            double_field("ω1y ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w1i[1]);
-            double_field("ω1z ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w1i[2]);
+            input_double("ω1x ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w1i[0]);
+            input_double("ω1y ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w1i[1]);
+            input_double("ω1z ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w1i[2]);
             ImGui::Dummy(ImVec2(0.0f,5.0f*SCY));
-            double_field("ω2x ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w2i[0]);
-            double_field("ω2y ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w2i[1]);
-            double_field("ω2z ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w2i[2]);
+            input_double("ω2x ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w2i[0]);
+            input_double("ω2y ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w2i[1]);
+            input_double("ω2z ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w2i[2]);
         }
         else //angvel_frame == ANGVEL_BODY
         {
-            double_field("ω11 ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w1b[0]);
-            double_field("ω12 ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w1b[1]);
-            double_field("ω13 ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w1b[2]);
+            input_double("ω11 ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w1b[0]);
+            input_double("ω12 ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w1b[1]);
+            input_double("ω13 ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w1b[2]);
             ImGui::Dummy(ImVec2(0.0f,5.0f*SCY));
-            double_field("ω21 ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w2b[0]);
-            double_field("ω22 ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w2b[1]);
-            double_field("ω23 ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w2b[2]);
+            input_double("ω21 ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w2b[0]);
+            input_double("ω22 ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w2b[1]);
+            input_double("ω23 ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w2b[2]);
         }
         ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
 
 
+        ImGui::Text("Binary COM (Heliocentric)");
         static const char *cart_kep_com_var[2] = {"Cartesian",
                                                   "Keplerian"};
-        ImGui::Text("Binary COM (Heliocentric)");
         ImGui::PushItemWidth(220.0f*SCX);
-        ImGui::PushID(id++);
-        ImGui::Combo("  ", (int*)(&pos_vel_com_var), cart_kep_com_var, IM_ARRAYSIZE(cart_kep_com_var));
-        ImGui::PopID();
+            ImGui::PushID(id++);
+                ImGui::Combo("  ", (int*)(&pos_vel_com_var), cart_kep_com_var, IM_ARRAYSIZE(cart_kep_com_var));
+            ImGui::PopID();
         ImGui::PopItemWidth();
         if (pos_vel_com_var == CARTESIAN_COM_HELIO)
         {
-            double_field("x ",  100.0f*SCX, 55.0f*SCX, id, "[AU]",     cart_com_helio[0]);
-            double_field("y ",  100.0f*SCX, 55.0f*SCX, id, "[AU]",     cart_com_helio[1]);
-            double_field("z ",  100.0f*SCX, 55.0f*SCX, id, "[AU]",     cart_com_helio[2]);
-            double_field("υx ", 100.0f*SCX, 55.0f*SCX, id, "[km/sec]", cart_com_helio[3]);
-            double_field("υy ", 100.0f*SCX, 55.0f*SCX, id, "[km/sec]", cart_com_helio[4]);
-            double_field("υz ", 100.0f*SCX, 55.0f*SCX, id, "[km/sec]", cart_com_helio[5]);
+            input_double("x ",  100.0f*SCX, 55.0f*SCX, id, "[AU]",     cart_com_helio[0]);
+            input_double("y ",  100.0f*SCX, 55.0f*SCX, id, "[AU]",     cart_com_helio[1]);
+            input_double("z ",  100.0f*SCX, 55.0f*SCX, id, "[AU]",     cart_com_helio[2]);
+            input_double("υx ", 100.0f*SCX, 55.0f*SCX, id, "[km/sec]", cart_com_helio[3]);
+            input_double("υy ", 100.0f*SCX, 55.0f*SCX, id, "[km/sec]", cart_com_helio[4]);
+            input_double("υz ", 100.0f*SCX, 55.0f*SCX, id, "[km/sec]", cart_com_helio[5]);
         }
         else //pos_vel_com_var == KEPLERIAN_COM_HELIO
         {
-            double_field("a ", 100.0f*SCX, 55.0f*SCX, id, "[AU]",   kep_com_helio[0]);
-            double_field("e ", 100.0f*SCX, 55.0f*SCX, id, "[    ]", kep_com_helio[1]);
-            double_field("i ", 100.0f*SCX, 55.0f*SCX, id, "[deg]",  kep_com_helio[2]);
-            double_field("Ω ", 100.0f*SCX, 55.0f*SCX, id, "[deg]",  kep_com_helio[3]);
-            double_field("ω ", 100.0f*SCX, 55.0f*SCX, id, "[deg]",  kep_com_helio[4]);
-            double_field("M ", 100.0f*SCX, 55.0f*SCX, id, "[deg]",  kep_com_helio[5]);
+            input_double("a ", 100.0f*SCX, 55.0f*SCX, id, "[AU]",   kep_com_helio[0]);
+            input_double("e ", 100.0f*SCX, 55.0f*SCX, id, "[    ]", kep_com_helio[1]);
+            input_double("i ", 100.0f*SCX, 55.0f*SCX, id, "[deg]",  kep_com_helio[2]);
+            input_double("Ω ", 100.0f*SCX, 55.0f*SCX, id, "[deg]",  kep_com_helio[3]);
+            input_double("ω ", 100.0f*SCX, 55.0f*SCX, id, "[deg]",  kep_com_helio[4]);
+            input_double("M ", 100.0f*SCX, 55.0f*SCX, id, "[deg]",  kep_com_helio[5]);
         }
         ImGui::Unindent();
         ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
@@ -1079,7 +1106,7 @@ public:
             if (ImGui::RadioButton("Body 2", impactor_refers_to_body == 2))
                 impactor_refers_to_body = 2;
             ImGui::Dummy(ImVec2(0.0f,5.0f*SCY));
-            //Impactor menu.
+            //Impactor menu :
             if (impactor_refers_to_body == 1)
                 render_impactor_menu(mD1, vD1, beta1, tD1, id);
             else
@@ -1111,65 +1138,87 @@ public:
                                                      "Keplerian (body 1)",
                                                      "Keplerian (body 2)"};
             ImGui::PushItemWidth(220.0f*SCX);
-            ImGui::PushID(id++);
-            ImGui::Combo("  ", (int*)(&pos_vel_sp_var), cart_kep_sp_var, IM_ARRAYSIZE(cart_kep_sp_var));
-            ImGui::PopID();
+                ImGui::PushID(id++);
+                    ImGui::Combo("  ", (int*)(&pos_vel_sp_var), cart_kep_sp_var, IM_ARRAYSIZE(cart_kep_sp_var));
+                ImGui::PopID();
             ImGui::PopItemWidth();
             if (pos_vel_sp_var == CARTESIAN_SP_COM)
             {
-                double_field("x ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp_com[0]);
-                double_field("y ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp_com[1]);
-                double_field("z ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp_com[2]);
-                double_field("υx ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp_com[3]);
-                double_field("υy ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp_com[4]);
-                double_field("υz ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp_com[5]);
+                input_double("x ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp_com[0]);
+                input_double("y ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp_com[1]);
+                input_double("z ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp_com[2]);
+                input_double("υx ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp_com[3]);
+                input_double("υy ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp_com[4]);
+                input_double("υz ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp_com[5]);
             }
             else if (pos_vel_sp_var == CARTESIAN_SP_COM1)
             {
-                double_field("x ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp_com1[0]);
-                double_field("y ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp_com1[1]);
-                double_field("z ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp_com1[2]);
-                double_field("υx ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp_com1[3]);
-                double_field("υy ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp_com1[4]);
-                double_field("υz ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp_com1[5]);
+                input_double("x ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp_com1[0]);
+                input_double("y ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp_com1[1]);
+                input_double("z ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp_com1[2]);
+                input_double("υx ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp_com1[3]);
+                input_double("υy ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp_com1[4]);
+                input_double("υz ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp_com1[5]);
             }
             else if (pos_vel_sp_var == CARTESIAN_SP_COM2)
             {
-                double_field("x ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp_com2[0]);
-                double_field("y ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp_com2[1]);
-                double_field("z ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp_com2[2]);
-                double_field("υx ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp_com2[3]);
-                double_field("υy ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp_com2[4]);
-                double_field("υz ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp_com2[5]);
+                input_double("x ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp_com2[0]);
+                input_double("y ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp_com2[1]);
+                input_double("z ",  100.0f*SCX, 40.0f*SCX, id, "[km]",     cart_sp_com2[2]);
+                input_double("υx ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp_com2[3]);
+                input_double("υy ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp_com2[4]);
+                input_double("υz ", 100.0f*SCX, 40.0f*SCX, id, "[km/sec]", cart_sp_com2[5]);
             }
             else if (pos_vel_sp_var == KEPLERIAN_SP_COM)
             {
-                double_field("a ", 100.0f*SCX, 40.0f*SCX, id, "[km]",   kep_sp_com[0]);
-                double_field("e ", 100.0f*SCX, 40.0f*SCX, id, "[    ]", kep_sp_com[1]);
-                double_field("i ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com[2]);
-                double_field("Ω ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com[3]);
-                double_field("ω ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com[4]);
-                double_field("M ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com[5]);
+                input_double("a ", 100.0f*SCX, 40.0f*SCX, id, "[km]",   kep_sp_com[0]);
+                input_double("e ", 100.0f*SCX, 40.0f*SCX, id, "[    ]", kep_sp_com[1]);
+                input_double("i ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com[2]);
+                input_double("Ω ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com[3]);
+                input_double("ω ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com[4]);
+                input_double("M ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com[5]);
             }
             else if (pos_vel_sp_var == KEPLERIAN_SP_COM1)
             {
-                double_field("a ", 100.0f*SCX, 40.0f*SCX, id, "[km]",   kep_sp_com1[0]);
-                double_field("e ", 100.0f*SCX, 40.0f*SCX, id, "[    ]", kep_sp_com1[1]);
-                double_field("i ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com1[2]);
-                double_field("Ω ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com1[3]);
-                double_field("ω ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com1[4]);
-                double_field("M ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com1[5]);
+                input_double("a ", 100.0f*SCX, 40.0f*SCX, id, "[km]",   kep_sp_com1[0]);
+                input_double("e ", 100.0f*SCX, 40.0f*SCX, id, "[    ]", kep_sp_com1[1]);
+                input_double("i ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com1[2]);
+                input_double("Ω ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com1[3]);
+                input_double("ω ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com1[4]);
+                input_double("M ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com1[5]);
             }
             else //pos_vel_sp_var == KEPLERIAN_SP_COM2
             {
-                double_field("a ", 100.0f*SCX, 40.0f*SCX, id, "[km]",   kep_sp_com2[0]);
-                double_field("e ", 100.0f*SCX, 40.0f*SCX, id, "[    ]", kep_sp_com2[1]);
-                double_field("i ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com2[2]);
-                double_field("Ω ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com2[3]);
-                double_field("ω ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com2[4]);
-                double_field("M ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com2[5]);
+                input_double("a ", 100.0f*SCX, 40.0f*SCX, id, "[km]",   kep_sp_com2[0]);
+                input_double("e ", 100.0f*SCX, 40.0f*SCX, id, "[    ]", kep_sp_com2[1]);
+                input_double("i ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com2[2]);
+                input_double("Ω ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com2[3]);
+                input_double("ω ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com2[4]);
+                input_double("M ", 100.0f*SCX, 40.0f*SCX, id, "[deg]",  kep_sp_com2[5]);
             }
             ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1186,13 +1235,13 @@ public:
             ImGui::Checkbox("Is rigid body", &sp_is_rigidbody_checkbox);
             if (!sp_is_rigidbody_checkbox)
                 ImGui::BeginDisabled();
-            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
-            ImGui::Text("Shape models");
+
             
-
-
+            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
+            ImGui::Text("Shape model");
+            
             //Ellipsoid shape logic :
-            if (ImGui::Checkbox("S/c Ellipsoid", &sp_ell_checkbox) && sp_ell_checkbox)
+            if (ImGui::Checkbox("Ellipsoid##sp_ell_checkbox", &sp_ell_checkbox) && sp_ell_checkbox)
                 sp_ell_clicked_ok = false;
             if (sp_ell_checkbox && !sp_ell_clicked_ok)
             {
@@ -1200,11 +1249,11 @@ public:
 
                 ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, 0.0f), ImGuiCond_FirstUseEver); 
                 ImGui::SetNextWindowSize(ImVec2(0.15f*sx, 0.4f*sy), ImGuiCond_FirstUseEver); 
-                ImGui::Begin("S/c Ellipsoid parameters", &sp_ell_checkbox);
+                ImGui::Begin("Ellipsoid parameters##spacecraft", &sp_ell_checkbox);
                 
-                double_field("a ", 100.0f*SCX, 30.0f*SCX, id, "[km]", sp_semiaxes[0]);
-                double_field("b ", 100.0f*SCX, 30.0f*SCX, id, "[km]", sp_semiaxes[1]);
-                double_field("c ", 100.0f*SCX, 30.0f*SCX, id, "[km]", sp_semiaxes[2]);
+                input_double("a ", 100.0f*SCX, 30.0f*SCX, id, "[km]", sp_semiaxes[0]);
+                input_double("b ", 100.0f*SCX, 30.0f*SCX, id, "[km]", sp_semiaxes[1]);
+                input_double("c ", 100.0f*SCX, 30.0f*SCX, id, "[km]", sp_semiaxes[2]);
                 ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
                 if (ImGui::Button("OK", ImVec2(50.0f*SCX,30.0f*SCY)))
                     sp_ell_clicked_ok = true;
@@ -1212,7 +1261,7 @@ public:
                 ImGui::End();
             }
             //.obj shape logic :
-            if (ImGui::Checkbox("S/c .obj files", &sp_obj_checkbox) && sp_obj_checkbox)
+            if (ImGui::Checkbox(".obj file##sp_obj_checkbox", &sp_obj_checkbox) && sp_obj_checkbox)
                 sp_obj_clicked_ok = false;
             if (sp_obj_checkbox && !sp_obj_clicked_ok)
             {
@@ -1220,7 +1269,7 @@ public:
 
                 ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, 0.0f), ImGuiCond_FirstUseEver);
                 ImGui::SetNextWindowSize(ImVec2(0.15f*sx, 0.4f*sy), ImGuiCond_FirstUseEver); 
-                ImGui::Begin("S/c .obj files", &sp_obj_checkbox);
+                ImGui::Begin(".obj files##spacecraft", &sp_obj_checkbox);
 
                 //File listing and selection logic :
                 static std::vector<std::filesystem::path> all_obj_files;
@@ -1247,79 +1296,78 @@ public:
                 ImGui::End();
             }
 
-            //S/c Mass :
+            //Spacecraft mass :
             ImGui::SeparatorText("Mass");
-            double_field("m ", 150.0f*SCX, 40.0f*SCX, id, "[kg]", sp_mass);
+            input_double("m ", 150.0f*SCX, 40.0f*SCX, id, "[kg]", sp_mass);
             ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
 
-            ImGui::Text("Orientations");
-            static const char *rpy_quat_var[2] = {"Euler angles (XYZ)",
-                                                "Quaternions (WXYZ)"};
+            ImGui::Text("Orientation");
+            static const char *sp_rpy_quat_var[2] = {"Euler angles (XYZ)",
+                                                     "Quaternions (WXYZ)"};
             ImGui::PushItemWidth(220.0f*SCX);
-            ImGui::PushID(id++);
-            ImGui::Combo("  ", (int*)(&orient_var), rpy_quat_var, IM_ARRAYSIZE(rpy_quat_var));
-            ImGui::PopID();
+                ImGui::PushID(id++);
+                    ImGui::Combo("  ", (int*)(&sp_orient_var), sp_rpy_quat_var, IM_ARRAYSIZE(sp_rpy_quat_var));
+                ImGui::PopID();
             ImGui::PopItemWidth();
-            if (orient_var == EULER_XYZ)
+            if (sp_orient_var == EULER_XYZ_SP)
             {
-                double_field("Roll 1 " , 100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy1[0]);
-                double_field("Pitch 1 ", 100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy1[1]);
-                double_field("Yaw 1 ",   100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy1[2]);
-                ImGui::Dummy(ImVec2(0.0f,5.0f));
-                double_field("Roll 2 ",  100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy2[0]);
-                double_field("Pitch 2 ", 100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy2[1]);
-                double_field("Yaw 2 ",   100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy2[2]);
+                input_double("Roll " , 100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy_sp[0]);
+                input_double("Pitch ", 100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy_sp[1]);
+                input_double("Yaw ",   100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy_sp[2]);
             }
-            else //orient_var == QUATERNION
+            else //sp_orient_var == QUATERNION_SP
             {
-                double_field("q10 ", 100.0f*SCX, 70.0f*SCX, id, "[    ]", q1[0]);
-                double_field("q11 ", 100.0f*SCX, 70.0f*SCX, id, "[    ]", q1[1]);
-                double_field("q12 ", 100.0f*SCX, 70.0f*SCX, id, "[    ]", q1[2]);
-                double_field("q13 ", 100.0f*SCX, 70.0f*SCX, id, "[    ]", q1[3]);
-                ImGui::Dummy(ImVec2(0.0f,5.0f*SCY));
-                double_field("q20 ", 100.0f*SCX, 70.0f*SCX, id, "[    ]", q2[0]);
-                double_field("q21 ", 100.0f*SCX, 70.0f*SCX, id, "[    ]", q2[1]);
-                double_field("q22 ", 100.0f*SCX, 70.0f*SCX, id, "[    ]", q2[2]);
-                double_field("q23 ", 100.0f*SCX, 70.0f*SCX, id, "[    ]", q2[3]);
+                input_double("q0 ", 100.0f*SCX, 70.0f*SCX, id, "[    ]", qsp[0]);
+                input_double("q1 ", 100.0f*SCX, 70.0f*SCX, id, "[    ]", qsp[1]);
+                input_double("q2 ", 100.0f*SCX, 70.0f*SCX, id, "[    ]", qsp[2]);
+                input_double("q3 ", 100.0f*SCX, 70.0f*SCX, id, "[    ]", qsp[3]);
             }
             ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
 
 
-            ImGui::Text("Angular velocities");
-            static const char *omega_frame[2] = {"Heliocentric (inertial)",
-                                                "Body frames"};
+            ImGui::Text("Angular velocity");
+            static const char *sp_omega_frame[2] = {"Heliocentric (inertial)",
+                                                    "Body frames"};
             ImGui::PushItemWidth(220.0f*SCX);
-            ImGui::PushID(id++);
-            ImGui::Combo("  ", (int*)(&angvel_frame), omega_frame, IM_ARRAYSIZE(omega_frame));
-            ImGui::PopID();
+                ImGui::PushID(id++);
+                    ImGui::Combo("  ", (int*)(&sp_angvel_frame), sp_omega_frame, IM_ARRAYSIZE(sp_omega_frame));
+                ImGui::PopID();
             ImGui::PopItemWidth();
-            if (angvel_frame == ANGVEL_HELIO)
+            if (sp_angvel_frame == ANGVEL_SP_HELIO)
             {
-                double_field("ω1x ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w1i[0]);
-                double_field("ω1y ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w1i[1]);
-                double_field("ω1z ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w1i[2]);
-                ImGui::Dummy(ImVec2(0.0f,5.0f*SCY));
-                double_field("ω2x ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w2i[0]);
-                double_field("ω2y ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w2i[1]);
-                double_field("ω2z ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w2i[2]);
+                input_double("ωx ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", wi_sp[0]);
+                input_double("ωy ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", wi_sp[1]);
+                input_double("ωz ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", wi_sp[2]);
             }
-            else //angvel_frame == ANGVEL_BODY
+            else //sp_angvel_frame == ANGVEL_BODY
             {
-                double_field("ω11 ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w1b[0]);
-                double_field("ω12 ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w1b[1]);
-                double_field("ω13 ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w1b[2]);
-                ImGui::Dummy(ImVec2(0.0f,5.0f*SCY));
-                double_field("ω21 ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w2b[0]);
-                double_field("ω22 ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w2b[1]);
-                double_field("ω23 ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", w2b[2]);
+                input_double("ω1 ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", wb_sp[0]);
+                input_double("ω2 ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", wb_sp[1]);
+                input_double("ω3 ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", wb_sp[2]);
             }
             ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
-
-
 
             if (!sp_is_rigidbody_checkbox)
                 ImGui::EndDisabled();
             ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
+
+
+
+
+
+
+
+
+
+            
+
+
+
+
+
+
+
+
 
 
 
@@ -1345,9 +1393,9 @@ public:
                 ImGui::BeginDisabled();
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
             ImGui::Text("SRP parameters");
-            double_field("ρ ", 100.0f*SCX, 40.0f*SCX, id, "[  ]",  sp_refl);
-            double_field("A ", 100.0f*SCX, 40.0f*SCX, id, "[m^2]", sp_area);
-            double_field("m ", 100.0f*SCX, 40.0f*SCX, id, "[kg]",  sp_mass);
+            input_double("ρ ", 100.0f*SCX, 40.0f*SCX, id, "[  ]",  sp_refl);
+            input_double("A ", 100.0f*SCX, 40.0f*SCX, id, "[m^2]", sp_area);
+            input_double("m ", 100.0f*SCX, 40.0f*SCX, id, "[kg]",  sp_mass);
             ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
             ImGui::Checkbox("Account for shadows", &srp_shadow_checkbox);
             if (!srp_checkbox)
