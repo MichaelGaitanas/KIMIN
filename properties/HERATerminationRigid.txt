@@ -64,7 +64,9 @@ Assume spacecraft orbiter := "Yes"
         w  := 0
         M  := 0
 
-    Is rigid body := "No"
+    Is rigid body := "yes"
+        Shape model := ".obj file"
+            file := "Cuboid_R04km.obj"
 
     Account for SRP := "Yes"
         SRP parameters : 

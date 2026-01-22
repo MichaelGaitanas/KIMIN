@@ -96,6 +96,7 @@ public:
     bool impactors_clicked_ok; //Impactors 'OK' button.
 
     bool spacecraft_checkbox; //'Spacecraft orbiter' checkbox state.
+    double sp_mass; //Spacecraft mass 'm'.
     enum
     {
         CARTESIAN_SP_COM,
@@ -114,7 +115,6 @@ public:
     bool sp_obj_checkbox;
     std::string sp_obj_path;
     bool sp_obj_clicked_ok;
-    //double sp_mass1;
     enum
     {
         EULER_XYZ_SP,
@@ -129,7 +129,7 @@ public:
     } sp_angvel_frame;
     dvec3 wi_sp, wb_sp;
     bool srp_checkbox; //'Account for SRP' checkbox state.
-    double sp_refl, sp_area, sp_mass; //Spacecraft's 'ρ', 'A', 'm' double fields.
+    double sp_refl, sp_area; //Spacecraft's 'ρ', 'A' double fields.
     bool srp_shadow_checkbox; //'Account for shadow' checkbox state.
     bool spacecraft_clicked_ok; //Spacecraft's 'OK' button.
 
@@ -188,6 +188,7 @@ public:
                    tD2(0.0),
                    impactors_clicked_ok(false),
                    spacecraft_checkbox(false),
+                   sp_mass(0.0),
                    pos_vel_sp_var(CARTESIAN_SP_COM),
                    cart_sp_com({0.0,0.0,0.0,0.0,0.0,0.0}),
                    cart_sp_com1({0.0,0.0,0.0,0.0,0.0,0.0}),
@@ -211,7 +212,6 @@ public:
                    srp_checkbox(false),
                    sp_refl(0.0),
                    sp_area(0.0),
-                   sp_mass(0.0),
                    srp_shadow_checkbox(false),
                    spacecraft_clicked_ok(false),
                    run_pressed(false),
@@ -393,7 +393,7 @@ public:
             }
         }
 
-        //Parse the spacecraft orbiter's state.
+        //Parse the spacecraft's state.
         if (find_assignment_operator(fp))
         {
             fscanf(fp, " \"%127[^\"]\"", buffer);
@@ -552,7 +552,7 @@ private:
         ImGui::PopItemWidth();
     }
 
-    void render_impactor_menu(double mD, dvec3 &vD, double beta, double tD, int id)
+    void render_impactor_menu(double &mD, dvec3 &vD, double &beta, double &tD, int &id)
     {
         ImGui::Text("Mass (dry + fuel)");
         input_double("m ", 100.0f*SCX, 40.0f*SCX, id, "[kg]", mD);
@@ -691,6 +691,9 @@ public:
         //Rules regarding the spacecraft orbiter :
         if (spacecraft_checkbox)
         {
+            if (sp_mass < 1e-15)
+                    {cons.print("[Error] : Spacecraft's mass 'm' must positive.\n"); return false;}
+
             //Rule : Initial position/velocity, must be valid (similar to binary's mutual state logic).
             if (pos_vel_sp_var == KEPLERIAN_SP_COM)
             {
@@ -713,6 +716,18 @@ public:
                 if (kep_sp_com2[1] < 0.0 || fabs(kep_sp_com2[1] - 1.0) <= 1e-15)
                     {cons.print("[Error] : Spacecraft's eccentricity 'e' must be in [0,1)U(1,inf).\n"); return false;}
             }
+
+            if (sp_is_rigidbody_checkbox)
+            {
+                //Rule : Spacecraft's quaternion must be nonzero.
+                if (sp_orient_var == QUATERNION_SP)
+                {
+                    if (length(qsp) <= 1e-15)
+                        {cons.print("[Error] : Spacecraft quaternion ('q0', 'q1', 'q2', 'q3') must be nonzero.\n"); return false;}
+                    else //Normalize it no matter what.
+                        qsp = quat2unit(qsp); //This correction will be visible in the gui.
+                }
+            }
             
             //Rule : SRP inputs must be valid.
             if (srp_checkbox)
@@ -721,8 +736,6 @@ public:
                     {cons.print("[Error] : Spacecraft's reflectance 'ρ' must range in [0,1].\n"); return false;}
                 if (sp_area < 1e-15)
                     {cons.print("[Error] : Spacecraft's area 'A' must positive.\n"); return false;}
-                if (sp_mass < 1e-15)
-                    {cons.print("[Error] : Spacecraft's mass 'm' must positive.\n"); return false;}
             }
             //Rule : 'OK' button must be clicked in the end.
             if (!spacecraft_clicked_ok)
@@ -1130,6 +1143,11 @@ public:
             ImGui::SetNextWindowSize(ImVec2(0.15f*sx, 0.4f*sy), ImGuiCond_FirstUseEver); 
             ImGui::Begin("Spacecraft state", &spacecraft_checkbox);
 
+            //Spacecraft mass :
+            ImGui::Text("Mass");
+            input_double("m ", 150.0f*SCX, 30.0f*SCX, id, "[kg]", sp_mass);
+            ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
+
             ImGui::Text("Position and velocity");
             static const char *cart_kep_sp_var[6] = {"Cartesian (binary COM)",
                                                      "Cartesian (body 1)",
@@ -1234,7 +1252,10 @@ public:
 
             ImGui::Checkbox("Is rigid body", &sp_is_rigidbody_checkbox);
             if (!sp_is_rigidbody_checkbox)
+            {
+                sp_ell_checkbox = sp_obj_checkbox = sp_ell_clicked_ok = sp_obj_clicked_ok = false;
                 ImGui::BeginDisabled();
+            }
 
             
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
@@ -1249,7 +1270,7 @@ public:
 
                 ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, 0.0f), ImGuiCond_FirstUseEver); 
                 ImGui::SetNextWindowSize(ImVec2(0.15f*sx, 0.4f*sy), ImGuiCond_FirstUseEver); 
-                ImGui::Begin("Ellipsoid parameters##spacecraft", &sp_ell_checkbox);
+                ImGui::Begin("Ellipsoid parameters (spacecraft)##spacecraft", &sp_ell_checkbox);
                 
                 input_double("a ", 100.0f*SCX, 30.0f*SCX, id, "[km]", sp_semiaxes[0]);
                 input_double("b ", 100.0f*SCX, 30.0f*SCX, id, "[km]", sp_semiaxes[1]);
@@ -1269,7 +1290,7 @@ public:
 
                 ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x, 0.0f), ImGuiCond_FirstUseEver);
                 ImGui::SetNextWindowSize(ImVec2(0.15f*sx, 0.4f*sy), ImGuiCond_FirstUseEver); 
-                ImGui::Begin(".obj files##spacecraft", &sp_obj_checkbox);
+                ImGui::Begin(".obj files (spacecraft)##spacecraft", &sp_obj_checkbox);
 
                 //File listing and selection logic :
                 static std::vector<std::filesystem::path> all_obj_files;
@@ -1295,10 +1316,6 @@ public:
 
                 ImGui::End();
             }
-
-            //Spacecraft mass :
-            ImGui::SeparatorText("Mass");
-            input_double("m ", 150.0f*SCX, 40.0f*SCX, id, "[kg]", sp_mass);
             ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
 
             ImGui::Text("Orientation");
@@ -1311,16 +1328,16 @@ public:
             ImGui::PopItemWidth();
             if (sp_orient_var == EULER_XYZ_SP)
             {
-                input_double("Roll " , 100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy_sp[0]);
-                input_double("Pitch ", 100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy_sp[1]);
-                input_double("Yaw ",   100.0f*SCX, 80.0f*SCX, id, "[deg]", rpy_sp[2]);
+                input_double("Roll " , 100.0f*SCX, 50.0f*SCX, id, "[deg]", rpy_sp[0]);
+                input_double("Pitch ", 100.0f*SCX, 50.0f*SCX, id, "[deg]", rpy_sp[1]);
+                input_double("Yaw ",   100.0f*SCX, 50.0f*SCX, id, "[deg]", rpy_sp[2]);
             }
             else //sp_orient_var == QUATERNION_SP
             {
-                input_double("q0 ", 100.0f*SCX, 70.0f*SCX, id, "[    ]", qsp[0]);
-                input_double("q1 ", 100.0f*SCX, 70.0f*SCX, id, "[    ]", qsp[1]);
-                input_double("q2 ", 100.0f*SCX, 70.0f*SCX, id, "[    ]", qsp[2]);
-                input_double("q3 ", 100.0f*SCX, 70.0f*SCX, id, "[    ]", qsp[3]);
+                input_double("q0 ", 100.0f*SCX, 40.0f*SCX, id, "[    ]", qsp[0]);
+                input_double("q1 ", 100.0f*SCX, 40.0f*SCX, id, "[    ]", qsp[1]);
+                input_double("q2 ", 100.0f*SCX, 40.0f*SCX, id, "[    ]", qsp[2]);
+                input_double("q3 ", 100.0f*SCX, 40.0f*SCX, id, "[    ]", qsp[3]);
             }
             ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
 
@@ -1335,9 +1352,9 @@ public:
             ImGui::PopItemWidth();
             if (sp_angvel_frame == ANGVEL_SP_HELIO)
             {
-                input_double("ωx ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", wi_sp[0]);
-                input_double("ωy ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", wi_sp[1]);
-                input_double("ωz ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", wi_sp[2]);
+                input_double("ωx ", 100.0f*SCX, 40.0f*SCX, id, "[rad/sec]", wi_sp[0]);
+                input_double("ωy ", 100.0f*SCX, 40.0f*SCX, id, "[rad/sec]", wi_sp[1]);
+                input_double("ωz ", 100.0f*SCX, 40.0f*SCX, id, "[rad/sec]", wi_sp[2]);
             }
             else //sp_angvel_frame == ANGVEL_BODY
             {
@@ -1345,7 +1362,6 @@ public:
                 input_double("ω2 ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", wb_sp[1]);
                 input_double("ω3 ", 100.0f*SCX, 70.0f*SCX, id, "[rad/sec]", wb_sp[2]);
             }
-            ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
 
             if (!sp_is_rigidbody_checkbox)
                 ImGui::EndDisabled();
@@ -1395,7 +1411,6 @@ public:
             ImGui::Text("SRP parameters");
             input_double("ρ ", 100.0f*SCX, 40.0f*SCX, id, "[  ]",  sp_refl);
             input_double("A ", 100.0f*SCX, 40.0f*SCX, id, "[m^2]", sp_area);
-            input_double("m ", 100.0f*SCX, 40.0f*SCX, id, "[kg]",  sp_mass);
             ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
             ImGui::Checkbox("Account for shadows", &srp_shadow_checkbox);
             if (!srp_checkbox)
