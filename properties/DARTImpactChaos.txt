@@ -74,7 +74,7 @@ Assume kinetic impactors := "Yes"
             vz := 0.961274144225715
         Momentum enhancement factor (ejecta) :
             beta := 3.6
-        Impact epoch :
+        Relative day of impact (post-epoch) :
             t := 100
 
 Assume spacecraft orbiter := "No"

@@ -56,6 +56,9 @@ Collision shapes := "Spheres"
 Assume kinetic impactors := "No"
 
 Assume spacecraft orbiter := "Yes"
+    Mass :
+        m  := 1128
+
     Position and velocity := "Keplerian (binary COM)"
         a  := 3
         e  := 0
@@ -70,5 +73,4 @@ Assume spacecraft orbiter := "Yes"
         SRP parameters : 
             ρ  := 0.3
             A  := 13
-            m  := 1128
     Account for shadows := "Yes"

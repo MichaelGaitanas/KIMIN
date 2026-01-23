@@ -1,4 +1,4 @@
-Simulation name := "DidymosHERATermination"
+Simulation name := "DidymosHERATerminationRigid"
 
 Shape models := ".obj files"
     file 1 := "didymain2019_R04km.obj"
@@ -56,6 +56,9 @@ Collision shapes := "Spheres"
 Assume kinetic impactors := "No"
 
 Assume spacecraft orbiter := "Yes"
+    Mass :
+        m  := 1128
+
     Position and velocity := "Keplerian (binary COM)"
         a  := 3
         e  := 0
@@ -64,13 +67,20 @@ Assume spacecraft orbiter := "Yes"
         w  := 0
         M  := 0
 
-    Is rigid body := "yes"
+    Is rigid body := "Yes"
         Shape model := ".obj file"
-            file := "Cuboid_R04km.obj"
+            file := "cuboid3x2x1m.obj"
+        Orientation := "Euler angles (XYZ)"
+        Roll  := 0
+        Pitch := 76
+        Yaw   := 0
+        Angular velocity := "Heliocentric (inertial)"
+        wx := 0
+        wy := 0
+        wz := 0
 
     Account for SRP := "Yes"
         SRP parameters : 
             ρ  := 0.3
             A  := 13
-            m  := 1128
     Account for shadows := "Yes"

@@ -136,7 +136,7 @@ public:
     bool run_pressed; //Whether or not the 'Run' button has been pressed.
     bool abort_pressed; //Whether or not the 'Abort' button has been pressed.
 
-    polyhedron poly1, poly2; //Polyhedra instances.
+    polyhedron poly1, poly2, poly_sp; //Polyhedra instances.
 
     properties() : sim_name(""),
                    ell_checkbox(false),
@@ -205,7 +205,7 @@ public:
                    sp_obj_clicked_ok(false),
                    sp_orient_var(EULER_XYZ_SP),
                    rpy_sp({0.0,0.0,0.0}),
-                   qsp({0.0,0.0,0.0,0.0}),
+                   qsp({1.0,0.0,0.0,0.0}),
                    sp_angvel_frame(ANGVEL_SP_HELIO),
                    wi_sp({0.0,0.0,0.0}),
                    wb_sp({0.0,0.0,0.0}),
@@ -217,7 +217,8 @@ public:
                    run_pressed(false),
                    abort_pressed(false),
                    poly1(),
-                   poly2()
+                   poly2(),
+                   poly_sp()
     { }
 
     //This function loads to the gui the user-chosen properties file.
@@ -399,6 +400,9 @@ public:
             fscanf(fp, " \"%127[^\"]\"", buffer);
             if (strcmp(buffer, "Yes") == 0)
             {
+                //Mass.
+                if (find_assignment_operator(fp)) fscanf(fp, "%lf", &sp_mass);
+
                 //Initial position/velocity.
                 if (find_assignment_operator(fp))
                 {
@@ -435,6 +439,59 @@ public:
                     }
                 }
 
+                //Is rigid body settings.
+                if (find_assignment_operator(fp))
+                {
+                    fscanf(fp, " \"%127[^\"]\"", buffer);
+                    if (strcmp(buffer, "Yes") == 0)
+                    {
+                        //Parse spacecraft's shape model.
+                        if (find_assignment_operator(fp)) fscanf(fp, " \"%127[^\"]\"", buffer);
+                        if (strcmp(buffer, "Ellipsoid") == 0)
+                        {
+                            for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &sp_semiaxes[i]);
+                            sp_ell_checkbox = sp_ell_clicked_ok = true;
+                        }
+                        else //".obj file"
+                        {
+                            if (find_assignment_operator(fp))
+                            {   
+                                fscanf(fp, " \"%127[^\"]\"", buffer);
+                                sp_obj_path = buffer;
+                            }
+                            sp_obj_checkbox = sp_obj_clicked_ok = true;
+                        }
+
+                        //Parse spacecraft's initial orientation.
+                        if (find_assignment_operator(fp)) fscanf(fp, " \"%127[^\"]\"", buffer);
+                        if (strcmp(buffer, "Euler angles (XYZ)") == 0)
+                        {
+                            sp_orient_var = EULER_XYZ_SP;
+                            for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &rpy_sp[i]);
+                        }
+                        else
+                        {
+                            sp_orient_var = QUATERNION_SP;
+                            for (int i = 0; i < 4; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &qsp[i]);
+                        }
+
+                        //Parse spacecraft's initial angular velocity.
+                        if (find_assignment_operator(fp)) fscanf(fp, " \"%127[^\"]\"", buffer);
+                        if (strcmp(buffer, "Heliocentric (inertial)") == 0)
+                        {
+                            sp_angvel_frame = ANGVEL_SP_HELIO;
+                            for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &wi_sp[i]);
+                        }
+                        else
+                        {
+                            sp_angvel_frame = ANGVEL_SP_BODY;
+                            for (int i = 0; i < 3; ++i) if (find_assignment_operator(fp)) fscanf(fp, "%lf", &wb_sp[i]);
+                        }
+
+                        sp_is_rigidbody_checkbox = true;
+                    }
+                }
+
                 //SRP settings.
                 if (find_assignment_operator(fp))
                 {
@@ -443,7 +500,6 @@ public:
                     {
                         if (find_assignment_operator(fp)) fscanf(fp, "%lf", &sp_refl);
                         if (find_assignment_operator(fp)) fscanf(fp, "%lf", &sp_area);
-                        if (find_assignment_operator(fp)) fscanf(fp, "%lf", &sp_mass);
 
                         if (find_assignment_operator(fp))
                         {
@@ -454,6 +510,7 @@ public:
                         srp_checkbox = true;
                     }
                 }
+
                 spacecraft_checkbox = spacecraft_clicked_ok = true;
             }
         }
@@ -500,7 +557,7 @@ private:
         ///////////////////////////////////////////////////////////////////////////
 
         //Rule 1 : verify that the date is not empty.
-        if (!str)
+        if (!str || str[0] == '\0')
             return false;
 
         //Rule 2 : measure exactly 19 characters ("YYYY-MM-DDTHH:MM:SS").
@@ -719,6 +776,18 @@ public:
 
             if (sp_is_rigidbody_checkbox)
             {
+                //Rule : Shape model checkbox (at least one must be checked when the 'Run' button has been pressed).
+                if (!sp_ell_checkbox && !sp_obj_checkbox)
+                    {cons.print("[Error] : Neither 'Ellipsoid', nor '.obj file' is selected for determining the spacecraft shape.\n"); return false;}
+
+                //Rule : 'OK' button in the Elliposid parameters window (it must be clicked so that the parameters are taken into account).
+                if (sp_ell_checkbox && !sp_ell_clicked_ok)
+                    {cons.print("[Error] : 'OK' button must be pressed in the 'Ellipsoid parameters' window.\n"); return false;}
+
+                //Rule : 'OK' button in the '.obj file' window (it must be clicked so that the spacecraft .obj file is taken into account).
+                if (sp_obj_checkbox && !sp_obj_clicked_ok)
+                    {cons.print("[Error] : 'OK' button must be pressed in the '.obj file' window.\n"); return false;}
+
                 //Rule : Spacecraft's quaternion must be nonzero.
                 if (sp_orient_var == QUATERNION_SP)
                 {
@@ -742,7 +811,7 @@ public:
                 {cons.print("[Error] : 'OK' button must be pressed in the 'Spacecraft's state' window.\n"); return false;}
         }
 
-        //Rule : Ellipsoids semiaxes (all semiaxes must be > 0).
+        //Rule : Binary ellipsoid semiaxes (all semiaxes must be > 0).
         if (ell_checkbox)
         {
             if (semiaxes1[0] <= 0.0 || semiaxes1[1] <= 0.0 || semiaxes1[2] <= 0.0)
@@ -762,7 +831,21 @@ public:
             }
         }
 
-        //Rule : Rgarding .obj files, at least one .obj file per body must be selected. Also the polyhedra must be closed manifold geometries.
+        //Rule : Spacecraft ellipsoid semiaxes (all semiaxes must be > 0).
+        if (sp_ell_checkbox)
+        {
+            if (sp_semiaxes[0] <= 0.0 || sp_semiaxes[1] <= 0.0 || sp_semiaxes[2] <= 0.0)
+                {cons.print("[Error] : Spacecraft's 'a', 'b', 'c' must be positive numbers.\n"); return false;}
+
+            if (sp_semiaxes[0] > 0.0 && sp_semiaxes[1] > 0.0 && sp_semiaxes[2] > 0.0)
+            {
+                poly_sp.load_obj_file("../obj/polyhedra/uvsphere64x64_R1km.obj");
+                poly_sp.set_scale(sp_semiaxes);
+                poly_sp.gen_norms();
+            }
+        }
+
+        //Rule : Regarding binary .obj files, at least one .obj file per body must be selected. Also the polyhedra must be closed manifold geometries.
         if (obj_checkbox)
         {   
             if (obj1_path.empty())
@@ -796,6 +879,27 @@ public:
                 }
                 else
                     {cons.print("< Invalid .obj file for 'Body 2' (it must contain only vertices and faces). >\n"); return false;}
+            }
+        }
+
+        //Rule : Regarding spacecraft .obj files, at least one .obj file per body must be selected. Also the polyhedra must be closed manifold geometries.
+        if (sp_obj_checkbox)
+        {   
+            if (sp_obj_path.empty())
+                {cons.print("[Error] : No .obj file is selected for spacecraft.\n"); return false;}
+            else
+            {
+                cons.print("[Polyhedron] : Loading spacecraft .obj file... ");
+                if (poly_sp.is_kimin_valid_obj(("../obj/polyhedra/" + sp_obj_path).c_str()))
+                {
+                    poly_sp.load_obj_file(("../obj/polyhedra/" + sp_obj_path).c_str());
+                    if (!poly_sp.is_closed_manifold())
+                        {cons.print("< Invalid .obj file for spacecraft (non closed manifold). >\n"); return false;}
+                    else
+                        cons.print("Done.\n");
+                }
+                else
+                    {cons.print("< Invalid .obj file for spacecraft (it must contain only vertices and faces). >\n"); return false;}
             }
         }
 
@@ -1366,43 +1470,6 @@ public:
             if (!sp_is_rigidbody_checkbox)
                 ImGui::EndDisabled();
             ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
-
-
-
-
-
-
-
-
-
-            
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
             ImGui::Checkbox("Account for SRP", &srp_checkbox);
             if (!srp_checkbox)
