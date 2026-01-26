@@ -269,7 +269,7 @@ public:
             xmut[i]     = rmut[0];
             ymut[i]     = rmut[1];
             zmut[i]     = rmut[2];
-            dist_mut[i] = rcyl[0];
+            dist_mut[i] = length(rmut);
 
             vxmut[i]   = vmut[0];
             vymut[i]   = vmut[1];
@@ -450,8 +450,8 @@ public:
 
                 if (sol.integr.props.sp_is_rigidbody_checkbox)
                 {
-                    const dvec4 qsp   = {integr.orbit[i][33], integr.orbit[i][34], integr.orbit[i][35], integr.orbit[i][36]};
-                    const dvec3 wb_sp = {integr.orbit[i][37], integr.orbit[i][38], integr.orbit[i][39]};
+                    const dvec4 qsp   = {sol.integr.orbit[j][33], sol.integr.orbit[j][34], sol.integr.orbit[j][35], sol.integr.orbit[j][36]};
+                    const dvec3 wb_sp = {sol.integr.orbit[j][37], sol.integr.orbit[j][38], sol.integr.orbit[j][39]};
 
                     const dmat3 Asp    = quat2mat(qsp);
                     const dvec3 wi_sp  = body2iner(wb_sp, Asp);

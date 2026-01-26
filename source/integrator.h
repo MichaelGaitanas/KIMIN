@@ -25,9 +25,9 @@ public:
     dvec6 cart_sp_helio; //Heliocentric Cartesian state of the spacecraft (arcitectural convenience to have it as member).
 
     double m, m1, m2; //Reduced mass and reduced mass coefficients : m = M1*M2/(M1+M2), m1 = -M2/(M1+M2), m2 = M1/(M1+M2).
-    dmat3 I1, I2; //Moments of inertia.
-    dtens J1, J2; //Inertial integrals.
-    double brillouin1, brillouin2; //Brillouin radii of the 2 rigid bodies.
+    dmat3 I1, I2, Isp; //Moments of inertia.
+    dtens J1, J2, Jsp; //Inertial integrals.
+    double brillouin1, brillouin2, brillouin_sp; //Brillouin radii of the 2 rigid bodies + spacecraft.
     bool collision_mut, collision_sp1, collision_sp2, collision_sun; //Collision flags.
     bool maneuver1, maneuver2; //Whether or not a beta-kick (equivalent maneuver) has been applied to the corresponding body.
 
@@ -150,6 +150,8 @@ private:
         //Now handle the spacecraft's ODEs :
         if (props.spacecraft_checkbox)
         {
+            //Precompute essential quantities :
+
             //Spacecraft's state in the inertial (Heliocentric) frame.
             const dvec3 rsp_helio = {state[26], state[27], state[28]};
             const dvec3 vsp_helio = {state[29], state[30], state[31]};
@@ -159,21 +161,19 @@ private:
             //Corresponding body-to-spacecraft vector.
             const dvec3 rho1 = rsp_helio - r1_helio;
             const dvec3 rho2 = rsp_helio - r2_helio;
-            //Spacecraft's acceleration due to the combined presence of the 2 rigid bodies.
-            dvec3 asp_helio;
-            if (props.ord2_checkbox)
-                asp_helio = accel_integrals_ord2(rho1, props.M1, J1, A1) + accel_integrals_ord2(rho2, props.M2, J2, A2);
-            else if (props.ord3_checkbox)
-                asp_helio = accel_integrals_ord3(rho1, props.M1, J1, A1) + accel_integrals_ord3(rho2, props.M2, J2, A2);
-            else
-                asp_helio = accel_integrals_ord4(rho1, props.M1, J1, A1) + accel_integrals_ord4(rho2, props.M2, J2, A2);
 
-            if (props.sun_gravity) //Add Sun's gravity.
+            //Spacecraft's acceleration due to the combined presence of the 2 rigid bodies.
+            dvec3 asp_helio = {0.0,0.0,0.0};
+
+            //1) Add Sun's contribution to spacecraft's acceleration if chosen :
+            if (props.sun_gravity)
             {
                 const double dsp = length(rsp_helio);
                 asp_helio = asp_helio - G*MSUN*rsp_helio/(dsp*dsp*dsp);
             }
-            if (props.srp_checkbox) //Add SRP.
+
+            //2) Add SRP contribution to spacecraft's acceleration if chosen :
+            if (props.srp_checkbox)
             {
                 bool sp_in_shadow = false;
                 const dvec3 rsun_helio = {0.0,0.0,0.0}; //Sun is at the origin.
@@ -181,6 +181,69 @@ private:
                     sp_in_shadow = line_sphere_intersection(rsp_helio, rsun_helio, r1_helio, brillouin1) || line_sphere_intersection(rsp_helio, rsun_helio, r2_helio, brillouin2);
                 if (!sp_in_shadow)
                     asp_helio = asp_helio + accel_srp(props.sp_refl, props.sp_area, props.sp_mass, rsp_helio, rsun_helio);
+            }
+            
+            if (!props.sp_is_rigidbody_checkbox)
+            {
+                if (props.ord2_checkbox)
+                    asp_helio = asp_helio + accel_integrals_ord2(rho1, props.M1, J1, A1) + accel_integrals_ord2(rho2, props.M2, J2, A2);
+                else if (props.ord3_checkbox)
+                    asp_helio = asp_helio + accel_integrals_ord3(rho1, props.M1, J1, A1) + accel_integrals_ord3(rho2, props.M2, J2, A2);
+                else
+                    asp_helio = asp_helio + accel_integrals_ord4(rho1, props.M1, J1, A1) + accel_integrals_ord4(rho2, props.M2, J2, A2);
+
+                //Spacecraft's rotational rhs :
+                for (int i = 32; i <= 38; ++i)
+                    dstate[i] = 0.0;
+            }
+            else
+            {
+                const dvec4 qsp  = {state[32], state[33], state[34], state[35]};
+                const dvec3 wspb = {state[36], state[37], state[38]};
+                const dmat3 Asp  = quat2mat(qsp);
+
+                dvec6 ft1, ft2;
+                if (props.ord2_checkbox)
+                {
+                    ft1 = mut_force_torque1_integrals_ord2(-rho1, props.sp_mass, Jsp, Asp, props.M1, J1, A1);
+                    ft2 = mut_force_torque1_integrals_ord2(-rho2, props.sp_mass, Jsp, Asp, props.M2, J2, A2);
+                }
+                else if (props.ord3_checkbox)
+                {
+                    ft1 = mut_force_torque1_integrals_ord3(-rho1, props.sp_mass, Jsp, Asp, props.M1, J1, A1);
+                    ft2 = mut_force_torque1_integrals_ord3(-rho2, props.sp_mass, Jsp, Asp, props.M2, J2, A2);
+                }
+                else
+                {
+                    ft1 = mut_force_torque1_integrals_ord4(-rho1, props.sp_mass, Jsp, Asp, props.M1, J1, A1);
+                    ft2 = mut_force_torque1_integrals_ord4(-rho2, props.sp_mass, Jsp, Asp, props.M2, J2, A2);
+                }
+
+                const dvec3 Fsp     = dvec3{ft1[0],ft1[1],ft1[2]} + dvec3{ft2[0],ft2[1],ft2[2]};
+                const dvec3 tau_spi = dvec3{ft1[3],ft1[4],ft1[5]} + dvec3{ft2[3],ft2[4],ft2[5]};
+                asp_helio = asp_helio + Fsp/props.sp_mass;
+
+                dvec3 torque_spb_sun = {0.0,0.0,0.0};
+                if (props.sun_gravity)
+                {
+                    const double dsp = length(rsp_helio);
+                    const dvec3 rspb_unit = iner2body(rsp_helio, Asp)/dsp;
+                    torque_spb_sun = 3.0*G*MSUN*cross(rspb_unit, dot(Isp, rspb_unit))/(dsp*dsp*dsp);
+                }
+
+                const dvec3 torque_spb = iner2body(tau_spi, Asp) + torque_spb_sun;
+
+                const dvec4 dqsp  = quat_rhs(qsp, wspb);
+                const dvec3 dwspb = euler_rhs(wspb, Isp, torque_spb);
+
+                //Spacecraft's rotational rhs :
+                dstate[32] = dqsp[0];
+                dstate[33] = dqsp[1];
+                dstate[34] = dqsp[2];
+                dstate[35] = dqsp[3];
+                dstate[36] = dwspb[0];
+                dstate[37] = dwspb[1];
+                dstate[38] = dwspb[2];
             }
 
             //Spacecraft's position and velocity rhs.
@@ -191,8 +254,9 @@ private:
             dstate[30] = asp_helio[1];
             dstate[31] = asp_helio[2];
         }
-        else
-            dstate[26] = dstate[27] = dstate[28] = dstate[29] = dstate[30] = dstate[31] = 0.0;
+        else //no spacecraft was chosen, so set everything to zero that concerns the spacecraft.
+            for (int i = 26; i <= 38; ++i)
+                dstate[i] = 0.0;
     }
 
 public:
@@ -346,9 +410,34 @@ public:
                 //Preparation : If the user chose to input the angular velocity in the inertial frame, then, transform iy to the body frame.
                 if (props.sp_angvel_frame == properties::ANGVEL_SP_HELIO)
                     props.wb_sp = iner2body(props.wi_sp, quat2mat(props.qsp));
+
+                //Preparation : Evaluate Brillouin radius and inertial integrals of the spacecraft, based on the user's choice of shape model (ellipsoid or obj file).
+                if (props.sp_ell_checkbox)
+                {
+                    brillouin_sp = ell_brillouin(props.sp_semiaxes);
+                    Isp = ell_inertia(props.sp_mass, props.sp_semiaxes);
+                    if (props.ord2_checkbox)
+                        Jsp = ell_integrals(props.sp_mass, props.sp_semiaxes, 2);
+                    else if (props.ord3_checkbox)
+                        Jsp = ell_integrals(props.sp_mass, props.sp_semiaxes, 3);
+                    else
+                        Jsp = ell_integrals(props.sp_mass, props.sp_semiaxes, 4);
+                }
+                else //obj file
+                {
+                    props.poly_sp.set_com_zero();
+                    props.poly_sp.set_inertia_diagonal();
+                    brillouin_sp = props.poly_sp.get_farthest_vertex_distance();
+                    Isp = props.poly_sp.get_inertia(props.sp_mass);
+                    if (props.ord2_checkbox)
+                        Jsp = props.poly_sp.get_inertial_integrals_ord2(props.sp_mass);
+                    else if (props.ord3_checkbox)
+                        Jsp = props.poly_sp.get_inertial_integrals_ord3(props.sp_mass);
+                    else
+                        Jsp = props.poly_sp.get_inertial_integrals_ord4(props.sp_mass);
+                }
             }
         }
-        //Else the spacecraft is assumed to remain in the center of the Heliocentric frame with zero velocity throughout the integration.
         
         //Preparation : Set time parameters in [sec] for integration.
         t0 = (props.epoch_jd - JD_J2000)*DAY2SEC; //[sec]
@@ -561,6 +650,13 @@ public:
             norm = length(dvec4{state[13], state[14], state[15], state[16]}); //q2
             for (int i = 13; i <= 16; ++i)
                 state[i] /= norm;
+            
+            if (props.spacecraft_checkbox && props.sp_is_rigidbody_checkbox)
+            {
+                norm = length(dvec4{state[32], state[33], state[34], state[35]}); //qsp
+                for (int i = 32; i <= 35; ++i)
+                    state[i] /= norm;
+            }
                 
             //Progressbar : set the progress value of the integrator in [0,1]. The properties then convert it to [0,100]
             progress.store((t-t0)/(tmax-t0));
