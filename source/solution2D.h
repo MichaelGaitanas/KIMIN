@@ -63,6 +63,10 @@ public:
     dvec xsp_com2,  ysp_com2,  zsp_com2,  dist_sp_com2;
     dvec vxsp_com2, vysp_com2, vzsp_com2, vel_sp_com2;
     dvec sma_sp_com2, ecc_sp_com2, inc_sp_com2, raan_sp_com2, argper_sp_com2, manom_sp_com2;
+    //Rotation :
+    dvec roll_sp, pitch_sp, yaw_sp;
+    dvec wix_sp, wiy_sp, wiz_sp;
+    dvec wbx_sp, wby_sp, wbz_sp;
 
     solution2D() { }
 
@@ -96,6 +100,9 @@ public:
         xsp_com2.clear();      ysp_com2.clear();      zsp_com2.clear();      dist_sp_com2.clear();
         vxsp_com2.clear();     vysp_com2.clear();     vzsp_com2.clear();     vel_sp_com2.clear();
         sma_sp_com2.clear();   ecc_sp_com2.clear();   inc_sp_com2.clear();   raan_sp_com2.clear();  argper_sp_com2.clear(); manom_sp_com2.clear();
+        roll_sp.clear();       pitch_sp.clear();      yaw_sp.clear();
+        wix_sp.clear();        wiy_sp.clear();        wiz_sp.clear();
+        wbx_sp.clear();        wby_sp.clear();        wbz_sp.clear();
     }
 
     dvec2 get_energy_and_momentum_at_t0(const solution &sol)
@@ -175,6 +182,12 @@ public:
             xsp_com2.resize(N2D);       ysp_com2.resize(N2D);       zsp_com2.resize(N2D);       dist_sp_com2.resize(N2D);
             vxsp_com2.resize(N2D);      vysp_com2.resize(N2D);      vzsp_com2.resize(N2D);      vel_sp_com2.resize(N2D);
             sma_sp_com2.resize(N2D);    ecc_sp_com2.resize(N2D);    inc_sp_com2.resize(N2D);    raan_sp_com2.resize(N2D); argper_sp_com2.resize(N2D); manom_sp_com2.resize(N2D);
+            if (sol.integr.props.sp_is_rigidbody_checkbox)
+            {
+                roll_sp.resize(N2D); pitch_sp.resize(N2D); yaw_sp.resize(N2D);
+                wix_sp.resize(N2D);  wiy_sp.resize(N2D);   wiz_sp.resize(N2D);
+                wbx_sp.resize(N2D);  wby_sp.resize(N2D);   wbz_sp.resize(N2D);
+            }
         }
 
         const dvec2 ener_mom_at_t0 = get_energy_and_momentum_at_t0(sol);
@@ -251,7 +264,7 @@ public:
             //Note : All 3 components of the momentum vector are conserved in time, but I just choose to store and plot the magnitude only.
             const double momentum = length( sol.integr.m*cross(rmut,vmut) + dot(A1, dot(sol.integr.I1, w1b)) + dot(A2, dot(sol.integr.I2, w2b)) );
 
-            t[i] = (sol.integr.orbit[j][0] - sol.integr.t0)/86400.0; //Back in [days].
+            t[i] = (sol.integr.orbit[j][0] - sol.integr.t0)/DAY2SEC; //Back in [days].
 
             xmut[i]     = rmut[0];
             ymut[i]     = rmut[1];
@@ -434,6 +447,24 @@ public:
                 raan_sp_com2[i]   = kep_sp_com2[3]*180.0/PI;
                 argper_sp_com2[i] = kep_sp_com2[4]*180.0/PI;
                 manom_sp_com2[i]  = kep_sp_com2[5]*180.0/PI;
+
+                if (sol.integr.props.sp_is_rigidbody_checkbox)
+                {
+                    const dvec4 qsp   = {integr.orbit[i][33], integr.orbit[i][34], integr.orbit[i][35], integr.orbit[i][36]};
+                    const dvec3 wb_sp = {integr.orbit[i][37], integr.orbit[i][38], integr.orbit[i][39]};
+
+                    const dmat3 Asp    = quat2mat(qsp);
+                    const dvec3 wi_sp  = body2iner(wb_sp, Asp);
+                    const dvec3 rpy_sp = quat2ang(qsp);
+
+                    wix_sp[i] = wi_sp[0];
+                    wiy_sp[i] = wi_sp[1];
+                    wiz_sp[i] = wi_sp[2];
+
+                    roll_sp[i]  = rpy_sp[0]*180.0/PI;
+                    pitch_sp[i] = rpy_sp[1]*180.0/PI;
+                    yaw_sp[i]   = rpy_sp[2]*180.0/PI;
+                }
             }
         }
     }

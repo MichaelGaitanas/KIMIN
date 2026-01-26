@@ -454,7 +454,7 @@ double calendar2jd(int year, int month, const int day, const int hour, const int
 //Convert Julian day to seconds (since J2000 epoch).
 double jd2sec(const double jd)
 {
-    return (jd - JD_J2000)*86400.0;
+    return (jd - JD_J2000)*DAY2SEC;
 }
 
 //Calculate the Stokes coefficient C[n][m], provided the NORMALIZED inertial integral tensor N. Then the term C[n][m] will be stage 1 normalized.

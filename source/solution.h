@@ -45,6 +45,9 @@ public:
     dvec xsp_helio, ysp_helio, zsp_helio;
     //In binary's COM frame :
     dvec xsp_com, ysp_com, zsp_com;
+    //Rotation :
+    dvec roll_sp, pitch_sp, yaw_sp;
+    dvec wix_sp, wiy_sp, wiz_sp;
 
     solution() { } //This is needed to instantiate solution in the scene class.
 
@@ -75,6 +78,11 @@ public:
         {
             xsp_helio.resize(N); ysp_helio.resize(N); zsp_helio.resize(N);
             xsp_com.resize(N);   ysp_com.resize(N);   zsp_com.resize(N);
+            if (integr.props.sp_is_rigidbody_checkbox)
+            {
+                roll_sp.resize(N); pitch_sp.resize(N); yaw_sp.resize(N);
+                wix_sp.resize(N);  wiy_sp.resize(N);   wiz_sp.resize(N);
+            }
         }
 
         #ifdef _OPENMP
@@ -101,6 +109,7 @@ public:
             const dvec4 q2         = {integr.orbit[i][14], integr.orbit[i][15], integr.orbit[i][16], integr.orbit[i][17]};
             const dvec3 w2b        = {integr.orbit[i][18], integr.orbit[i][19], integr.orbit[i][20]};
             const dvec3 rcom_helio = {integr.orbit[i][21], integr.orbit[i][22], integr.orbit[i][23]};
+            //const dvec3 vcom_helio = {integr.orbit[i][24], integr.orbit[i][25], integr.orbit[i][26]};
 
             const dmat3 A1   = quat2mat(q1);
             const dmat3 A2   = quat2mat(q2);
@@ -109,7 +118,7 @@ public:
             const dvec3 rpy1 = quat2ang(q1);
             const dvec3 rpy2 = quat2ang(q2);
             
-            t[i] = (integr.orbit[i][0] - integr.t0)/86400.0; //Back in [days].
+            t[i] = (integr.orbit[i][0] - integr.t0)/DAY2SEC; //Back in [days].
 
             xmut[i]     = rmut[0];
             ymut[i]     = rmut[1];
@@ -149,6 +158,24 @@ public:
                 xsp_com[i] = xsp_helio[i] - xcom_helio[i];
                 ysp_com[i] = ysp_helio[i] - ycom_helio[i];
                 zsp_com[i] = zsp_helio[i] - zcom_helio[i];
+
+                if (integr.props.sp_is_rigidbody_checkbox)
+                {
+                    const dvec4 qsp   = {integr.orbit[i][33], integr.orbit[i][34], integr.orbit[i][35], integr.orbit[i][36]};
+                    const dvec3 wb_sp = {integr.orbit[i][37], integr.orbit[i][38], integr.orbit[i][39]};
+
+                    const dmat3 Asp    = quat2mat(qsp);
+                    const dvec3 wi_sp  = body2iner(wb_sp, Asp);
+                    const dvec3 rpy_sp = quat2ang(qsp);
+
+                    wix_sp[i] = wi_sp[0];
+                    wiy_sp[i] = wi_sp[1];
+                    wiz_sp[i] = wi_sp[2];
+
+                    roll_sp[i]  = rpy_sp[0]*180.0/PI;
+                    pitch_sp[i] = rpy_sp[1]*180.0/PI;
+                    yaw_sp[i]   = rpy_sp[2]*180.0/PI;
+                }
             }
         }
         cons.print("Done.\n");
@@ -192,6 +219,19 @@ public:
             for (size_t i = 0; i < t.size(); ++i)
                 fprintf(fp_rsp_helio, "%.16lf %.16lf %.16lf\n", xsp_helio[i]/AU2KM, ysp_helio[i]/AU2KM, zsp_helio[i]/AU2KM); //Deliberatly saved as [AU] in the file.
             fclose(fp_rsp_helio);
+
+            if (integr.props.sp_is_rigidbody_checkbox)
+            {
+                FILE *fp_rpy_sp = fopen((sim_dir + "/spacecraft_euler_rpy.txt").c_str(), "w");
+                FILE *fp_ang_vel_sp = fopen((sim_dir + "/spacecraft_ang_vel_wi.txt").c_str(), "w");
+                for (size_t i = 0; i < t.size(); ++i)
+                {
+                    fprintf(fp_rpy_sp,     "%.16lf %.16lf %.16lf\n", roll_sp[i], pitch_sp[i], yaw_sp[i]);
+                    fprintf(fp_ang_vel_sp, "%.16lf %.16lf %.16lf\n", wix_sp[i],  wiy_sp[i],   wiz_sp[i]);
+                }
+                fclose(fp_rpy_sp);
+                fclose(fp_ang_vel_sp);
+            }
         }
 
         //Export collision status :
@@ -382,7 +422,7 @@ public:
             fprintf(fp_props,"        Momentum enhancement factor (ejecta) :\n");
             fprintf(fp_props,"            beta := %.15g\n", integr.props.beta1);
             fprintf(fp_props,"        Relative day of impact (post-epoch) :\n");
-            fprintf(fp_props,"            t := %.15g\n", integr.props.tD1/86400.0);
+            fprintf(fp_props,"            t := %.15g\n", integr.props.tD1/DAY2SEC);
             fprintf(fp_props,"    Body 2 :\n");
             fprintf(fp_props,"        Mass (dry + fuel) :\n");
             fprintf(fp_props,"            m := %.15g\n", integr.props.mD2);
@@ -393,7 +433,7 @@ public:
             fprintf(fp_props,"        Momentum enhancement factor (ejecta) :\n");
             fprintf(fp_props,"            beta := %.15g\n", integr.props.beta2);
             fprintf(fp_props,"        Relative day of impact (post-epoch) :\n");
-            fprintf(fp_props,"            t := %.15g\n\n", integr.props.tD2/86400.0);
+            fprintf(fp_props,"            t := %.15g\n\n", integr.props.tD2/DAY2SEC);
         }
         else
             fprintf(fp_props, "Assume kinetic impactors := \"No\"\n\n");
@@ -401,6 +441,10 @@ public:
         if (integr.props.spacecraft_checkbox)
         {
             fprintf(fp_props,"Assume spacecraft orbiter := \"Yes\"\n");
+
+            fprintf(fp_props,"    Mass :\n");
+            fprintf(fp_props,"        m := %.15g\n\n", integr.props.sp_mass);
+
             if (integr.props.pos_vel_sp_var == properties::CARTESIAN_SP_COM)
             {
                 fprintf(fp_props,"    Position and velocity := \"Cartesian (binary COM)\"\n");
@@ -462,13 +506,62 @@ public:
                 fprintf(fp_props,"        M  := %.15g\n\n", integr.props.kep_sp_com2[5]);
             }
 
+            if (integr.props.sp_is_rigidbody_checkbox)
+            {
+                fprintf(fp_props,"    Is rigid body := \"Yes\"\n");
+                if (integr.props.sp_ell_checkbox)
+                {
+                    fprintf(fp_props,"        Shape model := \"Ellipsoid\"\n");
+                    fprintf(fp_props,"            a := %.15g\n", integr.props.sp_semiaxes[0]);
+                    fprintf(fp_props,"            b := %.15g\n", integr.props.sp_semiaxes[1]);
+                    fprintf(fp_props,"            c := %.15g\n", integr.props.sp_semiaxes[2]);
+                }
+                else
+                {
+                    fprintf(fp_props,"        Shape model := \".obj file\"\n");
+                    fprintf(fp_props,"            file := \"%s\"\n",  integr.props.sp_obj_path.c_str());
+                }
+
+                if (integr.props.sp_orient_var == properties::EULER_XYZ_SP)
+                {
+                    fprintf(fp_props,"        Orientation := \"Euler angles (XYZ)\"\n");
+                    fprintf(fp_props,"            Roll  := %.15g\n", integr.props.rpy_sp[0]);
+                    fprintf(fp_props,"            Pitch := %.15g\n", integr.props.rpy_sp[1]);
+                    fprintf(fp_props,"            Yaw   := %.15g\n", integr.props.rpy_sp[2]);
+                }
+                else //properties::QUATERNION_SP
+                {
+                    fprintf(fp_props,"        Orientation := \"Quaternions (WXYZ)\"\n");
+                    fprintf(fp_props,"            q0 := %.15g\n", integr.props.qsp[0]);
+                    fprintf(fp_props,"            q1 := %.15g\n", integr.props.qsp[1]);
+                    fprintf(fp_props,"            q2 := %.15g\n", integr.props.qsp[2]);
+                    fprintf(fp_props,"            q3 := %.15g\n", integr.props.qsp[3]);
+                }
+
+                if (integr.props.sp_angvel_frame == properties::ANGVEL_SP_HELIO)
+                {
+                    fprintf(fp_props,"        Angular velocity := \"Heliocentric (inertial)\"\n");
+                    fprintf(fp_props,"            wx := %.15g\n", integr.props.wi_sp[0]);
+                    fprintf(fp_props,"            wy := %.15g\n", integr.props.wi_sp[1]);
+                    fprintf(fp_props,"            wz := %.15g\n", integr.props.wi_sp[2]);
+                }
+                else //properties::ANGVEL_SP_BODY
+                {
+                    fprintf(fp_props,"        Angular velocity := \"Body frames\"\n");
+                    fprintf(fp_props,"            w1 := %.15g\n", integr.props.wb_sp[0]);
+                    fprintf(fp_props,"            w2 := %.15g\n", integr.props.wb_sp[1]);
+                    fprintf(fp_props,"            w3 := %.15g\n", integr.props.wb_sp[2]);
+                }
+            }
+            else
+                fprintf(fp_props,"    Is rigid body := \"No\"\n");
+
             if (integr.props.srp_checkbox)
             {
                 fprintf(fp_props,"    Account for SRP := \"Yes\"\n");
                 fprintf(fp_props,"        SRP parameters : \n");
                 fprintf(fp_props,"            ρ  := %.15g\n", integr.props.sp_refl);
                 fprintf(fp_props,"            A  := %.15g\n", integr.props.sp_area);
-                fprintf(fp_props,"            m  := %.15g\n", integr.props.sp_mass);
                 if (integr.props.srp_shadow_checkbox)
                     fprintf(fp_props,"    Account for shadows := \"Yes\"\n");
                 else

@@ -29,6 +29,7 @@ private:
     bvec plot_cart_sp_com,   plot_kep_sp_com;
     bvec plot_cart_sp_com1,  plot_kep_sp_com1;
     bvec plot_cart_sp_com2,  plot_kep_sp_com2;
+    bvec plot_rpy_sp, plot_wi_sp, plot_wb_sp;
     
     bool render_scene, play_video, reset_gpu_flag, auto_replay, sync_orb1, sync_orb2, sync_orb_sp;
 
@@ -61,6 +62,9 @@ public:
               plot_kep_sp_com1({false,false,false,false,false,false}),
               plot_cart_sp_com2({false,false,false,false, false,false,false,false}),
               plot_kep_sp_com2({false,false,false,false,false,false}),
+              plot_rpy_sp({false,false,false}),
+              plot_wi_sp({false,false,false}),
+              plot_wb_sp({false,false,false}),
               render_scene(false),
               play_video(false),
               reset_gpu_flag(false),
@@ -103,6 +107,8 @@ public:
                 plot_cart_sp_helio[i] = plot_cart_sp_com[i] = plot_cart_sp_com1[i] = plot_cart_sp_com2[i] = false;
             for (size_t i = 0; i < plot_kep_sp_helio.size(); ++i)
                 plot_kep_sp_helio[i] = plot_kep_sp_com[i] = plot_kep_sp_com1[i] = plot_kep_sp_com2[i] = false;
+            for (int i = 0; i < 3; ++i)
+                plot_rpy_sp[i] = plot_wi_sp[i] = plot_wb_sp[i] = false;
 
             rend3D.orb_sp.gl_draw_count = 0;
             rend3D.render_orb_sp = sync_orb_sp = false;
@@ -772,6 +778,30 @@ private:
             plot_kep_sp_com2[5] = onoff_button("M##plot_kep_sp_com2[5]", ImVec2(35.0f*SCX, 20.0f*SCY), plot_kep_sp_com2[5]);
             ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
 
+            //This level of BeginDisabled() is meant to gray out only the rotational plots of the spacecraft in case it was not selected to be a rigdi body.
+            if (!sol->integr.props.sp_is_rigidbody_checkbox)
+                ImGui::BeginDisabled();
+
+            ImGui::Text("Euler angles (XYZ)");
+            plot_rpy_sp[0] = onoff_button("roll##plot_rpy_sp[0]",  ImVec2(50.0f*SCX, 20.0f*SCY), plot_rpy_sp[0]); ImGui::SameLine();
+            plot_rpy_sp[1] = onoff_button("pitch##plot_rpy_sp[1]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_rpy_sp[1]); ImGui::SameLine();
+            plot_rpy_sp[2] = onoff_button("yaw##plot_rpy_sp[2]",   ImVec2(50.0f*SCX, 20.0f*SCY), plot_rpy_sp[2]);
+            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
+
+            ImGui::Text("Angular velocity (Heliocentric)");
+            plot_wi_sp[0] = onoff_button("ωx##plot_wi_sp[0]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_wi_sp[0]); ImGui::SameLine();
+            plot_wi_sp[1] = onoff_button("ωy##plot_wi_sp[1]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_wi_sp[1]); ImGui::SameLine();
+            plot_wi_sp[2] = onoff_button("ωz##plot_wi_sp[2]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_wi_sp[2]);
+            ImGui::Dummy(ImVec2(0.0f,7.5f*SCY));
+            
+            ImGui::Text("Angular velocity (body frame)");
+            plot_wb_sp[0] = onoff_button("ω1##plot_wb_sp[0]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_wb_sp[0]); ImGui::SameLine();
+            plot_wb_sp[1] = onoff_button("ω2##plot_wb_sp[1]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_wb_sp[1]); ImGui::SameLine();
+            plot_wb_sp[2] = onoff_button("ω3##plot_wb_sp[2]", ImVec2(50.0f*SCX, 20.0f*SCY), plot_wb_sp[2]);
+
+            if (!sol->integr.props.sp_is_rigidbody_checkbox)
+                ImGui::EndDisabled();
+
             if (!sol || sol->t.empty() || !sol->integr.props.spacecraft_checkbox)
                 ImGui::EndDisabled();
         }
@@ -872,17 +902,17 @@ public:
                 if (plot_w1i[1]) plot_w1i[1] = plot("##plot_w1i[1]", "Body 1 ωy (inertial frame)", "ω1y [rad/sec]", plot_w1i[1], sol2D.w1iy);
                 if (plot_w1i[2]) plot_w1i[2] = plot("##plot_w1i[2]", "Body 1 ωz (inertial frame)", "ω1z [rad/sec]", plot_w1i[2], sol2D.w1iz);
 
-                if (plot_w1b[0]) plot_w1b[0] = plot("##plot_w1b[0]", "Body 1 ωx (body frame)", "ω11 [rad/sec]", plot_w1b[0], sol2D.w1bx);
-                if (plot_w1b[1]) plot_w1b[1] = plot("##plot_w1b[1]", "Body 1 ωy (body frame)", "ω12 [rad/sec]", plot_w1b[1], sol2D.w1by);
-                if (plot_w1b[2]) plot_w1b[2] = plot("##plot_w1b[2]", "Body 1 ωz (body frame)", "ω13 [rad/sec]", plot_w1b[2], sol2D.w1bz);
+                if (plot_w1b[0]) plot_w1b[0] = plot("##plot_w1b[0]", "Body 1 ω1 (body frame)", "ω11 [rad/sec]", plot_w1b[0], sol2D.w1bx);
+                if (plot_w1b[1]) plot_w1b[1] = plot("##plot_w1b[1]", "Body 1 ω1 (body frame)", "ω12 [rad/sec]", plot_w1b[1], sol2D.w1by);
+                if (plot_w1b[2]) plot_w1b[2] = plot("##plot_w1b[2]", "Body 1 ω1 (body frame)", "ω13 [rad/sec]", plot_w1b[2], sol2D.w1bz);
 
                 if (plot_w2i[0]) plot_w2i[0] = plot("##plot_w2i[0]", "Body 2 ωx (inertial frame)", "ω2x [rad/sec]", plot_w2i[0], sol2D.w2ix);
                 if (plot_w2i[1]) plot_w2i[1] = plot("##plot_w2i[1]", "Body 2 ωy (inertial frame)", "ω2y [rad/sec]", plot_w2i[1], sol2D.w2iy);
                 if (plot_w2i[2]) plot_w2i[2] = plot("##plot_w2i[2]", "Body 2 ωz (inertial frame)", "ω2z [rad/sec]", plot_w2i[2], sol2D.w2iz);
 
-                if (plot_w2b[0]) plot_w2b[0] = plot("##plot_w2b[0]", "Body 2 ωx (body frame)", "ω21 [rad/sec]", plot_w2b[0], sol2D.w2bx);
-                if (plot_w2b[1]) plot_w2b[1] = plot("##plot_w2b[1]", "Body 2 ωy (body frame)", "ω22 [rad/sec]", plot_w2b[1], sol2D.w2by);
-                if (plot_w2b[2]) plot_w2b[2] = plot("##plot_w2b[2]", "Body 2 ωz (body frame)", "ω23 [rad/sec]", plot_w2b[2], sol2D.w2bz);
+                if (plot_w2b[0]) plot_w2b[0] = plot("##plot_w2b[0]", "Body 2 ω1 (body frame)", "ω21 [rad/sec]", plot_w2b[0], sol2D.w2bx);
+                if (plot_w2b[1]) plot_w2b[1] = plot("##plot_w2b[1]", "Body 2 ω1 (body frame)", "ω22 [rad/sec]", plot_w2b[1], sol2D.w2by);
+                if (plot_w2b[2]) plot_w2b[2] = plot("##plot_w2b[2]", "Body 2 ω1 (body frame)", "ω23 [rad/sec]", plot_w2b[2], sol2D.w2bz);
 
                 if (sol->integr.props.spacecraft_checkbox)
                 {
@@ -949,6 +979,18 @@ public:
                     if (plot_kep_sp_com2[3]) plot_kep_sp_com2[3] = plot("##plot_kep_sp_com2[3]", "Spacecraft longitude of ascending node (body 2)", "Ω [deg]", plot_kep_sp_com2[3], sol2D.raan_sp_com2);
                     if (plot_kep_sp_com2[4]) plot_kep_sp_com2[4] = plot("##plot_kep_sp_com2[4]", "Spacecraft argument of periapsis (body 2)",       "ω [deg]", plot_kep_sp_com2[4], sol2D.argper_sp_com2);
                     if (plot_kep_sp_com2[5]) plot_kep_sp_com2[5] = plot("##plot_kep_sp_com2[5]", "Spacecraft mean anomaly (body 2)",                "M [deg]", plot_kep_sp_com2[5], sol2D.manom_sp_com2);
+
+                    if (plot_rpy_sp[0]) plot_rpy_sp[0] = plot("##plot_rpy_sp[0]", "Spacecraft roll",  "roll [deg]",  plot_rpy_sp[0], sol2D.roll_sp);
+                    if (plot_rpy_sp[1]) plot_rpy_sp[1] = plot("##plot_rpy_sp[1]", "Spacecraft pitch", "pitch [deg]", plot_rpy_sp[1], sol2D.pitch_sp);
+                    if (plot_rpy_sp[2]) plot_rpy_sp[2] = plot("##plot_rpy_sp[2]", "Spacecraft yaw",   "yaw [deg]",   plot_rpy_sp[2], sol2D.yaw_sp);
+
+                    if (plot_wi_sp[0]) plot_wi_sp[0] = plot("##plot_wi_sp[0]", "Spacecraft ωx (inertial frame)", "ωx [rad/sec]", plot_wi_sp[0], sol2D.wix_sp);
+                    if (plot_wi_sp[1]) plot_wi_sp[1] = plot("##plot_wi_sp[1]", "Spacecraft ωy (inertial frame)", "ωy [rad/sec]", plot_wi_sp[1], sol2D.wiy_sp);
+                    if (plot_wi_sp[2]) plot_wi_sp[2] = plot("##plot_wi_sp[2]", "Spacecraft ωz (inertial frame)", "ωz [rad/sec]", plot_wi_sp[2], sol2D.wiz_sp);
+
+                    if (plot_wb_sp[0]) plot_wb_sp[0] = plot("##plot_wb_sp[0]", "Spacecraft ω1 (body frame)", "ω1 [rad/sec]", plot_wb_sp[0], sol2D.wbx_sp);
+                    if (plot_wb_sp[1]) plot_wb_sp[1] = plot("##plot_wb_sp[1]", "Spacecraft ω2 (body frame)", "ω2 [rad/sec]", plot_wb_sp[1], sol2D.wby_sp);
+                    if (plot_wb_sp[2]) plot_wb_sp[2] = plot("##plot_wb_sp[2]", "Spacecraft ω3 (body frame)", "ω3 [rad/sec]", plot_wb_sp[2], sol2D.wbz_sp);
                 }
             }
             ImGui::PopStyleColor();
