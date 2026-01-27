@@ -72,7 +72,7 @@ private:
         const dvec3 force = {force_torque1i[0], force_torque1i[1], force_torque1i[2]};
         //Mutual and COM acceleration due to binary's gravity.
         dvec3 amut = force/m;
-        dvec3 acom_helio = {0.0,0.0,0.0};
+        dvec3 acom_helio   = {0.0,0.0,0.0};
         dvec3 torque1b_sun = {0.0,0.0,0.0};
         dvec3 torque2b_sun = {0.0,0.0,0.0};
         if (props.sun_gravity) //Add Sun's contribution to both the amut and acom_helio.

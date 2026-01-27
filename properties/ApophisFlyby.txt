@@ -1,0 +1,89 @@
+Simulation name := "ApophisFlyby"
+
+Shape models := "Ellipsoids"
+    a1 := 6378.137
+    b1 := 6378.067
+    c1 := 6356.752
+    a2 := 1737.6
+    b2 := 1735.6
+    c2 := 1735
+
+Potential expansion order := 4
+
+Masses :
+    M1 := 5.97216787e+24
+    M2 := 7.342e+22
+
+Numerical integration :
+    Method := "RKF78 (fixed)"
+    Epoch := "2029-04-13T21:34:00"
+    Duration := 10
+    Step := 0.02
+
+Initial state :
+    Mutual position and velocity := "Keplerian"
+    a  := 384400
+    e  := 0.0549
+    i  := 5.145
+    Om := 0
+    w  := 0
+    M  := 0
+
+    Orientations := "Euler angles (XYZ)"
+    Roll 1  := -23.4393
+    Pitch 1 := 0
+    Yaw 1   := 0
+    Roll 2  := 0
+    Pitch 2 := 0
+    Yaw 2   := 0
+
+    Angular velocities := "Body frames"
+    w11 := 0
+    w12 := 0
+    w13 := 7.292115e-05
+    w21 := 0
+    w22 := 0
+    w23 := 2.6617e-06
+
+    Binary COM (Heliocentric) := "Keplerian"
+    a  := 1
+    e  := 0.0167
+    i  := 0
+    Om := 0
+    w  := 102.94
+    M  := 0
+
+Assume Sun's gravity := "Yes"
+
+Collision shapes := "Spheres"
+
+Assume kinetic impactors := "No"
+
+Assume spacecraft orbiter := "Yes"
+    Mass :
+        m := 50000000000
+
+    Position and velocity := "Keplerian (body 1)"
+        a  := -11682
+        e  := 4.2539
+        i  := 162.856
+        Om := 152.002
+        w  := 32.568
+        M  := -19.0222
+
+    Is rigid body := "Yes"
+        Shape model := ".obj file"
+            file := "apophis2k_R02km.obj"
+        Orientation := "Euler angles (XYZ)"
+            Roll  := 0
+            Pitch := 0
+            Yaw   := 0
+        Angular velocity := "Heliocentric (inertial)"
+            wx := 0
+            wy := 0
+            wz := -5.7e-05
+    Account for SRP := "Yes"
+        SRP parameters : 
+            ρ  := 0.3
+            A  := 100000
+    Account for shadows := "Yes"
