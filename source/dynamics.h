@@ -831,7 +831,7 @@ dvec6 mut_force_torque1_integrals_ord4(const dvec3 &r, const double M1, const dt
 
     //F = -grad(V)
     const dvec3 force = -(dV_dd*dd_dr + dV_dl1*dl1_dr + dV_dm1*dm1_dr + dV_dn1*dn1_dr +
-                                  dV_dl2*dl2_dr + dV_dm2*dm2_dr + dV_dn2*dn2_dr);
+                                        dV_dl2*dl2_dr + dV_dm2*dm2_dr + dV_dn2*dn2_dr);
 
     const dvec3 dl1_da1 = ru, dm1_da2 = ru, dn1_da3 = ru;
 

@@ -202,21 +202,21 @@ private:
                 const dvec3 wspb = {state[36], state[37], state[38]};
                 const dmat3 Asp  = quat2mat(qsp);
 
-                dvec6 ft1, ft2;
+                dvec6 ft1, ft2; //Force and torque applied to the spacecraft.
                 if (props.ord2_checkbox)
                 {
-                    ft1 = mut_force_torque1_integrals_ord2(-rho1, props.sp_mass, Jsp, Asp, props.M1, J1, A1);
-                    ft2 = mut_force_torque1_integrals_ord2(-rho2, props.sp_mass, Jsp, Asp, props.M2, J2, A2);
+                    ft1 = mut_force_torque1_integrals_ord2(rho1, props.sp_mass, Jsp, Asp, props.M1, J1, A1);
+                    ft2 = mut_force_torque1_integrals_ord2(rho2, props.sp_mass, Jsp, Asp, props.M2, J2, A2);
                 }
                 else if (props.ord3_checkbox)
                 {
-                    ft1 = mut_force_torque1_integrals_ord3(-rho1, props.sp_mass, Jsp, Asp, props.M1, J1, A1);
-                    ft2 = mut_force_torque1_integrals_ord3(-rho2, props.sp_mass, Jsp, Asp, props.M2, J2, A2);
+                    ft1 = mut_force_torque1_integrals_ord3(rho1, props.sp_mass, Jsp, Asp, props.M1, J1, A1);
+                    ft2 = mut_force_torque1_integrals_ord3(rho2, props.sp_mass, Jsp, Asp, props.M2, J2, A2);
                 }
                 else
                 {
-                    ft1 = mut_force_torque1_integrals_ord4(-rho1, props.sp_mass, Jsp, Asp, props.M1, J1, A1);
-                    ft2 = mut_force_torque1_integrals_ord4(-rho2, props.sp_mass, Jsp, Asp, props.M2, J2, A2);
+                    ft1 = mut_force_torque1_integrals_ord4(rho1, props.sp_mass, Jsp, Asp, props.M1, J1, A1);
+                    ft2 = mut_force_torque1_integrals_ord4(rho2, props.sp_mass, Jsp, Asp, props.M2, J2, A2);
                 }
 
                 const dvec3 Fsp     = dvec3{ft1[0],ft1[1],ft1[2]} + dvec3{ft2[0],ft2[1],ft2[2]};

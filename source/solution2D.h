@@ -461,6 +461,10 @@ public:
                     wiy_sp[i] = wi_sp[1];
                     wiz_sp[i] = wi_sp[2];
 
+                    wbx_sp[i] = wb_sp[0];
+                    wby_sp[i] = wb_sp[1];
+                    wbz_sp[i] = wb_sp[2];
+
                     roll_sp[i]  = rpy_sp[0]*180.0/PI;
                     pitch_sp[i] = rpy_sp[1]*180.0/PI;
                     yaw_sp[i]   = rpy_sp[2]*180.0/PI;
