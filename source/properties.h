@@ -1320,40 +1320,6 @@ public:
             }
             ImGui::Dummy(ImVec2(0.0f,15.0f*SCY));
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
             ImGui::Checkbox("Is rigid body", &sp_is_rigidbody_checkbox);
             if (!sp_is_rigidbody_checkbox)
             {

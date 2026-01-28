@@ -17,8 +17,8 @@ Masses :
 Numerical integration :
     Method := "RKF78 (fixed)"
     Epoch := "2029-04-13T21:34:00"
-    Duration := 10
-    Step := 0.02
+    Duration := 60
+    Step := 0.003
 
 Initial state :
     Mutual position and velocity := "Keplerian"
@@ -69,7 +69,7 @@ Assume spacecraft orbiter := "Yes"
         i  := 162.856
         Om := 152.002
         w  := 32.568
-        M  := -19.0222
+        M  := -2494.33
 
     Is rigid body := "Yes"
         Shape model := ".obj file"
