@@ -133,7 +133,7 @@ public:
         //up = get_up_vector();
 
         view = glm::lookAt(pos, aim, up);
-        projection = glm::infinitePerspective(glm::radians(fov), aspect, std::max(0.001f*dist_act, 0.1f));
+        projection = glm::infinitePerspective(glm::radians(fov), aspect, std::max(0.001f*dist_act, 0.001f));
     }
 
     //This function runs once each time a simulation terminates. It resets min, max and current camera distance, depending on the scales of the simulation that just ran.

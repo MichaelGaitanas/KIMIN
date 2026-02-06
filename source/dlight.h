@@ -1,4 +1,4 @@
-/* This class contains the core geometrical calculations of the directional light used to render the simulation in 3D. */
+/* This class contains the core geometrical calculations of the 'directional light' used to render the simulation in 3D. */
 
 #ifndef DLIGHT_H
 #define DLIGHT_H

@@ -1,4 +1,4 @@
-/* This class handles the numerical integration of the F2BP. */
+/* This class handles the numerical integration of the F2RBP. */
 
 #ifndef INTEGRATOR_H
 #define INTEGRATOR_H

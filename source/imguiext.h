@@ -1,4 +1,4 @@
-/* This header contains solely "imgui exterior" functions, in the sense that "extends" imgui's standard capabilities. We do this in order to
+/* This header contains solely "imgui extended" functions, in the sense that "extends" imgui's standard capabilities. We do this in order to
    accomplish some gui features that are not natively supported by imgui. Here, we obey the naming conventions adopted by imgui's source code.  */
 
 #ifndef IMGUIEXT_H
