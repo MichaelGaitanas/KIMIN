@@ -862,7 +862,7 @@ dvec6 mut_force_torque1_integrals_ord4(const dvec3 &r, const double M1, const dt
 
 //Mutual force of 2 rigid bodies AND the torque felt by the primary, assuming mascon distributions with constant densities.
 dvec6 mut_force_torque1_masc(const dvec3 &r, const double M1, const dmatnx3 &masc1, const dmat3 &A1,
-                                              const double M2, const dmatnx3 &masc2, const dmat3 &A2)
+                                             const double M2, const dmatnx3 &masc2, const dmat3 &A2)
 {
     #ifdef _OPENMP
         const int total_threads = omp_get_max_threads();

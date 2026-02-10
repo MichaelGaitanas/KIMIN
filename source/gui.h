@@ -37,7 +37,7 @@ public:
     solution sol, sol_pending;
 
     //These variables are meant to track and control separate thread heavy tasks, in order to prevent the gui from freezing.
-    std::atomic<bool> task_is_running, task_was_aborted, solution_is_ready;
+    std::atomic<bool>  task_is_running, task_was_aborted, solution_is_ready;
     std::atomic<float> task_progress;
 
     //Initialize class members, as well as imgui and implot.

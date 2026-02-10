@@ -17,7 +17,7 @@ int main()
     double c = 763;
     dcomplexvec x_quad = solve_quadratic(a,b,c);
     printf("size = %ld\n", x_quad.size());
-    printf("[%.16lf, %.16lf*i]\n", x_quad[0].real(), x_quad[0].imag());
+    printf("[%.16lf, %.16lf*i]\n",   x_quad[0].real(), x_quad[0].imag());
     printf("[%.16lf, %.16lf*i]\n\n", x_quad[1].real(), x_quad[1].imag());
 
     //Find all the roots of [a*x^3 + b*x^2 + c*x + d = 0].
@@ -27,8 +27,8 @@ int main()
     double d = 4;
     dcomplexvec x_cub = solve_cubic(a,b,c,d);
     printf("size = %ld\n", x_cub.size());
-    printf("[%.16lf, %.16lf*i]\n", x_cub[0].real(), x_cub[0].imag());
-    printf("[%.16lf, %.16lf*i]\n", x_cub[1].real(), x_cub[1].imag());
+    printf("[%.16lf, %.16lf*i]\n",   x_cub[0].real(), x_cub[0].imag());
+    printf("[%.16lf, %.16lf*i]\n",   x_cub[1].real(), x_cub[1].imag());
     printf("[%.16lf, %.16lf*i]\n\n", x_cub[2].real(), x_cub[2].imag());
 
     //Find all the roots of [a*x^4 + b*x^3 + c*x^2 + d*x + e = 0].
@@ -39,9 +39,9 @@ int main()
     double e = -5.1234;
     dcomplexvec x_quart = solve_quartic(a,b,c,d,e);
     printf("size = %ld\n", x_quart.size());
-    printf("[%.16lf, %.16lf*i]\n", x_quart[0].real(), x_quart[0].imag());
-    printf("[%.16lf, %.16lf*i]\n", x_quart[1].real(), x_quart[1].imag());
-    printf("[%.16lf, %.16lf*i]\n", x_quart[2].real(), x_quart[2].imag());
+    printf("[%.16lf, %.16lf*i]\n",   x_quart[0].real(), x_quart[0].imag());
+    printf("[%.16lf, %.16lf*i]\n",   x_quart[1].real(), x_quart[1].imag());
+    printf("[%.16lf, %.16lf*i]\n",   x_quart[2].real(), x_quart[2].imag());
     printf("[%.16lf, %.16lf*i]\n\n", x_quart[3].real(), x_quart[3].imag());
 
     return 0;
