@@ -1,0 +1,59 @@
+Simulation name := "Moshup1999KW4"
+
+Shape models := ".obj files"
+    file 1 := "moshup1999kw4_primary_R08km.obj"
+    file 2 := "moshup1999kw4_secondary_R03km.obj"
+
+Potential expansion order := 4
+
+Masses :
+    M1 := 2353000000000
+    M2 := 135000000000
+
+Numerical integration :
+    Method := "RKF78 (fixed)"
+    Epoch := "2025-11-21T00:00:00"
+    Duration := 300
+    Step := 0.005
+
+Initial state :
+    Mutual position and velocity := "Keplerian"
+    a  := 2.548
+    e  := 0
+    i  := 0
+    Om := 0
+    w  := 0
+    M  := 0
+
+    Orientations := "Euler angles (XYZ)"
+    Roll 1  := 0
+    Pitch 1 := 0
+    Yaw 1   := 0
+    Roll 2  := 0
+    Pitch 2 := 0
+    Yaw 2   := 0
+
+    Angular velocities := "Body frames"
+    w11 := 0
+    w12 := 0
+    w13 := 0.000631336
+    w21 := 0
+    w22 := 0
+    w23 := 0.000100168
+
+    Binary COM (Heliocentric) := "Keplerian"
+    a  := 0.6423918
+    e  := 0.6883963
+    i  := 38.87968
+    Om := 244.89629
+    w  := 192.65252
+    M  := 342.60363
+
+Assume Sun's gravity := "Yes"
+
+Collision shapes := "Spheres"
+
+Assume kinetic impactors := "No"
+
+Assume spacecraft orbiter := "No"
+
