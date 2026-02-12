@@ -1,0 +1,59 @@
+Simulation name := "IdaDactyl"
+
+Shape models := ".obj files"
+    file 1 := "ida32k_R31km.obj"
+    file 2 := "dactyl_ellipsoid_R08km.obj"
+
+Potential expansion order := 3
+
+Masses :
+    M1 := 4.2e+16
+    M2 := 3700000000000
+
+Numerical integration :
+    Method := "RKF78 (fixed)"
+    Epoch := "2014-05-23T12:00:00"
+    Duration := 100
+    Step := 0.001
+
+Initial state :
+    Mutual position and velocity := "Keplerian"
+    a  := 70
+    e  := 0.1
+    i  := 148.96
+    Om := 352.77
+    w  := 0
+    M  := 0
+
+    Orientations := "Euler angles (XYZ)"
+    Roll 1  := 0
+    Pitch 1 := 156.958
+    Yaw 1   := 262.767
+    Roll 2  := -23.042
+    Pitch 2 := 0
+    Yaw 2   := 0
+
+    Angular velocities := "Body frames"
+    w11 := 0
+    w12 := 0
+    w13 := 0.00037672
+    w21 := 0
+    w22 := 0
+    w23 := -9.04e-05
+
+    Binary COM (Heliocentric) := "Keplerian"
+    a  := 2.862471602
+    e  := 0.041485093
+    i  := 1.1322337
+    Om := 324.02846
+    w  := 110.31757
+    M  := 236.460083
+
+Assume Sun's gravity := "Yes"
+
+Collision shapes := "Spheres"
+
+Assume kinetic impactors := "No"
+
+Assume spacecraft orbiter := "No"
+
