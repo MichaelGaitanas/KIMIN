@@ -13,25 +13,25 @@ Masses :
 Numerical integration :
     Method := "RKF78 (fixed)"
     Epoch := "2025-11-21T00:00:00"
-    Duration := 300
+    Duration := 250
     Step := 0.005
 
 Initial state :
     Mutual position and velocity := "Keplerian"
     a  := 2.548
     e  := 0
-    i  := 0
-    Om := 0
+    i  := 155
+    Om := 56
     w  := 0
     M  := 0
 
     Orientations := "Euler angles (XYZ)"
-    Roll 1  := 0
-    Pitch 1 := 0
-    Yaw 1   := 0
-    Roll 2  := 0
+    Roll 1  := 164.443
+    Pitch 1 := -19.818
+    Yaw 1   := 5.392
+    Roll 2  := 164.443
     Pitch 2 := 0
-    Yaw 2   := 0
+    Yaw 2   := 60
 
     Angular velocities := "Body frames"
     w11 := 0

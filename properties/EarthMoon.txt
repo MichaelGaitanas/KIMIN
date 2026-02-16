@@ -25,9 +25,9 @@ Initial state :
     a  := 384400
     e  := 0.0549
     i  := 5.145
-    Om := 0
-    w  := 0
-    M  := 0
+    Om := 125.043
+    w  := 318.31
+    M  := 134.963
 
     Orientations := "Euler angles (XYZ)"
     Roll 1  := -23.4393
@@ -49,9 +49,9 @@ Initial state :
     a  := 1
     e  := 0.0167
     i  := 0
-    Om := 0
-    w  := 102.94
-    M  := 0
+    Om := 348.73936
+    w  := 102.95
+    M  := 357.517
 
 Assume Sun's gravity := "Yes"
 
